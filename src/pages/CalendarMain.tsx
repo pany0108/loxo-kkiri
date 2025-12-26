@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction'; // 클릭 이벤트를 위해 추가
 import { Plus, Bell, Calendar as CalendarIcon, Users, Settings } from 'lucide-react';
-import './CalendarCustom.css'; // 아래 CSS 내용을 이 파일에 저장하세요
+import './CalendarMain.css';
 
 const CalendarMain = () => {
   const navigate = useNavigate();

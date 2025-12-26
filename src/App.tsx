@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
-import './App.css';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import CalendarMain from './pages/CalendarMain';
