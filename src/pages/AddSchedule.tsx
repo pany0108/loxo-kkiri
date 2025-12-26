@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, DatePicker, Switch, TextArea, Selector, Toast, ImageUploader, NavBar } from 'antd-mobile';
+import { Form, Input, Button, DatePicker, Switch, TextArea, Toast, ImageUploader, NavBar } from 'antd-mobile';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
