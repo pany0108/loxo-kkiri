@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -8,9 +9,11 @@ import { Plus } from 'lucide-react'; // 아이콘 추가
 import './CalendarMain.css'; // 아래에서 스타일 파일을 만들 거예요
 
 const CalendarMain = () => {
+  const navigate = useNavigate(); // 이동을 도와주는 도구
+
   // 날짜 클릭 시 (일정 추가 시나리오)
   const handleDateClick = (arg: any) => {
-    Toast.show(`선택한 날짜: ${arg.dateStr}\n여기에 일정 등록 팝업을 띄울 거예요!`);
+    // Toast.show(`선택한 날짜: ${arg.dateStr}\n여기에 일정 등록 팝업을 띄울 거예요!`);
   };
 
   return (
@@ -39,7 +42,7 @@ const CalendarMain = () => {
           '--initial-position-right': '24px',
           '--edge-distance': '24px',
         }}
-        onClick={() => Toast.show('일정 등록 화면으로 이동합니다.')}
+        onClick={() => navigate('/add-schedule')}
       >
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
           <Plus size={28} />

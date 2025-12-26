@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import CalendarMain from './pages/CalendarMain';
+import AddSchedule from './pages/AddSchedule';
 import './App.css';
 
 function App() {
@@ -10,7 +12,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        {/* 비밀번호 찾기나 메인 캘린더 페이지도 여기에 추가하게 됩니다 */}
+        <Route path="/calendar" element={<CalendarMain />} />
+        <Route path="/add-schedule" element={<AddSchedule />} />
       </Routes>
     </Router>
   );
