@@ -1,69 +1,130 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, DatePicker, Switch, TextArea, Toast, ImageUploader, NavBar } from 'antd-mobile';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { ChevronLeft, MapPin, AlignLeft, Calendar, Clock, Camera } from 'lucide-react';
 
 const AddSchedule = () => {
   const navigate = useNavigate();
-  const [isAllDay, setIsAllDay] = useState(false);
 
-  const onFinish = (values: any) => {
-    // 날짜 유효성 검사
-    if (values.start && values.end && dayjs(values.end).isBefore(dayjs(values.start))) {
-      Toast.show({ content: '종료 시간이 시작보다 빠를 수 없습니다.', position: 'bottom' });
+  // 상태 관리
+  const [formData, setFormData] = useState({
+    title: '',
+    isAllDay: false,
+    start: dayjs().format('YYYY-MM-DDTHH:mm'),
+    end: dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    location: '',
+    content: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggle = () => {
+    setFormData((prev) => ({ ...prev, isAllDay: !prev.isAllDay }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 유효성 검사
+    if (!formData.title) {
+      alert('제목을 입력해주세요.');
+      return;
+    }
+    if (dayjs(formData.end).isBefore(dayjs(formData.start))) {
+      alert('종료 시간이 시작보다 빠를 수 없습니다.');
       return;
     }
 
-    console.log('등록 데이터:', values);
-    Toast.show({ content: '일정이 등록되었습니다!', icon: 'success' });
-    setTimeout(() => navigate('/calendar'), 1500); // 토스트를 보여줄 시간을 줌
+    console.log('등록 데이터:', formData);
+    alert('일정이 등록되었습니다!');
+    navigate('/calendar');
   };
 
   return (
-    <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
-      <NavBar onBack={() => navigate(-1)}>일정 추가</NavBar>
+    <div className="bg-gray-50 min-h-screen pb-10">
+      {/* 상단 네비게이션 바 */}
+      <nav className="bg-white px-4 py-3 flex items-center border-b sticky top-0 z-10">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1">
+          <ChevronLeft size={24} />
+        </button>
+        <h1 className="flex-1 text-center font-bold text-lg mr-6">일정 추가</h1>
+      </nav>
 
-      <Form
-        layout="vertical"
-        onFinish={onFinish}
-        footer={
-          <Button block type="submit" color="primary" size="large">
-            등록하기
-          </Button>
-        }
-      >
-        <Form.Item name="title" label="제목" rules={[{ required: true, message: '제목은 필수입니다' }]}>
-          <Input placeholder="일정 제목" />
-        </Form.Item>
+      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* 제목 입력 */}
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <input
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="제목을 입력하세요"
+            className="w-full text-xl font-semibold outline-none border-none placeholder-gray-300"
+            required
+          />
+        </div>
 
-        <Form.Item label="종일" childElementPosition="right">
-          <Switch checked={isAllDay} onChange={setIsAllDay} />
-        </Form.Item>
+        {/* 시간 설정 */}
+        <div className="bg-white rounded-2xl shadow-sm divide-y">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <Clock size={20} className="text-gray-400" />
+              <span className="font-medium">종일</span>
+            </div>
+            <button type="button" onClick={handleToggle} className={`w-12 h-6 rounded-full transition-colors relative ${formData.isAllDay ? 'bg-blue-500' : 'bg-gray-200'}`}>
+              <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isAllDay ? 'translate-x-6' : ''}`} />
+            </button>
+          </div>
 
-        <Form.Item name="start" label="시작 시간" rules={[{ required: true }]}>
-          <DatePicker precision={isAllDay ? 'day' : 'minute'}>
-            {(value) => (value ? dayjs(value).format(isAllDay ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm') : '날짜를 선택하세요')}
-          </DatePicker>
-        </Form.Item>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">시작</span>
+              <input
+                type={formData.isAllDay ? 'date' : 'datetime-local'}
+                name="start"
+                value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
+                onChange={handleChange}
+                className="bg-gray-100 px-3 py-2 rounded-lg outline-none"
+              />
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">종료</span>
+              <input
+                type={formData.isAllDay ? 'date' : 'datetime-local'}
+                name="end"
+                value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
+                onChange={handleChange}
+                className="bg-gray-100 px-3 py-2 rounded-lg outline-none"
+              />
+            </div>
+          </div>
+        </div>
 
-        <Form.Item name="end" label="종료 시간" rules={[{ required: true }]}>
-          <DatePicker precision={isAllDay ? 'day' : 'minute'}>
-            {(value) => (value ? dayjs(value).format(isAllDay ? 'YYYY/MM/DD' : 'YYYY/MM/DD HH:mm') : '날짜를 선택하세요')}
-          </DatePicker>
-        </Form.Item>
+        {/* 장소 및 메모 */}
+        <div className="bg-white rounded-2xl shadow-sm p-2">
+          <div className="flex items-center gap-3 p-3 border-b border-gray-50">
+            <MapPin size={20} className="text-gray-400" />
+            <input name="location" value={formData.location} onChange={handleChange} placeholder="장소 추가" className="flex-1 outline-none text-sm" />
+          </div>
+          <div className="flex items-start gap-3 p-3">
+            <AlignLeft size={20} className="text-gray-400 mt-1" />
+            <textarea name="content" value={formData.content} onChange={handleChange} placeholder="메모 추가" rows={3} className="flex-1 outline-none text-sm resize-none" />
+          </div>
+        </div>
 
-        <Form.Item name="location" label="장소">
-          <Input placeholder="장소 입력" />
-        </Form.Item>
+        {/* 사진 첨부 (UI만 구현) */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3 cursor-pointer active:bg-gray-50 transition-colors">
+          <Camera size={20} className="text-gray-400" />
+          <span className="text-sm text-gray-500 font-medium">사진 첨부</span>
+        </div>
 
-        <Form.Item name="content" label="내용">
-          <TextArea placeholder="상세 내용" rows={3} />
-        </Form.Item>
-
-        <Form.Item name="files" label="첨부파일">
-          <ImageUploader upload={async (file) => ({ url: URL.createObjectURL(file) })} />
-        </Form.Item>
-      </Form>
+        {/* 제출 버튼 */}
+        <button type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 active:scale-[0.98] transition-all mt-4">
+          등록하기
+        </button>
+      </form>
     </div>
   );
 };

@@ -1,77 +1,117 @@
-import React from 'react';
-import { Form, Input, Button, NavBar, Toast } from 'antd-mobile';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, LockKeyhole, Eye, EyeOff } from 'lucide-react';
 
 const ChangePassword = () => {
   const navigate = useNavigate();
-  const [form] = Form.useForm();
 
-  const onFinish = (values: any) => {
-    const { currentPassword, newPassword, confirmPassword } = values;
+  // 폼 상태 관리
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-    // [기획 로직] 비밀번호 일치 확인
+  // 비밀번호 보기/숨기기 토글 (커스텀 기능 추가)
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const { currentPassword, newPassword, confirmPassword } = formData;
+
+    // 유효성 검사
+    if (newPassword.length < 6) {
+      alert('새 비밀번호를 6자리 이상 입력해주세요.');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
-      Toast.show({
-        content: '새 비밀번호가 일치하지 않습니다.',
-        icon: 'fail',
-      });
+      alert('새 비밀번호가 일치하지 않습니다.');
       return;
     }
 
-    // [기획 로직] 기존 비밀번호와 동일한지 확인 (보안)
     if (currentPassword === newPassword) {
-      Toast.show({
-        content: '기존 비밀번호와 다른 비밀번호를 사용해주세요.',
-        icon: 'fail',
-      });
+      alert('기존 비밀번호와 다른 비밀번호를 사용해주세요.');
       return;
     }
 
-    Toast.show({
-      content: '비밀번호가 성공적으로 변경되었습니다.',
-      icon: 'success',
-    });
-
-    // 변경 후 프로필 화면으로 복귀
-    setTimeout(() => navigate('/profile'), 1500);
+    alert('비밀번호가 성공적으로 변경되었습니다.');
+    setTimeout(() => navigate('/profile'), 1000);
   };
 
   return (
-    <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
-      <NavBar onBack={() => navigate(-1)}>비밀번호 변경</NavBar>
+    <div className="bg-gray-50 min-h-screen">
+      {/* 상단 네비게이션 */}
+      <nav className="bg-white px-4 py-4 flex items-center border-b sticky top-0 z-10">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors">
+          <ChevronLeft size={24} className="text-gray-700" />
+        </button>
+        <h1 className="flex-1 text-center font-bold text-lg mr-6 text-gray-900">비밀번호 변경</h1>
+      </nav>
 
-      <div style={{ padding: '24px 16px' }}>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          footer={
-            <Button block type="submit" color="primary" size="large" style={{ marginTop: '20px' }}>
-              비밀번호 변경하기
-            </Button>
-          }
-        >
-          <Form.Item name="currentPassword" label="현재 비밀번호" rules={[{ required: true, message: '현재 비밀번호를 입력해주세요' }]}>
-            <Input type="password" placeholder="현재 비밀번호 입력" clearable />
-          </Form.Item>
+      <div className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* 현재 비밀번호 */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-600 ml-1">현재 비밀번호</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                placeholder="현재 비밀번호 입력"
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-blue-500 transition-all text-sm"
+                required
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
 
-          <Form.Item
-            name="newPassword"
-            label="새 비밀번호"
-            rules={[
-              { required: true, message: '새 비밀번호를 입력해주세요' },
-              { min: 6, message: '최소 6자리 이상 입력해주세요' },
-            ]}
-          >
-            <Input type="password" placeholder="새 비밀번호 입력 (6자리 이상)" clearable />
-          </Form.Item>
+          <hr className="border-gray-100 my-2" />
 
-          <Form.Item name="confirmPassword" label="새 비밀번호 확인" rules={[{ required: true, message: '비밀번호를 한 번 더 입력해주세요' }]}>
-            <Input type="password" placeholder="새 비밀번호 다시 입력" clearable />
-          </Form.Item>
-        </Form>
+          {/* 새 비밀번호 */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-600 ml-1">새 비밀번호</label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="newPassword"
+              value={formData.newPassword}
+              onChange={handleChange}
+              placeholder="새 비밀번호 입력 (6자리 이상)"
+              className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-blue-500 transition-all text-sm"
+              required
+            />
+          </div>
 
-        <div style={{ marginTop: '16px', color: '#999', fontSize: '13px', padding: '0 8px' }}>* 개인정보 보호를 위해 비밀번호는 주기적으로 변경하시는 것이 좋습니다.</div>
+          {/* 새 비밀번호 확인 */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-600 ml-1">새 비밀번호 확인</label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="새 비밀번호 다시 입력"
+              className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 outline-none focus:border-blue-500 transition-all text-sm"
+              required
+            />
+          </div>
+
+          <p className="text-[12px] text-gray-400 px-1 leading-relaxed">* 개인정보 보호를 위해 비밀번호는 주기적으로 변경하시는 것이 좋습니다.</p>
+
+          {/* 제출 버튼 */}
+          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 active:scale-[0.98] transition-all mt-8">
+            비밀번호 변경하기
+          </button>
+        </form>
       </div>
     </div>
   );
