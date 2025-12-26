@@ -10,6 +10,7 @@ import CalendarManager from './pages/CalendarManager';
 import CreateCalendar from './pages/CreateCalendar';
 import MyProfile from './pages/MyProfile';
 import FriendList from './pages/FriendList';
+import ChangePassword from './pages/ChangePassword';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/create-calendar" element={<CreateCalendar />} />
         <Route path="/profile" element={<MyProfile />} />
         <Route path="/friend-list" element={<FriendList />} />
+        <Route path="/change-password" element={<ChangePassword />} />
       </Routes>
     </Router>
   );
