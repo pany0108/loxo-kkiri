@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Calendar, Clock, Camera } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell } from 'lucide-react';
 import ColorPalette from '../components/calendar/ColorPalette';
 
 const AddSchedule = () => {
@@ -15,21 +15,52 @@ const AddSchedule = () => {
     allDay?: boolean;
   } | null;
 
+  const NOTIFICATION_OPTIONS = [
+    { label: '안함', value: 'none' },
+    { label: '정시', value: '0' },
+    { label: '5분 전', value: '5' },
+    { label: '10분 전', value: '10' },
+    { label: '15분 전', value: '15' },
+    { label: '30분 전', value: '30' },
+    { label: '1시간 전', value: '60' },
+    { label: '2시간 전', value: '120' },
+    { label: '3시간 전', value: '180' },
+    { label: '12시간 전', value: '720' },
+    { label: '1일 전', value: '1440' },
+  ];
+
   // 상태 관리 - 초기값을 전달받은 데이터로 설정
   const [formData, setFormData] = useState({
     title: '',
     isAllDay: receivedData?.allDay || false,
-    // 날짜 포맷팅: datetime-local 입력창은 'YYYY-MM-DDTHH:mm' 형식을 요구합니다.
     start: receivedData?.start ? dayjs(receivedData.start).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
     end: receivedData?.end ? dayjs(receivedData.end).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
     location: '',
     content: '',
-    color: '#3b82f6', // 기본 색상 추가
+    color: '#3b82f6',
+    notification: 'none', // 초기값
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      let nextData = { ...prev, [name]: value };
+
+      // 시작 시간(start)이 변경될 때의 로직
+      if (name === 'start') {
+        const newStart = dayjs(value);
+        const currentEnd = dayjs(prev.end);
+
+        // 종료 시간이 시작 시간보다 이전이라면 종료 시간을 시작 시간과 동일하게 변경
+        if (currentEnd.isBefore(newStart)) {
+          // datetime-local(분 단위) 혹은 date(일 단위) 포맷 유지
+          nextData.end = value;
+        }
+      }
+
+      return nextData;
+    });
   };
 
   // 3. 색상 변경 핸들러 추가
@@ -58,7 +89,7 @@ const AddSchedule = () => {
       return;
     }
     if (dayjs(formData.end).isBefore(dayjs(formData.start))) {
-      alert('종료 시간이 시작보다 빠를 수 없습니다.');
+      alert('종료 일자가 시작일보다 빠를 수 없습니다.');
       return;
     }
 
@@ -129,6 +160,26 @@ const AddSchedule = () => {
               />
             </div>
           </div>
+        </div>
+
+        {/* 푸시 알림 설정 */}
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Bell size={20} className="text-gray-400" />
+            <span className="font-medium text-sm text-gray-700">푸시 알림</span>
+          </div>
+          <select
+            name="notification"
+            value={formData.notification}
+            onChange={handleChange} // 이제 에러가 발생하지 않습니다.
+            className="w-full bg-gray-50 border border-gray-100 text-gray-700 text-[14px] rounded-xl p-3 outline-none appearance-none"
+          >
+            {NOTIFICATION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* 장소 및 메모 */}
