@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Calendar, Clock, Camera } from 'lucide-react';
+import ColorPalette from '../components/calendar/ColorPalette';
 
 const AddSchedule = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // 상태 관리
+  // [수정] 전달받은 데이터 추출 (CalendarMain에서 보낸 정보)
+  const receivedData = location.state as {
+    start?: string;
+    end?: string;
+    allDay?: boolean;
+  } | null;
+
+  // 상태 관리 - 초기값을 전달받은 데이터로 설정
   const [formData, setFormData] = useState({
     title: '',
-    isAllDay: false,
-    start: dayjs().format('YYYY-MM-DDTHH:mm'),
-    end: dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    isAllDay: receivedData?.allDay || false,
+    // 날짜 포맷팅: datetime-local 입력창은 'YYYY-MM-DDTHH:mm' 형식을 요구합니다.
+    start: receivedData?.start ? dayjs(receivedData.start).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
+    end: receivedData?.end ? dayjs(receivedData.end).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
     location: '',
     content: '',
+    color: '#3b82f6', // 기본 색상 추가
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -21,10 +32,23 @@ const AddSchedule = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleToggle = () => {
-    setFormData((prev) => ({ ...prev, isAllDay: !prev.isAllDay }));
+  // 3. 색상 변경 핸들러 추가
+  const handleColorChange = (color: string) => {
+    setFormData((prev) => ({ ...prev, color }));
   };
 
+  const handleToggle = () => {
+    setFormData((prev) => {
+      const nextIsAllDay = !prev.isAllDay;
+      return {
+        ...prev,
+        isAllDay: nextIsAllDay,
+        // 종일 모드를 켜고 끌 때 시간을 정규화 (선택 사항)
+        start: dayjs(prev.start).format('YYYY-MM-DDTHH:mm'),
+        end: dayjs(prev.end).format('YYYY-MM-DDTHH:mm'),
+      };
+    });
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -64,6 +88,11 @@ const AddSchedule = () => {
             className="w-full text-xl font-semibold outline-none border-none placeholder-gray-300"
             required
           />
+        </div>
+
+        {/* 색상 팔레트 */}
+        <div className="bg-white rounded-2xl shadow-sm px-4">
+          <ColorPalette selectedColor={formData.color} onSelectColor={handleColorChange} />
         </div>
 
         {/* 시간 설정 */}
