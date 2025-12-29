@@ -4,9 +4,17 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, Bell, ChevronDown, Users, Settings2, Check } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg } from '@fullcalendar/core';
 import './CalendarMain.css';
+
+// 캘린더 타입 정의
+interface CalendarType {
+  id: string;
+  name: string;
+  members: string[]; // 공유 대상 이름들
+  isPrivate: boolean;
+}
 
 /**
  * [Utility] 주차 계산 함수
@@ -23,6 +31,17 @@ const getWeekOfMonth = (date: Date) => {
 const CalendarMain = () => {
   const navigate = useNavigate();
   const calendarRef = useRef<FullCalendar>(null);
+  const [isCalListOpen, setIsCalListOpen] = useState(false);
+  const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
+    id: '1',
+    name: '내 캘린더',
+    members: [],
+    isPrivate: true,
+  });
+  const [myCalendars, setMyCalendars] = useState<CalendarType[]>([
+    { id: '1', name: '내 캘린더', members: [], isPrivate: true },
+    { id: '2', name: '우리 가족 캘린더', members: ['엄마', '아빠', '동생'], isPrivate: false },
+  ]);
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
@@ -88,15 +107,50 @@ const CalendarMain = () => {
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
       {/* 1. 상단 헤더 영역 */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">내 캘린더</h1>
-          <p className="text-[10px] text-blue-500 font-black uppercase tracking-[0.15em] mt-0.5">Family Scheduler</p>
+      <header className="sticky top-0 z-50 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="relative">
+            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="flex items-center gap-2 group">
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
+              <ChevronDown size={20} className={`text-gray-400 transition-transform ${isCalListOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <p className="text-[10px] text-blue-500 font-black uppercase tracking-[0.15em] mt-0.5">{activeCalendar.isPrivate ? 'Private Space' : 'Family Link'}</p>
+
+            {/* 캘린더 선택 드롭다운 UI */}
+            {isCalListOpen && (
+              <div className="absolute top-12 left-0 w-64 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-2 z-[60] animate-in fade-in zoom-in duration-200">
+                {myCalendars.map((cal) => (
+                  <button
+                    key={cal.id}
+                    onClick={() => {
+                      setActiveCalendar(cal);
+                      setIsCalListOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-[18px] transition-colors"
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className={`text-[14px] font-bold ${activeCalendar.id === cal.id ? 'text-blue-600' : 'text-gray-700'}`}>{cal.name}</span>
+                      {!cal.isPrivate && <span className="text-[10px] text-gray-400">멤버: {cal.members.join(', ')}</span>}
+                    </div>
+                    {activeCalendar.id === cal.id && <Check size={16} className="text-blue-600" />}
+                  </button>
+                ))}
+                <div className="h-[1px] bg-gray-100 my-2 mx-2" />
+                <button
+                  onClick={() => navigate('/add-calendar')} // 캘린더 추가 페이지로 이동
+                  className="w-full flex items-center gap-2 p-4 text-gray-500 font-bold text-[14px] hover:text-blue-600"
+                >
+                  <Plus size={18} /> 캘린더 추가하기
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button className="relative p-2.5 bg-gray-50 text-gray-500 rounded-xl transition-all">
+            <Bell size={20} />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
         </div>
-        <button className="relative p-2.5 bg-gray-50 text-gray-500 hover:bg-gray-100 rounded-xl transition-all">
-          <Bell size={20} />
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </button>
       </header>
 
       {/* 2. 상단 뷰 전환 탭 네비게이션 */}
@@ -242,10 +296,15 @@ const CalendarMain = () => {
       <button
         onClick={() =>
           navigate('/add-schedule', {
-            state: { start: selectedDate || new Date().toISOString().split('T')[0], allDay: true },
+            state: {
+              start: selectedDate || new Date().toISOString().split('T')[0],
+              allDay: true,
+              calendarId: activeCalendar.id, // 어떤 캘린더에 추가할지 전달
+            },
           })
         }
-        className="fixed right-6 bottom-10 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center z-30 active:scale-90 transition-transform"
+        className="fixed right-6 bottom-10 w-14 h-14 bg-blue-600 text-white rounded-[20px] shadow-2xl flex items-center justify-center z-30 active:scale-90 transition-transform"
+        style={{ bottom: '80px' }}
       >
         <Plus size={28} strokeWidth={2.5} />
       </button>
