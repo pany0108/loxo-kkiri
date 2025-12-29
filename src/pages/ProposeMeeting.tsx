@@ -1,141 +1,100 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
-import dayjs from 'dayjs';
+import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, ChevronLeft } from 'lucide-react';
 
 const ProposeMeeting = () => {
   const navigate = useNavigate();
 
-  // 상태 관리: 선택된 날짜들 (YYYY-MM-DD 형식의 문자열 배열)
-  const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [currentMonth, setCurrentMonth] = useState(dayjs());
-
-  // 날짜 선택 토글 로직
-  const toggleDate = (dateStr: string) => {
-    setSelectedDates((prev) => (prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr]));
-  };
-
-  // 캘린더 날짜 생성 로직
-  const generateDates = () => {
-    const startOfMonth = currentMonth.startOf('month');
-    const endOfMonth = currentMonth.endOf('month');
-    const dates = [];
-
-    // 시작 요일에 맞춘 빈 칸 채우기
-    for (let i = 0; i < startOfMonth.day(); i++) {
-      dates.push(null);
-    }
-
-    // 실제 날짜 채우기
-    for (let i = 1; i <= endOfMonth.date(); i++) {
-      dates.push(startOfMonth.date(i).format('YYYY-MM-DD'));
-    }
-    return dates;
-  };
-
-  const handleConfirm = () => {
-    alert('약속 제안이 친구들에게 발송되었습니다!');
-    navigate('/calendar');
-  };
+  // 진행 중인 약속 데이터 (나중에는 서버에서 받아올 부분)
+  const ongoingMeetings = [
+    { id: '1', title: '강남역 삼겹살 파티 🥓', status: 'VOTING', members: 4, dday: 'D-2' },
+    { id: '2', title: '주말 한강 피크닉 돗자리', status: 'PENDING', members: 3, dday: '투표중' },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="bg-white px-4 py-4 flex items-center border-b sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors">
-          <ChevronLeft size={24} className="text-gray-700" />
+      <nav className="px-4 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+          <ChevronLeft size={28} />
         </button>
-        <h1 className="flex-1 text-center font-bold text-lg mr-6 text-gray-900">새 약속 제안</h1>
       </nav>
 
-      <div className="p-5 space-y-6">
-        {/* 단계 1: 다중 날짜 선택 (커스텀 캘린더) */}
-        <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-6 text-blue-600">
-            <CalendarIcon size={20} strokeWidth={2.5} />
-            <h2 className="font-bold">1. 후보 날짜 선택</h2>
+      <div className="flex-1 px-8 pt-4 pb-24 overflow-y-auto max-w-md mx-auto w-full">
+        {/* 헤더 섹션 */}
+        <div className="mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+            <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
+          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
+            소중한 사람들과의 <br />
+            <span className="text-blue-600">약속을 잡아보세요</span>
+          </h2>
+        </div>
 
-          {/* 캘린더 헤더 */}
-          <div className="flex items-center justify-between mb-4 px-2">
-            <button onClick={() => setCurrentMonth(currentMonth.subtract(1, 'month'))} className="p-1">
-              <ChevronLeft size={20} />
-            </button>
-            <span className="font-bold text-gray-800">{currentMonth.format('YYYY년 MM월')}</span>
-            <button onClick={() => setCurrentMonth(currentMonth.add(1, 'month'))} className="p-1">
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          {/* 캘린더 그리드 */}
-          <div className="grid grid-cols-7 gap-1 text-center">
-            {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
-              <span key={d} className="text-[10px] font-bold text-gray-300 py-2">
-                {d}
-              </span>
-            ))}
-            {generateDates().map((date, idx) => {
-              if (!date) return <div key={`empty-${idx}`} />;
-              const isSelected = selectedDates.includes(date);
-              const isToday = date === dayjs().format('YYYY-MM-DD');
-
-              return (
-                <button
-                  key={date}
-                  type="button"
-                  onClick={() => toggleDate(date)}
-                  className={`
-                    aspect-square rounded-2xl text-sm font-bold transition-all flex items-center justify-center
-                    ${isSelected ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'hover:bg-gray-50 text-gray-700'}
-                    ${isToday && !isSelected ? 'text-blue-600 ring-1 ring-blue-100' : ''}
-                  `}
-                >
-                  {dayjs(date).date()}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 단계 2: 시간 설정 목록 */}
-        <section className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-4 text-orange-500">
-            <Clock size={20} strokeWidth={2.5} />
-            <h2 className="font-bold">2. 상세 시간 설정</h2>
-          </div>
-
-          <div className="space-y-3">
-            {selectedDates.length > 0 ? (
-              [...selectedDates].sort().map((date) => (
-                <div key={date} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group active:scale-[0.98] transition-transform">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-400 font-bold uppercase tracking-tighter">Selected Date</span>
-                    <span className="text-sm font-extrabold text-gray-700">{dayjs(date).format('MM월 DD일 (ddd)')}</span>
-                  </div>
-                  <button className="text-xs font-black text-blue-600 bg-white border border-blue-100 px-4 py-2 rounded-xl shadow-sm active:bg-blue-600 active:text-white transition-all">
-                    시간 추가
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="py-12 text-center border-2 border-dashed border-gray-100 rounded-[24px]">
-                <p className="text-sm text-gray-300 font-medium">먼저 위에서 날짜를 선택해주세요.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* 제안하기 버튼 */}
+        {/* [버튼] 새 약속 만들기 */}
         <button
-          onClick={handleConfirm}
-          disabled={selectedDates.length === 0}
-          className={`
-            w-full py-5 rounded-[24px] font-black text-lg shadow-xl transition-all
-            ${selectedDates.length > 0 ? 'bg-blue-600 text-white shadow-blue-200 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
-          `}
+          onClick={() => navigate('/propose/create')}
+          className="w-full h-[80px] bg-blue-600 rounded-[24px] flex items-center justify-between px-6 shadow-xl shadow-blue-100 active:scale-[0.98] transition-all group mb-8"
         >
-          약속 제안 발송하기
+          <div className="text-left">
+            <p className="text-blue-200 text-[11px] font-bold mb-1 tracking-wider uppercase">New Meeting</p>
+            <h3 className="text-white font-black text-[17px]">새로운 약속 제안하기</h3>
+          </div>
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white group-hover:bg-white group-hover:text-blue-600 transition-all">
+            <Plus size={24} strokeWidth={3} />
+          </div>
         </button>
+
+        {/* [리스트] 진행 중인 약속 */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-[15px] font-black text-gray-900 flex items-center gap-2">
+              <Clock size={18} className="text-blue-600" /> 진행 중인 약속
+            </h2>
+            <span className="text-[11px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">{ongoingMeetings.length}개</span>
+          </div>
+
+          {ongoingMeetings.length > 0 ? (
+            <div className="space-y-3">
+              {ongoingMeetings.map((meeting) => (
+                <button
+                  key={meeting.id}
+                  onClick={() => navigate(`/meeting/report/${meeting.id}`)}
+                  className="w-full bg-white p-5 rounded-[24px] border-2 border-gray-50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-blue-100 hover:shadow-lg hover:shadow-blue-50/50 group"
+                >
+                  <div className="text-left space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-md ${meeting.status === 'VOTING' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {meeting.status === 'VOTING' ? '투표 진행중' : '시간 조율중'}
+                      </span>
+                      <span className="text-[11px] font-bold text-gray-300">| {meeting.dday}</span>
+                    </div>
+                    <h4 className="font-black text-gray-800 text-[16px] group-hover:text-blue-600 transition-colors">{meeting.title}</h4>
+                    <div className="flex items-center gap-1.5 text-gray-400">
+                      <Users size={14} />
+                      <span className="text-[12px] font-bold">{meeting.members}명 참여중</span>
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
+                    <ChevronRight size={18} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            // 약속이 없을 때 보여줄 화면
+            <div className="py-12 text-center space-y-3 bg-gray-50 rounded-[24px] border-2 border-dashed border-gray-100">
+              <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto text-gray-300 mb-2 shadow-sm">
+                <CalendarCheck size={24} />
+              </div>
+              <div className="space-y-1">
+                <p className="text-gray-500 font-bold text-[13px]">현재 진행 중인 약속이 없어요.</p>
+                <p className="text-gray-400 text-[11px]">새로운 약속을 만들어보세요!</p>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

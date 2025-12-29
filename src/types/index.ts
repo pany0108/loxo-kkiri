@@ -17,3 +17,18 @@ export interface Schedule {
   attachments: string[];
   attendees: string[]; // 공유된 친구들
 }
+
+interface AppointmentType {
+  id: string;
+  title: string;
+  hostId: string; // 약속을 만든 사람
+  members: {
+    userId: string;
+    name: string;
+    status: 'pending' | 'accepted' | 'declined'; // 수락 여부
+  }[];
+  start: string;
+  end: string;
+  location: string;
+  isConfirmed: boolean; // 약속 최종 확정 여부
+}
