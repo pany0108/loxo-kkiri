@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, ChevronDown, Check, X } from 'lucide-react';
+import { Plus, ChevronDown, Check, X, Settings } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
@@ -273,6 +273,15 @@ const CalendarMain = () => {
                     </button>
                   ))}
                   <div className="h-[1px] bg-gray-50 my-2 mx-2" />
+                  <button
+                    onClick={() => {
+                      setIsCalListOpen(false);
+                      navigate('/calendar-manager');
+                    }}
+                    className="w-full flex items-center gap-2 p-3.5 text-gray-500 font-bold text-[13px] hover:text-gray-900 hover:bg-gray-50 rounded-[18px] transition-colors"
+                  >
+                    <Settings size={16} /> 캘린더 관리
+                  </button>
                   <button
                     onClick={() => navigate('/create-calendar')}
                     className="w-full flex items-center gap-2 p-4 text-gray-500 font-bold text-[13px] hover:text-blue-600 hover:bg-gray-50 rounded-[18px] transition-colors"
