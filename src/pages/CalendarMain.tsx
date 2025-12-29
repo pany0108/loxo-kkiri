@@ -137,7 +137,7 @@ const CalendarMain = () => {
                 ))}
                 <div className="h-[1px] bg-gray-100 my-2 mx-2" />
                 <button
-                  onClick={() => navigate('/add-calendar')} // 캘린더 추가 페이지로 이동
+                  onClick={() => navigate('/create-calendar')} // 캘린더 추가 페이지로 이동
                   className="w-full flex items-center gap-2 p-4 text-gray-500 font-bold text-[14px] hover:text-blue-600"
                 >
                   <Plus size={18} /> 캘린더 추가하기
@@ -152,7 +152,6 @@ const CalendarMain = () => {
           </button>
         </div>
       </header>
-
       {/* 2. 상단 뷰 전환 탭 네비게이션 */}
       <nav className="px-4 py-2">
         <div className="flex p-1 bg-gray-100/80 rounded-2xl">
@@ -171,7 +170,6 @@ const CalendarMain = () => {
           ))}
         </div>
       </nav>
-
       {/* 3. 메인 캘린더 콘텐츠 영역 */}
       <main className="flex-1 flex flex-col bg-gray-50/50 overflow-hidden relative">
         <div
@@ -291,18 +289,20 @@ const CalendarMain = () => {
           </div>
         </div>
       </main>
-
       {/* 5. 플로팅 버튼 (선택된 날짜가 있으면 해당 날짜로, 없으면 오늘로) */}
       <button
-        onClick={() =>
+        onClick={() => {
+          // 선택된 날짜가 있으면 그 날짜를, 없으면 오늘 날짜를 기준으로 설정
+          const targetDate = selectedDate || new Date().toISOString().split('T')[0];
           navigate('/add-schedule', {
             state: {
-              start: selectedDate || new Date().toISOString().split('T')[0],
+              start: targetDate, // 'YYYY-MM-DD' 형식
+              end: targetDate, // 종일 일정이므로 종료일도 동일하게 설정
               allDay: true,
-              calendarId: activeCalendar.id, // 어떤 캘린더에 추가할지 전달
+              calendarId: activeCalendar.id,
             },
-          })
-        }
+          });
+        }}
         className="fixed right-6 bottom-10 w-14 h-14 bg-blue-600 text-white rounded-[20px] shadow-2xl flex items-center justify-center z-30 active:scale-90 transition-transform"
         style={{ bottom: '80px' }}
       >

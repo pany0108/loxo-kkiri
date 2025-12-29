@@ -4,6 +4,20 @@ import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, Calendar as CalendarIcon } from 'lucide-react';
 import ColorPalette from '../components/calendar/ColorPalette';
 
+const NOTIFICATION_OPTIONS = [
+  { label: '알림 안함', value: 'none' },
+  { label: '정시', value: '0' },
+  { label: '5분 전', value: '5' },
+  { label: '10분 전', value: '10' },
+  { label: '15분 전', value: '15' },
+  { label: '30분 전', value: '30' },
+  { label: '1시간 전', value: '60' },
+  { label: '2시간 전', value: '120' },
+  { label: '3시간 전', value: '180' },
+  { label: '12시간 전', value: '720' },
+  { label: '1일 전', value: '1440' },
+];
+
 const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,25 +28,18 @@ const AddSchedule = () => {
     allDay?: boolean;
   } | null;
 
-  const NOTIFICATION_OPTIONS = [
-    { label: '알림 안함', value: 'none' },
-    { label: '정시', value: '0' },
-    { label: '5분 전', value: '5' },
-    { label: '10분 전', value: '10' },
-    { label: '15분 전', value: '15' },
-    { label: '30분 전', value: '30' },
-    { label: '1시간 전', value: '60' },
-    { label: '2시간 전', value: '120' },
-    { label: '3시간 전', value: '180' },
-    { label: '12시간 전', value: '720' },
-    { label: '1일 전', value: '1440' },
-  ];
+  // 초기 날짜 포맷 결정 함수
+  const getInitialDate = (dateStr?: string, isAllDay?: boolean) => {
+    if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
+    // 종일 일정으로 넘어온 경우 시간 없이 날짜만, 아니면 시간 포함
+    return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
+  };
 
   const [formData, setFormData] = useState({
     title: '',
-    isAllDay: receivedData?.allDay || false,
-    start: receivedData?.start ? dayjs(receivedData.start).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
-    end: receivedData?.end ? dayjs(receivedData.end).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
+    isAllDay: receivedData?.allDay ?? false, // 명시적으로 넘어온 값 사용
+    start: getInitialDate(receivedData?.start, receivedData?.allDay),
+    end: getInitialDate(receivedData?.end || receivedData?.start, receivedData?.allDay),
     location: '',
     content: '',
     color: '#3b82f6',
@@ -59,12 +66,16 @@ const AddSchedule = () => {
   };
 
   const handleToggle = () => {
-    setFormData((prev) => ({
-      ...prev,
-      isAllDay: !prev.isAllDay,
-      start: dayjs(prev.start).format('YYYY-MM-DDTHH:mm'),
-      end: dayjs(prev.end).format('YYYY-MM-DDTHH:mm'),
-    }));
+    setFormData((prev) => {
+      const nextIsAllDay = !prev.isAllDay;
+      return {
+        ...prev,
+        isAllDay: nextIsAllDay,
+        // 종일로 변경 시 시간을 떼고, 시간제로 변경 시 기본 오전 9시/오후 6시 등을 붙여줌
+        start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
+        end: nextIsAllDay ? dayjs(prev.end).format('YYYY-MM-DD') : dayjs(prev.end).format('YYYY-MM-DDT18:00'),
+      };
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
