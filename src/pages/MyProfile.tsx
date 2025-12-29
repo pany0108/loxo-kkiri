@@ -34,7 +34,7 @@ const MyProfile = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-24">
       {/* 1. 상단 헤더 */}
-      <nav className="px-4 pt-6 pb-2 flex items-center sticky top-0 bg-white/90 backdrop-blur-md z-40 transition-all">
+      <nav className="px-6 pt-6 pb-2 flex items-center sticky top-0 bg-white/90 backdrop-blur-md z-40 transition-all">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90">
           <ChevronLeft size={28} />
         </button>
