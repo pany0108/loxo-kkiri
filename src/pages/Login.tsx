@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Sparkles, Loader2, ChevronRight } from 'lucide-react';
+import { Lock, User, Sparkles, Loader2 } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -40,12 +40,17 @@ const Login = () => {
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-5 transition-all duration-300">
                 <User size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
                 <input
-                  type="text"
+                  type="text" // 만약 이메일 형식이면 type="email"로 변경 추천
                   placeholder="아이디"
                   className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
                   required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  inputMode="text"
                 />
               </div>
             </div>
@@ -61,6 +66,8 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  // [수정] 비밀번호 관련 속성 추가 (보안 및 편의성)
+                  autoComplete="current-password"
                 />
               </div>
             </div>
