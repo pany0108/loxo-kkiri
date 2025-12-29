@@ -1,16 +1,7 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import CalendarMain from './pages/CalendarMain';
-import AddSchedule from './pages/AddSchedule';
-import ProposeMeetingDetail from './pages/ProposeMeetingDetail';
-import CalendarManager from './pages/CalendarManager';
-import CreateCalendar from './pages/CreateCalendar';
-import MyProfile from './pages/MyProfile';
-import FriendList from './pages/FriendList';
-import ChangePassword from './pages/ChangePassword';
+import { Login, Signup, CalendarMain, AddSchedule, ProposeMeetingDetail, CalendarManager, CreateCalendar, MyProfile, FriendList, ChangePassword } from './pages';
 
 function App() {
   const location = useLocation();
