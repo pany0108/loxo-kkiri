@@ -8,3 +8,4 @@ export { default as CreateCalendar } from './CreateCalendar';
 export { default as MyProfile } from './MyProfile';
 export { default as FriendList } from './FriendList';
 export { default as ChangePassword } from './ChangePassword';
+export { default as ScheduleDetail } from './ScheduleDetail';

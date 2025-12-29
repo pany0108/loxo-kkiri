@@ -217,7 +217,8 @@ const CalendarMain = () => {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white p-4 rounded-[24px] border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center gap-4 active:scale-[0.98] transition-transform"
+                onClick={() => navigate(`/schedule/${i}`)}
+                className="bg-white p-4 rounded-[24px] border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center gap-4 active:scale-[0.98] transition-transform cursor-pointer"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
