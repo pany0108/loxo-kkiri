@@ -1,7 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, CheckCircle, Sparkles } from 'lucide-react';
-import { validatePassword } from '../utils/validation';
+import { User, Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, CheckCircle, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+
+/**
+ * 비밀번호 유효성 검사 로직
+ */
+const validatePasswordLocally = (password: string, userInfo: any) => {
+  if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
+
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const combinations = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
+
+  if (combinations < 2) return '영문, 숫자, 특수문자 중 2종류 이상을 조합해주세요.';
+
+  if (userInfo.userId && password.includes(userInfo.userId)) return '비밀번호에 아이디를 포함할 수 없습니다.';
+  if (userInfo.name && password.includes(userInfo.name)) return '비밀번호에 이름을 포함할 수 없습니다.';
+
+  return true;
+};
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -9,6 +27,7 @@ const Signup = () => {
   const [formData, setFormData] = useState({
     id: '',
     password: '',
+    confirmPassword: '',
     lastName: '',
     firstName: '',
     nickname: '',
@@ -20,10 +39,42 @@ const Signup = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isAuthSent, setIsAuthSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const forbiddenIds = ['admin', 'root', 'master', 'support'];
+  const forbiddenIds = ['admin', 'root', 'master', 'support', 'manager', 'owner'];
 
-  // 1. 자동 포맷팅 함수들
+  // 아이디 실시간 검사
+  useEffect(() => {
+    if (!formData.id) {
+      setErrors((prev) => ({ ...prev, id: '' }));
+      return;
+    }
+
+    const idRegex = /^[a-z0-9-_]+$/;
+    if (!idRegex.test(formData.id)) {
+      setErrors((prev) => ({ ...prev, id: '영문 소문자, 숫자, -, _만 사용 가능합니다.' }));
+    } else if (forbiddenIds.includes(formData.id.toLowerCase())) {
+      setErrors((prev) => ({ ...prev, id: '사용할 수 없는 금칙어입니다.' }));
+    } else {
+      setErrors((prev) => ({ ...prev, id: '' }));
+    }
+  }, [formData.id]);
+
+  // 비밀번호 일치 실시간 검사
+  useEffect(() => {
+    if (!formData.confirmPassword) {
+      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrors((prev) => ({ ...prev, confirmPassword: '비밀번호가 일치하지 않습니다.' }));
+    } else {
+      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
+    }
+  }, [formData.password, formData.confirmPassword]);
+
   const formatPhone = (value: string) => {
     const nums = value.replace(/[^\d]/g, '');
     if (nums.length <= 3) return nums;
@@ -45,10 +96,8 @@ const Signup = () => {
     if (name === 'birthDate') formattedValue = formatBirth(value);
 
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // 2. 인증번호 발송 함수 (추가됨)
   const handleSendAuth = () => {
     if (!formData.phone || formData.phone.length < 13) {
       alert('올바른 휴대폰 번호를 입력해주세요.');
@@ -58,245 +107,268 @@ const Signup = () => {
     alert('인증번호가 발송되었습니다. (테스트 번호: 1234)');
   };
 
-  // 3. 인증번호 확인 함수 (추가됨)
   const handleVerify = () => {
     if (formData.authCode === '1234') {
       setIsVerified(true);
-      alert('인증되었습니다.');
     } else {
       alert('인증번호가 일치하지 않습니다.');
     }
   };
 
-  // 4. 회원가입 제출 함수 (추가됨)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: Record<string, string> = {};
 
     if (!isVerified) {
       alert('휴대폰 본인인증을 완료해주세요.');
       return;
     }
 
-    // 아이디 금칙어 체크
-    if (forbiddenIds.includes(formData.id.toLowerCase())) {
-      newErrors.id = '사용할 수 없는 아이디입니다.';
-    }
-
-    // 비밀번호 유효성 검사 (개인정보 포함 여부 등)
-    const fullName = formData.lastName + formData.firstName;
-    const pwdResult = validatePassword(formData.password, {
-      userId: formData.id,
-      name: fullName,
-      birthDate: formData.birthDate,
-      phone: formData.phone,
-    });
-
-    if (pwdResult !== true) {
-      newErrors.password = pwdResult as string;
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (errors.id || errors.confirmPassword) {
+      alert('입력된 정보를 다시 확인해주세요.');
       return;
     }
 
-    const randomTag = Math.floor(1000 + Math.random() * 9000);
-    alert(`${formData.nickname}#${randomTag}님, 회원가입을 축하합니다!`);
-    navigate('/');
+    const fullName = formData.lastName + formData.firstName;
+    const pwdResult = validatePasswordLocally(formData.password, {
+      userId: formData.id,
+      name: fullName,
+    });
+
+    if (pwdResult !== true) {
+      setErrors((prev) => ({ ...prev, password: pwdResult as string }));
+      return;
+    }
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      const randomTag = Math.floor(1000 + Math.random() * 9000);
+      alert(`${formData.nickname}#${randomTag}님, 환영합니다!`);
+      navigate('/');
+    }, 1500);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      <header className="px-6 py-6 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur-md z-20">
-        <div className="flex items-center mb-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
-            <ChevronLeft size={24} />
-          </button>
+      <div className="px-4 pt-6">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+          <ChevronLeft size={28} />
+        </button>
+      </div>
+
+      <div className="flex-1 px-8 pt-6 pb-12 overflow-y-auto max-w-md mx-auto w-full">
+        <div className="mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+            <Sparkles className="text-blue-600 w-6 h-6" />
+          </div>
+          <h2 className="text-[28px] font-black text-gray-900 leading-[1.2] tracking-tight">
+            새로운 시작, <br />
+            <span className="text-blue-600">회원가입을 시작할까요?</span>
+          </h2>
         </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">회원가입</h1>
-            <Sparkles size={20} className="text-blue-500 fill-blue-500" />
-          </div>
-          <p className="text-[13px] font-medium text-gray-400 leading-relaxed">
-            슈퍼 스케줄러와 함께 <br />
-            스마트한 일정 관리를 시작해보세요.
-          </p>
-        </div>
-      </header>
 
-      <div className="flex-1 px-8 pb-12 overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-6 pt-6">
-          {/* 아이디 */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">ID</label>
-            <div
-              className={`flex items-center bg-gray-50 border-2 rounded-2xl px-4 py-3 ${
-                errors.id ? 'border-red-400' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
-              }`}
-            >
-              <User size={18} className="text-gray-400 mr-3" />
-              <input
-                name="id"
-                placeholder="영문 소문자, 숫자 조합"
-                className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
-                onChange={handleChange}
-                required
-              />
-            </div>
-            {errors.id && <p className="text-[10px] text-red-500 ml-2">{errors.id}</p>}
-          </div>
-
-          {/* 비밀번호 */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Password</label>
-            <div
-              className={`flex items-center bg-gray-50 border-2 rounded-2xl px-4 py-3 ${
-                errors.password ? 'border-red-400' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
-              }`}
-            >
-              <Lock size={18} className="text-gray-400 mr-3" />
-              <input
-                name="password"
-                type="password"
-                placeholder="10자 이상, 조합 필수"
-                className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
-                onChange={handleChange}
-                required
-              />
-            </div>
-            {errors.password && <p className="text-[10px] text-red-500 ml-2 leading-tight">{errors.password}</p>}
-          </div>
-
-          {/* 성/이름 */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-500">성</label>
-              <div className="bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-3">
-                <input name="lastName" placeholder="김" className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800" onChange={handleChange} required />
-              </div>
-            </div>
-            <div className="col-span-2 space-y-1">
-              <label className="text-xs font-bold text-gray-500">이름</label>
-              <div className="bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-3">
-                <input name="firstName" placeholder="철수" className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800" onChange={handleChange} required />
-              </div>
-            </div>
-          </div>
-
-          {/* 생년월일 */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Birth Date</label>
-            <div className="flex items-center bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-3">
-              <Calendar size={18} className="text-gray-400 mr-3" />
-              <input
-                name="birthDate"
-                value={formData.birthDate}
-                placeholder="19901231 (숫자만 입력)"
-                className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
-                onChange={handleChange}
-                required
-                maxLength={10}
-              />
-            </div>
-          </div>
-
-          {/* 휴대폰 번호 */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Phone</label>
-            <div className="flex gap-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-3">
+            {/* 아이디 */}
+            <div className="group relative">
               <div
-                className={`flex-1 flex items-center bg-gray-50 border-2 border-transparent rounded-2xl px-4 py-3 ${
-                  isVerified ? 'bg-blue-50' : 'focus-within:border-blue-500 focus-within:bg-white'
+                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.id ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
                 }`}
               >
-                <Smartphone size={18} className={isVerified ? 'text-blue-500 mr-3' : 'text-gray-400 mr-3'} />
+                <User size={20} className={`${errors.id ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
                 <input
-                  name="phone"
-                  value={formData.phone}
-                  placeholder="01012345678"
-                  className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
+                  name="id"
+                  placeholder="아이디 (영문 소문자, 숫자, -, _)"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   onChange={handleChange}
                   required
-                  readOnly={isVerified}
                 />
-                {isVerified && <CheckCircle size={18} className="text-blue-500 ml-2" />}
               </div>
-              <button
-                type="button"
-                onClick={handleSendAuth}
-                disabled={isVerified}
-                className="px-4 bg-gray-900 text-white rounded-2xl text-xs font-bold disabled:bg-gray-200 transition-colors"
-              >
-                {isAuthSent ? '재발송' : '인증하기'}
-              </button>
-            </div>
-          </div>
-
-          {/* 인증번호 입력창 (발송 후 노출) */}
-          {isAuthSent && !isVerified && (
-            <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="text-xs font-bold text-blue-600 ml-1">인증번호 입력</label>
-              <div className="flex gap-2">
-                <div className="flex-1 flex items-center bg-blue-50 border-2 border-blue-200 rounded-2xl px-4 py-3">
-                  <ShieldCheck size={18} className="text-blue-500 mr-3" />
-                  <input
-                    name="authCode"
-                    value={formData.authCode}
-                    placeholder="4자리 숫자"
-                    className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
-                    onChange={handleChange}
-                    maxLength={4}
-                  />
+              {errors.id && (
+                <div className="flex items-center gap-1 ml-4 mt-1">
+                  <AlertCircle size={12} className="text-red-500" />
+                  <p className="text-[11px] text-red-500 font-bold">{errors.id}</p>
                 </div>
-                <button type="button" onClick={handleVerify} className="px-6 bg-blue-600 text-white rounded-2xl text-xs font-bold active:scale-95 transition-all">
-                  확인
+              )}
+            </div>
+
+            {/* 비밀번호 */}
+            <div className="group relative">
+              <div
+                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.password ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                }`}
+              >
+                <Lock size={20} className={`${errors.password ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="비밀번호 (10자 이상 조합)"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  onChange={handleChange}
+                  required
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-300 hover:text-gray-500 transition-colors">
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {errors.password && <p className="text-[11px] text-red-500 ml-4 mt-1 font-bold">{errors.password}</p>}
             </div>
-          )}
 
-          {/* 닉네임 */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Nickname</label>
-            <div className="bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-3">
-              <input
-                name="nickname"
-                placeholder="닉네임 (16자 이하)"
-                className="bg-transparent outline-none w-full text-sm font-semibold text-gray-800"
-                onChange={handleChange}
-                required
-                maxLength={16}
-              />
+            {/* 비밀번호 확인 */}
+            <div className="group relative">
+              <div
+                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                  formData.confirmPassword && errors.confirmPassword
+                    ? 'border-red-400 bg-white'
+                    : formData.confirmPassword && !errors.confirmPassword
+                    ? 'border-emerald-400 bg-white'
+                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                }`}
+              >
+                <ShieldCheck
+                  size={20}
+                  className={`${
+                    formData.confirmPassword && errors.confirmPassword
+                      ? 'text-red-400'
+                      : formData.confirmPassword && !errors.confirmPassword
+                      ? 'text-emerald-500'
+                      : 'text-gray-300 group-focus-within:text-blue-600'
+                  } mr-4`}
+                />
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="비밀번호 다시 입력"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  onChange={handleChange}
+                  required
+                />
+                {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
+              </div>
+              {formData.confirmPassword && errors.confirmPassword && <p className="text-[11px] text-red-500 ml-4 mt-1 font-bold">{errors.confirmPassword}</p>}
+            </div>
+
+            {/* 이름 (성/이름) */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-1 group">
+                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                  <input
+                    name="lastName"
+                    placeholder="성"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="col-span-2 group">
+                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                  <input
+                    name="firstName"
+                    placeholder="이름"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 생년월일 */}
+            <div className="group">
+              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+                <input
+                  name="birthDate"
+                  value={formData.birthDate}
+                  placeholder="생년월일 (YYYY/MM/DD)"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  onChange={handleChange}
+                  required
+                  maxLength={10}
+                />
+              </div>
+            </div>
+
+            {/* 휴대폰 인증 */}
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div
+                  className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
+                    isVerified ? 'bg-blue-50 border-blue-100' : 'focus-within:border-blue-500 focus-within:bg-white'
+                  }`}
+                >
+                  <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
+                  <input
+                    name="phone"
+                    value={formData.phone}
+                    placeholder="휴대폰 번호"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    onChange={handleChange}
+                    required
+                    readOnly={isVerified}
+                  />
+                  {isVerified && <CheckCircle2 size={20} className="text-blue-500 ml-2" />}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendAuth}
+                  disabled={isVerified}
+                  className="flex-1 h-[60px] bg-gray-900 text-white rounded-[20px] text-[13px] font-black active:scale-[0.95] disabled:opacity-50"
+                >
+                  {isAuthSent ? '재발송' : '인증요청'}
+                </button>
+              </div>
+
+              {isAuthSent && !isVerified && (
+                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                  <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
+                    <input
+                      name="authCode"
+                      value={formData.authCode}
+                      placeholder="인증번호 4자리"
+                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                      onChange={handleChange}
+                      maxLength={4}
+                    />
+                  </div>
+                  <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-blue-600 text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
+                    확인
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 닉네임 */}
+            <div className="group">
+              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <CheckCircle size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+                <input
+                  name="nickname"
+                  placeholder="닉네임"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
           </div>
 
-          {/* 제출 버튼 */}
           <div className="pt-10">
             <button
               type="submit"
-              disabled={!isVerified}
-              className={`
-                relative w-full py-5 rounded-[24px] font-black text-lg transition-all duration-300
-                flex items-center justify-center gap-2 overflow-hidden shadow-xl
+              disabled={isLoading || !isVerified || !!errors.id || !!errors.confirmPassword}
+              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
-                  isVerified
-                    ? 'bg-blue-600 text-white shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 active:scale-[0.98]'
-                    : 'bg-gray-100 text-gray-400 shadow-none cursor-not-allowed'
-                }
-              `}
+                  isVerified && !errors.id && !errors.confirmPassword
+                    ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                }`}
             >
-              <span>회원가입 완료</span>
-              {isVerified ? <CheckCircle size={20} /> : <Lock size={18} className="opacity-50" />}
+              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
             </button>
-
-            {!isVerified && <p className="text-center mt-4 text-[11px] font-bold text-rose-400 animate-pulse">본인인증을 완료해야 가입이 가능합니다.</p>}
-
-            <p className="text-center mt-6 text-[11px] text-gray-300 font-medium">
-              가입 시 <span className="underline decoration-gray-200 px-1">이용약관</span> 및 <span className="underline decoration-gray-200 px-1">개인정보 처리방침</span>에
-              동의하게 됩니다.
-            </p>
           </div>
         </form>
       </div>
