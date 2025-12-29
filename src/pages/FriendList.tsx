@@ -15,11 +15,15 @@ const FriendList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // [추가] 모달 상태 관리
+  // 모달 상태 관리
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFriendName, setNewFriendName] = useState('');
 
-  // [수정] 친구 추가를 시연하기 위해 setFriends 추가
+  // 내 상태 메시지 (여기서는 보여주기만 함)
+  // 실제 앱에서는 전역 상태(Context/Redux)나 서버 데이터여야 합니다.
+  const [myStatus] = useState('오늘도 파이팅! 🔥');
+
+  // 친구 목록 데이터
   const [friends, setFriends] = useState<Friend[]>([
     { id: '1', name: '강호동', tag: '#1111', status: '오늘 운동 가실 분? 💪', isOnline: true },
     { id: '2', name: '김철수', tag: '#1234', status: '업무 중... 연락 늦어요', isOnline: false },
@@ -28,14 +32,13 @@ const FriendList = () => {
     { id: '5', name: '정준하', tag: '#5555', status: '맛집 탐방', isOnline: false },
   ]);
 
-  // 검색어 필터링 및 이름순 정렬
+  // 검색어 필터링
   const filteredFriends = friends.filter((f) => f.name.includes(searchTerm)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-  // [추가] 친구 추가 핸들러
+  // 친구 추가 핸들러
   const handleAddFriend = () => {
     if (!newFriendName.trim()) return;
 
-    // 가상의 친구 데이터 생성
     const newFriend: Friend = {
       id: Date.now().toString(),
       name: newFriendName,
@@ -57,7 +60,7 @@ const FriendList = () => {
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">친구</h1>
           <button
             className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg shadow-gray-200 active:scale-90 transition-all hover:bg-black"
-            onClick={() => setIsModalOpen(true)} // [수정] 모달 오픈
+            onClick={() => setIsModalOpen(true)}
           >
             <UserPlus size={20} />
           </button>
@@ -84,27 +87,28 @@ const FriendList = () => {
       </header>
 
       <div className="px-6 space-y-6 mt-2">
-        {/* 2. 내 프로필 (검색 중이 아닐 때만 표시) */}
+        {/* 2. 내 프로필 (단순 이동 버튼 역할) */}
         {!searchTerm && (
           <section>
             <h2 className="text-[12px] font-bold text-gray-400 mb-3 px-1">내 프로필</h2>
             <div
               className="bg-white p-4 rounded-[28px] shadow-[0_5px_20px_rgba(0,0,0,0.02)] border border-gray-100 flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/profile')} // [중요] 전체 영역 클릭 시 이동
             >
-              <div className="flex items-center gap-4">
-                <div className="w-[56px] h-[56px] bg-gradient-to-br from-blue-500 to-blue-600 rounded-[22px] flex items-center justify-center text-white shadow-blue-200 shadow-lg">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-[56px] h-[56px] bg-gradient-to-br from-blue-500 to-blue-600 rounded-[22px] flex items-center justify-center text-white shadow-blue-200 shadow-lg shrink-0">
                   <User size={26} strokeWidth={2.5} />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[17px] font-black text-gray-900">내 이름</span>
                     <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">ME</span>
                   </div>
-                  <p className="text-[13px] text-gray-500 font-medium mt-0.5">상태 메시지를 입력해주세요</p>
+                  {/* 단순히 텍스트만 표시 */}
+                  <p className="text-[13px] font-medium text-gray-500 mt-0.5 truncate">{myStatus}</p>
                 </div>
               </div>
-              <ChevronRight size={20} className="text-gray-300" />
+              <ChevronRight size={20} className="text-gray-300 ml-2 shrink-0" />
             </div>
           </section>
         )}
@@ -123,7 +127,6 @@ const FriendList = () => {
                 {filteredFriends.map((friend) => (
                   <div key={friend.id} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-4 overflow-hidden">
-                      {/* 프로필 이미지 (이니셜) */}
                       <div className="relative shrink-0">
                         <div
                           className={`w-[48px] h-[48px] rounded-[18px] flex items-center justify-center text-gray-500 font-bold text-lg
@@ -131,11 +134,9 @@ const FriendList = () => {
                         >
                           {friend.name[0]}
                         </div>
-                        {/* 접속 상태 표시 점 */}
                         {friend.isOnline && <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-[3px] border-white rounded-full"></div>}
                       </div>
 
-                      {/* 정보 텍스트 */}
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[16px] font-bold text-gray-900 truncate">{friend.name}</span>
@@ -144,7 +145,6 @@ const FriendList = () => {
                       </div>
                     </div>
 
-                    {/* 액션 버튼 */}
                     <div className="flex items-center gap-1 pl-2">
                       <button className="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                         <MessageCircle size={20} />
@@ -154,7 +154,6 @@ const FriendList = () => {
                 ))}
               </div>
             ) : (
-              // 검색 결과 없음 상태
               <div className="py-24 text-center flex flex-col items-center justify-center">
                 <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-4">
                   <Search size={28} />
@@ -167,20 +166,11 @@ const FriendList = () => {
         </section>
       </div>
 
-      {/* ================================================================
-        [친구 추가 모달] 
-        - z-index 50으로 헤더보다 위에 표시
-        - backdrop-blur로 배경 블러 처리
-        ================================================================
-      */}
+      {/* 친구 추가 모달 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
-          {/* 배경 (클릭 시 닫힘) */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)} />
-
-          {/* 모달 컨텐츠 */}
           <div className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200">
-            {/* 닫기 버튼 */}
             <button onClick={() => setIsModalOpen(false)} className="absolute top-5 right-5 text-gray-300 hover:text-gray-500 transition-colors">
               <X size={24} />
             </button>
@@ -190,7 +180,6 @@ const FriendList = () => {
               <p className="text-gray-400 text-[13px] font-medium">친구의 이름이나 ID를 입력해주세요.</p>
             </div>
 
-            {/* 입력창 */}
             <div className="bg-gray-50 rounded-[20px] p-2 mb-6 border border-gray-100 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
               <div className="flex items-center px-3 py-2">
                 <Search size={18} className="text-gray-400 mr-3" />
@@ -206,7 +195,6 @@ const FriendList = () => {
               </div>
             </div>
 
-            {/* 하단 버튼 그룹 */}
             <div className="flex gap-3">
               <button
                 onClick={() => setIsModalOpen(false)}
