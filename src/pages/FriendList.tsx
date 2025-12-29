@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, User, ChevronRight, MessageCircle, X } from 'lucide-react';
+import { Search, UserPlus, User, ChevronRight, MessageCircle, X, Check } from 'lucide-react';
 
 // 친구 데이터 타입 정의
 interface Friend {
@@ -15,8 +15,12 @@ const FriendList = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 친구 목록 데이터
-  const [friends] = useState<Friend[]>([
+  // [추가] 모달 상태 관리
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newFriendName, setNewFriendName] = useState('');
+
+  // [수정] 친구 추가를 시연하기 위해 setFriends 추가
+  const [friends, setFriends] = useState<Friend[]>([
     { id: '1', name: '강호동', tag: '#1111', status: '오늘 운동 가실 분? 💪', isOnline: true },
     { id: '2', name: '김철수', tag: '#1234', status: '업무 중... 연락 늦어요', isOnline: false },
     { id: '3', name: '박지성', tag: '#9988', status: '영국 여행 중 ✈️', isOnline: true },
@@ -27,15 +31,33 @@ const FriendList = () => {
   // 검색어 필터링 및 이름순 정렬
   const filteredFriends = friends.filter((f) => f.name.includes(searchTerm)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
+  // [추가] 친구 추가 핸들러
+  const handleAddFriend = () => {
+    if (!newFriendName.trim()) return;
+
+    // 가상의 친구 데이터 생성
+    const newFriend: Friend = {
+      id: Date.now().toString(),
+      name: newFriendName,
+      tag: `#${Math.floor(Math.random() * 9000) + 1000}`,
+      status: '방금 추가된 친구에요! 👋',
+      isOnline: true,
+    };
+
+    setFriends((prev) => [newFriend, ...prev]);
+    setNewFriendName('');
+    setIsModalOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-[100px]">
+    <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-[100px] relative">
       {/* 1. 상단 헤더 및 검색 영역 */}
       <header className="sticky top-0 bg-white/90 backdrop-blur-md z-40 px-6 pt-6 pb-4">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">친구</h1>
           <button
             className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg shadow-gray-200 active:scale-90 transition-all hover:bg-black"
-            onClick={() => alert('친구 추가 모달 오픈')}
+            onClick={() => setIsModalOpen(true)} // [수정] 모달 오픈
           >
             <UserPlus size={20} />
           </button>
@@ -144,6 +166,67 @@ const FriendList = () => {
           </div>
         </section>
       </div>
+
+      {/* ================================================================
+        [친구 추가 모달] 
+        - z-index 50으로 헤더보다 위에 표시
+        - backdrop-blur로 배경 블러 처리
+        ================================================================
+      */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+          {/* 배경 (클릭 시 닫힘) */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)} />
+
+          {/* 모달 컨텐츠 */}
+          <div className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            {/* 닫기 버튼 */}
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-5 right-5 text-gray-300 hover:text-gray-500 transition-colors">
+              <X size={24} />
+            </button>
+
+            <div className="mt-2 mb-6">
+              <h3 className="text-xl font-black text-gray-900 mb-1">새 친구 추가</h3>
+              <p className="text-gray-400 text-[13px] font-medium">친구의 이름이나 ID를 입력해주세요.</p>
+            </div>
+
+            {/* 입력창 */}
+            <div className="bg-gray-50 rounded-[20px] p-2 mb-6 border border-gray-100 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+              <div className="flex items-center px-3 py-2">
+                <Search size={18} className="text-gray-400 mr-3" />
+                <input
+                  type="text"
+                  value={newFriendName}
+                  onChange={(e) => setNewFriendName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddFriend()}
+                  placeholder="예: 홍길동"
+                  className="flex-1 bg-transparent outline-none text-gray-900 text-[15px] font-bold placeholder:font-medium placeholder:text-gray-300"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* 하단 버튼 그룹 */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-3.5 rounded-[20px] bg-gray-100 text-gray-500 font-bold text-[14px] hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAddFriend}
+                disabled={!newFriendName.trim()}
+                className={`flex-1 py-3.5 rounded-[20px] font-bold text-[14px] flex items-center justify-center gap-2 transition-all
+                  ${newFriendName.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-95' : 'bg-blue-100 text-blue-300 cursor-not-allowed'}`}
+              >
+                <Check size={16} strokeWidth={3} />
+                추가하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
