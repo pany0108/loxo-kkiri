@@ -22,7 +22,6 @@
 
 .fc-view-harness {
   height: 100% !important;
-  background-color: #ffffff;
   flex-grow: 0;
   flex-shrink: 0;
 }
@@ -31,29 +30,34 @@
    [2] 상단 툴바 및 네비게이션 버튼
    ========================================================== */
 .fc-header-toolbar {
-  margin: 4px 0 12px 0 !important;
-  padding: 10px 12px !important;
+  margin: 0 !important;
+  padding: 16px 24px 8px !important;
   display: flex;
   align-items: center;
-  min-height: 50px;
 }
 
-/* 데이터 속성을 이용한 타이틀 커스텀 */
 .fc-toolbar-title {
   position: relative;
-  font-size: 14px !important;
-  font-weight: 800 !important;
+  font-size: 0 !important;
+  font-weight: 900 !important;
   color: transparent !important;
-  user-select: none;
+  letter-spacing: -0.5px;
+  white-space: nowrap !important;
+  line-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  min-width: 160px !important;
 }
 
 .fc-toolbar-title::before {
   content: attr(data-custom-title);
   position: absolute;
   left: 0;
-  top: 0;
-  color: #1f2937 !important;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #111827 !important; /* gray-900 */
   visibility: visible;
+  font-size: 18px !important;
 }
 
 .fc-prev-button,
@@ -61,297 +65,282 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: #d1d5db !important;
-  padding: 0 4px !important;
+  color: #9ca3af !important; /* gray-400 */
+  padding: 4px !important;
+  border-radius: 50% !important;
+}
+
+.fc-prev-button:hover,
+.fc-next-button:hover {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  color: #111827 !important;
 }
 
 .fc-today-button {
   background-color: #eff6ff !important;
   border: none !important;
   color: #2563eb !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  padding: 4px 10px !important;
-  border-radius: 8px !important;
-  margin-right: 8px !important;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+  margin-right: 12px !important;
+  opacity: 1 !important;
+  white-space: nowrap !important;
+  width: auto !important;
+  min-width: max-content !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
 }
 
 /* ==========================================================
    [3] 주(Week) / 일(Day) 뷰 상세 스타일
    ========================================================== */
-/* 좌측 시간축(Axis) 고정 */
 .fc .fc-timegrid-axis,
 .fc .fc-timegrid-slot-label,
-.fc .fc-scrollgrid-shrink,
-.fc-timegrid col,
-.fc-scrollgrid col {
-  width: 75px !important;
-  min-width: 75px !important;
-  max-width: 75px !important;
-}
-
-.fc-timegrid-slot-label-frame,
-.fc-timegrid-slot-label-cushion,
-.fc-timegrid-axis-cushion {
-  width: 75px !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  padding: 0 !important;
-}
-
-.fc .fc-timegrid-axis-cushion {
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  color: #1f2937 !important;
-  max-width: none;
+.fc .fc-scrollgrid-shrink {
+  width: 60px !important;
 }
 
 .fc .fc-timegrid-slot-label-cushion {
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
-  color: #94a3b8 !important;
-}
-
-/* 그리드 및 헤더 */
-.fc-timegrid .fc-col-header {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+  color: #9ca3af !important;
 }
 
 .fc-timegrid .fc-col-header-cell-cushion {
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  color: #1f2937 !important;
-  padding: 8px 0 !important;
-  text-decoration: none !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #4b5563 !important;
+  padding: 12px 0 !important;
 }
 
 .fc-timegrid .fc-timegrid-slots td {
-  height: 45px !important;
-  border-bottom: 1px solid #f8fafc !important;
+  height: 50px !important;
+  border-bottom: 1px dashed #f3f4f6 !important;
 }
 
-.fc-timegrid-allday {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+.fc .fc-timegrid-axis-frame {
+  justify-content: center !important;
 }
 
-.fc-timegrid-body {
-  padding-bottom: 20px !important;
-}
-
-.fc-timegrid-col-misc {
-  display: none !important;
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-scrollgrid-shrink-cushion,
+.fc .fc-scrollgrid-sync-inner {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  text-align: center;
+  vertical-align: middle;
+  letter-spacing: -0.5px;
 }
 
 /* ==========================================================
    [4] 월(Month) 뷰 기본 스타일
    ========================================================== */
-.fc-daygrid .fc-col-header {
-  background-color: #ffffff;
-}
-
 .fc-daygrid .fc-col-header-cell-cushion {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  color: #94a3b8 !important;
-  text-decoration: none !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #9ca3af !important;
+  padding-bottom: 12px !important;
 }
 
 .fc-daygrid-day-top {
-  padding: 0 !important;
   justify-content: center !important;
-  align-items: center !important;
-  height: 24px !important;
-  display: flex !important;
+  padding-top: 4px !important;
 }
 
 .fc-daygrid-day-number {
-  display: inline-block !important;
-  line-height: 1 !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  text-align: center;
+  color: #4b5563;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
 }
 
-.fc .fc-daygrid-body,
-.fc .fc-scrollgrid-sync-table {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.fc .fc-daygrid-day {
-  height: auto !important;
-}
-
-/* ==========================================================
-   [5] 날짜 선택 및 오늘 표시 효과
-   ========================================================== */
-/* 오늘 날짜 표시 */
+/* 오늘 날짜 */
 .fc-day-today .fc-daygrid-day-number {
-  padding: 0 !important;
-  color: #2563eb !important;
-  background-color: #eff6ff;
-  border-radius: 50%;
-  width: 20px !important;
-  height: 20px !important;
-  line-height: 20px !important;
-  text-align: center;
-}
-
-/* 선택된 날짜 하이라이트 */
-.selected-day {
-  background-color: #eff6ff !important; /* blue-50 */
-}
-
-.selected-day .fc-daygrid-day-number {
-  padding: 0 !important;
-  background-color: #2563eb !important;
+  background-color: #111827 !important; /* gray-900 */
   color: #ffffff !important;
-  border-radius: 50% !important;
-  width: 20px !important;
-  height: 20px !important;
-  line-height: 20px !important;
-  text-align: center;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+}
+
+/* 선택된 날짜 */
+.selected-day .fc-daygrid-day-number {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 /* ==========================================================
-   [6] 압축 모드 (리스트 노출 시 h-[50%])
+   [6] 압축 모드 (Compact Mode) - 6주 고정 레이아웃 스타일
    ========================================================== */
-.h-\[50\%\] .fc,
-.h-\[50\%\] .fc-view-harness {
+
+/* 1. FullCalendar 전체 레이아웃 구조 */
+/* Root 요소를 Flex로 설정하여 툴바와 달력 영역 분리 */
+.compact-mode .fc {
+  display: flex !important;
+  flex-direction: column !important;
   height: 100% !important;
 }
 
-.h-\[50\%\] .fc-scroller {
-  overflow: hidden !important;
+/* 툴바(제목, 버튼): 높이 자동, 공간 차지 */
+.compact-mode .fc-header-toolbar {
+  flex: 0 0 auto !important;
+  margin-bottom: 4px !important;
+}
+
+/* 2. 달력 영역 (View Harness): 남은 공간 자동 채움 */
+.compact-mode .fc-view-harness {
+  flex: 1 1 auto !important;
   height: auto !important;
+  min-height: 0 !important; /* 컨텐츠 오버플로우 방지 */
+  overflow: hidden !important;
 }
 
-.h-\[50\%\] .fc-daygrid-body,
-.h-\[50\%\] .fc-daygrid-body table,
-.h-\[50\%\] .fc-scrollgrid-sync-table {
+/* 3. 내부 스크롤 및 테이블 높이 전체 설정 */
+.compact-mode .fc-scroller-harness,
+.compact-mode .fc-scroller,
+.compact-mode .fc-daygrid-body,
+.compact-mode .fc-scrollgrid,
+.compact-mode .fc-scrollgrid-sync-table {
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important; /* 스크롤바 숨김 */
+}
+
+/* 4. 6주 높이 균등 배분 (테이블 구조) */
+/* tbody 높이 100% 설정 */
+.compact-mode tbody {
   height: 100% !important;
 }
 
-.h-\[50\%\] .fc-daygrid-day {
-  height: 1px !important;
+/* 각 행(tr) 높이 16.66% 고정 (6주 기준) */
+.compact-mode tr.fc-scrollgrid-sync-row {
+  height: 16.66% !important;
 }
 
-.h-\[50\%\] .fc-daygrid-day-frame {
+/* 요일 헤더 높이 최소화 */
+.compact-mode .fc-col-header-row {
+  height: 20px !important;
+  line-height: 20px !important;
+}
+
+/* 5. 날짜 셀 및 이벤트 표시 스타일 */
+.compact-mode .fc-daygrid-day-frame {
+  height: 100% !important;
   min-height: 0 !important;
-  height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  position: relative !important;
-  padding: 4px 0 !important;
+  justify-content: flex-start !important;
+  padding-top: 2px !important;
 }
 
-.h-\[50\%\] .fc-daygrid-day-top {
-  display: flex !important;
+/* 날짜 숫자 */
+.compact-mode .fc-daygrid-day-top {
+  flex: 0 0 auto !important;
   justify-content: center !important;
-  align-items: center !important;
-  height: 20px !important;
-  width: 100% !important;
-  z-index: 2;
-  margin: 0 !important;
 }
 
-/* 압축 모드 일정 점(Dot) 스타일 */
-.h-\[50\%\] .fc-daygrid-day-events {
+/* 일정 컨테이너 (Dot) - 가로 정렬 */
+.compact-mode .fc-daygrid-day-events {
+  flex: 1 !important;
   display: flex !important;
+  flex-direction: row !important;
   justify-content: center !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   flex-wrap: wrap !important;
   gap: 2px !important;
-  position: absolute !important;
-  bottom: 4px !important;
-  left: 0 !important;
-  right: 0 !important;
-  min-height: 4px !important;
   margin: 0 !important;
-  padding: 0 !important;
-  z-index: 1;
+  min-height: 0 !important;
+  padding: 2px 1px 0 !important;
 }
 
-.h-\[50\%\] .fc-daygrid-event-harness,
-.h-\[50\%\] .fc-daygrid-event-harness-abs {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+/* 이벤트 래퍼(Harness) 위치 초기화 */
+.compact-mode .fc-daygrid-event-harness,
+.compact-mode .fc-daygrid-event-harness-abs {
   position: static !important;
   margin: 0 !important;
-  padding: 0 !important;
   width: auto !important;
+  visibility: visible !important;
 }
 
-.h-\[50\%\] .fc-event {
-  all: unset !important;
-  width: 4px !important;
-  height: 4px !important;
-  min-width: 4px !important;
-  max-width: 4px !important;
-  min-height: 4px !important;
+/* 점(Dot) 디자인 */
+.compact-mode .fc-event {
   display: block !important;
+  width: 5px !important;
+  height: 5px !important;
+  min-width: 5px !important;
   border-radius: 50% !important;
   background-color: var(--event-color, #3b82f6) !important;
   border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
   margin: 0 !important;
   padding: 0 !important;
   position: static !important;
 }
 
-/* 압축 모드 불필요 요소 숨김 */
-.h-\[50\%\] .fc-event *,
-.h-\[50\%\] .fc-daygrid-event-dot,
-.h-\[50\%\] .fc-daygrid-more-link,
-.h-\[50\%\] .fc-event-title,
-.h-\[50\%\] .fc-event-time,
-.fc-daygrid-day-bottom {
+/* 기타 요소 숨김 */
+.compact-mode .fc-event *,
+.compact-mode .fc-daygrid-day-bottom {
   display: none !important;
 }
 
 /* ==========================================================
-   [7] 일정(Event) 상세 및 요일별 색상
+   [7] 일정(Event) 스타일
    ========================================================== */
-/* 일정 블록 및 텍스트 */
-.fc-v-event,
 .fc-daygrid-block-event {
-  background-color: var(--event-color, #3b82f6) !important;
+  border-radius: 6px !important;
+  padding: 1px 4px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
   border: none !important;
-  border-radius: 4px !important;
-  padding: 1px 2px !important;
+  margin-top: 2px !important;
 }
 
-.fc-daygrid-dot-event .fc-daygrid-event-dot {
-  border: 4px solid var(--event-color, #3b82f6) !important;
+.fc-v-event {
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 2px 4px !important;
+  font-size: 10px !important;
 }
 
 .fc-event-title {
-  font-size: 9px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
 }
 
-/* 요일별 색상 (일/토) */
-.fc-day-sun .fc-daygrid-day-number,
+.fc-event-time {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+}
+
+/* 주말 색상 */
 .fc-day-sun .fc-col-header-cell-cushion {
-  color: #f87171 !important;
+  color: #ef4444 !important;
 }
-.fc-day-sat .fc-daygrid-day-number,
 .fc-day-sat .fc-col-header-cell-cushion {
-  color: #60a5fa !important;
+  color: #3b82f6 !important;
 }
 
-/* 기타 상태 */
-.fc .fc-day-other .fc-daygrid-day-events {
-  opacity: 0.3 !important;
+/* 일요일 (Sunday) - 빨강 */
+.fc-day-sun .fc-daygrid-day-number {
+  color: #ef4444 !important; /* red-500 */
+}
+
+/* 토요일 (Saturday) - 파랑 */
+.fc-day-sat .fc-daygrid-day-number {
+  color: #3b82f6 !important; /* blue-500 */
+}
+
+/* 선택된 날짜 텍스트 가독성 확보 */
+.selected-day .fc-daygrid-day-number {
+  color: #ffffff !important;
 }
 
 /* ==========================================================
@@ -371,13 +360,7 @@
   transition: height 0.15s ease-out !important;
 }
 
-main.flex-1 {
-  height: calc(100vh - 78px - 56px);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.fixed.right-6.bottom-10 {
-  bottom: 80px !important;
+.calendar-transition {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: height;
 }

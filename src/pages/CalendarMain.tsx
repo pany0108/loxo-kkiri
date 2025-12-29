@@ -1,23 +1,23 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, Bell, ChevronDown, Check } from 'lucide-react';
-import { SlotLabelContentArg, DateSelectArg, DatesSetArg } from '@fullcalendar/core';
+import { Plus, Bell, ChevronDown, Check, Sparkles, X } from 'lucide-react';
+import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
-// 캘린더 타입 정의
+// 캘린더 데이터 타입 정의
 interface CalendarType {
   id: string;
   name: string;
-  members: string[]; // 공유 대상 이름들
+  members: string[];
   isPrivate: boolean;
 }
 
 /**
- * [Utility] 주차 계산 함수
+ * [Utility] 현재 날짜가 월의 몇 번째 주인지 계산 (예: 2025년 12월 1째주)
  */
 const getWeekOfMonth = (date: Date) => {
   const year = date.getFullYear();
@@ -31,6 +31,8 @@ const getWeekOfMonth = (date: Date) => {
 const CalendarMain = () => {
   const navigate = useNavigate();
   const calendarRef = useRef<FullCalendar>(null);
+
+  // 상태 관리: 캘린더 목록, 현재 뷰, 선택된 날짜, 리스트 가시성 등
   const [isCalListOpen, setIsCalListOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
     id: '1',
@@ -49,12 +51,43 @@ const CalendarMain = () => {
   const listRef = useRef<HTMLDivElement>(null);
 
   /**
-   * [Handler] 뷰 전환 (월/주/일)
-   * 뷰 변경 시 접힘 상태와 스크롤 위치를 초기화하고 캘린더 크기를 재계산합니다.
+   * [Effect] 리스트(바텀시트) 열림/닫힘 애니메이션 동기화
+   * - 리스트가 올라오거나 내려갈 때 CSS transition(0.3s) 동안
+   * 캘린더 크기(updateSize)를 지속적으로 갱신하여 레이아웃 깨짐 방지
+   */
+  useEffect(() => {
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      // 1. 애니메이션 시작 즉시 업데이트
+      calendarApi.updateSize();
+
+      // 2. 애니메이션 진행 중 프레임 단위로 업데이트 (부드러운 전환)
+      let frameId: number;
+      const startTime = performance.now();
+      const duration = 300; // CSS transition 시간과 일치
+
+      const animateResize = (currentTime: number) => {
+        if (currentTime - startTime < duration) {
+          calendarApi.updateSize();
+          frameId = requestAnimationFrame(animateResize);
+        } else {
+          // 3. 종료 후 최종 업데이트
+          calendarApi.updateSize();
+        }
+      };
+
+      frameId = requestAnimationFrame(animateResize);
+
+      return () => cancelAnimationFrame(frameId);
+    }
+  }, [isListVisible]);
+
+  /**
+   * [Handler] 뷰 모드 변경 (월/주/일)
    */
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
-    setIsListVisible(false);
+    setIsListVisible(false); // 뷰 변경 시 리스트 닫기
     setSelectedDate(null);
     setCurrentView(view);
 
@@ -65,49 +98,35 @@ const CalendarMain = () => {
   };
 
   /**
-   * [Handler] 날짜 클릭 시 실행되는 공통 로직
+   * [Handler] 날짜 선택 시 로직 (월간 뷰)
+   * - 선택된 날짜 설정 및 리스트(바텀시트) 오픈
    */
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
-
     if (listRef.current) listRef.current.scrollTop = 0;
-
     setTimeout(() => {
       const calendarApi = calendarRef.current?.getApi();
-      if (calendarApi) {
-        calendarApi.updateSize();
-      }
+      if (calendarApi) calendarApi.updateSize();
     }, 100);
   };
 
-  /**
-   * [Handler] 빈 날짜 칸 클릭 시
-   */
+  // 빈 날짜 클릭 핸들러
   const handleDateClick = (arg: { dateStr: string }) => {
     executeDateSelection(arg.dateStr);
   };
 
-  /**
-   * [Handler] 이벤트(일정 바) 클릭 시
-   * 이벤트가 위치한 날짜를 추출하여 handleDateClick과 동일한 효과를 줌
-   */
+  // 등록된 일정 클릭 핸들러
   const handleEventClick = (info: any) => {
-    // 이벤트의 시작 날짜를 YYYY-MM-DD 형식으로 추출
     const dateStr = info.event.startStr.split('T')[0];
-
-    // 월 뷰(dayGridMonth)일 때만 날짜 선택 로직 실행
     if (currentView === 'dayGridMonth') {
       executeDateSelection(dateStr);
     } else {
-      // 주/일 뷰에서는 상세 페이지로 이동하거나 다른 로직 처리 가능
       navigate(`/schedule/${info.event.id}`);
     }
   };
 
-  /**
-   * [Handler] 시간 드래그 시 이동 (주/일 뷰 전용)
-   */
+  // 드래그로 날짜 선택 시 (일정 추가 화면으로 이동)
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -116,10 +135,7 @@ const CalendarMain = () => {
     });
   };
 
-  /**
-   * [Handler] 캘린더 타이틀 커스텀
-   * 주 뷰일 경우 'n째주' 형식을 적용합니다.
-   */
+  // 캘린더 날짜 범위 변경 시 타이틀 업데이트 (주간 뷰 커스텀 타이틀 처리)
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -128,79 +144,113 @@ const CalendarMain = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
-      {/* 1. 상단 헤더 영역 */}
-      <header className="sticky top-0 z-50 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="relative">
-            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="flex items-center gap-2 group">
-              <h1 className="text-xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
-              <ChevronDown size={20} className={`text-gray-400 transition-transform ${isCalListOpen ? 'rotate-180' : ''}`} />
-            </button>
-            <p className="text-[10px] text-blue-500 font-black uppercase tracking-[0.15em] mt-0.5">{activeCalendar.isPrivate ? 'Private Space' : 'Family Link'}</p>
+  /**
+   * [Render] 주간/일간 뷰 헤더 커스텀 렌더링
+   * - 요일별 색상 적용 (일요일: 빨강, 토요일: 파랑)
+   */
+  const renderTimeGridHeader = (args: DayHeaderContentArg) => {
+    const date = args.date.getDate();
+    const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
+    const dayOfWeek = args.date.getDay();
 
-            {/* 캘린더 선택 드롭다운 UI */}
+    let dateColor = 'text-gray-900';
+    let dayNameColor = 'text-gray-400';
+
+    if (dayOfWeek === 0) {
+      dateColor = 'text-red-500';
+      dayNameColor = 'text-red-400';
+    } else if (dayOfWeek === 6) {
+      dateColor = 'text-blue-600';
+      dayNameColor = 'text-blue-400';
+    }
+
+    return (
+      <div className="flex flex-col items-center justify-center gap-0.5 pb-2">
+        <span className={`text-[14px] font-black leading-none ${dateColor}`}>{date}</span>
+        <span className={`text-[10px] font-bold leading-none ${dayNameColor}`}>{dayName}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
+      {/* 1. 헤더 영역: 캘린더 선택 및 뷰 전환 컨트롤 */}
+      <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
+        <div className="flex items-center justify-between pb-2">
+          {/* 좌측: 캘린더 타이틀 (클릭 시 드롭다운 메뉴) */}
+          <div className="relative">
+            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
+              <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isCalListOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">{activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`}</p>
+
+            {/* 캘린더 목록 드롭다운 */}
             {isCalListOpen && (
-              <div className="absolute top-12 left-0 w-64 bg-white rounded-[24px] shadow-2xl border border-gray-100 p-2 z-[60] animate-in fade-in zoom-in duration-200">
-                {myCalendars.map((cal) => (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsCalListOpen(false)} />
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  {myCalendars.map((cal) => (
+                    <button
+                      key={cal.id}
+                      onClick={() => {
+                        setActiveCalendar(cal);
+                        setIsCalListOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all
+                        ${activeCalendar.id === cal.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-[14px] font-bold">{cal.name}</span>
+                        {!cal.isPrivate && <span className="text-[10px] opacity-70 mt-0.5">멤버: {cal.members.join(', ')}</span>}
+                      </div>
+                      {activeCalendar.id === cal.id && <Check size={16} />}
+                    </button>
+                  ))}
+                  <div className="h-[1px] bg-gray-50 my-2 mx-2" />
                   <button
-                    key={cal.id}
-                    onClick={() => {
-                      setActiveCalendar(cal);
-                      setIsCalListOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-4 hover:bg-gray-50 rounded-[18px] transition-colors"
+                    onClick={() => navigate('/create-calendar')}
+                    className="w-full flex items-center gap-2 p-4 text-gray-500 font-bold text-[13px] hover:text-blue-600 hover:bg-gray-50 rounded-[18px] transition-colors"
                   >
-                    <div className="flex flex-col items-start">
-                      <span className={`text-[14px] font-bold ${activeCalendar.id === cal.id ? 'text-blue-600' : 'text-gray-700'}`}>{cal.name}</span>
-                      {!cal.isPrivate && <span className="text-[10px] text-gray-400">멤버: {cal.members.join(', ')}</span>}
-                    </div>
-                    {activeCalendar.id === cal.id && <Check size={16} className="text-blue-600" />}
+                    <Plus size={16} /> 새 캘린더 만들기
                   </button>
-                ))}
-                <div className="h-[1px] bg-gray-100 my-2 mx-2" />
-                <button
-                  onClick={() => navigate('/create-calendar')} // 캘린더 추가 페이지로 이동
-                  className="w-full flex items-center gap-2 p-4 text-gray-500 font-bold text-[14px] hover:text-blue-600"
-                >
-                  <Plus size={18} /> 캘린더 추가하기
-                </button>
-              </div>
+                </div>
+              </>
             )}
           </div>
 
-          <button className="relative p-2.5 bg-gray-50 text-gray-500 rounded-xl transition-all">
-            <Bell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-          </button>
+          {/* 우측: 뷰 전환 버튼 (월/주/일) */}
+          <div className="flex items-center gap-3">
+            <div className="flex p-1 bg-gray-100 rounded-[14px]">
+              {[
+                { id: 'dayGridMonth', label: '월' },
+                { id: 'timeGridWeek', label: '주' },
+                { id: 'timeGridDay', label: '일' },
+              ].map((view) => (
+                <button
+                  key={view.id}
+                  onClick={() => handleViewChange(view.id)}
+                  className={`px-3 py-1.5 text-[12px] font-bold rounded-[10px] transition-all duration-200
+                    ${currentView === view.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {view.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </header>
-      {/* 2. 상단 뷰 전환 탭 네비게이션 */}
-      <nav className="px-4 py-2">
-        <div className="flex p-1 bg-gray-100/80 rounded-2xl">
-          {[
-            { id: 'dayGridMonth', label: '월' },
-            { id: 'timeGridWeek', label: '주' },
-            { id: 'timeGridDay', label: '일' },
-          ].map((view) => (
-            <button
-              key={view.id}
-              onClick={() => handleViewChange(view.id)}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${currentView === view.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
-            >
-              {view.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-      {/* 3. 메인 캘린더 콘텐츠 영역 */}
-      <main className="flex-1 flex flex-col bg-gray-50/50 overflow-hidden relative">
+
+      {/* 2. 메인 컨텐츠 영역: 캘린더 + 일정 리스트 */}
+      <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
+        {/* FullCalendar 컨테이너 */}
         <div
-          className={`bg-white flex-shrink-0 flex flex-col overflow-hidden transition-all duration-150 ease-in-out ${
-            currentView === 'dayGridMonth' ? (isListVisible ? 'h-[50%]' : 'h-full') : 'h-full'
-          }`}
-          style={{ paddingBottom: isListVisible ? '65px' : '130px' }}
+          className={`flex-shrink-0 flex flex-col overflow-hidden calendar-transition 
+            ${currentView === 'dayGridMonth' && isListVisible ? 'compact-mode' : 'h-full'}`}
+          style={{
+            height: currentView === 'dayGridMonth' && isListVisible ? '50%' : '100%',
+            paddingBottom: isListVisible ? '0' : '64px',
+          }}
         >
           <FullCalendar
             ref={calendarRef}
@@ -209,6 +259,9 @@ const CalendarMain = () => {
             locale="ko"
             height="100%"
             dayMaxEvents={false}
+            fixedWeekCount={true} // 항상 6주 표시 (레이아웃 고정)
+            contentHeight="100%"
+            handleWindowResize={true}
             selectable={currentView !== 'dayGridMonth'}
             selectMirror={true}
             dateClick={handleDateClick}
@@ -217,7 +270,7 @@ const CalendarMain = () => {
             select={handleDateSelect}
             unselectAuto={true}
             dragScroll={true}
-            longPressDelay={50}
+            longPressDelay={200}
             eventDragMinDistance={5}
             headerToolbar={{
               left: 'title',
@@ -228,32 +281,32 @@ const CalendarMain = () => {
             datesSet={handleDatesSet}
             views={{
               dayGridMonth: {
-                titleFormat: { year: 'numeric', month: 'long' },
+                titleFormat: { year: 'numeric', month: 'short' },
                 dayHeaderFormat: { weekday: 'short' },
+                dayCellContent: (args) => args.date.getDate(),
               },
               timeGridWeek: {
-                dayHeaderFormat: { weekday: 'short' },
+                dayHeaderContent: renderTimeGridHeader,
               },
               timeGridDay: {
                 titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-                dayHeaderFormat: { weekday: 'short' },
+                dayHeaderContent: renderTimeGridHeader,
               },
             }}
             slotMinTime="06:00:00"
             slotMaxTime="24:00:00"
             slotLabelFormat={{ hour: 'numeric', minute: '2-digit', hour12: true, meridiem: 'short' }}
-            slotLabelContent={(args: SlotLabelContentArg) => args.text.replace(':00', '') + '시'}
+            slotLabelContent={(args: SlotLabelContentArg) => args.text.replace(':00', '')}
             allDayText="종일"
-            dayCellContent={(args) => args.date.getDate()}
             displayEventTime={false}
             dayCellClassNames={(arg) => {
               const dateStr = arg.date.toLocaleDateString('en-CA');
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
             events={[
-              { id: '1', title: '강남역 저녁 약속', start: new Date(), allDay: false, color: '#ff5733' },
-              { id: '2', title: '압구정 저녁 약속', start: new Date(), allDay: false }, // 기본 파랑
-              { id: '3', title: '제주도 가족 여행', start: '2025-12-24', end: '2025-12-27', allDay: true, color: '#10b981' }, // 종일 배경색 적용
+              { id: '1', title: '강남역 저녁 약속', start: new Date(), allDay: false, color: '#3b82f6' },
+              { id: '2', title: '압구정 저녁 약속', start: new Date(), allDay: false, color: '#f59e0b' },
+              { id: '3', title: '제주도 가족 여행', start: '2025-12-24', end: '2025-12-27', allDay: true, color: '#10b981' },
             ]}
             eventDidMount={(info) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
@@ -263,76 +316,69 @@ const CalendarMain = () => {
             }}
           />
         </div>
-        {/* 4. 오늘의 일정 리스트 (월 뷰 전용) */}
+
+        {/* 3. 일정 상세 리스트 (바텀시트) */}
         <div
           ref={listRef}
-          className={`absolute left-0 right-0 bg-gray-50 transition-transform duration-150 ease-in-out z-20 overflow-y-auto 
-    ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
-          style={{
-            bottom: '65px',
-            height: 'calc(50% - 65px)',
-            borderTopLeftRadius: '24px',
-            borderTopRightRadius: '24px',
-            boxShadow: '0 -10px 30px rgba(0,0,0,0.08)',
-          }}
+          className={`absolute left-0 right-0 bottom-0 bg-white z-30 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px]
+            ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
+          style={{ height: '50%' }}
         >
           {/* 리스트 헤더 */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-3 sticky top-0 bg-gray-50/90 backdrop-blur-sm z-10">
-            <h3 className="text-sm font-extrabold text-gray-900">{selectedDate ? `${selectedDate.split('-')[2]}일 일정` : '일정'}</h3>
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white rounded-t-[32px]">
+            <div className="flex items-center gap-2">
+              <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+              <h3 className="text-[16px] font-black text-gray-900">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
+            </div>
             <button
               onClick={() => {
                 setIsListVisible(false);
                 setSelectedDate(null);
               }}
-              className="text-[11px] text-gray-400 font-bold"
+              className="p-2 -mr-2 text-gray-300 hover:text-gray-500 transition-colors"
             >
-              닫기
+              <X size={20} />
             </button>
           </div>
 
-          {/* 리스트 내용 */}
-          <div className="px-6 space-y-3 pb-[100px]">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                onClick={() => navigate(`/schedule/${i}`)}
-                className="bg-white p-4 rounded-[24px] border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex items-center gap-4 active:scale-[0.98] transition-transform cursor-pointer"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-900 font-semibold text-[15px] tracking-tight truncate">맛있는 저녁 식사 {i + 1}</p>
-                    <span className="px-1.5 py-0.5 bg-blue-50 text-[9px] font-bold text-blue-500 rounded-md border border-blue-100">가족</span>
+          {/* 리스트 내용 (스크롤 영역) */}
+          <div className="px-6 pb-24 overflow-y-auto h-full">
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => navigate(`/schedule/${i}`)}
+                  className="bg-gray-50 p-5 rounded-[24px] border border-transparent active:scale-[0.98] transition-all cursor-pointer group hover:bg-white hover:border-gray-100 hover:shadow-lg"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="px-2 py-1 bg-white text-[10px] font-bold text-blue-600 rounded-[8px] shadow-sm">오후 7:00</span>
+                    <span className="text-[10px] font-bold text-gray-400">가족 모임</span>
                   </div>
-                  <p className="text-[11px] font-medium text-slate-400 mt-1.5 flex items-center gap-1">
-                    <span className="tabular-nums">오후 7:00</span>
-                    <span className="w-0.5 h-0.5 rounded-full bg-gray-300"></span>
-                    <span className="truncate">강남역 5번 출구</span>
-                  </p>
+                  <h4 className="text-[15px] font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">맛있는 저녁 식사 {i + 1}</h4>
+                  <p className="text-[12px] font-medium text-gray-400 flex items-center gap-1">강남역 5번 출구</p>
                 </div>
-                <Plus size={16} className="text-gray-300 rotate-45 flex-shrink-0" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </main>
-      {/* 5. 플로팅 버튼 (선택된 날짜가 있으면 해당 날짜로, 없으면 오늘로) */}
+
+      {/* 4. 플로팅 버튼 (일정 추가) */}
       <button
         onClick={() => {
-          // 선택된 날짜가 있으면 그 날짜를, 없으면 오늘 날짜를 기준으로 설정
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];
           navigate('/add-schedule', {
             state: {
-              start: targetDate, // 'YYYY-MM-DD' 형식
-              end: targetDate, // 종일 일정이므로 종료일도 동일하게 설정
+              start: targetDate,
+              end: targetDate,
               allDay: true,
               calendarId: activeCalendar.id,
             },
           });
         }}
-        className="fixed right-6 bottom-10 w-14 h-14 bg-blue-600 text-white rounded-[20px] shadow-2xl flex items-center justify-center z-30 active:scale-90 transition-transform"
-        style={{ bottom: '80px' }}
+        className="absolute right-6 bottom-6 w-[56px] h-[56px] bg-gray-900 text-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.3)] flex items-center justify-center z-40 active:scale-90 transition-transform hover:bg-black"
       >
-        <Plus size={28} strokeWidth={2.5} />
+        <Plus size={24} strokeWidth={3} />
       </button>
     </div>
   );
