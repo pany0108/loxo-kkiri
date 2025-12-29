@@ -1,10 +1,10 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, Bell, ChevronDown, Users, Settings2, Check } from 'lucide-react';
+import { Plus, Bell, ChevronDown, Check } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
@@ -38,7 +38,7 @@ const CalendarMain = () => {
     members: [],
     isPrivate: true,
   });
-  const [myCalendars, setMyCalendars] = useState<CalendarType[]>([
+  const [myCalendars] = useState<CalendarType[]>([
     { id: '1', name: '내 캘린더', members: [], isPrivate: true },
     { id: '2', name: '우리 가족 캘린더', members: ['엄마', '아빠', '동생'], isPrivate: false },
   ]);

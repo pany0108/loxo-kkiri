@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles } from 'lucide-react';
 import ColorPalette from '../components/calendar/ColorPalette';
 
 const NOTIFICATION_OPTIONS = [
