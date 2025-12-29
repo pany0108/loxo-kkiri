@@ -71,7 +71,7 @@ const MyProfile = () => {
         </div>
 
         <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden px-2">
-          <MenuBtn icon={<LogOut size={20} />} iconBg="bg-red-50 text-red-400" label="로그아웃" onClick={() => navigate('/login')} color="text-red-500" hideArrow />
+          <MenuBtn icon={<LogOut size={20} />} iconBg="bg-red-50 text-red-400" label="로그아웃" onClick={() => navigate('/')} color="text-red-500" hideArrow />
         </div>
       </div>
 
