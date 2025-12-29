@@ -5,7 +5,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Plus, ChevronDown, Check, X } from 'lucide-react';
-import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg } from '@fullcalendar/core';
+import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
 // 캘린더 데이터 타입 정의
@@ -18,7 +18,6 @@ interface CalendarType {
 
 /**
  * 주차 계산 유틸리티
- * 예: 2025년 12월 1째주
  */
 const getWeekOfMonth = (date: Date) => {
   const year = date.getFullYear();
@@ -36,7 +35,7 @@ const CalendarMain = () => {
   // 스와이프 제스처 감지용 Ref
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
-  const minSwipeDistance = 50; // 스와이프 인식 최소 거리 (px)
+  const minSwipeDistance = 50;
 
   // 상태 관리
   const [isCalListOpen, setIsCalListOpen] = useState(false);
@@ -57,8 +56,7 @@ const CalendarMain = () => {
   const listRef = useRef<HTMLDivElement>(null);
 
   /**
-   * 리스트(바텀시트) 애니메이션 동기화 Effect
-   * 리스트가 열리거나 닫힐 때 캘린더 크기를 재계산하여 레이아웃 깨짐 방지
+   * 리스트(바텀시트) 애니메이션 동기화
    */
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
@@ -81,18 +79,16 @@ const CalendarMain = () => {
     }
   }, [isListVisible]);
 
-  // 터치 시작 핸들러
+  // 터치 이벤트 핸들러 (스와이프)
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
   };
 
-  // 터치 이동 핸들러
   const onTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
 
-  // 터치 종료 핸들러 (스와이프 방향 판별 및 월 이동)
   const onTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
 
@@ -100,21 +96,14 @@ const CalendarMain = () => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    // 월간 뷰(dayGridMonth)일 때만 스와이프 동작
     if (currentView === 'dayGridMonth') {
       const calendarApi = calendarRef.current?.getApi();
-
-      if (isLeftSwipe) {
-        calendarApi?.next(); // 다음 달
-      }
-
-      if (isRightSwipe) {
-        calendarApi?.prev(); // 이전 달
-      }
+      if (isLeftSwipe) calendarApi?.next();
+      if (isRightSwipe) calendarApi?.prev();
     }
   };
 
-  // 뷰 모드 변경 핸들러 (월/주/일)
+  // 뷰 변경 핸들러
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
     setIsListVisible(false);
@@ -126,7 +115,7 @@ const CalendarMain = () => {
     }
   };
 
-  // 날짜 선택 및 리스트 오픈 처리
+  // 날짜 선택 처리
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
@@ -137,12 +126,10 @@ const CalendarMain = () => {
     }, 100);
   };
 
-  // 날짜 클릭 핸들러
   const handleDateClick = (arg: { dateStr: string }) => {
     executeDateSelection(arg.dateStr);
   };
 
-  // 일정 클릭 핸들러
   const handleEventClick = (info: any) => {
     const dateStr = info.event.startStr.split('T')[0];
     if (currentView === 'dayGridMonth') {
@@ -152,7 +139,6 @@ const CalendarMain = () => {
     }
   };
 
-  // 드래그로 날짜 선택 시 일정 추가 화면으로 이동
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -161,7 +147,6 @@ const CalendarMain = () => {
     });
   };
 
-  // 캘린더 뷰 변경 시 타이틀 업데이트 (주간 뷰 커스텀 타이틀)
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -170,7 +155,7 @@ const CalendarMain = () => {
     }
   };
 
-  // 주간/일간 뷰 헤더 커스텀 렌더링 (요일별 색상 적용)
+  // 주간/일간 헤더 렌더링
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
@@ -195,6 +180,63 @@ const CalendarMain = () => {
     );
   };
 
+  /**
+   * 이벤트 내용 커스텀 렌더링
+   */
+  const renderEventContent = (eventInfo: EventContentArg) => {
+    // 1. 월간 뷰 (dayGridMonth)
+    if (eventInfo.view.type === 'dayGridMonth') {
+      // 종일 일정
+      if (eventInfo.event.allDay) {
+        return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
+      }
+      // 시간 일정 (Dot + Title)
+      return (
+        <div className="flex items-center h-full w-full overflow-hidden pl-0.5">
+          <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
+          <div className="text-[10px] font-medium text-gray-400 mr-1 whitespace-nowrap">{eventInfo.timeText}</div>
+          <div className="text-[11px] font-bold text-gray-700 truncate">{eventInfo.event.title}</div>
+        </div>
+      );
+    }
+
+    // 2. 주간/일간 뷰 (timeGrid)
+    const formatTime = (date: Date | null) => {
+      if (!date) return '';
+      return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    };
+    const startStr = formatTime(eventInfo.event.start);
+    const endStr = formatTime(eventInfo.event.end);
+    const isWeekView = eventInfo.view.type === 'timeGridWeek';
+
+    return (
+      <div className={`w-full h-full flex flex-col items-start overflow-hidden rounded-[4px] ${isWeekView ? 'p-0.5' : 'p-1'}`}>
+        {/* 시간 라벨 */}
+        {isWeekView ? (
+          // [주간 뷰] 좁은 공간 대응: 세로 배치
+          <div className="flex flex-col text-[10px] font-extrabold text-white/90 leading-none mb-0.5 tracking-tight">
+            <span>{startStr}</span>
+            <span className="opacity-70 font-medium text-[9px] mt-px">~ {endStr}</span>
+          </div>
+        ) : (
+          // [일간 뷰] 넓은 공간: 가로 박스
+          <div className="bg-white/90 text-blue-600 text-[11px] font-extrabold px-1.5 py-0.5 rounded-[6px] shadow-sm mb-1 whitespace-nowrap z-10">
+            {startStr} - {endStr}
+          </div>
+        )}
+
+        {/* 이벤트 제목 */}
+        {eventInfo.event.title && (
+          <div className={`font-bold text-white leading-tight break-words w-full ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
       {/* 1. 헤더 영역 */}
@@ -208,7 +250,7 @@ const CalendarMain = () => {
             </button>
             <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">{activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`}</p>
 
-            {/* 캘린더 목록 드롭다운 */}
+            {/* 드롭다운 UI */}
             {isCalListOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsCalListOpen(false)} />
@@ -266,7 +308,6 @@ const CalendarMain = () => {
 
       {/* 2. 메인 컨텐츠 영역 */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
-        {/* 스와이프 이벤트 핸들러 연결 */}
         <div
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
@@ -293,6 +334,7 @@ const CalendarMain = () => {
             dateClick={handleDateClick}
             eventClick={handleEventClick}
             eventClassNames="cursor-pointer"
+            eventContent={renderEventContent}
             select={handleDateSelect}
             unselectAuto={true}
             dragScroll={true}
@@ -350,7 +392,6 @@ const CalendarMain = () => {
             ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
           style={{ height: '50%' }}
         >
-          {/* 리스트 헤더 */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white rounded-t-[32px]">
             <div className="flex items-center gap-2">
               <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
@@ -367,7 +408,6 @@ const CalendarMain = () => {
             </button>
           </div>
 
-          {/* 리스트 내용 */}
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
