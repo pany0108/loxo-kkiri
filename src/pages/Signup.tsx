@@ -276,12 +276,15 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* 생년월일 */}
+            {/* 생년월일 - 숫자 키패드 설정 */}
             <div className="group">
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input
                   name="birthDate"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={formData.birthDate}
                   placeholder="생년월일 (YYYY/MM/DD)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
@@ -292,7 +295,7 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* 휴대폰 인증 */}
+            {/* 휴대폰 인증 - 숫자 키패드 설정 */}
             <div className="space-y-3">
               <div className="flex gap-2">
                 <div
@@ -303,6 +306,9 @@ const Signup = () => {
                   <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
                   <input
                     name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={formData.phone}
                     placeholder="휴대폰 번호"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
@@ -327,6 +333,9 @@ const Signup = () => {
                   <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
                     <input
                       name="authCode"
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={formData.authCode}
                       placeholder="인증번호 4자리"
                       className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
