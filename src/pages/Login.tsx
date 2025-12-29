@@ -73,7 +73,11 @@ const Login = () => {
                 아이디 찾기
               </button>
               <div className="w-[1px] h-3 bg-gray-100 mt-0.5" />
-              <button type="button" onClick={() => navigate('/change-password')} className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors">
+              <button
+                type="button"
+                onClick={() => navigate('/change-password', { state: { from: 'login' } })}
+                className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors"
+              >
                 비밀번호 재설정
               </button>
             </div>
