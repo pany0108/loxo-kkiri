@@ -65,10 +65,10 @@ const CalendarMain = () => {
   };
 
   /**
-   * [Handler] 날짜 클릭 시 이동 (월 뷰 전용)
+   * [Handler] 날짜 클릭 시 실행되는 공통 로직
    */
-  const handleDateClick = (arg: { dateStr: string }) => {
-    setSelectedDate(arg.dateStr);
+  const executeDateSelection = (dateStr: string) => {
+    setSelectedDate(dateStr);
     setIsListVisible(true);
 
     if (listRef.current) listRef.current.scrollTop = 0;
@@ -79,6 +79,30 @@ const CalendarMain = () => {
         calendarApi.updateSize();
       }
     }, 100);
+  };
+
+  /**
+   * [Handler] 빈 날짜 칸 클릭 시
+   */
+  const handleDateClick = (arg: { dateStr: string }) => {
+    executeDateSelection(arg.dateStr);
+  };
+
+  /**
+   * [Handler] 이벤트(일정 바) 클릭 시
+   * 이벤트가 위치한 날짜를 추출하여 handleDateClick과 동일한 효과를 줌
+   */
+  const handleEventClick = (info: any) => {
+    // 이벤트의 시작 날짜를 YYYY-MM-DD 형식으로 추출
+    const dateStr = info.event.startStr.split('T')[0];
+
+    // 월 뷰(dayGridMonth)일 때만 날짜 선택 로직 실행
+    if (currentView === 'dayGridMonth') {
+      executeDateSelection(dateStr);
+    } else {
+      // 주/일 뷰에서는 상세 페이지로 이동하거나 다른 로직 처리 가능
+      navigate(`/schedule/${info.event.id}`);
+    }
   };
 
   /**
@@ -188,6 +212,8 @@ const CalendarMain = () => {
             selectable={currentView !== 'dayGridMonth'}
             selectMirror={true}
             dateClick={handleDateClick}
+            eventClick={handleEventClick}
+            eventClassNames="cursor-pointer"
             select={handleDateSelect}
             unselectAuto={true}
             dragScroll={true}
@@ -225,9 +251,9 @@ const CalendarMain = () => {
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
             events={[
-              { title: '강남역 저녁 약속', start: new Date(), allDay: false, color: '#ff5733' },
-              { title: '압구정 저녁 약속', start: new Date(), allDay: false }, // 기본 파랑
-              { title: '제주도 가족 여행', start: '2025-12-24', allDay: true, color: '#10b981' }, // 종일 배경색 적용
+              { id: '1', title: '강남역 저녁 약속', start: new Date(), allDay: false, color: '#ff5733' },
+              { id: '2', title: '압구정 저녁 약속', start: new Date(), allDay: false }, // 기본 파랑
+              { id: '3', title: '제주도 가족 여행', start: '2025-12-24', end: '2025-12-27', allDay: true, color: '#10b981' }, // 종일 배경색 적용
             ]}
             eventDidMount={(info) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
