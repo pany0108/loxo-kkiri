@@ -103,7 +103,7 @@ const Signup = () => {
 
     const randomTag = Math.floor(1000 + Math.random() * 9000);
     alert(`${formData.nickname}#${randomTag}님, 회원가입을 축하합니다!`);
-    navigate('/login');
+    navigate('/');
   };
 
   return (
