@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, Bell, ChevronDown, Check, Sparkles, X } from 'lucide-react';
+import { Plus, ChevronDown, Check, X } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
@@ -17,7 +17,8 @@ interface CalendarType {
 }
 
 /**
- * [Utility] 현재 날짜가 월의 몇 번째 주인지 계산 (예: 2025년 12월 1째주)
+ * 주차 계산 유틸리티
+ * 예: 2025년 12월 1째주
  */
 const getWeekOfMonth = (date: Date) => {
   const year = date.getFullYear();
@@ -32,7 +33,12 @@ const CalendarMain = () => {
   const navigate = useNavigate();
   const calendarRef = useRef<FullCalendar>(null);
 
-  // 상태 관리: 캘린더 목록, 현재 뷰, 선택된 날짜, 리스트 가시성 등
+  // 스와이프 제스처 감지용 Ref
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50; // 스와이프 인식 최소 거리 (px)
+
+  // 상태 관리
   const [isCalListOpen, setIsCalListOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
     id: '1',
@@ -51,56 +57,76 @@ const CalendarMain = () => {
   const listRef = useRef<HTMLDivElement>(null);
 
   /**
-   * [Effect] 리스트(바텀시트) 열림/닫힘 애니메이션 동기화
-   * - 리스트가 올라오거나 내려갈 때 CSS transition(0.3s) 동안
-   * 캘린더 크기(updateSize)를 지속적으로 갱신하여 레이아웃 깨짐 방지
+   * 리스트(바텀시트) 애니메이션 동기화 Effect
+   * 리스트가 열리거나 닫힐 때 캘린더 크기를 재계산하여 레이아웃 깨짐 방지
    */
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
-      // 1. 애니메이션 시작 즉시 업데이트
       calendarApi.updateSize();
-
-      // 2. 애니메이션 진행 중 프레임 단위로 업데이트 (부드러운 전환)
       let frameId: number;
       const startTime = performance.now();
-      const duration = 300; // CSS transition 시간과 일치
+      const duration = 300;
 
       const animateResize = (currentTime: number) => {
         if (currentTime - startTime < duration) {
           calendarApi.updateSize();
           frameId = requestAnimationFrame(animateResize);
         } else {
-          // 3. 종료 후 최종 업데이트
           calendarApi.updateSize();
         }
       };
-
       frameId = requestAnimationFrame(animateResize);
-
       return () => cancelAnimationFrame(frameId);
     }
   }, [isListVisible]);
 
-  /**
-   * [Handler] 뷰 모드 변경 (월/주/일)
-   */
+  // 터치 시작 핸들러
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  // 터치 이동 핸들러
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  // 터치 종료 핸들러 (스와이프 방향 판별 및 월 이동)
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    // 월간 뷰(dayGridMonth)일 때만 스와이프 동작
+    if (currentView === 'dayGridMonth') {
+      const calendarApi = calendarRef.current?.getApi();
+
+      if (isLeftSwipe) {
+        calendarApi?.next(); // 다음 달
+      }
+
+      if (isRightSwipe) {
+        calendarApi?.prev(); // 이전 달
+      }
+    }
+  };
+
+  // 뷰 모드 변경 핸들러 (월/주/일)
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
-    setIsListVisible(false); // 뷰 변경 시 리스트 닫기
+    setIsListVisible(false);
     setSelectedDate(null);
     setCurrentView(view);
-
     if (calendarApi) {
       calendarApi.changeView(view);
       requestAnimationFrame(() => calendarApi.updateSize());
     }
   };
 
-  /**
-   * [Handler] 날짜 선택 시 로직 (월간 뷰)
-   * - 선택된 날짜 설정 및 리스트(바텀시트) 오픈
-   */
+  // 날짜 선택 및 리스트 오픈 처리
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
@@ -111,12 +137,12 @@ const CalendarMain = () => {
     }, 100);
   };
 
-  // 빈 날짜 클릭 핸들러
+  // 날짜 클릭 핸들러
   const handleDateClick = (arg: { dateStr: string }) => {
     executeDateSelection(arg.dateStr);
   };
 
-  // 등록된 일정 클릭 핸들러
+  // 일정 클릭 핸들러
   const handleEventClick = (info: any) => {
     const dateStr = info.event.startStr.split('T')[0];
     if (currentView === 'dayGridMonth') {
@@ -126,7 +152,7 @@ const CalendarMain = () => {
     }
   };
 
-  // 드래그로 날짜 선택 시 (일정 추가 화면으로 이동)
+  // 드래그로 날짜 선택 시 일정 추가 화면으로 이동
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -135,7 +161,7 @@ const CalendarMain = () => {
     });
   };
 
-  // 캘린더 날짜 범위 변경 시 타이틀 업데이트 (주간 뷰 커스텀 타이틀 처리)
+  // 캘린더 뷰 변경 시 타이틀 업데이트 (주간 뷰 커스텀 타이틀)
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -144,10 +170,7 @@ const CalendarMain = () => {
     }
   };
 
-  /**
-   * [Render] 주간/일간 뷰 헤더 커스텀 렌더링
-   * - 요일별 색상 적용 (일요일: 빨강, 토요일: 파랑)
-   */
+  // 주간/일간 뷰 헤더 커스텀 렌더링 (요일별 색상 적용)
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
@@ -174,10 +197,10 @@ const CalendarMain = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
-      {/* 1. 헤더 영역: 캘린더 선택 및 뷰 전환 컨트롤 */}
+      {/* 1. 헤더 영역 */}
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
-          {/* 좌측: 캘린더 타이틀 (클릭 시 드롭다운 메뉴) */}
+          {/* 좌측: 캘린더 타이틀 */}
           <div className="relative">
             <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
@@ -219,7 +242,7 @@ const CalendarMain = () => {
             )}
           </div>
 
-          {/* 우측: 뷰 전환 버튼 (월/주/일) */}
+          {/* 우측: 뷰 전환 탭 */}
           <div className="flex items-center gap-3">
             <div className="flex p-1 bg-gray-100 rounded-[14px]">
               {[
@@ -241,10 +264,13 @@ const CalendarMain = () => {
         </div>
       </header>
 
-      {/* 2. 메인 컨텐츠 영역: 캘린더 + 일정 리스트 */}
+      {/* 2. 메인 컨텐츠 영역 */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
-        {/* FullCalendar 컨테이너 */}
+        {/* 스와이프 이벤트 핸들러 연결 */}
         <div
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
           className={`flex-shrink-0 flex flex-col overflow-hidden calendar-transition 
             ${currentView === 'dayGridMonth' && isListVisible ? 'compact-mode' : 'h-full'}`}
           style={{
@@ -259,7 +285,7 @@ const CalendarMain = () => {
             locale="ko"
             height="100%"
             dayMaxEvents={false}
-            fixedWeekCount={true} // 항상 6주 표시 (레이아웃 고정)
+            fixedWeekCount={true}
             contentHeight="100%"
             handleWindowResize={true}
             selectable={currentView !== 'dayGridMonth'}
@@ -341,7 +367,7 @@ const CalendarMain = () => {
             </button>
           </div>
 
-          {/* 리스트 내용 (스크롤 영역) */}
+          {/* 리스트 내용 */}
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -363,7 +389,7 @@ const CalendarMain = () => {
         </div>
       </main>
 
-      {/* 4. 플로팅 버튼 (일정 추가) */}
+      {/* 4. 플로팅 버튼 */}
       <button
         onClick={() => {
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];
