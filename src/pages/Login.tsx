@@ -1,20 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2 } from 'lucide-react';
+// [추가] Firebase 인증에 필요한 도구들을 불러옵니다.
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState(''); // 아이디 대신 이메일 형식을 권장합니다.
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  /**
+   * 1. 이메일/비밀번호 로그인 핸들러
+   * @param e 폼 제출 이벤트
+   */
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      // Firebase에게 이메일과 비밀번호로 로그인을 요청합니다.
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/calendar'); // 성공 시 캘린더 이동
+    } catch (error: any) {
+      console.error(error);
+      alert('로그인 정보를 다시 확인해주세요.');
+    } finally {
       setIsLoading(false);
-      navigate('/calendar');
-    }, 1000);
+    }
+  };
+
+  /**
+   * 2. 구글 소셜 로그인 핸들러
+   */
+  const handleGoogleLogin = async () => {
+    try {
+      // 팝업창을 띄워 구글 로그인을 진행합니다.
+      await signInWithPopup(auth, googleProvider);
+      navigate('/calendar'); // 성공 시 캘린더 이동
+    } catch (error) {
+      console.error(error);
+      alert('구글 로그인 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -32,30 +60,23 @@ const Login = () => {
           <p className="mt-3 text-gray-400 font-medium text-[15px]">슈퍼 스케줄러와 함께 스마트하게 약속하세요.</p>
         </div>
 
-        {/* 2. 로그인 입력 폼 */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        {/* 2. 로그인 입력 폼 (이메일/비번) */}
+        <form onSubmit={handleEmailLogin} className="space-y-4">
           <div className="space-y-3">
-            {/* 아이디 입력창 - 높이 h-[60px] 고정 */}
             <div className="group relative">
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-5 transition-all duration-300">
                 <User size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
                 <input
-                  type="text" // 만약 이메일 형식이면 type="email"로 변경 추천
-                  placeholder="아이디"
+                  type="email" // 아이디 대신 이메일 사용을 권장 (Firebase 기본값)
+                  placeholder="이메일 주소"
                   className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  inputMode="text"
                 />
               </div>
             </div>
 
-            {/* 비밀번호 입력창 - 높이 h-[60px] 고정 */}
             <div className="group relative">
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-5 transition-all duration-300">
                 <Lock size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
@@ -66,52 +87,44 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  // [수정] 비밀번호 관련 속성 추가 (보안 및 편의성)
                   autoComplete="current-password"
                 />
               </div>
             </div>
           </div>
 
-          {/* 보조 링크 영역 */}
           <div className="flex justify-end items-center px-1 pt-1">
-            <div className="flex gap-4">
-              <button type="button" className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors">
-                아이디 찾기
-              </button>
-              <div className="w-[1px] h-3 bg-gray-100 mt-0.5" />
-              <button
-                type="button"
-                onClick={() => navigate('/change-password', { state: { from: 'login' } })}
-                className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors"
-              >
-                비밀번호 재설정
-              </button>
-            </div>
+            <button type="button" onClick={() => navigate('/change-password')} className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors">
+              비밀번호 재설정
+            </button>
           </div>
 
-          {/* 3. 버튼 영역 - 높이 h-[60px]로 Input과 통일 */}
-          <div className="pt-10 space-y-3">
+          <div className="pt-8 space-y-3">
+            {/* 이메일 로그인 버튼 */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-[60px] bg-blue-600 text-white rounded-[20px] font-black text-[17px] shadow-lg shadow-blue-100 active:scale-[0.98] disabled:bg-blue-300 transition-all flex items-center justify-center gap-2 group"
+              className="w-full h-[60px] bg-blue-600 text-white rounded-[20px] font-black text-[17px] shadow-lg shadow-blue-100 active:scale-[0.98] disabled:bg-blue-300 transition-all flex items-center justify-center"
             >
-              {isLoading ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <>
-                  <span>로그인</span>
-                </>
-              )}
+              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '로그인'}
+            </button>
+
+            {/* [추가] 구글 로그인 버튼 */}
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full h-[60px] bg-white text-gray-700 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 hover:bg-gray-50 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+            >
+              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="google" className="w-5 h-5" />
+              구글로 계속하기
             </button>
 
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="w-full h-[60px] bg-white text-gray-500 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 hover:bg-gray-50 transition-all active:scale-[0.98]"
+              className="w-full h-[50px] bg-transparent text-gray-400 font-bold text-[14px] hover:text-gray-600 transition-all"
             >
-              회원가입
+              회원가입 하기
             </button>
           </div>
         </form>
