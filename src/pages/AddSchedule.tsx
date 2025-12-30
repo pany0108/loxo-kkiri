@@ -157,8 +157,8 @@ const AddSchedule = () => {
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
 
                 <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-blue-600' : 'text-gray-400'}`}>종일</span>
-                  <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
+                  <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
                     <div
                       className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
                         formData.isAllDay ? 'translate-x-4' : 'translate-x-0'
