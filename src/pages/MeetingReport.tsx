@@ -1,17 +1,47 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Users } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock } from 'lucide-react';
 import ConfirmMeetingDialog from './ConfirmMeetingDialog';
 
+/**
+ * 리포트 슬롯 데이터 인터페이스
+ */
+interface ReportSlot {
+  id: string;
+  date: string;
+  time: string;
+  responses: {
+    available: string[];
+    maybe: string[];
+    unavailable: string[];
+  };
+  memos: { user: string; text: string }[];
+  isAllAvailable: boolean;
+}
+
+/**
+ * 일정 조율 결과 리포트 컴포넌트입니다.
+ * 멤버들의 투표 결과를 종합하여 보여주고, 최종 약속 시간을 확정하거나 재요청/취소할 수 있습니다.
+ * * @returns {JSX.Element} 투표 결과 리포트 화면
+ */
 const MeetingReport = () => {
   const navigate = useNavigate();
 
-  // --- [State 추가] 모달 제어용 ---
+  /**
+   * 확정 확인 모달의 열림 상태
+   */
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  /**
+   * 사용자가 확정하려고 선택한 시간대 데이터
+   */
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
 
-  // 모든 멤버의 투표가 합산된 리포트 데이터 (예시)
-  const reportData = [
+  /**
+   * 조율 결과 모의 데이터 (Mock Data)
+   * 실제 구현 시 API를 통해 데이터를 받아와야 합니다.
+   */
+  const reportData: ReportSlot[] = [
     {
       id: 'slot_1',
       date: '2025-01-10',
@@ -22,7 +52,7 @@ const MeetingReport = () => {
         unavailable: [],
       },
       memos: [{ user: '이영희', text: '조금 일찍 갈 수 있어요!' }],
-      isAllAvailable: true, // 모두 '가능'인 경우
+      isAllAvailable: true,
     },
     {
       id: 'slot_2',
@@ -38,23 +68,38 @@ const MeetingReport = () => {
     },
   ];
 
-  const handleConfirmClick = (slot: any) => {
+  /**
+   * 특정 시간대 선택 핸들러
+   * 선택한 시간 데이터를 상태에 저장하고 확정 확인 모달을 엽니다.
+   * @param {ReportSlot} slot - 선택된 시간대 객체
+   */
+  const handleConfirmClick = (slot: ReportSlot) => {
     setSelectedSlot({ date: slot.date, time: slot.time });
     setIsConfirmOpen(true);
   };
 
-  // 2. [신규] 모달에서 '확정하기' 눌렀을 때 실행되는 최종 로직
+  /**
+   * 최종 확정 핸들러
+   * 모달에서 확정 버튼 클릭 시 실행되며, API 호출 후 캘린더 화면으로 이동합니다.
+   */
   const handleFinalConfirm = () => {
     setIsConfirmOpen(false);
-    // 실제 API 호출 로직은 여기에...
-    alert(`[${selectedSlot?.date} ${selectedSlot?.time}] 약속이 최종 확정되었습니다! 🎉`);
+    // TODO: 약속 확정 API 호출 (POST)
     navigate('/calendar');
   };
 
+  /**
+   * 일정 재요청 핸들러
+   * 멤버들에게 다시 투표를 요청하는 로직을 수행합니다.
+   */
   const handleRequestRetry = () => {
-    alert('친구들에게 일정 재등록을 요청하는 알림을 보냅니다.');
+    // TODO: 재요청 알림 전송 로직 구현
   };
 
+  /**
+   * 약속 취소 핸들러
+   * 진행 중인 약속 잡기를 취소하고 캘린더로 돌아갑니다.
+   */
   const handleCancel = () => {
     if (window.confirm('정말 이 약속 잡기를 취소하시겠습니까?')) {
       navigate('/calendar');
@@ -65,14 +110,14 @@ const MeetingReport = () => {
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-20 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -84,8 +129,9 @@ const MeetingReport = () => {
             <Sparkles size={14} className="text-emerald-500" />
             전원 가능인 시간을 우선 추천합니다.
           </p>
-        </div>
+        </header>
 
+        {/* 리포트 카드 리스트 */}
         <div className="space-y-6">
           {reportData.map((slot) => (
             <div
@@ -93,7 +139,7 @@ const MeetingReport = () => {
               className={`rounded-[32px] overflow-hidden border-2 transition-all duration-300
                 ${slot.isAllAvailable ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-50 ring-4 ring-emerald-50 scale-[1.02]' : 'bg-white border-gray-100 shadow-sm'}`}
             >
-              {/* 카드 헤더 */}
+              {/* 카드 헤더 (날짜 및 시간) */}
               <div className={`px-6 py-5 flex justify-between items-start ${slot.isAllAvailable ? 'bg-emerald-50/30' : 'bg-gray-50'}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -109,10 +155,10 @@ const MeetingReport = () => {
                 </div>
               </div>
 
-              {/* 멤버별 응답 현황 */}
+              {/* 멤버별 응답 현황 상세 */}
               <div className="p-6 space-y-5">
                 <div className="space-y-4">
-                  {/* Available */}
+                  {/* Available (가능) */}
                   <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100/50">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
                       <CheckCircle2 size={16} />
@@ -126,7 +172,7 @@ const MeetingReport = () => {
                     </div>
                   </div>
 
-                  {/* Maybe (있을 때만 표시하거나 흐리게 표시) */}
+                  {/* Maybe (미정) */}
                   <div
                     className={`flex items-start gap-3 p-3 rounded-2xl border ${
                       slot.responses.maybe.length > 0 ? 'bg-amber-50/50 border-amber-100/50' : 'bg-gray-50 border-transparent opacity-60'
@@ -154,7 +200,7 @@ const MeetingReport = () => {
                     </div>
                   </div>
 
-                  {/* Unavailable (있을 때만 표시하거나 흐리게 표시) */}
+                  {/* Unavailable (불가능) */}
                   <div
                     className={`flex items-start gap-3 p-3 rounded-2xl border ${
                       slot.responses.unavailable.length > 0 ? 'bg-rose-50/50 border-rose-100/50' : 'bg-gray-50 border-transparent opacity-60'
@@ -185,7 +231,7 @@ const MeetingReport = () => {
                   </div>
                 </div>
 
-                {/* 메모 표시 */}
+                {/* 남긴 메모 표시 */}
                 {slot.memos.length > 0 && (
                   <div className="pt-2">
                     <div className="space-y-2">
@@ -202,7 +248,7 @@ const MeetingReport = () => {
                   </div>
                 )}
 
-                {/* 확정 버튼 */}
+                {/* 선택/확정 버튼 */}
                 <button
                   onClick={() => handleConfirmClick(slot)}
                   className={`w-full py-4 rounded-[20px] font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2
@@ -225,7 +271,7 @@ const MeetingReport = () => {
           ))}
         </div>
 
-        {/* 하단 관리 메뉴 */}
+        {/* 하단 관리 메뉴 (재요청/취소) */}
         <div className="mt-10 pt-6 border-t border-gray-100">
           <p className="text-center text-[12px] font-bold text-gray-400 mb-4">마음에 드는 시간이 없으신가요?</p>
           <div className="grid grid-cols-2 gap-3">
@@ -244,7 +290,7 @@ const MeetingReport = () => {
           </div>
         </div>
 
-        {/* 3. [추가] 확정 확인 모달 컴포넌트 삽입 */}
+        {/* 확정 확인 다이얼로그 */}
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} />
       </div>
     </div>

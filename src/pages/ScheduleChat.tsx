@@ -3,6 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, Send, Plus, MoreVertical } from 'lucide-react';
 
+/**
+ * 채팅 메시지 데이터 인터페이스
+ * @property {number} id - 메시지 고유 식별자
+ * @property {'text' | 'system'} type - 메시지 유형 (일반 텍스트 / 시스템 알림)
+ * @property {string} text - 메시지 내용
+ * @property {string} sender - 보낸 사람 이름
+ * @property {string} timestamp - 전송 시간 문자열
+ * @property {boolean} isMe - 본인이 보낸 메시지 여부 (UI 배치 결정)
+ * @property {string} [profileImg] - 프로필 이미지 스타일 클래스 (선택적)
+ */
 interface Message {
   id: number;
   type: 'text' | 'system';
@@ -13,12 +23,25 @@ interface Message {
   profileImg?: string;
 }
 
+/**
+ * 일정별 상세 채팅방 컴포넌트입니다.
+ * - 참여자 간의 실시간 대화 및 일정 변경 이력(시스템 메시지)을 표시합니다.
+ * - 새 메시지 입력 시 자동으로 스크롤을 최하단으로 이동시킵니다.
+ * * @returns {JSX.Element} 채팅방 화면
+ */
 const ScheduleChat = () => {
   const navigate = useNavigate();
+  // URL 파라미터에서 현재 일정 ID를 가져옵니다 (추후 API 연동 시 사용)
   const { id } = useParams();
 
+  // 자동 스크롤을 위한 메시지 리스트 하단 참조 Ref
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * 채팅 메시지 목록 상태
+   *
+   * 실제 구현 시에는 WebSocket 또는 Firestore onSnapshot을 통해 실시간 데이터를 수신해야 합니다.
+   */
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, type: 'system', text: '김철수님이 초대되었습니다.', sender: 'system', timestamp: '', isMe: false },
     { id: 2, type: 'text', text: '이번 연말 모임 강남역 어때?', sender: '아빠', timestamp: '오후 1:00', isMe: false, profileImg: 'bg-green-200' },
@@ -33,16 +56,27 @@ const ScheduleChat = () => {
 
   const [inputText, setInputText] = useState('');
 
+  /**
+   * 채팅창 스크롤을 최하단으로 이동시키는 함수
+   */
   const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  /**
+   * 메시지 목록이 업데이트될 때마다 스크롤을 하단으로 이동
+   */
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  /**
+   * 메시지 전송 핸들러
+   * - 입력값이 비어있지 않은 경우에만 메시지를 추가합니다.
+   * - Day.js를 사용하여 현재 시간을 포맷팅합니다.
+   */
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
@@ -62,11 +96,10 @@ const ScheduleChat = () => {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#F2F4F6] font-['Pretendard'] overflow-hidden">
-      {/* 1. 상단 헤더 */}
-      {/* [수정] sticky top-0 추가하여 상단 고정 명시 */}
+      {/* 상단 헤더: 뒤로가기 및 일정 정보 */}
       <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-white/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-gray-800 hover:bg-gray-100 rounded-full transition-colors" aria-label="뒤로 가기">
             <ChevronLeft size={26} />
           </button>
           <div>
@@ -77,14 +110,15 @@ const ScheduleChat = () => {
             </span>
           </div>
         </div>
-        <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="메뉴 더보기">
           <MoreVertical size={22} />
         </button>
       </header>
 
-      {/* 2. 메시지 리스트 영역 */}
+      {/* 메시지 리스트 영역 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {
+          // 시스템 메시지 (입장/퇴장, 일정 변경 등)
           if (msg.type === 'system') {
             return (
               <div key={msg.id} className="flex justify-center my-4">
@@ -93,6 +127,7 @@ const ScheduleChat = () => {
             );
           }
 
+          // 일반 대화 메시지
           return (
             <div key={msg.id} className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               {!msg.isMe && (
@@ -120,11 +155,11 @@ const ScheduleChat = () => {
             </div>
           );
         })}
+        {/* 자동 스크롤 타겟 요소 */}
         <div ref={scrollRef} className="h-1" />
       </div>
 
-      {/* 3. 입력창 영역 */}
-      {/* w-full, min-w-0 유지 (Z-flip 대응) */}
+      {/* 입력창 영역 */}
       <div className="shrink-0 bg-white border-t border-gray-100 px-4 pt-3 pb-3 z-20 w-full">
         <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
           <button type="button" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0">

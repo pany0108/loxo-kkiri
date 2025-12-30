@@ -4,6 +4,9 @@ import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edi
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 
+/**
+ * 친구 데이터 인터페이스
+ */
 interface Friend {
   uid: string;
   name: string;
@@ -11,6 +14,13 @@ interface Friend {
   statusMessage?: string;
 }
 
+/**
+ * 친구 목록 관리 컴포넌트입니다.
+ * - Firestore 실시간 리스너를 통해 친구 목록 동기화
+ * - 이메일 검색을 통한 친구 추가
+ * - 친구 별명 수정 및 목록 삭제 기능 제공
+ * * @returns {JSX.Element} 친구 목록 관리 화면
+ */
 const FriendList = () => {
   const navigate = useNavigate();
 
@@ -32,10 +42,14 @@ const FriendList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
 
-  // 1. 실시간 데이터 구독
+  /**
+   * 컴포넌트 마운트 시 Firestore의 내 문서(users/{uid})를 구독합니다.
+   * 친구 목록이나 내 정보가 변경되면 실시간으로 상태를 업데이트합니다.
+   */
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
+
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -44,35 +58,44 @@ const FriendList = () => {
       }
       setIsLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
-  // 2. [기능] 친구 추가 핸들러
+  /**
+   * 이메일로 사용자를 검색하여 친구 목록에 추가합니다.
+   * - 자기 자신 추가 불가
+   * - 이미 등록된 친구 중복 추가 불가
+   * - 존재하지 않는 이메일 처리
+   */
   const handleAddFriend = async () => {
     if (!newFriendEmail.trim() || !auth.currentUser) return;
+
+    // 자기 자신 추가 방지
     if (newFriendEmail === auth.currentUser.email) {
-      alert('자기 자신은 추가할 수 없습니다.');
       return;
     }
 
     setIsAdding(true);
     try {
+      // 이메일로 유저 검색
       const q = query(collection(db, 'users'), where('email', '==', newFriendEmail.trim()));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        alert('사용자를 찾을 수 없습니다.');
+        // 유저를 찾을 수 없음
         return;
       }
 
       const targetUserDoc = querySnapshot.docs[0];
       const targetUserData = targetUserDoc.data();
 
+      // 이미 친구인지 확인
       if (friends.some((f) => f.uid === targetUserDoc.id)) {
-        alert('이미 친구입니다.');
         return;
       }
 
+      // 내 친구 목록에 추가 (arrayUnion)
       const myRef = doc(db, 'users', auth.currentUser.uid);
       await updateDoc(myRef, {
         friendsList: arrayUnion({
@@ -83,35 +106,49 @@ const FriendList = () => {
         }),
       });
 
-      alert(`${targetUserData.name}님을 친구로 추가했습니다! ✨`);
+      // 성공 처리
       setNewFriendEmail('');
       setIsAddModalOpen(false);
     } catch (error) {
-      alert('오류가 발생했습니다.');
+      // 에러 발생 시 처리
     } finally {
       setIsAdding(false);
     }
   };
 
-  // 3. [기능] 친구 이름(별명) 수정
+  /**
+   * 선택한 친구의 표시 이름(별명)을 수정합니다.
+   * Firestore의 배열 데이터를 업데이트합니다.
+   */
   const handleEditSave = async () => {
     if (!selectedFriend || !editName.trim()) return;
     try {
       const myRef = doc(db, 'users', auth.currentUser!.uid);
+
+      // 배열 내 특정 객체만 수정하여 전체 리스트 교체
       const updatedList = friends.map((f) => (f.uid === selectedFriend.uid ? { ...f, name: editName.trim() } : f));
+
       await updateDoc(myRef, { friendsList: updatedList });
       setIsEditModalOpen(false);
       setIsMenuOpen(false);
     } catch (e) {
-      alert('수정 중 오류가 발생했습니다.');
+      // 에러 발생 시 처리
     }
   };
 
+  /**
+   * 친구 추가 모달을 닫고 입력값을 초기화합니다.
+   */
   const closeAddModal = () => {
-    setNewFriendEmail(''); // 입력값 초기화
-    setIsAddModalOpen(false); // 모달 닫기
+    setNewFriendEmail('');
+    setIsAddModalOpen(false);
   };
 
+  /**
+   * 엔터 키 입력 시 지정된 액션을 실행합니다.
+   * @param {React.KeyboardEvent} e - 키보드 이벤트
+   * @param {() => void} action - 실행할 함수
+   */
   const handleKeyDownAction = (e: React.KeyboardEvent<HTMLInputElement>, action: () => void) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -119,7 +156,9 @@ const FriendList = () => {
     }
   };
 
-  // 4. [기능] 친구 삭제
+  /**
+   * 친구 목록에서 선택한 대상을 삭제합니다.
+   */
   const handleDeleteConfirm = async () => {
     if (!selectedFriend) return;
     try {
@@ -128,25 +167,30 @@ const FriendList = () => {
       setIsDeleteModalOpen(false);
       setIsMenuOpen(false);
     } catch (e) {
-      alert('삭제 중 오류가 발생했습니다.');
+      // 에러 발생 시 처리
     }
   };
 
+  /**
+   * 검색어에 따라 친구 목록을 필터링하고 이름순으로 정렬합니다.
+   */
   const filteredFriends = friends.filter((f) => f.name.includes(searchTerm)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-[100px] relative">
+      {/* 헤더 및 검색바 */}
       <header className="sticky top-0 bg-white/90 backdrop-blur-md z-40 px-6 pt-6 pb-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">친구</h1>
-          <button className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg active:scale-90" onClick={() => setIsAddModalOpen(true)}>
+          <button className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg active:scale-90" onClick={() => setIsAddModalOpen(true)} aria-label="친구 추가">
             <UserPlus size={20} />
           </button>
         </div>
@@ -165,6 +209,7 @@ const FriendList = () => {
       </header>
 
       <div className="px-6 space-y-6 mt-4">
+        {/* 내 프로필 섹션 (검색 시 숨김) */}
         {!searchTerm && (
           <section>
             <h2 className="text-[12px] font-bold text-gray-400 mb-3 px-1">내 프로필</h2>
@@ -189,6 +234,7 @@ const FriendList = () => {
           </section>
         )}
 
+        {/* 친구 목록 섹션 */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-[12px] font-bold text-gray-400">
@@ -228,7 +274,7 @@ const FriendList = () => {
         </section>
       </div>
 
-      {/* 1. 하단 액션 메뉴 (더보기) */}
+      {/* 친구 관리 바텀시트 메뉴 */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
@@ -269,7 +315,7 @@ const FriendList = () => {
         </div>
       )}
 
-      {/* 2. 이름 수정 팝업 */}
+      {/* 이름 수정 모달 */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
@@ -297,7 +343,7 @@ const FriendList = () => {
         </div>
       )}
 
-      {/* 3. 삭제 확인 팝업 */}
+      {/* 삭제 확인 모달 */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
@@ -323,7 +369,7 @@ const FriendList = () => {
         </div>
       )}
 
-      {/* 4. 친구 추가 모달 */}
+      {/* 친구 추가 모달 */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeAddModal} />

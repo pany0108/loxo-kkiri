@@ -5,21 +5,45 @@ import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 
+/**
+ * 사용자 프로필 데이터 인터페이스
+ */
+interface UserProfile {
+  name: string;
+  email: string;
+  statusMessage?: string;
+  [key: string]: any;
+}
+
+/**
+ * 마이페이지(내 프로필) 컴포넌트입니다.
+ * - 사용자 정보를 조회하고 상태 메시지를 수정할 수 있습니다.
+ * - 개인 정보 관리, 친구 목록, 설정 등 하위 메뉴로 이동하는 진입점 역할을 합니다.
+ * * @returns {JSX.Element} 마이페이지 화면
+ */
 const MyProfile = () => {
   const navigate = useNavigate();
 
-  const [userData, setUserData] = useState<any>(null);
+  // --- 상태 관리 ---
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPushEnabled, setIsPushEnabled] = useState(true);
 
+  /**
+   * 컴포넌트 마운트 시 Firestore에서 사용자 정보를 불러옵니다.
+   */
   useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
       if (user) {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          setUserData(userSnap.data());
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            setUserData(userSnap.data() as UserProfile);
+          }
+        } catch (error) {
+          // 데이터 로드 실패 처리
         }
       }
       setIsLoading(false);
@@ -27,20 +51,31 @@ const MyProfile = () => {
     fetchUserData();
   }, []);
 
-  // 상태 메시지만 수정 가능하도록 유지
+  /**
+   * 상태 메시지 수정 핸들러
+   * prompt 창을 통해 새로운 메시지를 입력받아 Firestore에 업데이트합니다.
+   * @param {string} currentStatus - 현재 상태 메시지
+   */
   const updateStatusMessage = async (currentStatus: string) => {
     const newValue = prompt('상태 메시지 수정', currentStatus);
+
     if (newValue !== null && newValue !== currentStatus) {
       try {
         const userRef = doc(db, 'users', auth.currentUser!.uid);
         await updateDoc(userRef, { statusMessage: newValue });
-        setUserData({ ...userData, statusMessage: newValue });
+
+        // 로컬 상태 즉시 업데이트
+        setUserData((prev) => (prev ? { ...prev, statusMessage: newValue } : null));
       } catch (e) {
-        alert('수정 중 오류가 발생했습니다.');
+        // 업데이트 실패 시 처리
       }
     }
   };
 
+  /**
+   * 로그아웃 핸들러
+   * Firebase 인증 세션을 종료하고 로그인 화면으로 이동합니다.
+   */
   const handleLogout = async () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
       await signOut(auth);
@@ -48,12 +83,15 @@ const MyProfile = () => {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-white">로딩 중...</div>;
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-white">로딩 중...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-24">
+      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 pb-2 flex items-center sticky top-0 bg-white/90 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
         <h1 className="text-2xl font-black text-gray-900 tracking-tight ml-1">내 프로필</h1>
@@ -72,13 +110,12 @@ const MyProfile = () => {
           </div>
 
           <div className="text-center w-full">
-            {/* [수정] 이름 영역: 수정 버튼 삭제, nickname -> name 변경 */}
             <div className="flex items-center justify-center gap-2 mb-1">
               <h2 className="text-2xl font-black text-gray-900">{userData?.name || '사용자'}</h2>
             </div>
             <p className="text-[14px] font-bold text-gray-400 mb-4">{userData?.email}</p>
 
-            {/* 상태 메시지는 여기서 바로 수정 가능 */}
+            {/* 상태 메시지 표시 및 수정 트리거 */}
             <div
               onClick={() => updateStatusMessage(userData?.statusMessage || '')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-[16px] text-gray-600 text-[14px] cursor-pointer hover:bg-gray-100 transition-colors"
@@ -93,7 +130,6 @@ const MyProfile = () => {
         <section className="space-y-4">
           <h3 className="px-2 text-[12px] font-bold text-gray-400 uppercase tracking-wider">Account</h3>
           <div className="bg-white rounded-[28px] border border-gray-100 overflow-hidden p-2 space-y-1">
-            {/* 실명 수정을 원하면 '개인 정보 관리'로 이동하도록 유도 */}
             <MenuBtn icon={<ClipboardList size={20} />} iconBg="bg-emerald-50 text-emerald-600" label="개인 정보 관리" onClick={() => navigate('/edit-info')} />
             <MenuBtn icon={<Users size={20} />} iconBg="bg-blue-50 text-blue-600" label="친구 목록 편집" onClick={() => navigate('/friend-list')} />
             <MenuBtn icon={<ShieldCheck size={20} />} iconBg="bg-orange-50 text-orange-500" label="비밀번호 변경" onClick={() => navigate('/change-password')} />
@@ -120,7 +156,11 @@ const MyProfile = () => {
   );
 };
 
-// [재사용 컴포넌트] 메뉴 버튼
+// --- 하위 컴포넌트 ---
+
+/**
+ * 메뉴 버튼 Props 인터페이스
+ */
 interface MenuBtnProps {
   icon: React.ReactNode;
   iconBg: string;
@@ -133,6 +173,10 @@ interface MenuBtnProps {
   hideArrow?: boolean;
 }
 
+/**
+ * 설정 메뉴의 각 항목을 렌더링하는 재사용 버튼 컴포넌트
+ * - 일반 이동 버튼 또는 토글 스위치 형태를 지원합니다.
+ */
 const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle, color = 'text-gray-900', hideArrow }: MenuBtnProps) => (
   <button
     onClick={isToggle ? onToggle : onClick}

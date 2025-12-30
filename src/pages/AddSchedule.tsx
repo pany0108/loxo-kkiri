@@ -4,6 +4,9 @@ import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X } from 'lucide-react';
 import ColorPalette from '../components/calendar/ColorPalette';
 
+/**
+ * 일정 알림 설정을 위한 옵션 리스트
+ */
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
   { label: '정시', value: '0' },
@@ -18,17 +21,31 @@ const NOTIFICATION_OPTIONS = [
   { label: '1일 전', value: '1440' },
 ];
 
+/**
+ * 새로운 일정을 등록하는 폼 컴포넌트입니다.
+ * 캘린더에서 선택한 날짜 정보를 기반으로 초기값을 설정하며, 제목/시간/장소/사진 등을 입력받습니다.
+ * * @returns {JSX.Element} 일정 등록 화면
+ */
 const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * 캘린더 페이지로부터 전달받은 날짜 및 시간 데이터
+   */
   const receivedData = location.state as {
     start?: string;
     end?: string;
     allDay?: boolean;
   } | null;
 
+  /**
+   * 시작 및 종료 날짜의 초기 포맷을 결정하는 헬퍼 함수
+   * @param {string} dateStr - 기준 날짜 문자열
+   * @param {boolean} isAllDay - 종일 여부
+   * @returns {string} 포맷팅된 날짜 문자열
+   */
   const getInitialDate = (dateStr?: string, isAllDay?: boolean) => {
     if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
     return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
@@ -47,10 +64,15 @@ const AddSchedule = () => {
 
   const [attachments, setAttachments] = useState<string[]>([]);
 
+  /**
+   * 입력 필드 값 변경 핸들러
+   * 시작 시간 변경 시 종료 시간이 시작 시간보다 이전이 되지 않도록 보정합니다.
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       let nextData = { ...prev, [name]: value };
+
       if (name === 'start') {
         const newStart = dayjs(value);
         const currentEnd = dayjs(prev.end);
@@ -62,10 +84,17 @@ const AddSchedule = () => {
     });
   };
 
+  /**
+   * 캘린더 태그 색상 변경 핸들러
+   * @param {string} color - 선택된 헥사 색상 코드
+   */
   const handleColorChange = (color: string) => {
     setFormData((prev) => ({ ...prev, color }));
   };
 
+  /**
+   * 종일 일정 여부 토글 핸들러
+   */
   const handleToggle = () => {
     setFormData((prev) => {
       const nextIsAllDay = !prev.isAllDay;
@@ -78,6 +107,9 @@ const AddSchedule = () => {
     });
   };
 
+  /**
+   * 이미지 파일 첨부 핸들러
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
@@ -86,37 +118,47 @@ const AddSchedule = () => {
     }
   };
 
+  /**
+   * 첨부된 이미지 삭제 핸들러
+   * @param {number} index - 삭제할 이미지의 인덱스
+   */
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * 최종 폼 제출 핸들러
+   * 유효성 검사 후 서버(혹은 상태 관리)에 데이터를 저장합니다.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!formData.title) {
       alert('제목을 입력해주세요.');
       return;
     }
+
     if (dayjs(formData.end).isBefore(dayjs(formData.start))) {
       alert('종료 일자가 시작일보다 빠를 수 없습니다.');
       return;
     }
-    console.log('등록 데이터:', { ...formData, attachments });
-    alert('일정이 등록되었습니다!');
+
+    // 서버 연동 로직이 들어갈 자리입니다.
+    alert('일정이 성공적으로 등록되었습니다! ✨');
     navigate('/calendar');
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <div className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
+      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
           <ChevronLeft size={28} />
         </button>
-      </div>
+      </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
-        {/* 헤더 섹션 */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -124,11 +166,11 @@ const AddSchedule = () => {
             새로운 <span className="text-blue-600">일정</span>을<br />
             등록해볼까요?
           </h2>
-        </div>
+        </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            {/* 제목 입력 */}
+          <section className="space-y-4">
+            {/* 제목 입력 필드 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">일정 제목</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -143,7 +185,7 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 색상 팔레트 */}
+            {/* 태그 색상 선택 */}
             <div className="py-2">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-3">태그 색상</label>
               <div className="bg-gray-50 rounded-[20px] p-4 border-2 border-transparent">
@@ -151,11 +193,10 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 시간 설정 섹션 */}
+            {/* 시간 및 날짜 설정 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
-
                 <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
                   <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
@@ -199,7 +240,7 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 푸시 알림 */}
+            {/* 알림 설정 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">푸시 알림</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -219,7 +260,7 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 장소 및 메모 */}
+            {/* 장소 및 상세 메모 */}
             <div className="space-y-3">
               <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
               <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
@@ -248,7 +289,7 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 사진 첨부 기능 */}
+            {/* 파일 및 사진 첨부 */}
             <div className="space-y-3">
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
               <button
@@ -260,7 +301,6 @@ const AddSchedule = () => {
                 <span className="text-[14px] font-bold">사진 첨부하기</span>
               </button>
 
-              {/* 첨부파일 미리보기 */}
               {attachments.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto py-1 px-1">
                   {attachments.map((src, i) => (
@@ -278,10 +318,9 @@ const AddSchedule = () => {
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* 등록 버튼 */}
-          <div className="pt-6">
+          <footer className="pt-6">
             <button
               type="submit"
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
@@ -294,7 +333,7 @@ const AddSchedule = () => {
                 </span>
               )}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>

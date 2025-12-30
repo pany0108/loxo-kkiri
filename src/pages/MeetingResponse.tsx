@@ -6,6 +6,9 @@ import 'dayjs/locale/ko';
 
 dayjs.locale('ko');
 
+/**
+ * 사용자가 새로 제안하는 시간 슬롯 인터페이스
+ */
 interface MyNewSlot {
   date: string;
   startTime: string;
@@ -13,15 +16,22 @@ interface MyNewSlot {
   isAllDay: boolean;
 }
 
+/**
+ * 초대받은 약속에 대해 응답하는 페이지 컴포넌트입니다.
+ * - 주최자가 제안한 시간 중 가능한 시간을 선택할 수 있습니다.
+ * - 주최자의 제안 외에 새로운 시간을 역으로 제안할 수 있습니다 (달력 인터랙션).
+ * * @returns {JSX.Element} 약속 응답 화면
+ */
 const MeetingResponse = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  // --- 상태 관리 ---
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [selectedHostSlots, setSelectedHostSlots] = useState<number[]>([]);
   const [myNewSlots, setMyNewSlots] = useState<MyNewSlot[]>([]);
 
-  // 데이터 Mock
+  // 모의 데이터 (실제 구현 시 API 호출 필요)
   const [hostProposal] = useState({
     title: '강남역 삼겹살 파티 🥓',
     host: '김철수',
@@ -32,16 +42,30 @@ const MeetingResponse = () => {
       { id: 2, date: '2025-01-11', time: '14:00 ~ 16:00' },
     ],
   });
+
+  // 내 기존 일정 데이터 (충돌 확인용)
   const myExistingSchedules = ['2025-01-10', '2025-01-15', '2025-01-22'];
 
+  /**
+   * 주최자가 제안한 슬롯의 선택 상태를 토글합니다.
+   * @param {number} slotId - 슬롯 고유 ID
+   */
   const toggleHostSlot = (slotId: number) => {
     setSelectedHostSlots((prev) => (prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId]));
   };
 
+  /**
+   * 달력 날짜 클릭 시 새로운 역제안 시간을 추가하거나 제거합니다.
+   * - 주최자가 이미 제안한 날짜는 선택할 수 없습니다.
+   * - 이미 선택된 날짜는 목록에서 제거합니다.
+   * - 새로운 날짜는 기본값(12:00~14:00, 종일)으로 추가됩니다.
+   * @param {string} dateStr - 선택한 날짜 문자열 (YYYY-MM-DD)
+   */
   const toggleMyNewSlot = (dateStr: string) => {
     const isHostDate = hostProposal.slots.some((s) => s.date === dateStr);
+
+    // 주최자 제안 날짜는 상단 카드에서 선택하도록 유도 (UI상 클릭 방지 처리)
     if (isHostDate) {
-      alert('주최자가 제안한 날짜입니다. 상단 카드에서 선택해주세요!');
       return;
     }
 
@@ -52,14 +76,26 @@ const MeetingResponse = () => {
     }
   };
 
+  /**
+   * 역제안 슬롯의 시간(시작/종료)을 업데이트합니다.
+   * 시간을 직접 수정하면 '종일' 옵션은 자동으로 해제됩니다.
+   */
   const updateSlotTime = (dateStr: string, field: 'startTime' | 'endTime', value: string) => {
     setMyNewSlots((prev) => prev.map((s) => (s.date === dateStr ? { ...s, [field]: value, isAllDay: false } : s)));
   };
 
+  /**
+   * 역제안 슬롯의 '종일' 여부를 토글합니다.
+   */
   const toggleAllDay = (dateStr: string) => {
     setMyNewSlots((prev) => prev.map((s) => (s.date === dateStr ? { ...s, isAllDay: !s.isAllDay } : s)));
   };
 
+  /**
+   * 현재 월의 달력 그리드 데이터를 생성합니다.
+   * 빈 칸(이전 달 날짜 공간)은 null로 채웁니다.
+   * @returns {(string | null)[]} 날짜 문자열 배열
+   */
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
@@ -69,18 +105,29 @@ const MeetingResponse = () => {
     return dates;
   };
 
+  /**
+   * 최종 응답 제출 핸들러
+   * 선택한 주최자 제안 슬롯과 새로 추가한 역제안 슬롯을 서버로 전송합니다.
+   */
+  const handleSubmitResponse = () => {
+    // TODO: 서버에 응답 데이터 전송 (POST)
+    // payload: { meetingId: id, selectedSlots: selectedHostSlots, newProposals: myNewSlots }
+
+    navigate('/calendar');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-6">
+        <header className="mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -89,7 +136,7 @@ const MeetingResponse = () => {
             <br />
             <span className="text-blue-600">응답해주세요</span>
           </h2>
-        </div>
+        </header>
 
         {/* 약속 상세 정보 카드 */}
         <div className="bg-gray-50 rounded-[28px] p-6 mb-10 border border-gray-100 shadow-sm">
@@ -112,7 +159,7 @@ const MeetingResponse = () => {
           </div>
         </div>
 
-        {/* 주최자 제안 확인 영역 */}
+        {/* 주최자 제안 확인 및 선택 영역 */}
         <section className="space-y-4 mb-10">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-[15px] font-black text-gray-900 flex items-center gap-2">
@@ -186,6 +233,7 @@ const MeetingResponse = () => {
             </div>
           </div>
 
+          {/* 달력 컴포넌트 */}
           <div className="bg-gray-50 rounded-[32px] p-6 border-2 border-transparent">
             <div className="flex items-center justify-between mb-6 px-2">
               <button
@@ -211,6 +259,7 @@ const MeetingResponse = () => {
               ))}
               {generateDates().map((date, idx) => {
                 if (!date) return <div key={`empty-${idx}`} />;
+
                 const hasMySchedule = myExistingSchedules.includes(date);
                 const isHostProposed = hostProposal.slots.some((s) => s.date === date);
                 const isMyNewProposal = myNewSlots.some((s) => s.date === date);
@@ -233,6 +282,7 @@ const MeetingResponse = () => {
             </div>
           </div>
 
+          {/* 추가된 역제안 슬롯 설정 영역 */}
           {myNewSlots.length > 0 && (
             <div className="space-y-4 pt-4">
               <div className="px-1">
@@ -246,6 +296,7 @@ const MeetingResponse = () => {
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-[15px] font-black text-gray-900">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
 
+                        {/* 종일 스위치 */}
                         <div onClick={() => toggleAllDay(slot.date)} className="flex items-center gap-2 cursor-pointer group">
                           <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
                           <div
@@ -256,14 +307,15 @@ const MeetingResponse = () => {
                           >
                             <div
                               className={`
-                                 absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
-                                 ${slot.isAllDay ? 'translate-x-4' : 'translate-x-0'}
-                               `}
+                                   absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
+                                   ${slot.isAllDay ? 'translate-x-4' : 'translate-x-0'}
+                                 `}
                             />
                           </div>
                         </div>
                       </div>
 
+                      {/* 시간 설정 인풋 */}
                       {slot.isAllDay ? (
                         <div className="bg-emerald-50 px-3 py-[15px] rounded-xl border border-emerald-100 text-center">
                           <p className="text-[12px] text-emerald-600 font-bold">✨ 하루 종일 가능해요!</p>
@@ -294,6 +346,7 @@ const MeetingResponse = () => {
             </div>
           )}
 
+          {/* 역제안이 없을 때 표시되는 가이드 */}
           {myNewSlots.length === 0 && (
             <div className="py-8 text-center border-2 border-dashed border-gray-100 rounded-[24px]">
               <Plus size={20} className="mx-auto text-gray-300 mb-2" />
@@ -307,18 +360,16 @@ const MeetingResponse = () => {
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      {/* 하단 고정 제출 버튼 */}
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
         <button
-          onClick={() => {
-            alert('응답과 새로운 시간 제안이 전송되었습니다!');
-            navigate('/calendar');
-          }}
+          onClick={handleSubmitResponse}
           className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           <span>제안 제출하기</span>
           {myNewSlots.length > 0 && <span className="bg-emerald-500 text-white px-2 py-0.5 rounded-lg text-[11px] font-bold">+ 역제안 {myNewSlots.length}건</span>}
         </button>
-      </div>
+      </footer>
     </div>
   );
 };

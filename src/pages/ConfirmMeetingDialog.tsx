@@ -1,6 +1,13 @@
 import React from 'react';
 import { CalendarCheck, X } from 'lucide-react';
 
+/**
+ * 약속 확정 확인 다이얼로그의 Props 인터페이스
+ * @property {boolean} isOpen - 모달 표시 여부
+ * @property {() => void} onClose - 모달 닫기 핸들러
+ * @property {() => void} onConfirm - 최종 확정 버튼 클릭 시 실행될 핸들러
+ * @property {{ date: string; time: string } | null} slotData - 확정하려는 날짜 및 시간 데이터 (null일 경우 렌더링 안 함)
+ */
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,28 +15,33 @@ interface ConfirmDialogProps {
   slotData: { date: string; time: string } | null;
 }
 
+/**
+ * 일정 조율 결과 리포트 화면에서 최종 시간을 확정할 때 사용하는 모달 컴포넌트입니다.
+ * 사용자에게 선택한 시간 정보를 다시 한번 보여주고, 확정 의사를 묻습니다.
+ *
+ * @param {ConfirmDialogProps} props - 컴포넌트 속성
+ * @returns {JSX.Element | null} 모달 컴포넌트
+ */
 const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmDialogProps) => {
+  // 모달이 닫혀있거나 데이터가 없는 경우 렌더링하지 않음
   if (!isOpen || !slotData) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-      {/* 배경 오버레이 (클릭 시 닫힘) */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      {/* 배경 오버레이: 클릭 시 모달 닫힘 처리 */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} aria-hidden="true" />
 
-      {/* 다이얼로그 컨텐츠 */}
+      {/* 모달 본문 */}
       <div className="relative bg-white w-full max-w-sm rounded-[32px] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        {/* 닫기 버튼 */}
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-300 hover:text-gray-500 transition-colors" aria-label="닫기">
           <X size={20} />
         </button>
 
         <div className="text-center space-y-4 pt-2">
-          {/* 아이콘 */}
           <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto text-blue-600 mb-2">
             <CalendarCheck size={32} />
           </div>
 
-          {/* 타이틀 & 설명 */}
           <div>
             <h3 className="text-xl font-black text-gray-900 mb-2">이 시간으로 확정할까요?</h3>
             <p className="text-[14px] text-gray-500 font-medium leading-relaxed">
@@ -39,13 +51,12 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmD
             </p>
           </div>
 
-          {/* 선택된 시간 정보 박스 */}
+          {/* 선택된 시간 정보 표시 영역 */}
           <div className="bg-gray-50 rounded-[20px] p-4 border border-gray-100">
             <p className="text-[15px] font-black text-gray-800 mb-1">{slotData.date}</p>
             <p className="text-[13px] font-bold text-blue-600">{slotData.time}</p>
           </div>
 
-          {/* 액션 버튼 */}
           <div className="flex gap-3 pt-2">
             <button onClick={onClose} className="flex-1 h-[52px] rounded-[20px] bg-gray-100 text-gray-500 font-bold text-[14px] hover:bg-gray-200 transition-colors">
               취소

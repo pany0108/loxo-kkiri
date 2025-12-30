@@ -10,10 +10,6 @@ import './CalendarMain.css';
 
 /**
  * 캘린더 메타데이터 인터페이스
- * @property id - 캘린더 고유 ID
- * @property name - 캘린더 표시 이름
- * @property members - 캘린더 공유 멤버 리스트 (이름 배열)
- * @property isPrivate - 개인 캘린더 여부
  */
 interface CalendarType {
   id: string;
@@ -23,15 +19,7 @@ interface CalendarType {
 }
 
 /**
- * 캘린더 이벤트(일정) 데이터 인터페이스
- * @property id - 이벤트 고유 ID
- * @property title - 이벤트 제목
- * @property start - 시작 시간 (Date 객체 또는 ISO 문자열)
- * @property end - 종료 시간 (Date 객체 또는 ISO 문자열, 선택)
- * @property allDay - 종일 일정 여부
- * @property color - 이벤트 색상 코드 (Hex)
- * @property location - 장소 정보 (선택)
- * @property attendees - 일정 참여자 이름 리스트
+ * 일정(이벤트) 데이터 인터페이스
  */
 interface CalendarEvent {
   id: string;
@@ -45,11 +33,11 @@ interface CalendarEvent {
 }
 
 /**
- * 주어진 날짜가 해당 월의 몇 번째 주인지 계산하는 유틸리티 함수
- * @param date - 기준 날짜
- * @returns 'YYYY년 M월 N째주' 형식의 문자열
+ * 특정 날짜가 해당 월의 몇 번째 주인지 계산합니다.
+ * @param {Date} date - 계산할 날짜 객체
+ * @returns {string} 'YYYY년 M월 N째주' 형식의 문자열
  */
-const getWeekOfMonth = (date: Date) => {
+const getWeekOfMonth = (date: Date): string => {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const firstDayOfMonth = new Date(year, date.getMonth(), 1);
@@ -59,38 +47,39 @@ const getWeekOfMonth = (date: Date) => {
 };
 
 /**
- * 메인 캘린더 컴포넌트
- * - FullCalendar 라이브러리를 사용한 월간/주간/일간 뷰 제공
- * - 캘린더 선택 및 관리 기능
- * - 일정 상세 보기 (바텀시트) 및 일정 추가 기능
+ * 메인 캘린더 컴포넌트입니다.
+ * 월간/주간/일간 뷰 전환, 일정 상세 조회(바텀시트), 드래그 앤 드롭 일정 추가 기능을 제공합니다.
  */
 const CalendarMain = () => {
   const navigate = useNavigate();
   const calendarRef = useRef<FullCalendar>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null); // 캘린더 리스트 드롭다운 참조
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // 스와이프 동작 감지를 위한 터치 좌표 Ref
+  // 스와이프 및 터치 제어 Ref
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
 
-  // 상태 관리
-  const [isCalListOpen, setIsCalListOpen] = useState(false); // 캘린더 리스트 드롭다운 열림 여부
+  // UI 상태 관리
+  const [isCalListOpen, setIsCalListOpen] = useState(false);
+  const [currentView, setCurrentView] = useState('dayGridMonth');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isListVisible, setIsListVisible] = useState(false);
+
+  // 캘린더 및 이벤트 데이터 (실제 연동 시 API로 대체)
   const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
     id: '1',
     name: '내 캘린더',
     members: [],
     isPrivate: true,
   });
+
   const [myCalendars] = useState<CalendarType[]>([
     { id: '1', name: '내 캘린더', members: [], isPrivate: true },
     { id: '2', name: '우리 가족 캘린더', members: ['엄마', '아빠', '동생'], isPrivate: false },
   ]);
-  const [currentView, setCurrentView] = useState('dayGridMonth'); // 현재 보고 있는 뷰 (월/주/일)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null); // 선택된 날짜 (월간 뷰 바텀시트용)
-  const [isListVisible, setIsListVisible] = useState(false); // 바텀시트 표시 여부
 
-  // 일정 데이터 상태
   const [events] = useState<CalendarEvent[]>([
     {
       id: '1',
@@ -124,11 +113,8 @@ const CalendarMain = () => {
     },
   ]);
 
-  const listRef = useRef<HTMLDivElement>(null);
-
   /**
-   * 바텀시트 열림/닫힘 시 캘린더 크기 재계산 애니메이션
-   * - 바텀시트가 올라오면 캘린더 높이가 줄어들므로 레이아웃을 다시 그리기 위함
+   * 바텀시트 열림/닫힘 상태에 따른 캘린더 레이아웃 재계산
    */
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
@@ -152,7 +138,7 @@ const CalendarMain = () => {
   }, [isListVisible]);
 
   /**
-   * 외부 클릭 감지하여 캘린더 리스트 드롭다운 닫기
+   * 캘린더 선택 드롭다운 외부 클릭 시 닫기 처리
    */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -172,9 +158,7 @@ const CalendarMain = () => {
     };
   }, [isCalListOpen]);
 
-  // =================================================================
-  // 터치 스와이프 핸들러 (월 이동)
-  // =================================================================
+  // 터치 스와이프 핸들러 (월 이동 로직)
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
@@ -199,8 +183,8 @@ const CalendarMain = () => {
   };
 
   /**
-   * 캘린더 뷰 변경 핸들러 (월/주/일)
-   * @param view - 변경할 뷰 이름 ('dayGridMonth', 'timeGridWeek', 'timeGridDay')
+   * 캘린더 뷰(월/주/일)를 변경하고 레이아웃을 갱신합니다.
+   * @param {string} view - FullCalendar 뷰 ID
    */
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
@@ -214,8 +198,8 @@ const CalendarMain = () => {
   };
 
   /**
-   * 날짜 선택 시 바텀시트 활성화 로직
-   * @param dateStr - 선택된 날짜 문자열 (YYYY-MM-DD)
+   * 특정 날짜를 선택하여 바텀시트를 활성화합니다.
+   * @param {string} dateStr - YYYY-MM-DD 형식의 날짜 문자열
    */
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
@@ -227,31 +211,31 @@ const CalendarMain = () => {
     }, 100);
   };
 
-  // 날짜 셀 클릭 핸들러
   const handleDateClick = (arg: { dateStr: string }) => {
     executeDateSelection(arg.dateStr);
   };
 
-  // 캘린더 내 이벤트 클릭 핸들러
+  /**
+   * 이벤트 클릭 시 뷰에 따라 상세 페이지 이동 혹은 바텀시트 노출을 결정합니다.
+   */
   const handleEventClick = (info: any) => {
     const eventData = events.find((e) => e.id === info.event.id);
 
-    // 월간 뷰: 해당 날짜의 바텀시트 열기
     if (currentView === 'dayGridMonth') {
       const dateStr = info.event.startStr.split('T')[0];
       executeDateSelection(dateStr);
     } else {
-      // 주간/일간 뷰: 상세 페이지로 바로 이동
       navigate(`/schedule/${info.event.id}`, { state: eventData });
     }
   };
 
-  // 바텀시트 리스트 아이템 클릭 핸들러
   const handleListItemClick = (event: CalendarEvent) => {
     navigate(`/schedule/${event.id}`, { state: event });
   };
 
-  // 빈 날짜 드래그 선택 시 일정 추가 화면으로 이동
+  /**
+   * 캘린더 드래그 선택 시 해당 시간 정보를 담아 일정 추가 페이지로 이동합니다.
+   */
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -260,7 +244,9 @@ const CalendarMain = () => {
     });
   };
 
-  // 날짜 범위 변경 시 헤더 타이틀 커스텀 (주간 뷰 'N월 N째주' 표시용)
+  /**
+   * 주간 뷰 등 헤더 타이틀을 커스텀 주차 정보로 변경합니다.
+   */
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -269,13 +255,8 @@ const CalendarMain = () => {
     }
   };
 
-  // =================================================================
-  // 커스텀 렌더링 함수 (Render Hooks)
-  // =================================================================
-
   /**
-   * 주간/일간 뷰 헤더 날짜 렌더링
-   * - 요일에 따라 색상 구분 (일: 빨강, 토: 파랑)
+   * 시간축 뷰(주/일)의 헤더 날짜 및 요일 렌더링을 정의합니다.
    */
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
@@ -302,12 +283,9 @@ const CalendarMain = () => {
   };
 
   /**
-   * 캘린더 이벤트(일정) 내용 커스텀 렌더링
-   * - 월간 뷰: 점(Dot) + 제목
-   * - 주간/일간 뷰: 시작-종료 시간 + 제목 박스
+   * 캘린더 내 일정 블록의 렌더링 스타일을 정의합니다.
    */
   const renderEventContent = (eventInfo: EventContentArg) => {
-    // 1. 월간 뷰 렌더링
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
         return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
@@ -321,7 +299,6 @@ const CalendarMain = () => {
       );
     }
 
-    // 2. 주간/일간 뷰 렌더링
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -330,6 +307,7 @@ const CalendarMain = () => {
         hour12: false,
       });
     };
+
     const startStr = formatTime(eventInfo.event.start);
     const endStr = formatTime(eventInfo.event.end);
     const isWeekView = eventInfo.view.type === 'timeGridWeek';
@@ -341,7 +319,6 @@ const CalendarMain = () => {
           <span className="opacity-70">-</span>
           <span className="opacity-90">{endStr}</span>
         </div>
-
         {eventInfo.event.title && (
           <div className={`font-bold text-white leading-tight break-words w-full ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>
         )}
@@ -351,12 +328,9 @@ const CalendarMain = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
-      {/* =================================================================
-          1. 헤더 영역 (캘린더 선택, 뷰 전환 탭)
-      ================================================================= */}
+      {/* 캘린더 헤더 및 메뉴 섹션 */}
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
-          {/* 캘린더 선택 드롭다운 */}
           <div className="relative" ref={dropdownRef}>
             <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
@@ -403,7 +377,6 @@ const CalendarMain = () => {
             )}
           </div>
 
-          {/* 뷰 전환 탭 (월/주/일) */}
           <div className="flex items-center gap-3">
             <div className="flex p-1 bg-gray-100 rounded-[14px]">
               {[
@@ -425,9 +398,7 @@ const CalendarMain = () => {
         </div>
       </header>
 
-      {/* =================================================================
-          2. 메인 캘린더 영역
-      ================================================================= */}
+      {/* 캘린더 렌더링 섹션 */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         <div
           onTouchStart={onTouchStart}
@@ -502,17 +473,13 @@ const CalendarMain = () => {
           />
         </div>
 
-        {/* =================================================================
-            3. 일정 상세 리스트 (바텀시트)
-            - 월간 뷰에서 날짜 선택 시 하단에서 올라오는 리스트
-        ================================================================= */}
+        {/* 선택 날짜 일정 리스트 (바텀시트) */}
         <div
           ref={listRef}
           className={`absolute left-0 right-0 bottom-0 bg-white z-30 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px]
             ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
           style={{ height: '50%' }}
         >
-          {/* 바텀시트 헤더 */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white rounded-t-[32px]">
             <div className="flex items-center gap-2">
               <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
@@ -529,7 +496,6 @@ const CalendarMain = () => {
             </button>
           </div>
 
-          {/* 일정 리스트 */}
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
               {events
@@ -566,10 +532,7 @@ const CalendarMain = () => {
         </div>
       </main>
 
-      {/* =================================================================
-          4. 플로팅 액션 버튼 (FAB)
-          - 일정 추가 화면으로 이동
-      ================================================================= */}
+      {/* 일정 추가 FAB */}
       <button
         onClick={() => {
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];

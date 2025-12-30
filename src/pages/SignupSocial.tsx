@@ -1,16 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 
+/**
+ * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
+ * - 소셜 계정에서 제공하지 않는 필수 정보(생년월일, 전화번호)를 수집합니다.
+ * - 모바일 환경에서의 리다이렉트 데이터 유실을 방지하기 위해 LocalStorage를 활용합니다.
+ * * @returns {JSX.Element} 추가 정보 입력 화면
+ */
 const SignupSocial = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // [1] 모든 훅(Hooks)은 최상단에 배치 (순서 고정)
-  // location.state가 있으면 사용하고, 없으면 localStorage에서 복구 시도
-  const [userData, setUserData] = useState(() => {
+  // --- 상태 관리 ---
+
+  /**
+   * 사용자 데이터 초기화
+   * location.state(직접 이동) 또는 LocalStorage(리다이렉트 복귀)에서 데이터를 복구합니다.
+   */
+  const [userData] = useState(() => {
     if (location.state?.uid) {
       // 전달받은 데이터가 있으면 로컬 스토리지에 백업 후 사용
       localStorage.setItem('pendingSignup', JSON.stringify(location.state));
@@ -25,12 +35,15 @@ const SignupSocial = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // userData 구조 분해 할당 (없을 경우를 대비해 빈 객체 기본값 처리)
   const { uid, email, lastName, firstName } = userData || {};
 
-  // [2] 데이터 유실 방어 로직
+  /**
+   * 데이터 유실 방지 Effect
+   * 필수 데이터(uid)가 없으면 로그인 페이지로 리다이렉트합니다.
+   */
   useEffect(() => {
     if (!uid) {
-      console.error('가입 데이터 유실: 로그인 페이지로 리다이렉트');
       const timer = setTimeout(() => {
         alert('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
         navigate('/login', { replace: true });
@@ -39,7 +52,7 @@ const SignupSocial = () => {
     }
   }, [uid, navigate]);
 
-  // [3] 로딩 상태 처리 (훅 규칙을 위해 훅 선언 아래에 배치)
+  // 필수 데이터가 로딩되지 않았을 때 로딩 화면 표시
   if (!uid) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -48,7 +61,11 @@ const SignupSocial = () => {
     );
   }
 
-  // 포맷팅 함수들
+  // --- 헬퍼 함수 ---
+
+  /**
+   * 휴대폰 번호 포맷팅 (010-0000-0000)
+   */
   const formatPhone = (value: string) => {
     const nums = value.replace(/[^\d]/g, '');
     if (nums.length <= 3) return nums;
@@ -56,6 +73,9 @@ const SignupSocial = () => {
     return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
   };
 
+  /**
+   * 생년월일 포맷팅 (YYYY/MM/DD)
+   */
   const formatBirth = (value: string) => {
     const nums = value.replace(/[^\d]/g, '');
     if (nums.length <= 4) return nums;
@@ -63,23 +83,34 @@ const SignupSocial = () => {
     return `${nums.slice(0, 4)}/${nums.slice(4, 6)}/${nums.slice(6, 8)}`;
   };
 
+  /**
+   * 입력 필드 변경 핸들러
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
+
     if (name === 'phone') formattedValue = formatPhone(value);
     if (name === 'birthDate') formattedValue = formatBirth(value);
+
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
   };
 
+  /**
+   * 휴대폰 인증번호 발송 시뮬레이션
+   */
   const handleSendAuth = () => {
     if (!formData.phone || formData.phone.length < 13) {
       alert('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
     setIsAuthSent(true);
-    alert('인증번호가 발송되었습니다. (테스트 번호: 1234)');
+    alert('인증번호가 발송되었습니다.');
   };
 
+  /**
+   * 인증번호 확인 시뮬레이션 (고정값: 1234)
+   */
   const handleVerify = () => {
     if (formData.authCode === '1234') {
       setIsVerified(true);
@@ -88,6 +119,10 @@ const SignupSocial = () => {
     }
   };
 
+  /**
+   * 최종 가입 완료 핸들러
+   * Firestore에 사용자 정보를 저장하고 메인 캘린더로 이동합니다.
+   */
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isVerified) return alert('본인인증을 완료해주세요.');
@@ -105,14 +140,13 @@ const SignupSocial = () => {
         createdAt: new Date().toISOString(),
       });
 
-      // 가입 완료 후 임시 데이터 삭제
+      // 가입 완료 후 임시 데이터 삭제 (보안 및 정합성 유지)
       localStorage.removeItem('pendingSignup');
 
       alert('회원가입이 완료되었습니다! ✨');
       navigate('/calendar', { replace: true });
     } catch (error) {
-      console.error('저장 에러:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      alert('저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +171,7 @@ const SignupSocial = () => {
 
         <form onSubmit={handleComplete} className="space-y-8">
           <div className="space-y-6">
-            {/* 생년월일 */}
+            {/* 생년월일 입력 */}
             <div className="group">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">생년월일</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -189,6 +223,7 @@ const SignupSocial = () => {
                 </button>
               </div>
 
+              {/* 인증번호 입력 (발송 후 노출) */}
               {isAuthSent && !isVerified && (
                 <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
                   <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
@@ -198,8 +233,8 @@ const SignupSocial = () => {
                       inputMode="numeric"
                       value={formData.authCode}
                       placeholder="인증번호 4자리"
-                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
-                      onChange={handleChange}
+                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                      onChange={(e) => setFormData({ ...formData, authCode: e.target.value })}
                       maxLength={4}
                     />
                   </div>

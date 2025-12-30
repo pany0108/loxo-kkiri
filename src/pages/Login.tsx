@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, browserSessionPersistence, setPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth, db, googleProvider } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
+/**
+ * 로그인 페이지 컴포넌트입니다.
+ * 이메일/비밀번호 로그인 및 Google 소셜 로그인을 처리합니다.
+ * 로그인 성공 시 기존 유저 여부를 확인하여 캘린더 또는 회원가입 페이지로 이동시킵니다.
+ * * @returns {JSX.Element} 로그인 화면
+ */
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -12,23 +18,25 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Login.tsx 내부의 함수 수정
+  /**
+   * 인증된 사용자의 Firestore 등록 여부를 확인하고 페이지를 라우팅합니다.
+   * - 기존 유저: 메인 캘린더(/calendar)로 이동
+   * - 신규 유저: 추가 정보 입력 페이지(/signup-social)로 이동
+   * * @param {any} user - Firebase Auth User 객체
+   */
   const handleUserRegistration = useCallback(
     async (user: any) => {
       try {
-        console.log('1. Firestore 확인 시작 - UID:', user.uid);
         setIsLoading(true);
 
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          console.log('2. 기존 유저 확인됨 -> 캘린더 이동');
+          // 기존 유저: 캘린더로 바로 이동
           navigate('/calendar', { replace: true });
         } else {
-          console.log('2. 신규 유저 확인됨 -> 가입 페이지 준비');
-
-          // 데이터 준비
+          // 신규 유저: 소셜 프로필 정보 준비
           const signupData = {
             uid: user.uid,
             email: user.email || '',
@@ -36,54 +44,49 @@ const Login = () => {
             firstName: user.displayName?.slice(1) || '',
           };
 
-          // [중요] 모바일 유실 대비 LocalStorage에 즉시 저장
+          // 모바일 리다이렉트 환경에서의 데이터 유실 방지를 위해 LocalStorage 백업
           localStorage.setItem('pendingSignup', JSON.stringify(signupData));
 
-          console.log('3. 가입 페이지로 이동 시도');
-          // replace: true를 사용해 로그인 페이지 기록을 지웁니다.
+          // 회원가입 페이지로 이동
           navigate('/signup-social', {
             replace: true,
             state: signupData,
           });
         }
       } catch (error: any) {
-        console.error('Firestore 조회 중 치명적 에러:', error);
-        // 권한 문제(Rules)인지, 네트워크 문제인지 팝업으로 확인
-        alert(`가입 확인 중 에러 발생: ${error.code}\n${error.message}`);
+        // 네트워크 또는 권한 오류 발생 시 처리
         setIsLoading(false);
+        alert('사용자 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
     },
     [navigate],
   );
 
-  // 1. [해결] 리다이렉트 처리 로직의 우선순위 최적화
+  /**
+   * 컴포넌트 마운트 시 인증 상태 및 리다이렉트 결과를 확인합니다.
+   */
   useEffect(() => {
-    setIsLoading(true); // 컴포넌트 마운트 즉시 로딩 시작
+    setIsLoading(true);
 
-    // 1. 리다이렉트 결과 확인
+    // 1. 소셜 로그인 리다이렉트 결과 처리 (모바일 환경 대응)
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
-          console.log('리다이렉트 결과 처리 중...');
           handleUserRegistration(result.user);
+        } else if (auth.currentUser) {
+          // 2. 이미 로그인된 세션이 있는 경우
+          handleUserRegistration(auth.currentUser);
         } else {
-          // 결과가 없으면 현재 로그인 상태인지 한 번 더 확인
-          if (auth.currentUser) {
-            handleUserRegistration(auth.currentUser);
-          } else {
-            setIsLoading(false); // 둘 다 아니면 로딩 해제
-          }
+          setIsLoading(false);
         }
       })
-      .catch((error) => {
-        console.error('인증 에러:', error);
+      .catch(() => {
         setIsLoading(false);
       });
 
-    // 2. [추가] 실시간 인증 감시 (가장 확실한 방법)
+    // 3. 실시간 인증 상태 변화 감지
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        console.log('실시간 세션 감지됨');
         handleUserRegistration(user);
       }
     });
@@ -91,7 +94,9 @@ const Login = () => {
     return () => unsubscribe();
   }, [handleUserRegistration]);
 
-  // 아이디 저장 로직
+  /**
+   * 저장된 이메일 정보를 불러옵니다.
+   */
   useEffect(() => {
     const savedEmail = localStorage.getItem('savedEmail');
     if (savedEmail) {
@@ -100,55 +105,54 @@ const Login = () => {
     }
   }, []);
 
-  // 이메일 로그인 핸들러
+  /**
+   * 이메일/비밀번호 로그인 핸들러
+   */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
       if (rememberMe) localStorage.setItem('savedEmail', email);
       else localStorage.removeItem('savedEmail');
-      navigate('/calendar');
+
+      // onAuthStateChanged에서 라우팅 처리하므로 별도 navigate 불필요
     } catch (error: any) {
-      alert('로그인 정보를 다시 확인해주세요.');
-    } finally {
+      alert('이메일 또는 비밀번호를 다시 확인해주세요.');
       setIsLoading(false);
     }
   };
 
   /**
-   * 2. 구글 소셜 로그인 핸들러 (개선형)
+   * Google 소셜 로그인 핸들러
+   * 1. 팝업 방식을 우선 시도합니다.
+   * 2. 팝업 차단 등으로 실패 시 리다이렉트 방식으로 자동 전환합니다.
    */
   const handleGoogleLogin = async () => {
     setIsLoading(true);
 
     try {
-      // [해결책] 모바일에서도 Popup 방식을 시도합니다.
-      // 팝업은 사용자 클릭 이벤트(onClick) 직후에 바로 실행되어야 차단되지 않습니다.
       const result = await signInWithPopup(auth, googleProvider);
-
       if (result.user) {
-        console.log('팝업 로그인 성공:', result.user.uid);
         await handleUserRegistration(result.user);
       }
     } catch (error: any) {
-      console.error('구글 로그인 에러:', error);
-
-      // 만약 팝업이 차단되었다면 리다이렉트로 대체 (마지막 시도)
+      // 팝업이 차단된 경우 리다이렉트로 대체 시도
       if (error.code === 'auth/popup-blocked') {
-        alert('팝업이 차단되어 리다이렉트 방식으로 시도합니다.');
+        alert('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.');
         await signInWithRedirect(auth, googleProvider);
       } else {
-        alert('로그인 중 오류가 발생했습니다: ' + error.message);
+        alert('로그인 중 오류가 발생했습니다.');
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       <div className="flex-1 px-6 pt-28 pb-12 overflow-y-auto max-w-md mx-auto w-full">
-        {/* 상단 브랜딩 */}
+        {/* 상단 브랜딩 영역 */}
         <div className="mb-14 text-left">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 ring-4 ring-blue-50">
             <Sparkles className="text-white w-7 h-7 fill-white/20" />
@@ -194,7 +198,7 @@ const Login = () => {
             </div>
           </div>
 
-          {/* [추가] 이메일 저장 체크박스 및 비밀번호 재설정 */}
+          {/* 이메일 저장 및 비밀번호 재설정 링크 */}
           <div className="flex justify-between items-center px-1 pt-1">
             <label className="flex items-center gap-2 cursor-pointer group">
               <div className="relative">
@@ -215,7 +219,7 @@ const Login = () => {
           </div>
 
           <div className="pt-8 space-y-3">
-            {/* 이메일 로그인 버튼 */}
+            {/* 로그인 버튼 */}
             <button
               type="submit"
               disabled={isLoading}
@@ -228,7 +232,7 @@ const Login = () => {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={isLoading} // 로딩 중 클릭 방지
+              disabled={isLoading}
               className="w-full h-[60px] bg-white text-gray-700 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 flex items-center justify-center gap-3"
             >
               {isLoading ? (
@@ -241,6 +245,7 @@ const Login = () => {
               )}
             </button>
 
+            {/* 회원가입 이동 버튼 */}
             <button
               type="button"
               onClick={() => navigate('/signup')}
@@ -251,6 +256,7 @@ const Login = () => {
           </div>
         </form>
       </div>
+
       <footer className="pb-10 text-center">
         <p className="text-[11px] font-bold text-gray-200 tracking-[0.2em] uppercase">Powered by Super Scheduler</p>
       </footer>

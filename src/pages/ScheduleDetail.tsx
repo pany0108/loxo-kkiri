@@ -2,15 +2,19 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, MessageCircle, BookOpen, Paperclip, X, Trash2, Sparkles, Users, Image as ImageIcon, FileText } from 'lucide-react';
-import ColorPalette from '../components/calendar/ColorPalette';
 
-// 캘린더 선택 옵션 Mock
+/**
+ * 캘린더 선택 옵션 목록 (Mock Data)
+ */
 const CALENDAR_OPTIONS = [
   { id: '1', name: '가족 공유 캘린더', color: '#3b82f6' },
   { id: '2', name: '개인 캘린더', color: '#10b981' },
   { id: '3', name: '업무용', color: '#8b5cf6' },
 ];
 
+/**
+ * 알림 설정 옵션 목록
+ */
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
   { label: '10분 전', value: '10' },
@@ -19,6 +23,9 @@ const NOTIFICATION_OPTIONS = [
   { label: '1일 전', value: '1440' },
 ];
 
+/**
+ * 라우터 상태(Location State) 인터페이스
+ */
 interface LocationState {
   title?: string;
   start?: string | Date;
@@ -26,25 +33,38 @@ interface LocationState {
   location?: string;
   content?: string;
   color?: string;
-  allDay?: boolean; // [추가] 종일 여부
+  allDay?: boolean;
   attendees?: string[];
 }
 
+/**
+ * 일정 상세 조회 및 수정 페이지 컴포넌트입니다.
+ * - 일정의 기본 정보(제목, 시간, 장소 등)를 수정할 수 있습니다.
+ * - 공유 일정인 경우 채팅방 입장 버튼과 공유 미디어를 표시합니다.
+ * - 지난 개인 일정인 경우 후기(Review) 작성 폼을 제공합니다.
+ * * @returns {JSX.Element} 일정 상세 화면
+ */
 const ScheduleDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
 
+  // 이전 페이지에서 전달받은 초기 데이터
   const eventData = location.state as LocationState | null;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
 
-  // [상태] 폼 데이터 초기화
+  // --- 상태 관리 ---
+
+  /**
+   * 폼 데이터 상태
+   * 초기값은 전달받은 eventData 또는 기본값으로 설정됩니다.
+   */
   const [formData, setFormData] = useState({
     title: eventData?.title || '새 일정',
     calendarId: '1',
-    isAllDay: eventData?.allDay || false, // [추가] 종일 상태
+    isAllDay: eventData?.allDay || false,
     start: eventData?.start ? dayjs(eventData.start).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
     end: eventData?.end ? dayjs(eventData.end).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
     location: eventData?.location || '',
@@ -57,34 +77,45 @@ const ScheduleDetail = () => {
     reviewImages: [] as string[],
   });
 
+  // 채팅방 미디어 미리보기 (Mock Data)
   const [chatMedia] = useState([
     'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=150&h=150&fit=crop',
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&h=150&fit=crop',
     'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=150&h=150&fit=crop',
   ]);
 
+  // 공유 일정 여부 및 과거 일정 여부 판별
   const isShared = formData.attendees.length > 1;
   const isPastEvent = dayjs().isAfter(dayjs(formData.end));
 
+  /**
+   * 입력 필드 값 변경 핸들러
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // [추가] 종일 <-> 시간 토글 핸들러
+  /**
+   * 종일 일정 여부 토글 핸들러
+   * - 종일 설정 시: 날짜 포맷(YYYY-MM-DD)으로 변경
+   * - 시간 설정 시: 날짜+시간 포맷(YYYY-MM-DDTHH:mm)으로 변경 및 기본 시간(09:00/10:00) 할당
+   */
   const handleToggleAllDay = () => {
     setFormData((prev) => {
       const nextIsAllDay = !prev.isAllDay;
       return {
         ...prev,
         isAllDay: nextIsAllDay,
-        // 종일이면 날짜만(YYYY-MM-DD), 시간이면 시분초 포함
         start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
         end: nextIsAllDay ? dayjs(prev.end).format('YYYY-MM-DD') : dayjs(prev.end).format('YYYY-MM-DDT10:00'),
       };
     });
   };
 
+  /**
+   * 첨부파일 삭제 핸들러
+   */
   const handleFileRemove = (index: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -92,6 +123,10 @@ const ScheduleDetail = () => {
     }));
   };
 
+  /**
+   * 후기 이미지 추가 핸들러
+   * (실제 구현 시 서버 업로드 로직 필요)
+   */
   const handleReviewImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const url = URL.createObjectURL(e.target.files[0]);
@@ -99,28 +134,39 @@ const ScheduleDetail = () => {
     }
   };
 
+  /**
+   * 일정 삭제 핸들러
+   */
   const handleDelete = () => {
     if (window.confirm('정말 이 일정을 삭제하시겠습니까?')) {
-      alert('삭제되었습니다.');
+      // TODO: 서버 삭제 API 호출
       navigate('/calendar');
     }
   };
 
+  /**
+   * 수정 사항 저장 핸들러
+   */
+  const handleSave = () => {
+    // TODO: 서버 수정 API 호출
+    navigate('/calendar');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 1. 상단 네비게이션 */}
+      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
         <h1 className="text-[17px] font-black text-gray-900">일정 상세</h1>
-        <button onClick={handleDelete} className="p-2 -mr-2 text-red-400 hover:text-red-600 transition-colors">
+        <button onClick={handleDelete} className="p-2 -mr-2 text-red-400 hover:text-red-600 transition-colors" aria-label="삭제">
           <Trash2 size={22} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
-        {/* 2. 타이틀 & 캘린더 선택 */}
+        {/* 타이틀 및 캘린더 선택 섹션 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-50 rounded-xl">
@@ -154,14 +200,12 @@ const ScheduleDetail = () => {
         </div>
 
         <div className="space-y-8">
-          {/* 3. 기본 정보 수정 영역 */}
+          {/* 기본 정보 수정 영역 (시간, 장소, 내용 등) */}
           <div className="space-y-5">
-            {/* [복구] 시간 설정 (종일 토글 포함) */}
+            {/* 시간 설정 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
-
-                {/* 종일 스위치 */}
                 <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
                   <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-blue-600' : 'text-gray-400'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-blue-600' : 'bg-gray-200'}`}>
@@ -205,9 +249,8 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
-            {/* 장소 & 알림 & 내용 */}
+            {/* 장소 & 알림 & 내용 입력 */}
             <div className="space-y-3">
-              {/* 장소 */}
               <div className="flex items-center h-[56px] bg-white border-2 border-gray-100 rounded-[20px] px-4 gap-4 focus-within:border-blue-500 transition-all">
                 <MapPin size={18} className="text-gray-400" />
                 <input
@@ -219,7 +262,6 @@ const ScheduleDetail = () => {
                 />
               </div>
 
-              {/* 알림 */}
               <div className="flex items-center h-[56px] bg-white border-2 border-gray-100 rounded-[20px] px-4 gap-4 focus-within:border-blue-500 transition-all relative">
                 <Bell size={18} className="text-gray-400" />
                 <select
@@ -237,7 +279,6 @@ const ScheduleDetail = () => {
                 <ChevronLeft size={16} className="absolute right-4 text-gray-300 -rotate-90" />
               </div>
 
-              {/* 내용 */}
               <div className="flex items-start bg-white border-2 border-gray-100 rounded-[24px] p-4 gap-4 focus-within:border-blue-500 transition-all">
                 <AlignLeft size={18} className="text-gray-400 mt-1" />
                 <textarea
@@ -251,7 +292,7 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
-            {/* 첨부파일 (수정/삭제 가능) */}
+            {/* 첨부파일 관리 */}
             <div>
               <div className="flex items-center justify-between px-1 mb-2">
                 <label className="text-[13px] font-black text-gray-400">첨부파일</label>
@@ -278,11 +319,9 @@ const ScheduleDetail = () => {
 
           <div className="h-[1px] bg-gray-100" />
 
-          {/* ============================================================
-              4. 조건부 영역 (채팅 vs 후기)
-          ============================================================ */}
+          {/* 조건부 렌더링 섹션 (공유 일정 vs 개인 일정 후기) */}
 
-          {/* CASE A: 공유 일정 (1명 이상) -> 채팅 및 갤러리 */}
+          {/* CASE 1: 공유 일정 (참여자 > 1) */}
           {isShared && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center justify-between">
@@ -313,7 +352,7 @@ const ScheduleDetail = () => {
                 </div>
               </button>
 
-              {/* 공유된 미디어 갤러리 (미리보기) */}
+              {/* 공유 미디어 미리보기 */}
               <div>
                 <div className="flex items-center justify-between px-1 mb-3">
                   <span className="text-[13px] font-bold text-gray-500">공유된 사진/문서</span>
@@ -334,7 +373,7 @@ const ScheduleDetail = () => {
             </div>
           )}
 
-          {/* CASE B: 개인 일정 & 완료됨 -> 후기 작성 */}
+          {/* CASE 2: 개인 일정 & 완료된 일정 (후기 작성) */}
           {!isShared && isPastEvent && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center gap-2 mb-2">
@@ -375,7 +414,7 @@ const ScheduleDetail = () => {
             </div>
           )}
 
-          {/* CASE C: 개인 일정 & 예정됨 -> 안내 문구 */}
+          {/* CASE 3: 개인 일정 & 예정된 일정 (안내) */}
           {!isShared && !isPastEvent && (
             <div className="py-8 text-center bg-gray-50 rounded-[24px] border border-gray-100">
               <BookOpen size={24} className="mx-auto text-gray-300 mb-2" />
@@ -385,18 +424,15 @@ const ScheduleDetail = () => {
         </div>
       </div>
 
-      {/* 5. 수정 완료 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-50">
+      {/* 저장 버튼 */}
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-50">
         <button
-          onClick={() => {
-            alert('수정 내용이 저장되었습니다.');
-            navigate('/calendar');
-          }}
+          onClick={handleSave}
           className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 active:scale-[0.98] transition-all"
         >
           저장하기
         </button>
-      </div>
+      </footer>
     </div>
   );
 };

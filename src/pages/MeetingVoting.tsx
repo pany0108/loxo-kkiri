@@ -6,17 +6,39 @@ import 'dayjs/locale/ko';
 
 dayjs.locale('ko');
 
+/**
+ * 투표 슬롯 데이터 인터페이스
+ */
+interface VotingSlot {
+  id: string;
+  date: string;
+  time: string;
+  registeredMembers: string[];
+  myVote: string; // 'available' | 'maybe' | 'unavailable' | ''
+  myMemo: string;
+}
+
+/**
+ * 일정 조율 투표 컴포넌트입니다.
+ * 제안된 여러 일정 슬롯에 대해 사용자가 가능 여부(가능/아마도/불가능)를 투표하고 메모를 남깁니다.
+ * * @returns {JSX.Element} 투표 화면
+ */
 const MeetingVoting = () => {
   const navigate = useNavigate();
 
-  // 1~3단계를 거쳐 취합된 중복 일정 데이터 (예시)
-  const [votingSlots, setVotingSlots] = useState([
+  // --- 상태 관리 ---
+
+  /**
+   * 투표 대상 슬롯 목록 상태
+   * (실제 구현 시 API를 통해 취합된 중복 일정 데이터를 불러와야 합니다)
+   */
+  const [votingSlots, setVotingSlots] = useState<VotingSlot[]>([
     {
       id: 'slot_1',
       date: '2025-01-10',
       time: '18:00 ~ 20:00',
-      registeredMembers: ['김철수', '이영희', '나'], // 이 시간에 가능하다고 응답한 사람
-      myVote: '', // 'available' | 'maybe' | 'unavailable'
+      registeredMembers: ['김철수', '이영희', '나'],
+      myVote: '',
       myMemo: '',
     },
     {
@@ -29,23 +51,42 @@ const MeetingVoting = () => {
     },
   ]);
 
+  /**
+   * 특정 슬롯에 대한 투표 상태를 업데이트합니다.
+   * @param {string} slotId - 슬롯 고유 ID
+   * @param {string} status - 투표 상태 ('available' | 'maybe' | 'unavailable')
+   */
   const handleVote = (slotId: string, status: string) => {
     setVotingSlots((prev) => prev.map((slot) => (slot.id === slotId ? { ...slot, myVote: status } : slot)));
   };
 
+  /**
+   * 특정 슬롯에 대한 메모 내용을 업데이트합니다.
+   * @param {string} slotId - 슬롯 고유 ID
+   * @param {string} text - 입력된 메모 텍스트
+   */
   const handleMemoChange = (slotId: string, text: string) => {
     setVotingSlots((prev) => prev.map((slot) => (slot.id === slotId ? { ...slot, myMemo: text } : slot)));
   };
 
+  /**
+   * 모든 슬롯에 대해 투표가 완료되었는지 확인합니다.
+   */
   const isAllVoted = votingSlots.every((slot) => slot.myVote !== '');
 
+  /**
+   * 투표 제출 핸들러
+   * 모든 항목에 응답했는지 검증 후 서버로 데이터를 전송합니다.
+   */
   const handleSubmit = () => {
     if (!isAllVoted) {
       alert('모든 일정에 대해 가능 여부를 선택해주세요.');
       return;
     }
-    // 기획: 모든 사용자가 응답을 마치면 주최자에게 알림 발송
-    alert('투표가 완료되었습니다! 모든 멤버의 응답이 끝나면 리포트가 생성됩니다.');
+
+    // TODO: 서버에 투표 데이터 전송 (POST)
+    // payload: { votingData: votingSlots }
+
     navigate('/calendar');
   };
 
@@ -53,14 +94,14 @@ const MeetingVoting = () => {
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -68,8 +109,9 @@ const MeetingVoting = () => {
             나의 <span className="text-blue-600">가능 여부</span>를<br />
             알려주세요.
           </h2>
-        </div>
+        </header>
 
+        {/* 투표 슬롯 리스트 */}
         <div className="space-y-6">
           {votingSlots.map((slot) => (
             <div
@@ -104,7 +146,7 @@ const MeetingVoting = () => {
                 </div>
               </div>
 
-              {/* 투표 버튼 그룹 */}
+              {/* 투표 버튼 그룹 (가능 / 아마도 / 불가능) */}
               <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => handleVote(slot.id, 'available')}
@@ -146,7 +188,7 @@ const MeetingVoting = () => {
                 </button>
               </div>
 
-              {/* 메모 입력 */}
+              {/* 메모 입력 필드 */}
               <div className="group relative">
                 <div className="flex items-center bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-4 py-3 transition-all">
                   <MessageSquare size={16} className="text-gray-300 mr-3 group-focus-within:text-blue-600" />
@@ -163,8 +205,8 @@ const MeetingVoting = () => {
         </div>
       </div>
 
-      {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      {/* 하단 고정 제출 버튼 */}
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
         <button
           onClick={handleSubmit}
           disabled={!isAllVoted}
@@ -173,7 +215,7 @@ const MeetingVoting = () => {
         >
           투표 완료하기
         </button>
-      </div>
+      </footer>
     </div>
   );
 };

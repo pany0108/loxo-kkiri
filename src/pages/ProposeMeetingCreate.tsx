@@ -6,69 +6,112 @@ import 'dayjs/locale/ko';
 
 dayjs.locale('ko');
 
+/**
+ * 친구 데이터 인터페이스
+ */
+interface Friend {
+  id: string;
+  name: string;
+}
+
+/**
+ * 약속 제안 생성 페이지 (Step 1) 컴포넌트입니다.
+ * - 약속의 기본 정보(제목, 메모)를 입력합니다.
+ * - 초대할 친구를 선택하고, 후보 날짜를 캘린더에서 다중 선택합니다.
+ * * @returns {JSX.Element} 약속 생성 초기 화면
+ */
 const ProposeMeetingCreate = () => {
   const navigate = useNavigate();
 
-  // --- 1. 상태 관리 ---
+  // --- 상태 관리 ---
+
+  // 약속 기본 정보
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  const [friendsList] = useState([
+  // 친구 목록 및 초대 상태
+  const [friendsList] = useState<Friend[]>([
     { id: '1', name: '김철수' },
     { id: '2', name: '이영희' },
     { id: '3', name: '박지성' },
     { id: '4', name: '홍길동' },
     { id: '5', name: '강백호' },
   ]);
-  const [invitedFriends, setInvitedFriends] = useState<{ id: string; name: string }[]>([]);
+  const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
 
-  // --- 2. 캘린더 관련 ---
+  // 캘린더 및 날짜 선택 상태
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
-  // 내 기존 일정 (예시)
+  // 기존 내 일정 데이터 (날짜별 점 표시용)
   const myExistingSchedules = [dayjs().date(5).format('YYYY-MM-DD'), dayjs().date(12).format('YYYY-MM-DD'), dayjs().date(20).format('YYYY-MM-DD')];
 
+  /**
+   * 날짜 선택 토글 핸들러
+   * 이미 선택된 날짜라면 배열에서 제거하고, 없다면 추가합니다.
+   * @param {string} dateStr - YYYY-MM-DD 형식의 날짜 문자열
+   */
   const toggleDate = (dateStr: string) => {
     setSelectedDates((prev) => (prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr]));
   };
 
-  const toggleFriend = (friend: { id: string; name: string }) => {
+  /**
+   * 친구 초대 토글 핸들러
+   * @param {Friend} friend - 선택한 친구 객체
+   */
+  const toggleFriend = (friend: Friend) => {
     setInvitedFriends((prev) => (prev.find((f) => f.id === friend.id) ? prev.filter((f) => f.id !== friend.id) : [...prev, friend]));
   };
 
+  /**
+   * 현재 월의 달력 그리드 생성 함수
+   * - 매월 1일의 요일을 계산하여 앞쪽 빈칸을 null로 채웁니다.
+   * - 해당 월의 마지막 날짜까지 배열을 생성합니다.
+   */
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
     const dates = [];
+
+    // 시작 요일만큼 빈칸 채우기
     for (let i = 0; i < startOfMonth.day(); i++) dates.push(null);
+
+    // 날짜 채우기
     for (let i = 1; i <= endOfMonth.date(); i++) dates.push(startOfMonth.date(i).format('YYYY-MM-DD'));
+
     return dates;
   };
 
+  /**
+   * 다음 단계 이동 핸들러
+   * 입력된 데이터를 state로 전달하며 상세 설정 페이지로 이동합니다.
+   */
   const handleNext = () => {
-    if (!title || invitedFriends.length === 0 || selectedDates.length === 0) {
-      alert('제목, 친구, 날짜를 모두 선택해주세요!');
-      return;
-    }
+    // 버튼의 disabled 속성으로 유효성을 제어하므로 별도 alert 불필요
     const calendarName = `나와 ${invitedFriends.map((f) => f.name).join(', ')}의 약속`;
+
     navigate('/propose/detail', {
       state: { title, description, invitedFriends, selectedDates, calendarName },
     });
   };
 
+  /**
+   * 폼 유효성 검사 (제목, 친구 1명 이상, 날짜 1개 이상 선택 필수)
+   */
+  const isValid = title.length > 0 && invitedFriends.length > 0 && selectedDates.length > 0;
+
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -76,12 +119,12 @@ const ProposeMeetingCreate = () => {
             어떤 <span className="text-blue-600">약속</span>을<br />
             만들어볼까요?
           </h2>
-        </div>
+        </header>
 
         <div className="space-y-8">
-          {/* 1. 약속 정보 입력 */}
-          <div className="space-y-4">
-            {/* 제목 */}
+          {/* 1. 약속 정보 입력 섹션 */}
+          <section className="space-y-4">
+            {/* 제목 입력 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">약속 제목</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -95,7 +138,7 @@ const ProposeMeetingCreate = () => {
               </div>
             </div>
 
-            {/* 메모 */}
+            {/* 메모 입력 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">메모 (선택)</label>
               <div className="flex items-start bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[24px] p-5 transition-all">
@@ -109,10 +152,10 @@ const ProposeMeetingCreate = () => {
                 />
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* 2. 친구 초대 */}
-          <div className="space-y-3">
+          {/* 2. 친구 초대 섹션 */}
+          <section className="space-y-3">
             <div className="flex items-center gap-2 px-1">
               <Users size={18} className="text-gray-400" />
               <label className="text-[13px] font-black text-gray-400">누구와 함께하나요?</label>
@@ -121,7 +164,7 @@ const ProposeMeetingCreate = () => {
             <div className="bg-gray-50 rounded-[24px] p-4 border-2 border-transparent">
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {friendsList.map((friend) => {
-                  const isSelected = invitedFriends.find((f) => f.id === friend.id);
+                  const isSelected = invitedFriends.some((f) => f.id === friend.id);
                   return (
                     <button
                       key={friend.id}
@@ -139,16 +182,17 @@ const ProposeMeetingCreate = () => {
               </div>
               {invitedFriends.length > 0 && <p className="text-[11px] font-bold text-blue-600 mt-2 ml-1">총 {invitedFriends.length}명 선택됨</p>}
             </div>
-          </div>
+          </section>
 
-          {/* 3. 캘린더 (날짜 선택) */}
-          <div className="space-y-3">
+          {/* 3. 캘린더 날짜 선택 섹션 */}
+          <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <CalendarIcon size={18} className="text-gray-400" />
                 <label className="text-[13px] font-black text-gray-400">날짜 선택</label>
               </div>
-              {/* 범례 */}
+
+              {/* 범례 표시 */}
               <div className="flex gap-3 text-[10px] font-bold bg-gray-50 px-3 py-1 rounded-full">
                 <span className="flex items-center gap-1.5 text-gray-500">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>내 일정
@@ -160,7 +204,7 @@ const ProposeMeetingCreate = () => {
             </div>
 
             <div className="bg-gray-50 rounded-[32px] p-6 border-2 border-transparent">
-              {/* 달력 헤더 */}
+              {/* 달력 헤더 (월 이동) */}
               <div className="flex items-center justify-between mb-6 px-2">
                 <button
                   onClick={() => setCurrentMonth(currentMonth.subtract(1, 'month'))}
@@ -207,23 +251,23 @@ const ProposeMeetingCreate = () => {
                 })}
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </div>
 
       {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
         <button
           onClick={handleNext}
-          disabled={selectedDates.length === 0 || !title}
+          disabled={!isValid}
           className={`
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center
-            ${selectedDates.length > 0 && title ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}
+            ${isValid ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}
           `}
         >
           {selectedDates.length > 0 ? `다음 단계로 (${selectedDates.length}일 선택)` : '날짜를 선택해주세요'}
         </button>
-      </div>
+      </footer>
     </div>
   );
 };

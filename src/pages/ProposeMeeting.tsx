@@ -2,23 +2,42 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, ChevronLeft } from 'lucide-react';
 
+/**
+ * 약속 데이터 인터페이스
+ */
+interface Meeting {
+  id: string;
+  title: string;
+  status: 'PENDING' | 'VOTING' | 'CONFIRMED';
+  members: number;
+  dday: string;
+}
+
+/**
+ * 약속 제안 및 목록 페이지 컴포넌트입니다.
+ * - 진행 중인 약속의 상태(조율 중, 투표 중, 확정)를 한눈에 확인할 수 있습니다.
+ * - 각 약속을 클릭하면 해당 진행 단계에 맞는 페이지로 라우팅합니다.
+ * - 새로운 약속을 생성하는 진입점 역할을 합니다.
+ * * @returns {JSX.Element} 약속 제안 메인 화면
+ */
 const ProposeMeeting = () => {
   const navigate = useNavigate();
 
-  // 진행 중인 약속 데이터 (서버 연동 시 API로 대체)
-  const ongoingMeetings = [
+  // 진행 중인 약속 목록 데이터 (Mock Data)
+  const ongoingMeetings: Meeting[] = [
     { id: '1', title: '강남역 삼겹살 파티 🥓', status: 'VOTING', members: 4, dday: 'D-2' },
     { id: '2', title: '주말 한강 피크닉 돗자리', status: 'PENDING', members: 3, dday: '투표중' },
     { id: '3', title: '연말 개발팀 회식 🍻', status: 'CONFIRMED', members: 8, dday: 'D-5' },
   ];
 
   /**
-   * [Handler] 약속 상태에 따른 페이지 이동 분기 처리
-   * - PENDING (조율 중): 내 시간 입력 화면으로 이동 (/response)
-   * - VOTING (투표 중): 최종 날짜 투표 화면으로 이동 (/vote)
-   * - CONFIRMED (확정): 최종 결과 화면으로 이동 (/report)
+   * 약속 아이템 클릭 시 현재 상태에 따라 적절한 페이지로 이동합니다.
+   * - PENDING: 시간 조율 화면 (Response)
+   * - VOTING: 최종 투표 화면 (Vote)
+   * - CONFIRMED: 결과 리포트 화면 (Report)
+   * @param {Meeting} meeting - 선택된 약속 객체
    */
-  const handleMeetingClick = (meeting: { id: string; status: string }) => {
+  const handleMeetingClick = (meeting: Meeting) => {
     switch (meeting.status) {
       case 'PENDING':
         navigate(`/meeting/response/${meeting.id}`);
@@ -35,15 +54,17 @@ const ProposeMeeting = () => {
   };
 
   /**
-   * [Helper] 상태별 뱃지 스타일 및 텍스트 반환
+   * 약속 상태에 따른 배지 스타일과 텍스트를 반환합니다.
+   * @param {string} status - 약속 상태 ('VOTING' | 'CONFIRMED' | 'PENDING')
+   * @returns {{ className: string; text: string }} 스타일 클래스와 표시 텍스트
    */
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'VOTING':
         return { className: 'bg-amber-50 text-amber-600', text: '투표 진행중' };
       case 'CONFIRMED':
-        return { className: 'bg-green-50 text-green-600', text: '약속 확정' }; // 확정은 초록색
-      default: // PENDING
+        return { className: 'bg-green-50 text-green-600', text: '약속 확정' };
+      default:
         return { className: 'bg-blue-50 text-blue-600', text: '시간 조율중' };
     }
   };
@@ -52,14 +73,14 @@ const ProposeMeeting = () => {
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-8">
+        <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -67,9 +88,9 @@ const ProposeMeeting = () => {
             소중한 사람들과의 <br />
             <span className="text-blue-600">약속을 잡아보세요</span>
           </h2>
-        </div>
+        </header>
 
-        {/* [버튼] 새 약속 만들기 */}
+        {/* 새 약속 만들기 버튼 */}
         <button
           onClick={() => navigate('/propose/create')}
           className="w-full h-[80px] bg-blue-600 rounded-[24px] flex items-center justify-between px-6 shadow-xl shadow-blue-100 active:scale-[0.98] transition-all group mb-8"
@@ -83,7 +104,7 @@ const ProposeMeeting = () => {
           </div>
         </button>
 
-        {/* [리스트] 진행 중인 약속 */}
+        {/* 진행 중인 약속 리스트 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[15px] font-black text-gray-900 flex items-center gap-2">
@@ -95,7 +116,7 @@ const ProposeMeeting = () => {
           {ongoingMeetings.length > 0 ? (
             <div className="space-y-3">
               {ongoingMeetings.map((meeting) => {
-                const badge = getStatusBadge(meeting.status); // 뱃지 정보 가져오기
+                const badge = getStatusBadge(meeting.status);
 
                 return (
                   <button
@@ -105,7 +126,6 @@ const ProposeMeeting = () => {
                   >
                     <div className="text-left space-y-2">
                       <div className="flex items-center gap-2">
-                        {/* 뱃지 적용 */}
                         <span className={`text-[10px] font-black px-2 py-1 rounded-md ${badge.className}`}>{badge.text}</span>
                         <span className="text-[11px] font-bold text-gray-300">| {meeting.dday}</span>
                       </div>

@@ -2,55 +2,81 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, User } from 'lucide-react';
 
+/**
+ * 비밀번호 변경 및 재설정 페이지 컴포넌트입니다.
+ * * 진입 경로(location.state)에 따라 두 가지 모드로 동작합니다:
+ * 1. 재설정 모드 (Reset Mode): 로그인 전, 아이디 확인 후 비밀번호를 새로 설정합니다.
+ * 2. 변경 모드 (Change Mode): 로그인 후, 현재 비밀번호 확인 과정을 거쳐 변경합니다.
+ */
 const ChangePassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 로그인 화면에서 왔는지 여부 확인 (경로 파라미터나 state로 판단 가능)
-  // 여기서는 예시로 state.fromLogin이 true면 '재설정' 모드로 동작하게 설정
+  // --- 상태 관리 ---
+
+  /**
+   * 페이지 동작 모드 상태
+   * - true: 비밀번호 재설정 (로그인 화면에서 진입)
+   * - false: 비밀번호 변경 (마이페이지/설정에서 진입)
+   */
   const [isResetMode, setIsResetMode] = useState(false);
 
+  /**
+   * 입력 폼 데이터 상태
+   */
+  const [formData, setFormData] = useState({
+    userId: '', // 재설정 모드용 ID
+    currentPassword: '', // 변경 모드용 현재 비밀번호
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  /**
+   * 비밀번호 가시성 토글 상태
+   */
+  const [showPassword, setShowPassword] = useState(false);
+
+  /**
+   * 진입 경로에 따라 모드를 결정합니다.
+   * location.state.from === 'login'일 경우 재설정 모드로 전환합니다.
+   */
   useEffect(() => {
-    // 실제 앱에서는 URL 파라미터나 Link의 state를 통해 모드를 결정합니다.
     if (location.state?.from === 'login') {
       setIsResetMode(true);
     }
   }, [location]);
 
-  // 폼 상태 관리
-  const [formData, setFormData] = useState({
-    userId: '', // 재설정 모드에서 사용
-    currentPassword: '', // 변경 모드에서 사용
-    newPassword: '',
-    confirmPassword: '',
-  });
+  // --- 핸들러 ---
 
-  // 비밀번호 보기/숨기기 토글
-  const [showPassword, setShowPassword] = useState(false);
-
+  /**
+   * 입력 필드 값 변경 핸들러
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * 폼 제출 및 비밀번호 변경 처리 핸들러
+   * 유효성 검사를 통과하면 서버에 변경 요청을 보냅니다.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { currentPassword, newPassword, confirmPassword } = formData;
+    const { currentPassword, newPassword } = formData;
 
+    // 1. 길이 검사
     if (newPassword.length < 10) {
       alert('새 비밀번호를 10자리 이상 입력해주세요.');
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      alert('새 비밀번호가 일치하지 않습니다.');
-      return;
-    }
-
+    // 2. 기존 비밀번호 중복 검사 (변경 모드일 경우)
     if (!isResetMode && currentPassword === newPassword) {
       alert('기존 비밀번호와 다른 비밀번호를 사용해주세요.');
       return;
     }
+
+    // TODO: 실제 API 연동 로직 필요
 
     alert(isResetMode ? '비밀번호가 재설정되었습니다. 다시 로그인해주세요.' : '비밀번호가 성공적으로 변경되었습니다.');
     setTimeout(() => navigate(isResetMode ? '/' : '/profile'), 1000);
@@ -60,14 +86,14 @@ const ChangePassword = () => {
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <div className="px-6 pt-6 flex items-center">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </div>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-10">
+        <header className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-5">
             <Lock className="text-blue-600 w-6 h-6" />
           </div>
@@ -85,11 +111,11 @@ const ChangePassword = () => {
             )}
           </h2>
           <p className="mt-2 text-gray-400 text-sm font-medium">{isResetMode ? '아이디 확인 후 새로운 비밀번호를 입력해주세요.' : '현재 사용 중인 비밀번호 확인이 필요합니다.'}</p>
-        </div>
+        </header>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
-            {/* 1. 상단 입력란 (모드에 따라 다름) */}
+            {/* 1. 상단 입력란 (모드에 따라 아이디 또는 현재 비밀번호 입력) */}
             {isResetMode ? (
               <div className="group relative">
                 <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">아이디 확인</label>
@@ -120,7 +146,12 @@ const ChangePassword = () => {
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     required={!isResetMode}
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-300 hover:text-gray-500 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-300 hover:text-gray-500 ml-2"
+                    aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                  >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
@@ -180,6 +211,8 @@ const ChangePassword = () => {
                 />
                 {formData.confirmPassword && formData.newPassword === formData.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
               </div>
+
+              {/* 불일치 시 에러 메시지 표시 */}
               {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
                 <div className="flex items-center gap-1 ml-4 mt-1.5">
                   <AlertCircle size={12} className="text-red-500" />
@@ -200,7 +233,10 @@ const ChangePassword = () => {
           <div className="pt-10">
             <button
               type="submit"
-              disabled={(isResetMode ? !formData.userId : !formData.currentPassword) || !formData.newPassword || formData.newPassword !== formData.confirmPassword}
+              disabled={
+                // 필수 값 누락 또는 비밀번호 불일치 시 버튼 비활성화
+                (isResetMode ? !formData.userId : !formData.currentPassword) || !formData.newPassword || formData.newPassword !== formData.confirmPassword
+              }
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   formData.newPassword && formData.newPassword === formData.confirmPassword && (isResetMode ? formData.userId : formData.currentPassword)
