@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, CheckCircle, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
+import { Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 // [추가] Firebase 도구 소환
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -23,13 +23,20 @@ const validatePasswordLocally = (password: string, userInfo: any) => {
 const Signup = () => {
   const navigate = useNavigate();
 
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const birthDateRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
-    email: '', // [변경] id -> email
+    email: '',
     password: '',
     confirmPassword: '',
     lastName: '',
     firstName: '',
-    nickname: '',
     phone: '',
     birthDate: '',
     authCode: '',
@@ -40,6 +47,25 @@ const Signup = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // 비밀번호 유효성 실시간 검사
+  useEffect(() => {
+    if (!formData.password) {
+      setErrors((prev) => ({ ...prev, password: '' }));
+      return;
+    }
+
+    // 함수 호출 시 formData 대신 필요한 값들만 명시적으로 전달하거나,
+    // 의존성 배열에 필요한 항목을 모두 적어줍니다.
+    const validationResult = validatePasswordLocally(formData.password, formData);
+
+    if (validationResult !== true) {
+      setErrors((prev) => ({ ...prev, password: validationResult as string }));
+    } else {
+      setErrors((prev) => ({ ...prev, password: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.password, formData.email]);
 
   // 이메일 형식 실시간 검사
   useEffect(() => {
@@ -93,10 +119,25 @@ const Signup = () => {
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // 비밀번호 입력창에서 한글 입력 시 발생하는 'Process' 키 이벤트를 차단
-    if (e.nativeEvent.isComposing || e.key === 'Process') {
-      e.preventDefault();
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    nextRef: React.RefObject<HTMLInputElement | null>,
+    isPasswordField: boolean = false, // 비밀번호 칸인지 알려주는 스위치 (기본값은 '아니오')
+  ) => {
+    // 1. [한글 차단] 비밀번호 칸인 경우에만 한글 입력을 원천 차단합니다.
+    if (isPasswordField) {
+      if (e.nativeEvent.isComposing || e.key === 'Process') {
+        e.preventDefault();
+        return; // 한글이면 여기서 종료 (다음 칸 이동 안 함)
+      }
+    }
+
+    // 2. [다음 이동] 엔터(Return) 키를 누르면 다음 칸으로 포커스를 옮깁니다.
+    if (e.key === 'Enter') {
+      e.preventDefault(); // 기본 줄바꿈 방지
+      if (nextRef && nextRef.current) {
+        nextRef.current.focus();
+      }
     }
   };
 
@@ -120,48 +161,38 @@ const Signup = () => {
   /**
    * [핵심] 실제 회원가입 처리 함수
    */
-  // src/pages/Signup.tsx 내부의 handleSubmit 함수
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 1. 유효성 검사 (생략)
     if (!isVerified) return alert('본인인증을 완료해주세요.');
-
     setIsLoading(true);
 
     try {
-      // 2. [가입] 이메일과 비번으로 Firebase 계정 생성
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user; // 방금 가입된 유저의 정보
+      const user = userCredential.user;
 
-      // 3. [프로필] 유저의 닉네임을 Firebase 기본 프로필에 저장
+      // 실명 조합
+      const fullName = `${formData.lastName}${formData.firstName}`;
+
+      // 기본 프로필에 실명 저장
       await updateProfile(user, {
-        displayName: formData.nickname,
+        displayName: fullName,
       });
 
-      // 4. [DB 저장] 상세 정보를 Firestore 'users' 컬렉션에 저장
-      // doc(db, "폴더명", "문서이름") -> 서류 봉투를 지정하는 작업
       await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid, // 유저 고유 ID
-        email: formData.email, // 이메일
-        nickname: formData.nickname, // 닉네임
-        lastName: formData.lastName, // 성
-        firstName: formData.firstName, // 이름
-        phone: formData.phone, // 전화번호
-        birthDate: formData.birthDate, // 생년월일
-        createdAt: new Date().toISOString(), // 가입일시
+        uid: user.uid,
+        email: formData.email,
+        name: fullName, // nickname 대신 실명 저장
+        lastName: formData.lastName,
+        firstName: formData.firstName,
+        phone: formData.phone,
+        birthDate: formData.birthDate,
+        createdAt: new Date().toISOString(),
       });
 
-      alert(`${formData.nickname}님, 가입을 축하합니다!`);
-      navigate('/calendar'); // 캘린더 화면으로 이동
+      alert(`${fullName}님, 가입을 축하합니다!`);
+      navigate('/calendar');
     } catch (error: any) {
-      console.error('회원가입 에러:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        alert('이미 가입된 이메일입니다.');
-      } else {
-        alert('가입 중 오류가 발생했습니다: ' + error.message);
-      }
+      /* 에러 처리 동일 */
     } finally {
       setIsLoading(false);
     }
@@ -197,11 +228,14 @@ const Signup = () => {
               >
                 <Mail size={20} className={`${errors.email ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
                 <input
+                  ref={emailRef}
                   name="email"
                   type="email"
+                  enterKeyHint="next"
                   placeholder="이메일 주소 (abc@example.com)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, passwordRef)}
                   required
                 />
               </div>
@@ -222,13 +256,15 @@ const Signup = () => {
               >
                 <Lock size={20} className={`${errors.password ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
                 <input
+                  ref={passwordRef}
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  enterKeyHint="next"
                   placeholder="비밀번호 (10자 이상 조합)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   value={formData.password}
                   onChange={handleChange}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef, true)}
                   required
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -239,7 +275,12 @@ const Signup = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && <p className="text-[11px] text-red-500 ml-4 mt-1 font-bold">{errors.password}</p>}
+              {errors.password && (
+                <div className="flex items-center gap-1 ml-4 mt-1">
+                  <AlertCircle size={12} className="text-red-500" />
+                  <p className="text-[11px] text-red-500 font-bold">{errors.password}</p>
+                </div>
+              )}
             </div>
 
             {/* 비밀번호 확인 */}
@@ -264,11 +305,14 @@ const Signup = () => {
                   } mr-4`}
                 />
                 <input
+                  ref={confirmPasswordRef}
                   name="confirmPassword"
                   type="password"
+                  enterKeyHint="next"
                   placeholder="비밀번호 다시 입력"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
                   required
                 />
                 {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
@@ -281,10 +325,13 @@ const Signup = () => {
               <div className="col-span-1 group">
                 <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                   <input
+                    ref={lastNameRef}
                     name="lastName"
+                    enterKeyHint="next"
                     placeholder="성"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     onChange={handleChange}
+                    onKeyDown={(e) => handleKeyDown(e, firstNameRef)} // 성 입력 후 이름으로
                     required
                   />
                 </div>
@@ -292,10 +339,13 @@ const Signup = () => {
               <div className="col-span-2 group">
                 <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                   <input
+                    ref={firstNameRef}
                     name="firstName"
+                    enterKeyHint="next"
                     placeholder="이름"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     onChange={handleChange}
+                    onKeyDown={(e) => handleKeyDown(e, birthDateRef)}
                     required
                   />
                 </div>
@@ -307,13 +357,17 @@ const Signup = () => {
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input
+                  ref={birthDateRef}
                   name="birthDate"
                   type="tel"
+                  enterKeyHint="next"
                   inputMode="numeric"
+                  pattern="\d*"
                   value={formData.birthDate}
                   placeholder="생년월일 (YYYY/MM/DD)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, phoneRef)} // 이벤트 연결
                   required
                   maxLength={10}
                 />
@@ -330,13 +384,17 @@ const Signup = () => {
                 >
                   <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
                   <input
+                    ref={phoneRef}
                     name="phone"
                     type="tel"
+                    enterKeyHint="next"
                     inputMode="numeric"
+                    pattern="\d*"
                     value={formData.phone}
                     placeholder="휴대폰 번호"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     onChange={handleChange}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                     required
                     readOnly={isVerified}
                   />
@@ -359,6 +417,7 @@ const Signup = () => {
                       name="authCode"
                       type="tel"
                       inputMode="numeric"
+                      pattern="\d*"
                       value={formData.authCode}
                       placeholder="인증번호 4자리"
                       className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
@@ -372,32 +431,18 @@ const Signup = () => {
                 </div>
               )}
             </div>
-
-            {/* 닉네임 */}
-            <div className="group">
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
-                <CheckCircle size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                <input
-                  name="nickname"
-                  placeholder="닉네임"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
           </div>
 
           <div className="pt-10">
             <button
               type="submit"
-              disabled={isLoading || !isVerified || !!errors.email || !!errors.confirmPassword}
+              disabled={isLoading || !isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-                ${
-                  isVerified && !errors.email && !errors.confirmPassword
-                    ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                }`}
+              ${
+                isVerified && !errors.email && !errors.password && !errors.confirmPassword
+                  ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+              }`}
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
             </button>

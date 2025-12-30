@@ -3,6 +3,7 @@
 // =============================================================================
 export { default as Login } from './Login'; // 로그인 화면
 export { default as Signup } from './Signup'; // 회원가입 화면
+export { default as SignupSocial } from './SignupSocial'; // 소셜 로그인 후 추가 정보 입력 화면
 export { default as ChangePassword } from './ChangePassword'; // 비밀번호 변경 화면
 
 // =============================================================================
@@ -22,6 +23,7 @@ export { default as CreateCalendar } from './CreateCalendar'; // 새로운 공�
 // 사용자 및 소셜 (User & Social)
 // =============================================================================
 export { default as MyProfile } from './MyProfile'; // 내 프로필 설정
+export { default as EditUserInfo } from './EditUserInfo'; // 개인 정보 수정 화면
 export { default as FriendList } from './FriendList'; // 친구 목록 및 관리 (초대 등)
 
 // =============================================================================
