@@ -18,6 +18,7 @@ import {
   MeetingVoting,
   MeetingReport,
   ProposeMeetingCreate,
+  ScheduleChat,
 } from './pages';
 
 function App() {
@@ -35,51 +36,69 @@ function App() {
     '/propose/detail',
     '/propose/create',
   ];
-  const shouldHideNav =
-    hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/vote/', '/meeting/response/', '/meeting/report/'].some((path) => location.pathname.startsWith(path));
+  const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/'].some((path) => location.pathname.startsWith(path));
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
-        {/* ================= 계정 및 인증 (Auth) ================= */}
-        {/* 로그인 화면 (첫 화면) */}
+        {/* =================================================================
+              1. 계정 및 인증 (Authentication)
+              - 앱 진입 및 사용자 신원 확인
+          ================================================================= */}
+        {/* 로그인 화면 (앱 실행 시 첫 화면) */}
         <Route path="/" element={<Login />} />
         {/* 회원가입 화면 */}
         <Route path="/signup" element={<Signup />} />
         {/* 비밀번호 변경 화면 */}
         <Route path="/change-password" element={<ChangePassword />} />
 
-        {/* ================= 프로필 및 인맥 (User) ================= */}
-        {/* 내 프로필 정보 관리 */}
+        {/* =================================================================
+              2. 사용자 및 소셜 (User & Social)
+              - 내 정보 관리 및 친구 관리
+          ================================================================= */}
+        {/* 내 프로필 정보 확인 및 수정 */}
         <Route path="/profile" element={<MyProfile />} />
-        {/* 내 친구 목록 확인 및 관리 */}
+        {/* 친구 목록 확인, 검색 및 관리 */}
         <Route path="/friend-list" element={<FriendList />} />
 
-        {/* ================= 기본 캘린더 기능 (Calendar) ================= */}
-        {/* 메인 화면: 월간/주간 캘린더 보기 */}
+        {/* =================================================================
+              3. 캘린더 핵심 기능 (Core Calendar Features)
+              - 일정 관리의 중심이 되는 화면들
+          ================================================================= */}
+        {/* 메인 화면: 월간/주간 캘린더 뷰 및 일정 확인 */}
         <Route path="/calendar" element={<CalendarMain />} />
-        {/* 새 공유 캘린더 만들기 (모임용 등) */}
-        <Route path="/create-calendar" element={<CreateCalendar />} />
-        {/* 보유한 캘린더 목록 및 권한 관리 */}
+        {/* 캘린더 관리: 내가 참여 중인 캘린더 목록 및 설정 */}
         <Route path="/calendar-manager" element={<CalendarManager />} />
-        {/* 새 일정 등록하기 */}
+        {/* 캘린더 생성: 새로운 공유(또는 개인) 캘린더 만들기 */}
+        <Route path="/create-calendar" element={<CreateCalendar />} />
+        {/* 일정 등록: 날짜, 시간, 장소 등을 입력하여 새 일정 추가 */}
         <Route path="/add-schedule" element={<AddSchedule />} />
-        {/* 일정 상세 정보 확인 및 수정/삭제 */}
+        {/* 일정 상세: 특정 일정의 상세 정보 확인, 수정, 삭제 */}
         <Route path="/schedule/:id" element={<ScheduleDetail />} />
 
-        {/* ================= 약속 잡기 프로세스 (Meeting Process) ================= */}
-        {/* [대시보드] 진행 중인 약속 목록 및 현황 확인 */}
+        {/* =================================================================
+              4. 약속 잡기 프로세스 (Meeting Coordination)
+              - 주최자가 제안하고 참여자가 응답하는 플로우
+          ================================================================= */}
+        {/* [대시보드] 현재 진행 중이거나 확정된 약속 현황 목록 */}
         <Route path="/propose" element={<ProposeMeeting />} />
-        {/* [주최자 1단계] 내 캘린더 확인하며 후보 날짜 선택 */}
+        {/* [주최자 Step 1] 약속 생성 시작: 제목 설정 및 후보 날짜 선택 */}
         <Route path="/propose/create" element={<ProposeMeetingCreate />} />
-        {/* [주최자 2단계] 선택한 날짜별 상세 시간대(슬롯) 지정 */}
+        {/* [주최자 Step 2] 상세 설정: 날짜별 후보 시간대(Slot) 지정 및 초대 발송 */}
         <Route path="/propose/detail" element={<ProposeMeetingDetail />} />
-        {/* [참여자] 제안받은 시간 중 내 캘린더와 대조하여 가능한 시간 선택 */}
+        {/* [참여자] 시간 응답: 주최자의 제안에 맞춰 내 캘린더를 보고 가능 시간 선택 */}
         <Route path="/meeting/response/:id" element={<MeetingResponse />} />
-        {/* [공통] 참여자들의 응답이 모인 후 '가능/아마도/불가능' 최종 투표 */}
+        {/* [공통/참여자] 2차 투표: 겹치는 시간대에 대해 구체적인 가능 여부(O/△/X) 투표 */}
         <Route path="/meeting/vote/:id" element={<MeetingVoting />} />
-        {/* [주최자] 전체 투표 결과 리포트 확인 및 최종 시간 확정 */}
+        {/* [주최자/공통] 최종 리포트: 투표 결과 확인 및 최종 약속 시간 확정 */}
         <Route path="/meeting/report/:id" element={<MeetingReport />} />
+
+        {/* =================================================================
+              5. 커뮤니케이션 (Communication)
+              - 일정 관련 소통
+          ================================================================= */}
+        {/* 일정별 채팅방: 특정 일정(약속)에 참여 중인 멤버들과 대화 */}
+        <Route path="/chat/:id" element={<ScheduleChat />} />
       </Routes>
 
       {!shouldHideNav && <BottomNav />}
