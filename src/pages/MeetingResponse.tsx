@@ -246,14 +246,22 @@ const MeetingResponse = () => {
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-[15px] font-black text-gray-900">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
 
-                        <button
-                          onClick={() => toggleAllDay(slot.date)}
-                          className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors ${
-                            slot.isAllDay ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'
-                          }`}
-                        >
-                          {slot.isAllDay ? '종일 가능' : '시간 선택'}
-                        </button>
+                        <div onClick={() => toggleAllDay(slot.date)} className="flex items-center gap-2 cursor-pointer group">
+                          <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일 가능</span>
+                          <div
+                            className={`
+                               relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0
+                               ${slot.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}
+                             `}
+                          >
+                            <div
+                              className={`
+                                 absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
+                                 ${slot.isAllDay ? 'translate-x-4' : 'translate-x-0'}
+                               `}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       {slot.isAllDay ? (
@@ -262,7 +270,6 @@ const MeetingResponse = () => {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 h-[50px] bg-gray-50 rounded-[16px] px-4 border border-gray-100">
-                          <Clock size={16} className="text-gray-300" />
                           <div className="flex-1 flex items-center justify-between gap-2">
                             <input
                               type="time"
@@ -270,7 +277,7 @@ const MeetingResponse = () => {
                               onChange={(e) => updateSlotTime(slot.date, 'startTime', e.target.value)}
                               className="bg-transparent border-none outline-none w-full text-[14px] font-bold text-gray-900 text-center"
                             />
-                            <span className="text-gray-300">~</span>
+                            <span className="text-gray-300">-</span>
                             <input
                               type="time"
                               value={slot.endTime}
