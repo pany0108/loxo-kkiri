@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X } from 'lucide-react';
 import ColorPalette from '../components/calendar/ColorPalette';
 
 const NOTIFICATION_OPTIONS = [
@@ -21,6 +21,7 @@ const NOTIFICATION_OPTIONS = [
 const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const receivedData = location.state as {
     start?: string;
@@ -28,16 +29,14 @@ const AddSchedule = () => {
     allDay?: boolean;
   } | null;
 
-  // 초기 날짜 포맷 결정 함수
   const getInitialDate = (dateStr?: string, isAllDay?: boolean) => {
     if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
-    // 종일 일정으로 넘어온 경우 시간 없이 날짜만, 아니면 시간 포함
     return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
   };
 
   const [formData, setFormData] = useState({
     title: '',
-    isAllDay: receivedData?.allDay ?? false, // 명시적으로 넘어온 값 사용
+    isAllDay: receivedData?.allDay ?? false,
     start: getInitialDate(receivedData?.start, receivedData?.allDay),
     end: getInitialDate(receivedData?.end || receivedData?.start, receivedData?.allDay),
     location: '',
@@ -45,6 +44,8 @@ const AddSchedule = () => {
     color: '#3b82f6',
     notification: 'none',
   });
+
+  const [attachments, setAttachments] = useState<string[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -71,11 +72,22 @@ const AddSchedule = () => {
       return {
         ...prev,
         isAllDay: nextIsAllDay,
-        // 종일로 변경 시 시간을 떼고, 시간제로 변경 시 기본 오전 9시/오후 6시 등을 붙여줌
         start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
         end: nextIsAllDay ? dayjs(prev.end).format('YYYY-MM-DD') : dayjs(prev.end).format('YYYY-MM-DDT18:00'),
       };
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setAttachments((prev) => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -88,7 +100,7 @@ const AddSchedule = () => {
       alert('종료 일자가 시작일보다 빠를 수 없습니다.');
       return;
     }
-    console.log('등록 데이터:', formData);
+    console.log('등록 데이터:', { ...formData, attachments });
     alert('일정이 등록되었습니다!');
     navigate('/calendar');
   };
@@ -102,7 +114,7 @@ const AddSchedule = () => {
         </button>
       </div>
 
-      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-autow-full">
+      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <div className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
@@ -143,39 +155,44 @@ const AddSchedule = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold text-gray-500">종일</span>
-                  <button type="button" onClick={handleToggle} className={`w-11 h-6 rounded-full transition-all relative ${formData.isAllDay ? 'bg-blue-600' : 'bg-gray-200'}`}>
-                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ${formData.isAllDay ? 'translate-x-5' : ''}`} />
-                  </button>
+
+                <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
+                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-blue-600' : 'text-gray-400'}`}>종일</span>
+                  <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                    <div
+                      className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
+                        formData.isAllDay ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-300" />
+                  <Clock size={18} className="text-gray-300 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-gray-400">시작</span>
+                    <span className="text-[14px] font-bold text-gray-400 shrink-0">시작</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-black text-gray-700 outline-none"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 outline-none text-right w-full font-mono"
                     />
                   </div>
                 </div>
                 <div className="h-[1px] bg-gray-100 mx-4" />
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-300" />
+                  <Clock size={18} className="text-gray-300 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-gray-400">종료</span>
+                    <span className="text-[14px] font-bold text-gray-400 shrink-0">종료</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-black text-gray-700 outline-none"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 outline-none text-right w-full font-mono"
                     />
                   </div>
                 </div>
@@ -207,7 +224,7 @@ const AddSchedule = () => {
               <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
               <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <MapPin size={18} className="text-gray-300" />
+                  <MapPin size={18} className="text-gray-300 shrink-0" />
                   <input
                     name="location"
                     value={formData.location}
@@ -218,7 +235,7 @@ const AddSchedule = () => {
                 </div>
                 <div className="h-[1px] bg-gray-100 mx-4" />
                 <div className="flex items-start p-4 gap-4">
-                  <AlignLeft size={18} className="text-gray-300 mt-0.5" />
+                  <AlignLeft size={18} className="text-gray-300 mt-0.5 shrink-0" />
                   <textarea
                     name="content"
                     value={formData.content}
@@ -231,24 +248,51 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 사진 첨부 버튼 */}
-            <button
-              type="button"
-              className="w-full h-[56px] bg-white border-2 border-gray-100 rounded-[20px] flex items-center justify-center gap-3 text-gray-400 hover:bg-gray-50 transition-all active:scale-[0.98]"
-            >
-              <Camera size={20} />
-              <span className="text-[14px] font-bold">사진 첨부하기</span>
-            </button>
+            {/* 사진 첨부 기능 */}
+            <div className="space-y-3">
+              <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-[56px] bg-white border-2 border-gray-100 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 hover:bg-gray-50 hover:text-blue-500 hover:border-blue-100 transition-all active:scale-[0.98]"
+              >
+                <Camera size={20} />
+                <span className="text-[14px] font-bold">사진 첨부하기</span>
+              </button>
+
+              {/* 첨부파일 미리보기 */}
+              {attachments.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto py-1 px-1">
+                  {attachments.map((src, i) => (
+                    <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100 shadow-sm group">
+                      <img src={src} alt={`attachment-${i}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 transition-opacity opacity-0 group-hover:opacity-100"
+                      >
+                        <X size={12} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 등록 버튼 */}
           <div className="pt-6">
             <button
               type="submit"
-              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center
+              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${formData.title ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
             >
-              일정 등록하기
+              <span>일정 등록하기</span>
+              {attachments.length > 0 && (
+                <span className="bg-white/20 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1">
+                  <Camera size={10} fill="currentColor" /> {attachments.length}
+                </span>
+              )}
             </button>
           </div>
         </form>
