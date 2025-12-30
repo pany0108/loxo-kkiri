@@ -247,7 +247,7 @@ const MeetingResponse = () => {
                         <span className="text-[15px] font-black text-gray-900">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
 
                         <div onClick={() => toggleAllDay(slot.date)} className="flex items-center gap-2 cursor-pointer group">
-                          <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일 가능</span>
+                          <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
                           <div
                             className={`
                                relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0
@@ -265,7 +265,7 @@ const MeetingResponse = () => {
                       </div>
 
                       {slot.isAllDay ? (
-                        <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center">
+                        <div className="bg-emerald-50 px-3 py-[15px] rounded-xl border border-emerald-100 text-center">
                           <p className="text-[12px] text-emerald-600 font-bold">✨ 하루 종일 가능해요!</p>
                         </div>
                       ) : (

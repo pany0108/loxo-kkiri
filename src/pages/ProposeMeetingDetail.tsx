@@ -135,7 +135,7 @@ const ProposeMeetingDetail = () => {
                   </div>
 
                   <div onClick={() => handleToggleDayAllDay(dateStr)} className="flex items-center gap-2 cursor-pointer group py-1">
-                    <span className={`text-[12px] font-bold transition-colors ${isAllDay ? 'text-emerald-500' : 'text-gray-400 group-hover:text-gray-600'}`}>종일 가능</span>
+                    <span className={`text-[11px] font-bold transition-colors ${isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
                     <div
                       className={`
                         relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0
@@ -170,14 +170,14 @@ const ProposeMeetingDetail = () => {
                               type="time"
                               value={slot.start}
                               onChange={(e) => handleTimeChange(dateStr, index, 'start', e.target.value)}
-                              className="bg-transparent border-none outline-none text-[15px] font-bold text-gray-900 text-center font-mono w-full min-w-[70px] p-0"
+                              className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 text-center w-full min-w-[70px] p-0"
                             />
                             <span className="text-gray-300 font-bold shrink-0">-</span>
                             <input
                               type="time"
                               value={slot.end}
                               onChange={(e) => handleTimeChange(dateStr, index, 'end', e.target.value)}
-                              className="bg-transparent border-none outline-none text-[15px] font-bold text-gray-900 text-center font-mono w-full min-w-[70px] p-0"
+                              className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 text-center w-full min-w-[70px] p-0"
                             />
                           </div>
 
