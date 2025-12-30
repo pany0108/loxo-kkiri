@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, ChevronDown, Check, X, Settings } from 'lucide-react';
+import { Plus, ChevronDown, Check, X, Settings, User, Users } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg } from '@fullcalendar/core';
 import './CalendarMain.css';
 
@@ -14,6 +14,18 @@ interface CalendarType {
   name: string;
   members: string[];
   isPrivate: boolean;
+}
+
+// [추가] 이벤트 타입 확장 (테스트용 상세 데이터 포함)
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date | string;
+  end?: Date | string;
+  allDay: boolean;
+  color: string;
+  location?: string;
+  attendees: string[]; // 참여자 리스트 추가
 }
 
 /**
@@ -53,11 +65,42 @@ const CalendarMain = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
 
+  // [수정] 더미 데이터 리스트 (상태로 관리)
+  // CASE 1: 나 혼자 (개인 일정) -> 후기 기능 테스트
+  // CASE 2: 여러 명 (공유 일정) -> 채팅 기능 테스트
+  const [events] = useState<CalendarEvent[]>([
+    {
+      id: '1',
+      title: '혼자 카페 공부 ☕',
+      start: new Date(),
+      allDay: false,
+      color: '#3b82f6',
+      location: '스타벅스 강남점',
+      attendees: ['나'], // 1명 (개인)
+    },
+    {
+      id: '2',
+      title: '가족 외식 👨‍👩‍👧‍👦',
+      start: new Date(new Date().setHours(new Date().getHours() + 2)),
+      allDay: false,
+      color: '#f59e0b',
+      location: '아웃백 스테이크하우스',
+      attendees: ['나', '엄마', '아빠', '동생'], // 4명 (공유)
+    },
+    {
+      id: '3',
+      title: '제주도 여행 ✈️',
+      start: '2025-12-24',
+      end: '2025-12-27',
+      allDay: true,
+      color: '#10b981',
+      location: '제주도 전역',
+      attendees: ['나', '친구1'], // 2명 (공유)
+    },
+  ]);
+
   const listRef = useRef<HTMLDivElement>(null);
 
-  /**
-   * 리스트(바텀시트) 애니메이션 동기화
-   */
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -79,7 +122,6 @@ const CalendarMain = () => {
     }
   }, [isListVisible]);
 
-  // 터치 이벤트 핸들러 (스와이프)
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
@@ -103,7 +145,6 @@ const CalendarMain = () => {
     }
   };
 
-  // 뷰 변경 핸들러
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
     setIsListVisible(false);
@@ -115,7 +156,6 @@ const CalendarMain = () => {
     }
   };
 
-  // 날짜 선택 처리
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
@@ -130,13 +170,22 @@ const CalendarMain = () => {
     executeDateSelection(arg.dateStr);
   };
 
+  // [수정] 이벤트 클릭 시 상세 페이지로 이동하며 데이터 전달
   const handleEventClick = (info: any) => {
-    const dateStr = info.event.startStr.split('T')[0];
+    const eventData = events.find((e) => e.id === info.event.id);
+
+    // 월간 뷰에서는 바텀시트를 열고, 그 외 뷰에서는 상세 페이지로 바로 이동
     if (currentView === 'dayGridMonth') {
+      const dateStr = info.event.startStr.split('T')[0];
       executeDateSelection(dateStr);
     } else {
-      navigate(`/schedule/${info.event.id}`);
+      navigate(`/schedule/${info.event.id}`, { state: eventData });
     }
+  };
+
+  // [추가] 리스트 아이템 클릭 핸들러 (상세 페이지 이동)
+  const handleListItemClick = (event: CalendarEvent) => {
+    navigate(`/schedule/${event.id}`, { state: event });
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
@@ -155,7 +204,6 @@ const CalendarMain = () => {
     }
   };
 
-  // 주간/일간 헤더 렌더링
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
@@ -180,17 +228,11 @@ const CalendarMain = () => {
     );
   };
 
-  /**
-   * 이벤트 내용 커스텀 렌더링
-   */
   const renderEventContent = (eventInfo: EventContentArg) => {
-    // 1. 월간 뷰 (dayGridMonth)
     if (eventInfo.view.type === 'dayGridMonth') {
-      // 종일 일정
       if (eventInfo.event.allDay) {
         return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
       }
-      // 시간 일정 (Dot + Title)
       return (
         <div className="flex items-center h-full w-full overflow-hidden pl-0.5">
           <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
@@ -200,7 +242,6 @@ const CalendarMain = () => {
       );
     }
 
-    // 2. 주간/일간 뷰 (timeGrid)
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -215,21 +256,17 @@ const CalendarMain = () => {
 
     return (
       <div className={`w-full h-full flex flex-col items-start overflow-hidden rounded-[4px] ${isWeekView ? 'p-0.5' : 'p-1'}`}>
-        {/* 시간 라벨 */}
         {isWeekView ? (
-          // [주간 뷰] 좁은 공간 대응: 세로 배치
           <div className="flex flex-col text-[10px] font-extrabold text-white/90 leading-none mb-0.5 tracking-tight">
             <span>{startStr}</span>
             <span className="opacity-70 font-medium text-[9px] mt-px">~ {endStr}</span>
           </div>
         ) : (
-          // [일간 뷰] 넓은 공간: 가로 박스
           <div className="bg-white/90 text-blue-600 text-[11px] font-extrabold px-1.5 py-0.5 rounded-[6px] shadow-sm mb-1 whitespace-nowrap z-10">
             {startStr} - {endStr}
           </div>
         )}
 
-        {/* 이벤트 제목 */}
         {eventInfo.event.title && (
           <div className={`font-bold text-white leading-tight break-words w-full ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>
         )}
@@ -242,7 +279,6 @@ const CalendarMain = () => {
       {/* 1. 헤더 영역 */}
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
-          {/* 좌측: 캘린더 타이틀 */}
           <div className="relative">
             <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
@@ -250,7 +286,6 @@ const CalendarMain = () => {
             </button>
             <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">{activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`}</p>
 
-            {/* 드롭다운 UI */}
             {isCalListOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsCalListOpen(false)} />
@@ -293,7 +328,6 @@ const CalendarMain = () => {
             )}
           </div>
 
-          {/* 우측: 뷰 전환 탭 */}
           <div className="flex items-center gap-3">
             <div className="flex p-1 bg-gray-100 rounded-[14px]">
               {[
@@ -380,11 +414,7 @@ const CalendarMain = () => {
               const dateStr = arg.date.toLocaleDateString('en-CA');
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
-            events={[
-              { id: '1', title: '강남역 저녁 약속', start: new Date(), allDay: false, color: '#3b82f6' },
-              { id: '2', title: '압구정 저녁 약속', start: new Date(), allDay: false, color: '#f59e0b' },
-              { id: '3', title: '제주도 가족 여행', start: '2025-12-24', end: '2025-12-27', allDay: true, color: '#10b981' },
-            ]}
+            events={events} // [수정] 더미 데이터 연결
             eventDidMount={(info) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
@@ -419,20 +449,39 @@ const CalendarMain = () => {
 
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  onClick={() => navigate(`/schedule/${i}`)}
-                  className="bg-gray-50 p-5 rounded-[24px] border border-transparent active:scale-[0.98] transition-all cursor-pointer group hover:bg-white hover:border-gray-100 hover:shadow-lg"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-1 bg-white text-[10px] font-bold text-blue-600 rounded-[8px] shadow-sm">오후 7:00</span>
-                    <span className="text-[10px] font-bold text-gray-400">가족 모임</span>
+              {/* [수정] 더미 데이터를 필터링하여 리스트에 표시 */}
+              {events
+                .filter((event) => {
+                  // 오늘 날짜와 같거나, selectedDate가 없으면 모든 일정 표시 (테스트용)
+                  if (!selectedDate) return true;
+                  const eventDate = new Date(event.start).toISOString().split('T')[0];
+                  return eventDate === selectedDate;
+                })
+                .map((event) => (
+                  <div
+                    key={event.id}
+                    onClick={() => handleListItemClick(event)}
+                    className="bg-gray-50 p-5 rounded-[24px] border border-transparent active:scale-[0.98] transition-all cursor-pointer group hover:bg-white hover:border-gray-100 hover:shadow-lg"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-1 bg-white text-[10px] font-bold text-blue-600 rounded-[8px] shadow-sm">
+                        {new Date(event.start).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                      {/* [추가] 참여자 수 아이콘 표시 */}
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                        {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
+                        <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                      </div>
+                    </div>
+                    <h4 className="text-[15px] font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{event.title}</h4>
+                    <p className="text-[12px] font-medium text-gray-400 flex items-center gap-1">{event.location}</p>
                   </div>
-                  <h4 className="text-[15px] font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">맛있는 저녁 식사 {i + 1}</h4>
-                  <p className="text-[12px] font-medium text-gray-400 flex items-center gap-1">강남역 5번 출구</p>
-                </div>
-              ))}
+                ))}
+
+              {/* 일정이 없을 때 표시 */}
+              {events.filter((e) => new Date(e.start).toISOString().split('T')[0] === selectedDate).length === 0 && (
+                <div className="py-10 text-center text-gray-400 text-[13px] font-medium">일정이 없습니다.</div>
+              )}
             </div>
           </div>
         </div>
