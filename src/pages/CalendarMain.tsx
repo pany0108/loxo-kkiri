@@ -34,8 +34,6 @@ interface CalendarEvent {
 
 /**
  * 특정 날짜가 해당 월의 몇 번째 주인지 계산합니다.
- * @param {Date} date - 계산할 날짜 객체
- * @returns {string} 'YYYY년 M월 N째주' 형식의 문자열
  */
 const getWeekOfMonth = (date: Date): string => {
   const year = date.getFullYear();
@@ -48,7 +46,9 @@ const getWeekOfMonth = (date: Date): string => {
 
 /**
  * 메인 캘린더 컴포넌트입니다.
- * 월간/주간/일간 뷰 전환, 일정 상세 조회(바텀시트), 드래그 앤 드롭 일정 추가 기능을 제공합니다.
+ * - 월간/주간/일간 뷰 전환 및 일정 확인
+ * - 바텀시트를 통한 일자별 상세 리스트 조회 (터치 슬라이드 다운 닫기 지원)
+ * * @returns {JSX.Element} 메인 캘린더 화면
  */
 const CalendarMain = () => {
   const navigate = useNavigate();
@@ -56,10 +56,15 @@ const CalendarMain = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 스와이프 및 터치 제어 Ref
+  // 캘린더 스와이프 제어 Ref
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
+
+  // [추가] 바텀시트 스와이프 제어 Ref
+  const sheetTouchStartY = useRef<number | null>(null);
+  const sheetTouchEndY = useRef<number | null>(null);
+  const minSheetSwipeDistance = 50; // 바텀시트를 닫기 위한 최소 드래그 거리
 
   // UI 상태 관리
   const [isCalListOpen, setIsCalListOpen] = useState(false);
@@ -67,7 +72,7 @@ const CalendarMain = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
 
-  // 캘린더 및 이벤트 데이터 (실제 연동 시 API로 대체)
+  // 캘린더 및 이벤트 데이터 (Mock Data)
   const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
     id: '1',
     name: '내 캘린더',
@@ -114,7 +119,7 @@ const CalendarMain = () => {
   ]);
 
   /**
-   * 바텀시트 열림/닫힘 상태에 따른 캘린더 레이아웃 재계산
+   * 바텀시트 애니메이션 및 캘린더 리사이즈 처리
    */
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
@@ -138,7 +143,7 @@ const CalendarMain = () => {
   }, [isListVisible]);
 
   /**
-   * 캘린더 선택 드롭다운 외부 클릭 시 닫기 처리
+   * 드롭다운 외부 클릭 감지
    */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -158,17 +163,17 @@ const CalendarMain = () => {
     };
   }, [isCalListOpen]);
 
-  // 터치 스와이프 핸들러 (월 이동 로직)
-  const onTouchStart = (e: React.TouchEvent) => {
+  // 캘린더 좌우 스와이프 핸들러
+  const onCalendarTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
   };
 
-  const onTouchMove = (e: React.TouchEvent) => {
+  const onCalendarTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
 
-  const onTouchEnd = () => {
+  const onCalendarTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
 
     const distance = touchStartX.current - touchEndX.current;
@@ -182,9 +187,33 @@ const CalendarMain = () => {
     }
   };
 
+  // [추가] 바텀시트 상하 스와이프(닫기) 핸들러
+  const onSheetTouchStart = (e: React.TouchEvent) => {
+    // 바텀시트 최상단에서만 스와이프 닫기 동작을 허용하려면 scrollTop 체크 가능
+    // 여기서는 헤더 부분을 주로 잡고 내리는 동작을 상정하거나 전체 영역에서 내림 감지
+    sheetTouchEndY.current = null;
+    sheetTouchStartY.current = e.targetTouches[0].clientY;
+  };
+
+  const onSheetTouchMove = (e: React.TouchEvent) => {
+    sheetTouchEndY.current = e.targetTouches[0].clientY;
+  };
+
+  const onSheetTouchEnd = () => {
+    if (!sheetTouchStartY.current || !sheetTouchEndY.current) return;
+
+    const distance = sheetTouchEndY.current - sheetTouchStartY.current;
+    // 아래로 내리는 동작 (양수)이고 최소 거리 이상일 때
+    const isDownSwipe = distance > minSheetSwipeDistance;
+
+    if (isDownSwipe) {
+      setIsListVisible(false);
+      setSelectedDate(null);
+    }
+  };
+
   /**
-   * 캘린더 뷰(월/주/일)를 변경하고 레이아웃을 갱신합니다.
-   * @param {string} view - FullCalendar 뷰 ID
+   * 뷰 변경 핸들러
    */
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
@@ -198,8 +227,7 @@ const CalendarMain = () => {
   };
 
   /**
-   * 특정 날짜를 선택하여 바텀시트를 활성화합니다.
-   * @param {string} dateStr - YYYY-MM-DD 형식의 날짜 문자열
+   * 날짜 선택 및 바텀시트 열기
    */
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
@@ -215,9 +243,6 @@ const CalendarMain = () => {
     executeDateSelection(arg.dateStr);
   };
 
-  /**
-   * 이벤트 클릭 시 뷰에 따라 상세 페이지 이동 혹은 바텀시트 노출을 결정합니다.
-   */
   const handleEventClick = (info: any) => {
     const eventData = events.find((e) => e.id === info.event.id);
 
@@ -233,9 +258,6 @@ const CalendarMain = () => {
     navigate(`/schedule/${event.id}`, { state: event });
   };
 
-  /**
-   * 캘린더 드래그 선택 시 해당 시간 정보를 담아 일정 추가 페이지로 이동합니다.
-   */
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -244,9 +266,6 @@ const CalendarMain = () => {
     });
   };
 
-  /**
-   * 주간 뷰 등 헤더 타이틀을 커스텀 주차 정보로 변경합니다.
-   */
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -255,9 +274,7 @@ const CalendarMain = () => {
     }
   };
 
-  /**
-   * 시간축 뷰(주/일)의 헤더 날짜 및 요일 렌더링을 정의합니다.
-   */
+  // ... (renderTimeGridHeader, renderEventContent 함수는 기존과 동일) ...
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
@@ -282,9 +299,6 @@ const CalendarMain = () => {
     );
   };
 
-  /**
-   * 캘린더 내 일정 블록의 렌더링 스타일을 정의합니다.
-   */
   const renderEventContent = (eventInfo: EventContentArg) => {
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
@@ -328,7 +342,7 @@ const CalendarMain = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
-      {/* 캘린더 헤더 및 메뉴 섹션 */}
+      {/* 헤더 (기존 코드 유지) */}
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
           <div className="relative" ref={dropdownRef}>
@@ -398,12 +412,12 @@ const CalendarMain = () => {
         </div>
       </header>
 
-      {/* 캘린더 렌더링 섹션 */}
+      {/* 캘린더 영역 */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         <div
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+          onTouchStart={onCalendarTouchStart}
+          onTouchMove={onCalendarTouchMove}
+          onTouchEnd={onCalendarTouchEnd}
           className={`flex-shrink-0 flex flex-col overflow-hidden calendar-transition 
             ${currentView === 'dayGridMonth' && isListVisible ? 'compact-mode' : 'h-full'}`}
           style={{
@@ -476,11 +490,19 @@ const CalendarMain = () => {
         {/* 선택 날짜 일정 리스트 (바텀시트) */}
         <div
           ref={listRef}
+          onTouchStart={onSheetTouchStart}
+          onTouchMove={onSheetTouchMove}
+          onTouchEnd={onSheetTouchEnd}
           className={`absolute left-0 right-0 bottom-0 bg-white z-30 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px]
             ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
           style={{ height: '50%' }}
         >
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 bg-white rounded-t-[32px]">
+          {/* 드래그 핸들바 (시각적 힌트) */}
+          <div className="w-full flex justify-center pt-3 pb-1" onClick={() => setIsListVisible(false)}>
+            <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+          </div>
+
+          <div className="flex items-center justify-between px-6 pt-2 pb-4 bg-white">
             <div className="flex items-center gap-2">
               <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
               <h3 className="text-[16px] font-black text-gray-900">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
@@ -532,7 +554,7 @@ const CalendarMain = () => {
         </div>
       </main>
 
-      {/* 일정 추가 FAB */}
+      {/* 일정 추가 FAB (기존 코드 유지) */}
       <button
         onClick={() => {
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];

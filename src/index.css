@@ -9,18 +9,18 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
 }
 
-/* --- [추가] 모바일 앱 환경 최적화 --- */
+/* --- 모바일 앱 환경 최적화 --- */
 html,
 body {
-  /* 핀치 줌, 더블 탭 줌 방지 (스크롤과 클릭만 허용) */
-  touch-action: manipulation;
+  /* 핀치 줌 방지 */
+  touch-action: pan-x pan-y;
 
-  /* 스크롤 끝 도달 시 바운스 효과 방지 (앱 같은 느낌) */
-  overscroll-behavior-y: none;
-
-  /* 가로 스크롤 방지 */
-  overflow-x: hidden;
+  /* 스크롤 바운스 방지 */
+  overscroll-behavior: none;
 
   /* 텍스트 크기 자동 조정 방지 */
   -webkit-text-size-adjust: 100%;
+
+  /* 모바일에서 꾹 눌렀을 때 파란색 하이라이트 제거 */
+  -webkit-tap-highlight-color: transparent;
 }
