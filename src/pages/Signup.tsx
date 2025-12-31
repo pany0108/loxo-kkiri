@@ -402,7 +402,6 @@ const Signup = () => {
                   type="tel"
                   enterKeyHint="next"
                   inputMode="numeric"
-                  pattern="\d*"
                   value={formData.birthDate}
                   placeholder="생년월일 (YYYY/MM/DD)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
@@ -429,7 +428,6 @@ const Signup = () => {
                     type="tel"
                     enterKeyHint="next"
                     inputMode="numeric"
-                    pattern="\d*"
                     value={formData.phone}
                     placeholder="휴대폰 번호"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
