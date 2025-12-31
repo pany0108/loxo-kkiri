@@ -3,9 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, Image as ImageIcon, Paperclip, BookOpen, Sparkles } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
+  { label: '정시', value: '0' }, // AddSchedule과 옵션 통일
+  { label: '5분 전', value: '5' }, // AddSchedule과 옵션 통일
   { label: '10분 전', value: '10' },
   { label: '30분 전', value: '30' },
   { label: '1시간 전', value: '60' },
@@ -36,7 +40,8 @@ const ScheduleEdit = () => {
     location: eventData?.location || '',
     content: eventData?.content || '',
     color: eventData?.color || '#3b82f6',
-    notification: '30',
+    // [수정] 이전 설정값 불러오기 (없으면 'none')
+    notification: eventData?.notification || 'none',
     attendees: eventData?.attendees || ['나'],
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
@@ -105,9 +110,24 @@ const ScheduleEdit = () => {
     }
   };
 
-  const handleSave = () => {
-    console.log('수정 데이터:', { ...formData, recurrence, attachments });
-    navigate(-1);
+  const handleSave = async () => {
+    try {
+      if (location.state?.id || location.pathname.split('/').pop()) {
+        const docId = location.state?.id || location.pathname.split('/').pop();
+
+        await updateDoc(doc(db, 'schedules', docId), {
+          ...formData,
+          recurrence,
+          // attachments 등은 파일 업로드 로직 필요 (현재는 생략)
+        });
+
+        alert('수정되었습니다!');
+        navigate(-1); // 뒤로 가기
+      }
+    } catch (error) {
+      console.error('수정 실패:', error);
+      alert('수정 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -123,7 +143,6 @@ const ScheduleEdit = () => {
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
-        {/* [수정] 통일된 헤더 디자인 적용 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
@@ -135,7 +154,6 @@ const ScheduleEdit = () => {
 
         <form className="space-y-6">
           <section className="space-y-4">
-            {/* [수정] 제목 입력 필드 스타일 통일 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">일정 제목</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -149,7 +167,6 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            {/* 태그 색상 선택 */}
             <div className="py-2">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-3">태그 색상</label>
               <div className="bg-gray-50 rounded-[20px] p-4 border-2 border-transparent">
@@ -157,7 +174,6 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            {/* 시간 설정 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
@@ -204,10 +220,8 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            {/* 반복 설정 */}
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
-            {/* 상세 정보 (장소, 알림, 메모) */}
             <div className="space-y-3">
               <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
 
@@ -251,7 +265,6 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            {/* 첨부파일 관리 */}
             <div>
               <div className="flex items-center justify-between px-1 mb-2">
                 <label className="text-[13px] font-black text-gray-400">첨부파일</label>
@@ -287,7 +300,6 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            {/* 후기 작성 (개인 일정 + 지난 일정일 경우) */}
             {!isShared && isPastEvent && (
               <div className="space-y-4 pt-4 border-t border-gray-100">
                 <div className="flex items-center gap-2">

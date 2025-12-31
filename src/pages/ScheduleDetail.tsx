@@ -1,22 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, Palette } from 'lucide-react';
-import { RecurrenceSettings } from '../components';
-import ImagePreviewModal from '../components/ImagePreviewModal'; // [추가]
+import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, X, Bell } from 'lucide-react';
+import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
+import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore'; // updateDoc, arrayUnion 추가
+import { db } from '../firebase';
 
 interface LocationState {
+  id?: string;
   title?: string;
   start?: string | Date;
   end?: string | Date;
   location?: string;
   content?: string;
   color?: string;
+  notification?: string;
   allDay?: boolean;
   attendees?: string[];
   recurrence?: RecurrenceSettings;
   review?: string;
   reviewImages?: string[];
+  files?: { name: string; type: string; url?: string }[];
 }
 
 const ScheduleDetail = () => {
@@ -24,56 +28,164 @@ const ScheduleDetail = () => {
   const { id } = useParams();
   const location = useLocation();
 
-  const eventData = location.state as LocationState | null;
+  // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
+  const initialState = location.state as LocationState | null;
 
-  // [수정] 이미지 프리뷰 상태를 더 구체적으로 관리 (어떤 리스트의 몇 번째 이미지인지)
+  const [data, setData] = useState({
+    title: initialState?.title || '로딩 중...',
+    start: initialState?.start ? dayjs(initialState.start) : dayjs(),
+    end: initialState?.end ? dayjs(initialState.end) : dayjs().add(1, 'hour'),
+    location: initialState?.location || '',
+    content: initialState?.content || '',
+    color: initialState?.color || '#3b82f6',
+    notification: initialState?.notification || 'none',
+    allDay: initialState?.allDay || false,
+    attendees: initialState?.attendees || ['나'],
+    recurrence: initialState?.recurrence,
+    files: initialState?.files || [],
+    review: initialState?.review || '',
+    reviewImages: initialState?.reviewImages || [],
+  });
+
   const [previewState, setPreviewState] = useState<{
     isOpen: boolean;
     images: string[];
     index: number;
   }>({ isOpen: false, images: [], index: 0 });
 
-  const [data] = useState({
-    title: eventData?.title || '일정 제목 없음',
-    start: eventData?.start ? dayjs(eventData.start) : dayjs(),
-    end: eventData?.end ? dayjs(eventData.end) : dayjs().add(1, 'hour'),
-    location: eventData?.location || '',
-    content: eventData?.content || '',
-    color: eventData?.color || '#3b82f6',
-    allDay: eventData?.allDay || false,
-    attendees: eventData?.attendees || ['나'],
-    recurrence: eventData?.recurrence,
-    files: [{ name: 'menu.pdf', type: 'doc' }],
-    review: eventData?.review || '오랜만에 정말 즐거운 시간을 보냈다. 다음에도 또 가고 싶다!',
-    reviewImages: eventData?.reviewImages || ['https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=150&h=150&fit=crop'],
-  });
-
   const [chatMedia] = useState([
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&h=150&fit=crop',
     'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=150&h=150&fit=crop',
-    'https://images.unsplash.com/photo-1526779218846-2731da2fbbf9?w=150&h=150&fit=crop', // 예시 이미지 추가
+    'https://images.unsplash.com/photo-1526779218846-2731da2fbbf9?w=150&h=150&fit=crop',
   ]);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // DB 실시간 구독
+  useEffect(() => {
+    if (!id) return;
+
+    const unsubscribe = onSnapshot(doc(db, 'schedules', id), (docSnap) => {
+      if (docSnap.exists()) {
+        const dbData = docSnap.data();
+
+        // [핵심 수정] 반복 일정 처리 로직
+        const isRecurring = dbData.recurrence && dbData.recurrence.frequency !== 'none';
+
+        // 1. 반복 일정이고, 2. 캘린더에서 클릭해서 들어온 정보(initialState)가 있다면?
+        // => DB의 원본 날짜(1월 2일) 대신 클릭한 날짜(1월 3일, 4일...)를 사용한다.
+        const displayStart = isRecurring && initialState?.start ? dayjs(initialState.start) : dayjs(dbData.start);
+
+        const displayEnd = isRecurring && initialState?.end ? dayjs(initialState.end) : dayjs(dbData.end);
+
+        setData({
+          title: dbData.title,
+          start: displayStart, // 보정된 날짜 사용
+          end: displayEnd, // 보정된 날짜 사용
+          location: dbData.location || '',
+          content: dbData.content || '',
+          color: dbData.color || '#3b82f6',
+          notification: dbData.notification || 'none',
+          allDay: dbData.isAllDay || false,
+          attendees: dbData.attendees || ['나'],
+          recurrence: dbData.recurrence,
+          files: dbData.files || [],
+          review: dbData.review || '',
+          reviewImages: dbData.reviewImages || [],
+        });
+      } else {
+        alert('삭제된 일정입니다.');
+        navigate('/calendar');
+      }
+    });
+
+    return () => unsubscribe();
+    // 의존성 배열에 initialState를 추가하여, 처음에 받은 날짜 정보를 기억하게 함
+  }, [id, navigate, initialState]);
 
   const isShared = data.attendees.length > 1;
   const isPastEvent = dayjs().isAfter(data.end);
 
-  const handleDelete = () => {
-    if (window.confirm('정말 이 일정을 삭제하시겠습니까?')) {
-      navigate('/calendar');
+  const handleDeleteClick = async () => {
+    // 1. 반복 일정이 아니면 바로 삭제 컨펌
+    if (!data.recurrence || data.recurrence.frequency === 'none') {
+      if (window.confirm('정말 이 일정을 삭제하시겠습니까?')) {
+        deleteEntireSchedule();
+      }
+      return;
+    }
+
+    // 2. 반복 일정이면 모달 띄우기
+    setIsDeleteModalOpen(true);
+  };
+
+  // 1. 전체 삭제 (문서 자체 삭제)
+  const deleteEntireSchedule = async () => {
+    try {
+      if (id) {
+        await deleteDoc(doc(db, 'schedules', id));
+        alert('삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 2. 이 일정만 삭제 (exceptions 배열에 현재 날짜 추가)
+  const deleteOnlyThis = async () => {
+    try {
+      if (id) {
+        // 현재 보고 있는 날짜(start)를 문자열로 변환 (YYYY-MM-DD)
+        const dateToDelete = data.start.format('YYYY-MM-DD');
+
+        await updateDoc(doc(db, 'schedules', id), {
+          'recurrence.exceptions': arrayUnion(dateToDelete),
+        });
+
+        alert('이 일정이 삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('개별 삭제 실패:', error);
+      alert('오류가 발생했습니다.');
+    }
+  };
+
+  // 3. 향후 일정 모두 삭제 (endDate를 어제로 수정)
+  const deleteFollowing = async () => {
+    try {
+      if (id) {
+        // 현재 날짜의 하루 전을 종료일로 설정
+        const newEndDate = data.start.subtract(1, 'day').format('YYYY-MM-DD');
+
+        await updateDoc(doc(db, 'schedules', id), {
+          'recurrence.endType': 'date', // 종료 타입을 날짜로 강제 변경
+          'recurrence.endDate': newEndDate,
+        });
+
+        alert('이후 일정이 모두 삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('향후 일정 삭제 실패:', error);
+      alert('오류가 발생했습니다.');
     }
   };
 
   const handleEdit = () => {
+    // 수정 시에는 현재 보고 있는 날짜가 아닌, 원본 데이터의 ID로 이동
+    // (반복 일정 수정 시 정책에 따라 다르지만, 여기서는 원본 수정으로 간주)
     const safeData = {
-      ...eventData,
+      id,
       ...data,
-      start: dayjs(data.start).toISOString(),
-      end: dayjs(data.end).toISOString(),
+      start: data.start.toISOString(),
+      end: data.end.toISOString(),
     };
     navigate(`/schedule/edit/${id}`, { state: safeData });
   };
 
-  // [추가] 전체보기 페이지로 이동
   const handleViewAllMedia = () => {
     navigate(`/schedule/${id}/media`, {
       state: {
@@ -84,7 +196,6 @@ const ScheduleDetail = () => {
     });
   };
 
-  // [추가] 이미지 클릭 시 모달 열기 헬퍼
   const openPreview = (images: string[], index: number) => {
     setPreviewState({ isOpen: true, images, index });
   };
@@ -92,6 +203,27 @@ const ScheduleDetail = () => {
   const formatDate = (date: dayjs.Dayjs, isAllDay: boolean) => {
     if (isAllDay) return date.format('YYYY년 M월 D일 (ddd)');
     return date.format('YYYY년 M월 D일 (ddd) A h:mm');
+  };
+
+  const getNotificationLabel = (value: string) => {
+    switch (value) {
+      case 'none':
+        return '알림 안함';
+      case '0':
+        return '이벤트 시작 정각';
+      case '5':
+        return '5분 전';
+      case '10':
+        return '10분 전';
+      case '30':
+        return '30분 전';
+      case '60':
+        return '1시간 전';
+      case '1440':
+        return '1일 전';
+      default:
+        return '알림 없음';
+    }
   };
 
   return (
@@ -104,41 +236,47 @@ const ScheduleDetail = () => {
           <button onClick={handleEdit} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
             <Edit2 size={22} />
           </button>
-          <button onClick={handleDelete} className="p-2 -mr-2 text-gray-400 hover:text-red-600 transition-colors">
+          <button onClick={handleDeleteClick} className="p-2 -mr-2 text-gray-400 hover:text-red-600 transition-colors">
             <Trash2 size={22} />
           </button>
         </div>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
-        {/* 타이틀 및 상세 정보 (기존과 동일) */}
+        {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-3">
             <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-50 rounded-xl">
               <Sparkles className="text-blue-600 w-5 h-5" />
             </div>
-            <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">{data.recurrence?.frequency !== 'none' ? '반복 일정' : '일반 일정'}</span>
+
+            {data.recurrence?.frequency !== 'none' && <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">반복 일정</span>}
           </div>
-          <h1 className="text-2xl font-black text-gray-900 leading-tight mb-4">{data.title}</h1>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: data.color }} />
-            <span className="text-[13px] font-bold text-gray-500">태그 색상</span>
+
+          <div className="flex relative pl-4">
+            <div className="absolute left-0 top-1 bottom-1 w-[5px] rounded-full" style={{ backgroundColor: data.color }} />
+            <h1 className="text-2xl font-black text-gray-900 leading-tight">{data.title}</h1>
           </div>
         </div>
 
         <div className="space-y-8">
-          {/* ... 상세 정보 섹션 (기존 코드 유지) ... */}
+          {/* 상세 정보 섹션 */}
           <div className="space-y-5">
+            {/* 시간 */}
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
                 <Clock size={20} className="text-gray-500" />
               </div>
               <div className="flex-1 py-1">
-                <p className="text-[15px] font-bold text-gray-900 mb-1">{formatDate(data.start, data.allDay)}</p>
+                <p className="text-[15px] font-bold text-gray-900 mb-1">
+                  {formatDate(data.start, data.allDay)}
+                  {data.allDay && <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded ml-2">종일</span>}
+                </p>
                 {!data.allDay && <p className="text-[13px] font-medium text-gray-400">~ {formatDate(data.end, data.allDay)}</p>}
-                {data.allDay && <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded ml-2">종일</span>}
               </div>
             </div>
+
+            {/* 장소 */}
             {data.location && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
@@ -149,6 +287,18 @@ const ScheduleDetail = () => {
                 </div>
               </div>
             )}
+
+            {/* 알림 정보 */}
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                <Bell size={20} className="text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[15px] font-bold text-gray-900">{getNotificationLabel(data.notification)}</p>
+              </div>
+            </div>
+
+            {/* 메모 */}
             {data.content && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
@@ -159,7 +309,9 @@ const ScheduleDetail = () => {
                 </div>
               </div>
             )}
-            {data.files.length > 0 && (
+
+            {/* 첨부파일 */}
+            {data.files && data.files.length > 0 && (
               <div className="pl-14">
                 <div className="flex gap-2 flex-wrap">
                   {data.files.map((file, idx) => (
@@ -216,7 +368,7 @@ const ScheduleDetail = () => {
                   {chatMedia.map((src: string, i: number) => (
                     <div
                       key={i}
-                      onClick={() => openPreview(chatMedia, i)} // [수정] 클릭 시 전체보기 모달 열기
+                      onClick={() => openPreview(chatMedia, i)}
                       className="relative w-20 h-20 shrink-0 rounded-[16px] overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
                     >
                       <img src={src} alt="shared" className="w-full h-full object-cover" />
@@ -250,7 +402,7 @@ const ScheduleDetail = () => {
                       {data.reviewImages.map((src: string, i: number) => (
                         <div
                           key={i}
-                          onClick={() => openPreview(data.reviewImages!, i)} // [수정] 클릭 시 모달 열기
+                          onClick={() => openPreview(data.reviewImages!, i)}
                           className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-gray-100 cursor-zoom-in active:scale-95 transition-transform"
                         >
                           <img src={src} alt="review" className="w-full h-full object-cover" />
@@ -273,7 +425,11 @@ const ScheduleDetail = () => {
         </div>
       </div>
 
-      {/* [수정] 공통 이미지 프리뷰 모달 사용 */}
+      {/* [추가] 반복 일정 삭제 모달 */}
+      {isDeleteModalOpen && (
+        <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
+      )}
+
       {previewState.isOpen && (
         <ImagePreviewModal images={previewState.images} initialIndex={previewState.index} onClose={() => setPreviewState((prev) => ({ ...prev, isOpen: false }))} />
       )}

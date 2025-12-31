@@ -1,65 +1,45 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X } from 'lucide-react';
-import { ColorPalette, RecurrenceOptions, RecurrenceSettings } from '../components';
+import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
+import { collection, addDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
-/**
- * 일정 알림 설정을 위한 옵션 리스트
- */
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
   { label: '정시', value: '0' },
   { label: '5분 전', value: '5' },
   { label: '10분 전', value: '10' },
-  { label: '15분 전', value: '15' },
   { label: '30분 전', value: '30' },
   { label: '1시간 전', value: '60' },
-  { label: '2시간 전', value: '120' },
-  { label: '3시간 전', value: '180' },
-  { label: '12시간 전', value: '720' },
   { label: '1일 전', value: '1440' },
 ];
 
-/**
- * 새로운 일정을 등록하는 폼 컴포넌트입니다.
- * 캘린더에서 선택한 날짜 정보를 기반으로 초기값을 설정하며, 제목/시간/장소/사진 등을 입력받습니다.
- * * @returns {JSX.Element} 일정 등록 화면
- */
 const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /**
-   * 캘린더 페이지로부터 전달받은 날짜 및 시간 데이터
-   */
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const receivedData = location.state as {
     start?: string;
     end?: string;
     allDay?: boolean;
   } | null;
 
-  /**
-   * 시작 및 종료 날짜의 초기 포맷을 결정하는 헬퍼 함수
-   * @param {string} dateStr - 기준 날짜 문자열
-   * @param {boolean} isAllDay - 종일 여부
-   * @returns {string} 포맷팅된 날짜 문자열
-   */
   const getInitialDate = (dateStr?: string, isAllDay?: boolean) => {
     if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
     return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
   };
-
-  const [recurrence, setRecurrence] = useState<RecurrenceSettings>({
-    frequency: 'none',
-    interval: 1,
-    daysOfWeek: [], // 매주 반복 시 선택된 요일들
-    monthlyType: 'date',
-    endType: 'none',
-    endDate: dayjs().add(1, 'month').format('YYYY-MM-DD'),
-    endCount: 10,
-  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -72,54 +52,53 @@ const AddSchedule = () => {
     notification: 'none',
   });
 
+  const [recurrence, setRecurrence] = useState<RecurrenceSettings>({
+    frequency: 'none',
+    interval: 1,
+    daysOfWeek: [],
+    monthlyType: 'date',
+    endType: 'none',
+    endDate: dayjs().add(1, 'month').format('YYYY-MM-DD'),
+    endCount: 10,
+  });
+
   const [attachments, setAttachments] = useState<string[]>([]);
 
-  /**
-   * 입력 필드 값 변경 핸들러
-   * 시작 시간 변경 시 종료 시간이 시작 시간보다 이전이 되지 않도록 보정합니다.
-   */
+  // [수정] 시작일 변경 시 종료일도 같이 변경되도록 로직 추가
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      let nextData = { ...prev, [name]: value };
 
+    setFormData((prev) => {
+      // 1. 입력된 값으로 데이터 업데이트
+      const newData = { ...prev, [name]: value };
+
+      // 2. 만약 변경된 항목이 '시작 시간(start)'이라면?
       if (name === 'start') {
-        const newStart = dayjs(value);
-        const currentEnd = dayjs(prev.end);
-        if (currentEnd.isBefore(newStart)) {
-          nextData.end = value;
-        }
+        // 종료 시간(end)도 시작 시간과 똑같이 맞춰줍니다.
+        newData.end = value;
       }
-      return nextData;
+
+      return newData;
     });
   };
 
-  /**
-   * 캘린더 태그 색상 변경 핸들러
-   * @param {string} color - 선택된 헥사 색상 코드
-   */
   const handleColorChange = (color: string) => {
     setFormData((prev) => ({ ...prev, color }));
   };
 
-  /**
-   * 종일 일정 여부 토글 핸들러
-   */
   const handleToggle = () => {
     setFormData((prev) => {
       const nextIsAllDay = !prev.isAllDay;
       return {
         ...prev,
         isAllDay: nextIsAllDay,
+        // 종일 여부에 따라 날짜 포맷 변경 (YYYY-MM-DD 혹은 YYYY-MM-DDTHH:mm)
         start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
-        end: nextIsAllDay ? dayjs(prev.end).format('YYYY-MM-DD') : dayjs(prev.end).format('YYYY-MM-DDT18:00'),
+        end: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT10:00'),
       };
     });
   };
 
-  /**
-   * 이미지 파일 첨부 핸들러
-   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
@@ -128,39 +107,47 @@ const AddSchedule = () => {
     }
   };
 
-  /**
-   * 첨부된 이미지 삭제 핸들러
-   * @param {number} index - 삭제할 이미지의 인덱스
-   */
   const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  /**
-   * 최종 폼 제출 핸들러
-   * 유효성 검사 후 서버(혹은 상태 관리)에 데이터를 저장합니다.
-   */
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     if (!formData.title) {
       alert('제목을 입력해주세요.');
       return;
     }
 
+    // 종료 시간이 시작 시간보다 빠른 경우 경고 (선택 사항)
     if (dayjs(formData.end).isBefore(dayjs(formData.start))) {
-      alert('종료 일자가 시작일보다 빠를 수 없습니다.');
+      alert('종료 시간이 시작 시간보다 빠를 수 없습니다.');
       return;
     }
 
-    // 서버 연동 로직이 들어갈 자리입니다.
-    alert('일정이 성공적으로 등록되었습니다! ✨');
-    navigate('/calendar');
+    try {
+      await addDoc(collection(db, 'schedules'), {
+        userId: user.uid,
+        ...formData,
+        recurrence,
+        createdAt: new Date().toISOString(),
+        attendees: ['나'],
+      });
+
+      alert('일정이 저장되었습니다! ☁️');
+      navigate('/calendar');
+    } catch (error) {
+      console.error('Error adding document: ', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
           <ChevronLeft size={28} />
@@ -180,7 +167,6 @@ const AddSchedule = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
-            {/* 제목 입력 필드 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">일정 제목</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -195,7 +181,6 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 태그 색상 선택 */}
             <div className="py-2">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-3">태그 색상</label>
               <div className="bg-gray-50 rounded-[20px] p-4 border-2 border-transparent">
@@ -203,7 +188,6 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 시간 및 날짜 설정 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-[13px] font-black text-gray-400">시간 설정</label>
@@ -250,10 +234,8 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 반복 설정 */}
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
-            {/* 알림 설정 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">푸시 알림</label>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
@@ -273,7 +255,6 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 장소 및 상세 메모 */}
             <div className="space-y-3">
               <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
               <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
@@ -302,7 +283,6 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            {/* 파일 및 사진 첨부 */}
             <div className="space-y-3">
               <input type="file" multiple accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
               <button
@@ -311,7 +291,7 @@ const AddSchedule = () => {
                 className="w-full h-[56px] bg-white border-2 border-gray-100 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 hover:bg-gray-50 hover:text-blue-500 hover:border-blue-100 transition-all active:scale-[0.98]"
               >
                 <Camera size={20} />
-                <span className="text-[14px] font-bold">사진 첨부하기</span>
+                <span className="text-[14px] font-bold">사진 첨부하기 (아직 서버 저장 안됨)</span>
               </button>
 
               {attachments.length > 0 && (
@@ -340,11 +320,6 @@ const AddSchedule = () => {
                 ${formData.title ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
             >
               <span>일정 등록하기</span>
-              {attachments.length > 0 && (
-                <span className="bg-white/20 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1">
-                  <Camera size={10} fill="currentColor" /> {attachments.length}
-                </span>
-              )}
             </button>
           </footer>
         </form>

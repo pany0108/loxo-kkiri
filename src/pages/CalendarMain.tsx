@@ -6,11 +6,16 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Plus, ChevronDown, Check, X, Settings, User, Users } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg } from '@fullcalendar/core';
+import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
 
-/**
- * 캘린더 메타데이터 인터페이스
- */
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+
+dayjs.extend(isSameOrBefore);
+
 interface CalendarType {
   id: string;
   name: string;
@@ -18,23 +23,19 @@ interface CalendarType {
   isPrivate: boolean;
 }
 
-/**
- * 일정(이벤트) 데이터 인터페이스
- */
 interface CalendarEvent {
   id: string;
   title: string;
-  start: Date | string;
-  end?: Date | string;
+  start: string;
+  end?: string;
   allDay: boolean;
   color: string;
   location?: string;
   attendees: string[];
+  recurrence?: any;
+  originalId?: string;
 }
 
-/**
- * 특정 날짜가 해당 월의 몇 번째 주인지 계산합니다.
- */
 const getWeekOfMonth = (date: Date): string => {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
@@ -45,34 +46,118 @@ const getWeekOfMonth = (date: Date): string => {
 };
 
 /**
- * 메인 캘린더 컴포넌트입니다.
- * - 월간/주간/일간 뷰 전환 및 일정 확인
- * - 바텀시트를 통한 일자별 상세 리스트 조회 (터치 슬라이드 다운 닫기 지원)
- * * @returns {JSX.Element} 메인 캘린더 화면
+ * 반복 일정을 '실제 날짜'를 가진 개별 일정들로 확장
  */
+const expandRecurringEvents = (events: any[]) => {
+  const expandedEvents: any[] = [];
+
+  events.forEach((event) => {
+    if (!event.recurrence || event.recurrence.frequency === 'none') {
+      expandedEvents.push({ ...event, originalId: event.id });
+      return;
+    }
+
+    const { frequency, endType, daysOfWeek } = event.recurrence;
+    const interval = Math.max(1, parseInt(event.recurrence.interval || '1', 10));
+    const endDate = event.recurrence.endDate;
+    const endCount = event.recurrence.endCount ? parseInt(event.recurrence.endCount, 10) : 0;
+    const isAllDay = event.allDay;
+
+    let currentStart = dayjs(event.start);
+    let currentEnd = event.end ? dayjs(event.end) : null;
+
+    const durationDays = isAllDay && currentEnd ? currentEnd.diff(currentStart, 'day') : 0;
+    const durationMs = !isAllDay && currentEnd ? currentEnd.diff(currentStart) : 0;
+
+    const limitDate = endType === 'date' && endDate ? dayjs(endDate).endOf('day') : dayjs().add(2, 'year');
+
+    let count = 0;
+    let loopSafety = 0;
+    const targetDays = daysOfWeek ? daysOfWeek.map(String) : [];
+    const exceptions = event.recurrence.exceptions || [];
+
+    while (loopSafety < 2000) {
+      loopSafety++;
+
+      if (endType === 'date' && currentStart.isAfter(limitDate)) break;
+      if (endType === 'count' && count >= endCount) break;
+
+      let shouldAdd = true;
+      if (frequency === 'weekly' && targetDays.length > 0) {
+        const currentDayStr = currentStart.day().toString();
+        if (!targetDays.includes(currentDayStr)) {
+          shouldAdd = false;
+        }
+      }
+
+      const currentDateStr = currentStart.format('YYYY-MM-DD');
+      if (exceptions.includes(currentDateStr)) {
+        shouldAdd = false;
+      }
+
+      if (shouldAdd) {
+        let finalStartStr, finalEndStr;
+
+        if (isAllDay) {
+          finalStartStr = currentStart.format('YYYY-MM-DD');
+          finalEndStr = currentEnd ? currentStart.add(durationDays, 'day').format('YYYY-MM-DD') : null;
+        } else {
+          finalStartStr = currentStart.toISOString();
+          finalEndStr = currentEnd ? currentStart.add(durationMs, 'millisecond').toISOString() : null;
+        }
+
+        expandedEvents.push({
+          ...event,
+          id: `${event.id}_${currentStart.format('YYYYMMDD')}`,
+          originalId: event.id,
+          start: finalStartStr,
+          end: finalEndStr,
+        });
+        count++;
+      }
+
+      if (frequency === 'daily') {
+        currentStart = currentStart.add(interval, 'day');
+      } else if (frequency === 'weekly') {
+        if (targetDays.length > 0) {
+          currentStart = currentStart.add(1, 'day');
+        } else {
+          currentStart = currentStart.add(interval, 'week');
+        }
+      } else if (frequency === 'monthly') {
+        currentStart = currentStart.add(interval, 'month');
+      } else if (frequency === 'yearly') {
+        currentStart = currentStart.add(interval, 'year');
+      } else {
+        break;
+      }
+    }
+  });
+
+  return expandedEvents;
+};
+
 const CalendarMain = () => {
   const navigate = useNavigate();
   const calendarRef = useRef<FullCalendar>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 캘린더 스와이프 제어 Ref
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
-
-  // [추가] 바텀시트 스와이프 제어 Ref
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
-  const minSheetSwipeDistance = 50; // 바텀시트를 닫기 위한 최소 드래그 거리
+  const minSheetSwipeDistance = 50;
 
-  // UI 상태 관리
   const [isCalListOpen, setIsCalListOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
 
-  // 캘린더 및 이벤트 데이터 (Mock Data)
+  const [user, setUser] = useState<any>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+
   const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
     id: '1',
     name: '내 캘린더',
@@ -85,52 +170,41 @@ const CalendarMain = () => {
     { id: '2', name: '우리 가족 캘린더', members: ['엄마', '아빠', '동생'], isPrivate: false },
   ]);
 
-  const [events] = useState<CalendarEvent[]>([
-    {
-      id: '1',
-      title: '혼자 카페 공부 ☕',
-      start: new Date(),
-      end: new Date(new Date().setHours(new Date().getHours() + 2)),
-      allDay: false,
-      color: '#3b82f6',
-      location: '스타벅스 강남점',
-      attendees: ['나'],
-    },
-    {
-      id: '2',
-      title: '가족 외식 👨‍👩‍👧‍👦',
-      start: new Date(new Date().setHours(new Date().getHours() + 2)),
-      end: new Date(new Date().setHours(new Date().getHours() + 4)),
-      allDay: false,
-      color: '#f59e0b',
-      location: '아웃백 스테이크하우스',
-      attendees: ['나', '엄마', '아빠', '동생'],
-    },
-    {
-      id: '3',
-      title: '제주도 여행 ✈️',
-      start: '2025-12-24',
-      end: '2025-12-27',
-      allDay: true,
-      color: '#10b981',
-      location: '제주도 전역',
-      attendees: ['나', '친구1'],
-    },
-    {
-      id: '4',
-      title: '혼자 카페 공부 ☕',
-      start: '2025-12-12',
-      end: '2025-12-12',
-      allDay: false,
-      color: '#3b82f6',
-      location: '스타벅스 강남점',
-      attendees: ['나'],
-    },
-  ]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  /**
-   * 바텀시트 애니메이션 및 캘린더 리사이즈 처리
-   */
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(collection(db, 'schedules'), where('userId', '==', user.uid));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const rawEvents = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          start: data.start,
+          end: data.end,
+          allDay: data.isAllDay,
+          color: data.color,
+          location: data.location,
+          attendees: data.attendees || ['나'],
+          recurrence: data.recurrence,
+        };
+      });
+
+      const processedEvents = expandRecurringEvents(rawEvents);
+      setEvents(processedEvents);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -138,7 +212,6 @@ const CalendarMain = () => {
       let frameId: number;
       const startTime = performance.now();
       const duration = 300;
-
       const animateResize = (currentTime: number) => {
         if (currentTime - startTime < duration) {
           calendarApi.updateSize();
@@ -152,79 +225,59 @@ const CalendarMain = () => {
     }
   }, [isListVisible]);
 
-  /**
-   * 드롭다운 외부 클릭 감지
-   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsCalListOpen(false);
       }
     };
-
     if (isCalListOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isCalListOpen]);
 
-  // 캘린더 좌우 스와이프 핸들러
   const onCalendarTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
   };
-
   const onCalendarTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
-
   const onCalendarTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-
     const distance = touchStartX.current - touchEndX.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    if (currentView === 'dayGridMonth') {
-      const calendarApi = calendarRef.current?.getApi();
-      if (isLeftSwipe) calendarApi?.next();
-      if (isRightSwipe) calendarApi?.prev();
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      if (isLeftSwipe) calendarApi.next();
+      if (isRightSwipe) calendarApi.prev();
     }
   };
 
-  // [추가] 바텀시트 상하 스와이프(닫기) 핸들러
   const onSheetTouchStart = (e: React.TouchEvent) => {
-    // 바텀시트 최상단에서만 스와이프 닫기 동작을 허용하려면 scrollTop 체크 가능
-    // 여기서는 헤더 부분을 주로 잡고 내리는 동작을 상정하거나 전체 영역에서 내림 감지
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;
   };
-
   const onSheetTouchMove = (e: React.TouchEvent) => {
     sheetTouchEndY.current = e.targetTouches[0].clientY;
   };
-
   const onSheetTouchEnd = () => {
     if (!sheetTouchStartY.current || !sheetTouchEndY.current) return;
-
     const distance = sheetTouchEndY.current - sheetTouchStartY.current;
-    // 아래로 내리는 동작 (양수)이고 최소 거리 이상일 때
     const isDownSwipe = distance > minSheetSwipeDistance;
-
     if (isDownSwipe) {
       setIsListVisible(false);
       setSelectedDate(null);
     }
   };
 
-  /**
-   * 뷰 변경 핸들러
-   */
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
     setIsListVisible(false);
@@ -236,9 +289,6 @@ const CalendarMain = () => {
     }
   };
 
-  /**
-   * 날짜 선택 및 바텀시트 열기
-   */
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
@@ -254,18 +304,32 @@ const CalendarMain = () => {
   };
 
   const handleEventClick = (info: any) => {
+    const originalId = info.event.extendedProps.originalId || info.event.id;
     const eventData = events.find((e) => e.id === info.event.id);
 
     if (currentView === 'dayGridMonth') {
-      const dateStr = info.event.startStr.split('T')[0];
+      const dateStr = dayjs(info.event.start).format('YYYY-MM-DD');
       executeDateSelection(dateStr);
     } else {
-      navigate(`/schedule/${info.event.id}`, { state: eventData });
+      if (eventData) {
+        const clickedEventData = {
+          ...eventData,
+          id: originalId,
+          start: info.event.startStr,
+          end: info.event.endStr,
+        };
+        navigate(`/schedule/${originalId}`, {
+          state: {
+            ...clickedEventData,
+          },
+        });
+      }
     }
   };
 
   const handleListItemClick = (event: CalendarEvent) => {
-    navigate(`/schedule/${event.id}`, { state: event });
+    const originalId = event.originalId || event.id;
+    navigate(`/schedule/${originalId}`, { state: { ...event, id: originalId } });
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
@@ -284,15 +348,12 @@ const CalendarMain = () => {
     }
   };
 
-  // ... (renderTimeGridHeader, renderEventContent 함수는 기존과 동일) ...
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
     const dayOfWeek = args.date.getDay();
-
     let dateColor = 'text-gray-900';
     let dayNameColor = 'text-gray-400';
-
     if (dayOfWeek === 0) {
       dateColor = 'text-red-500';
       dayNameColor = 'text-red-400';
@@ -300,7 +361,6 @@ const CalendarMain = () => {
       dateColor = 'text-blue-600';
       dayNameColor = 'text-blue-400';
     }
-
     return (
       <div className="flex flex-col items-center justify-center gap-0.5 pb-2">
         <span className={`text-[14px] font-black leading-none ${dateColor}`}>{date}</span>
@@ -310,6 +370,7 @@ const CalendarMain = () => {
   };
 
   const renderEventContent = (eventInfo: EventContentArg) => {
+    // 1. 월 뷰 처리
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
         return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
@@ -323,6 +384,7 @@ const CalendarMain = () => {
       );
     }
 
+    // 2. 주/일 뷰 처리
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -331,18 +393,25 @@ const CalendarMain = () => {
         hour12: false,
       });
     };
-
     const startStr = formatTime(eventInfo.event.start);
     const endStr = formatTime(eventInfo.event.end);
     const isWeekView = eventInfo.view.type === 'timeGridWeek';
 
     return (
       <div className={`w-full h-full flex flex-col items-start overflow-hidden rounded-[4px] ${isWeekView ? 'p-0.5' : 'p-1'}`}>
-        <div className="flex flex-wrap items-center gap-1 text-[10px] font-extrabold text-white/90 leading-tight mb-0.5 tracking-tight">
-          <span>{startStr}</span>
-          <span className="opacity-70">-</span>
-          <span className="opacity-90">{endStr}</span>
-        </div>
+        {/* [수정] 종일 일정이 아닌 경우에만 시간 표시 */}
+        {!eventInfo.event.allDay && (
+          <div className="flex flex-wrap items-center gap-1 text-[10px] font-extrabold text-white/90 leading-tight mb-0.5 tracking-tight">
+            <span>{startStr}</span>
+            {endStr && (
+              <>
+                <span className="opacity-70">-</span>
+                <span className="opacity-90">{endStr}</span>
+              </>
+            )}
+          </div>
+        )}
+
         {eventInfo.event.title && (
           <div className={`font-bold text-white leading-tight break-words w-full ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>
         )}
@@ -352,7 +421,6 @@ const CalendarMain = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
-      {/* 헤더 (기존 코드 유지) */}
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
           <div className="relative" ref={dropdownRef}>
@@ -422,7 +490,6 @@ const CalendarMain = () => {
         </div>
       </header>
 
-      {/* 캘린더 영역 */}
       <main className="flex-1 flex flex-col bg-white overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         <div
           onTouchStart={onCalendarTouchStart}
@@ -497,7 +564,7 @@ const CalendarMain = () => {
           />
         </div>
 
-        {/* 선택 날짜 일정 리스트 (바텀시트) */}
+        {/* 바텀시트 */}
         <div
           ref={listRef}
           onTouchStart={onSheetTouchStart}
@@ -507,7 +574,6 @@ const CalendarMain = () => {
             ${isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'}`}
           style={{ height: '50%' }}
         >
-          {/* 드래그 핸들바 (시각적 힌트) */}
           <div className="w-full flex justify-center pt-3 pb-1" onClick={() => setIsListVisible(false)}>
             <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
           </div>
@@ -533,30 +599,36 @@ const CalendarMain = () => {
               {events
                 .filter((event) => {
                   if (!selectedDate) return true;
-                  const eventDate = new Date(event.start).toISOString().split('T')[0];
-                  return eventDate === selectedDate;
+                  return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
                 })
-                .map((event) => (
+                .map((event, index) => (
                   <div
-                    key={event.id}
+                    key={`${event.id}-${index}`}
                     onClick={() => handleListItemClick(event)}
-                    className="bg-gray-50 p-5 rounded-[24px] border border-transparent active:scale-[0.98] transition-all cursor-pointer group hover:bg-white hover:border-gray-100 hover:shadow-lg"
+                    className="relative bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm active:scale-[0.98] transition-all cursor-pointer group hover:shadow-md overflow-hidden"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="px-2 py-1 bg-white text-[10px] font-bold text-blue-600 rounded-[8px] shadow-sm">
-                        {new Date(event.start).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' })}
-                      </span>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                        {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
-                        <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                    <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#3b82f6' }} />
+
+                    <div className="pl-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2 py-1 bg-gray-50 text-[10px] font-bold text-gray-600 rounded-[8px]">
+                          {event.allDay ? '종일' : `${dayjs(event.start).format('A h:mm')} - ${event.end ? dayjs(event.end).format('A h:mm') : ''}`}
+                        </span>
+
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                          {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
+                          <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                        </div>
                       </div>
+
+                      <h4 className="text-[15px] font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors truncate">{event.title}</h4>
+
+                      {event.location && <p className="text-[12px] font-medium text-gray-400 flex items-center gap-1 truncate">{event.location}</p>}
                     </div>
-                    <h4 className="text-[15px] font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">{event.title}</h4>
-                    <p className="text-[12px] font-medium text-gray-400 flex items-center gap-1">{event.location}</p>
                   </div>
                 ))}
 
-              {events.filter((e) => new Date(e.start).toISOString().split('T')[0] === selectedDate).length === 0 && (
+              {events.filter((e) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
                 <div className="py-10 text-center text-gray-400 text-[13px] font-medium">일정이 없습니다.</div>
               )}
             </div>
@@ -564,7 +636,6 @@ const CalendarMain = () => {
         </div>
       </main>
 
-      {/* 일정 추가 FAB (기존 코드 유지) */}
       <button
         onClick={() => {
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];
