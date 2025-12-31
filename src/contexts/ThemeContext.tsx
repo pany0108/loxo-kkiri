@@ -21,7 +21,14 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.setAttribute('data-theme-mode', themeMode);
+    // 'color-scheme'을 설정하여 브라우저 네이티브 UI(스크롤바, 입력창 등)의 테마를 변경합니다.
+    root.style.colorScheme = themeMode;
+    // 'dark' 클래스를 추가하거나 제거하여 Tailwind CSS 다크 모드를 제어합니다.
+    if (themeMode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
     localStorage.setItem('app-theme-mode', themeMode);
   }, [themeMode]);
 

@@ -200,10 +200,10 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <div className="px-6 pt-6 flex items-center">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </div>
@@ -211,23 +211,25 @@ const ChangePassword = () => {
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-5">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-5">
             <Lock className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             {isResetMode ? (
               <>
                 잊으신 비밀번호를 <br />
-                <span className="text-blue-600">새로 설정할게요</span>
+                <span className="text-blue-600 dark:text-blue-400">새로 설정할게요</span>
               </>
             ) : (
               <>
                 보안을 위해 <br />
-                <span className="text-blue-600">비밀번호를 변경할게요</span>
+                <span className="text-blue-600 dark:text-blue-400">비밀번호를 변경할게요</span>
               </>
             )}
           </h2>
-          <p className="mt-2 text-gray-400 text-sm font-medium">{isResetMode ? '아이디 확인 후 새로운 비밀번호를 입력해주세요.' : '현재 사용 중인 비밀번호 확인이 필요합니다.'}</p>
+          <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm font-medium">
+            {isResetMode ? '아이디 확인 후 새로운 비밀번호를 입력해주세요.' : '현재 사용 중인 비밀번호 확인이 필요합니다.'}
+          </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -235,8 +237,8 @@ const ChangePassword = () => {
             {/* 1. 상단 입력란 (모드에 따라 아이디 또는 현재 비밀번호 입력) */}
             {isResetMode ? (
               <div className="group relative">
-                <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">이메일</label>
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">이메일</label>
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <Mail size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                   <input
                     type="email"
@@ -244,15 +246,15 @@ const ChangePassword = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="가입하신 이메일 주소"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                     required={isResetMode}
                   />
                 </div>
               </div>
             ) : (
               <div className="group relative">
-                <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">현재 비밀번호</label>
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">현재 비밀번호</label>
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <Lock size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -260,13 +262,13 @@ const ChangePassword = () => {
                     value={formData.currentPassword}
                     onChange={handleChange}
                     placeholder="현재 사용 중인 비밀번호"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                     required={!isResetMode}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-300 hover:text-gray-500 ml-2"
+                    className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 ml-2"
                     aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -276,15 +278,17 @@ const ChangePassword = () => {
             )}
 
             <div className="py-2">
-              <div className="h-[1px] bg-gray-50 w-full" />
+              <div className="h-[1px] bg-gray-50 dark:bg-gray-800 w-full" />
             </div>
 
             {/* 2. 새 비밀번호 입력 */}
             <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">새 비밀번호</label>
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">새 비밀번호</label>
               <div
-                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
-                  errors.newPassword ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.newPassword
+                    ? 'border-red-400 bg-white dark:bg-gray-800'
+                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
                 <ShieldCheck size={20} className={`${errors.newPassword ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
@@ -294,7 +298,7 @@ const ChangePassword = () => {
                   value={formData.newPassword}
                   onChange={handleChange}
                   placeholder="새 비밀번호 (10자 이상 조합)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   required
                 />
               </div>
@@ -309,12 +313,12 @@ const ChangePassword = () => {
             {/* 3. 새 비밀번호 확인 */}
             <div className="group relative">
               <div
-                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
                   formData.confirmPassword && errors.confirmPassword
-                    ? 'border-red-400 bg-white'
+                    ? 'border-red-400 bg-white dark:bg-gray-800'
                     : formData.confirmPassword && !errors.confirmPassword
-                    ? 'border-emerald-400 bg-white'
-                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                    ? 'border-emerald-400 bg-white dark:bg-gray-800'
+                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
                 <ShieldCheck
@@ -333,7 +337,7 @@ const ChangePassword = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="새 비밀번호 다시 입력"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   required
                 />
                 {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
@@ -350,7 +354,7 @@ const ChangePassword = () => {
           </div>
 
           <div className="mt-4 px-1">
-            <p className="text-[12px] text-gray-400 leading-relaxed font-medium">
+            <p className="text-[12px] text-gray-400 dark:text-gray-500 leading-relaxed font-medium">
               * 영문, 숫자, 특수문자를 조합하여 10자 이상의 안전한 비밀번호를 설정해주세요.
               {isResetMode && ' 재설정 후 다시 로그인해 주시기 바랍니다.'}
             </p>
@@ -378,8 +382,8 @@ const ChangePassword = () => {
                     !!errors.newPassword ||
                     !!errors.confirmPassword
                   )
-                    ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
             >
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : isResetMode ? '비밀번호 재설정하기' : '비밀번호 변경하기'}

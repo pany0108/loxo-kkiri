@@ -150,14 +150,14 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       <div className="flex-1 px-6 pt-28 pb-12 overflow-y-auto max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-14 text-left">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 ring-4 ring-blue-50">
             <Sparkles className="text-white w-7 h-7 fill-white/20" />
           </div>
-          <h2 className="text-[30px] font-black text-gray-900 leading-[1.2] tracking-tight">
+          <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             일정 관리의 <br />
             <span className="text-blue-600">새로운 기준</span>
           </h2>
@@ -168,12 +168,12 @@ const Login = () => {
           <div className="space-y-3">
             {/* 이메일 입력 */}
             <div className="group relative">
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-5 transition-all duration-300">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[18px] px-5 transition-all duration-300">
                 <User size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
                 <input
                   type="email"
                   placeholder="이메일 주소"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -183,12 +183,12 @@ const Login = () => {
 
             {/* 비밀번호 입력 */}
             <div className="group relative">
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-5 transition-all duration-300">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[18px] px-5 transition-all duration-300">
                 <Lock size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
                 <input
                   type="password"
                   placeholder="비밀번호"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -204,19 +204,20 @@ const Login = () => {
               <div className="relative">
                 <input type="checkbox" className="sr-only" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
                 <div
-                  className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center
-                  ${rememberMe ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200 group-hover:border-blue-400'}`}
+                  className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
+                    rememberMe ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 group-hover:border-blue-400'
+                  }`}
                 >
                   {rememberMe && <Check size={14} className="text-white" strokeWidth={4} />}
                 </div>
               </div>
-              <span className={`text-sm font-bold transition-colors ${rememberMe ? 'text-gray-800' : 'text-gray-400'}`}>이메일 저장</span>
+              <span className={`text-sm font-bold transition-colors ${rememberMe ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}`}>이메일 저장</span>
             </label>
 
             <button
               type="button"
               onClick={() => navigate('/change-password', { state: { from: 'login' } })}
-              className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors"
+              className="text-xs font-bold text-gray-300 dark:text-gray-600 hover:text-blue-500 transition-colors"
             >
               비밀번호 재설정
             </button>
@@ -237,7 +238,7 @@ const Login = () => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full h-[60px] bg-white text-gray-700 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 flex items-center justify-center gap-3"
+              className="w-full h-[60px] bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center gap-3"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -253,7 +254,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="w-full h-[50px] bg-transparent text-gray-400 font-bold text-[14px] hover:text-gray-600 transition-all"
+              className="w-full h-[50px] bg-transparent text-gray-400 dark:text-gray-500 font-bold text-[14px] hover:text-gray-600 dark:hover:text-gray-300 transition-all"
             >
               회원가입 하기
             </button>
@@ -262,7 +263,7 @@ const Login = () => {
       </div>
 
       <footer className="pb-10 text-center">
-        <p className="text-[11px] font-bold text-gray-200 tracking-[0.2em] uppercase">Powered by Super Scheduler</p>
+        <p className="text-[11px] font-bold text-gray-200 dark:text-gray-700 tracking-[0.2em] uppercase">Powered by Super Scheduler</p>
       </footer>
     </div>
   );

@@ -91,10 +91,10 @@ const MeetingVoting = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
+      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
@@ -102,11 +102,11 @@ const MeetingVoting = () => {
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            나의 <span className="text-blue-600">가능 여부</span>를<br />
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            나의 <span className="text-blue-600 dark:text-blue-400">가능 여부</span>를<br />
             알려주세요.
           </h2>
         </header>
@@ -116,15 +116,15 @@ const MeetingVoting = () => {
           {votingSlots.map((slot) => (
             <div
               key={slot.id}
-              className="bg-white rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-2 border-gray-50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              className="bg-white dark:bg-gray-800 rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-2 border-gray-50 dark:border-gray-700/50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500"
             >
               {/* 일정 정보 및 등록 멤버 표시 */}
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[15px] font-black text-gray-900">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
+                    <span className="text-[15px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg w-fit">
+                  <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
                     <Clock size={14} />
                     <span className="text-[13px]">{slot.time}</span>
                   </div>
@@ -136,13 +136,13 @@ const MeetingVoting = () => {
                     {slot.registeredMembers.map((m, i) => (
                       <div
                         key={i}
-                        className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[11px] font-black text-gray-500 shadow-sm"
+                        className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[11px] font-black text-gray-500 dark:text-gray-400 shadow-sm"
                       >
                         {m[0]}
                       </div>
                     ))}
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400">{slot.registeredMembers.length}명 가능</span>
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">{slot.registeredMembers.length}명 가능</span>
                 </div>
               </div>
 
@@ -153,8 +153,8 @@ const MeetingVoting = () => {
                   className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
                     ${
                       slot.myVote === 'available'
-                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200'
-                        : 'bg-white border-gray-100 text-gray-300 hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50/30'
+                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50'
+                        : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-emerald-200 dark:hover:border-emerald-500/50 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/10'
                     }`}
                 >
                   <CheckCircle2 size={24} className={slot.myVote === 'available' ? 'fill-white/20' : ''} />
@@ -166,8 +166,8 @@ const MeetingVoting = () => {
                   className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
                     ${
                       slot.myVote === 'maybe'
-                        ? 'bg-amber-400 border-amber-400 text-white shadow-lg shadow-amber-200'
-                        : 'bg-white border-gray-100 text-gray-300 hover:border-amber-200 hover:text-amber-500 hover:bg-amber-50/30'
+                        ? 'bg-amber-400 border-amber-400 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/50'
+                        : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-amber-200 dark:hover:border-amber-500/50 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
                     }`}
                 >
                   <AlertCircle size={24} className={slot.myVote === 'maybe' ? 'fill-white/20' : ''} />
@@ -179,8 +179,8 @@ const MeetingVoting = () => {
                   className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
                     ${
                       slot.myVote === 'unavailable'
-                        ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200'
-                        : 'bg-white border-gray-100 text-gray-300 hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50/30'
+                        ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/50'
+                        : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-rose-200 dark:hover:border-rose-500/50 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50/30 dark:hover:bg-rose-500/10'
                     }`}
                 >
                   <XCircle size={24} className={slot.myVote === 'unavailable' ? 'fill-white/20' : ''} />
@@ -190,13 +190,13 @@ const MeetingVoting = () => {
 
               {/* 메모 입력 필드 */}
               <div className="group relative">
-                <div className="flex items-center bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[18px] px-4 py-3 transition-all">
-                  <MessageSquare size={16} className="text-gray-300 mr-3 group-focus-within:text-blue-600" />
+                <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-4 py-3 transition-all">
+                  <MessageSquare size={16} className="text-gray-300 dark:text-gray-500 mr-3 group-focus-within:text-blue-600" />
                   <input
                     value={slot.myMemo}
                     onChange={(e) => handleMemoChange(slot.id, e.target.value)}
                     placeholder="메모 남기기 (선택)"
-                    className="bg-transparent border-none outline-none w-full text-[13px] font-bold text-gray-700 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full text-[13px] font-bold text-gray-700 dark:text-white placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -206,12 +206,16 @@ const MeetingVoting = () => {
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
         <button
           onClick={handleSubmit}
           disabled={!isAllVoted}
           className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${isAllVoted ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
+            ${
+              isAllVoted
+                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+            }`}
         >
           투표 완료하기
         </button>

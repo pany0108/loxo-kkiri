@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X, ChevronDown, Plus, Check } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
-import { collection, addDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useFirestoreQuery } from '../hooks/useFirestore';
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
@@ -48,7 +49,6 @@ const AddSchedule = () => {
   const [user, setUser] = useState<any>(null);
 
   // [추가] 캘린더 목록 및 드롭다운 상태
-  const [myCalendars, setMyCalendars] = useState<CalendarType[]>([]);
   const [isCalListOpen, setIsCalListOpen] = useState(false);
 
   useEffect(() => {
@@ -58,21 +58,14 @@ const AddSchedule = () => {
     return () => unsubscribe();
   }, []);
 
-  // [추가] 내 캘린더 목록 실시간 로딩
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loadedCalendars = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as CalendarType[];
-      setMyCalendars(loadedCalendars);
-    });
-
-    return () => unsubscribe();
+  // [수정] useFirestoreQuery 훅으로 캘린더 목록 실시간 로딩
+  const calendarsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
   }, [user]);
+
+  const { data: myCalendarsData } = useFirestoreQuery<CalendarType>(calendarsQuery);
+  const myCalendars = myCalendarsData || [];
 
   // [추가] 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -262,19 +255,19 @@ const AddSchedule = () => {
   const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             새로운 <span className="text-blue-600">일정</span>을<br />
             등록해볼까요?
           </h2>
@@ -283,14 +276,14 @@ const AddSchedule = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
             <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <input
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                   placeholder="무엇을 하나요?"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   required
                 />
               </div>
@@ -298,37 +291,40 @@ const AddSchedule = () => {
 
             {/* [추가] 캘린더 선택 섹션 */}
             <div className="group relative" ref={dropdownRef}>
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">캘린더</label>
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
               <button
                 type="button"
                 onClick={() => setIsCalListOpen(!isCalListOpen)}
-                className="w-full flex items-center justify-between h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all text-left"
+                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
-                  <span className="text-[15px] font-bold text-gray-800">{selectedCalendar?.name || '캘린더 선택...'}</span>
+                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
                 </div>
-                <ChevronDown size={20} className={`text-gray-400 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isCalListOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                   {myCalendars.map((cal) => (
                     <button
                       key={cal.id}
                       type="button"
                       onClick={() => handleCalendarSelect(cal)}
-                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all
-                      ${selectedCalendar?.id === cal.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
+                        selectedCalendar?.id === cal.id
+                          ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
                         <span className="text-[14px] font-bold">{cal.name}</span>
                       </div>
-                      {selectedCalendar?.id === cal.id && <Check size={16} />}
+                      {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
                     </button>
                   ))}
-                  <div className="h-[1px] bg-gray-50 my-2 mx-2" />
+                  <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
                   <button
                     type="button"
                     onClick={() =>
@@ -339,7 +335,7 @@ const AddSchedule = () => {
                         },
                       })
                     }
-                    className="w-full flex items-center gap-3 p-4 text-gray-500 font-bold text-[13px] hover:text-blue-600 hover:bg-blue-50 rounded-[18px] transition-colors"
+                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
                   >
                     <Plus size={16} /> 새 캘린더 만들기
                   </button>
@@ -348,15 +344,15 @@ const AddSchedule = () => {
             </div>
 
             <div className="py-2">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-3">태그 색상</label>
-              <div className="bg-gray-50 rounded-[20px] p-4 border-2 border-transparent">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-3">태그 색상</label>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-4 border-2 border-transparent">
                 <ColorPalette selectedColor={formData.color} onSelectColor={handleColorChange} />
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-black text-gray-400">시간 설정</label>
+                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
                 <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
                   <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
@@ -369,31 +365,31 @@ const AddSchedule = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-300 shrink-0" />
+                  <Clock size={18} className="text-gray-300 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-gray-400 shrink-0">시작</span>
+                    <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[15px] font-bold text-gray-800 outline-none text-right w-full font-mono"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full font-mono"
                     />
                   </div>
                 </div>
-                <div className="h-[1px] bg-gray-100 mx-4" />
+                <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-300 shrink-0" />
+                  <Clock size={18} className="text-gray-300 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-gray-400 shrink-0">종료</span>
+                    <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[15px] font-bold text-gray-800 outline-none text-right w-full font-mono"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full font-mono"
                     />
                   </div>
                 </div>
@@ -403,14 +399,14 @@ const AddSchedule = () => {
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">푸시 알림</label>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">푸시 알림</label>
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <Bell size={18} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <select
                   name="notification"
                   value={formData.notification}
                   onChange={handleChange}
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 appearance-none"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-gray-200 appearance-none"
                 >
                   {NOTIFICATION_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -422,28 +418,28 @@ const AddSchedule = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
-              <div className="bg-gray-50 rounded-[24px] p-2 space-y-1">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <MapPin size={18} className="text-gray-300 shrink-0" />
+                  <MapPin size={18} className="text-gray-300 dark:text-gray-600 shrink-0" />
                   <input
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
                     placeholder="장소 추가"
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300"
                   />
                 </div>
-                <div className="h-[1px] bg-gray-100 mx-4" />
+                <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
                 <div className="flex items-start p-4 gap-4">
-                  <AlignLeft size={18} className="text-gray-300 mt-0.5 shrink-0" />
+                  <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-0.5 shrink-0" />
                   <textarea
                     name="content"
                     value={formData.content}
                     onChange={handleChange}
                     placeholder="메모를 입력하세요"
                     rows={3}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 placeholder:text-gray-300 resize-none"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 resize-none"
                   />
                 </div>
               </div>
@@ -465,7 +461,11 @@ const AddSchedule = () => {
             <button
               type="submit"
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-                ${formData.title ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
+                ${
+                  formData.title
+                    ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+                }`}
             >
               <span>일정 등록하기</span>
             </button>

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { doc, onSnapshot, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import ImagePreviewModal from '../components/ImagePreviewModal';
+import { useFirestoreDoc } from '../hooks/useFirestore';
 
 /**
  * 친구 데이터 인터페이스
@@ -28,9 +29,6 @@ const FriendList = () => {
   const navigate = useNavigate();
 
   // --- 상태 관리 ---
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [myInfo, setMyInfo] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   // 친구 추가 모달 상태
@@ -51,25 +49,12 @@ const FriendList = () => {
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
 
-  /**
-   * 컴포넌트 마운트 시 Firestore의 내 문서(users/{uid})를 구독합니다.
-   * 친구 목록이나 내 정보가 변경되면 실시간으로 상태를 업데이트합니다.
-   */
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
+  const user = auth.currentUser;
+  const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
+  const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
 
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setMyInfo(data);
-        setFriends(data.friendsList || []);
-      }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // myInfo 데이터가 변경될 때마다 friends 목록을 파생시킵니다.
+  const friends: Friend[] = myInfo?.friendsList || [];
 
   /**
    * [추가] 바텀시트 스와이프 핸들러
@@ -216,30 +201,30 @@ const FriendList = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-['Pretendard'] pb-[100px] relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard'] pb-[100px] relative">
       {/* 헤더 및 검색바 */}
-      <header className="sticky top-0 bg-white/90 backdrop-blur-md z-40 px-6 pt-6 pb-4 shadow-sm">
+      <header className="sticky top-0 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-40 px-6 pt-6 pb-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">친구</h1>
+          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">친구</h1>
           <button className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg active:scale-90" onClick={() => setIsAddModalOpen(true)} aria-label="친구 추가">
             <UserPlus size={20} />
           </button>
         </div>
         <div className="relative mt-2">
-          <div className="flex items-center bg-gray-100 rounded-[20px] px-4 py-3.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 focus-within:bg-white dark:focus-within:bg-gray-800/50 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
             <Search size={18} className="text-gray-400 mr-3 shrink-0" />
             <input
               type="text"
               value={searchTerm}
               placeholder="친구 이름 검색"
-              className="flex-1 bg-transparent outline-none text-gray-900 text-[15px] font-medium"
+              className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-medium"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
@@ -250,14 +235,14 @@ const FriendList = () => {
         {/* 내 프로필 섹션 (검색 시 숨김) */}
         {!searchTerm && (
           <section>
-            <h2 className="text-[12px] font-bold text-gray-400 mb-3 px-1">내 프로필</h2>
+            <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-3 px-1">내 프로필</h2>
             <div
-              className="bg-white p-4 rounded-[28px] border border-gray-100 flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
+              className="bg-white dark:bg-gray-800 p-4 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
               onClick={() => navigate('/profile')}
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div
-                  className="w-[56px] h-[56px] rounded-[22px] shrink-0 shadow-lg shadow-blue-100 overflow-hidden"
+                  className="w-[56px] h-[56px] rounded-[22px] shrink-0 shadow-lg shadow-blue-100 dark:shadow-blue-900/50 overflow-hidden"
                   onClick={(e) => {
                     if (myInfo?.photoURL) {
                       e.stopPropagation();
@@ -275,10 +260,10 @@ const FriendList = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[17px] font-black text-gray-900">{myInfo?.name || '사용자'}</span>
+                    <span className="text-[17px] font-black text-gray-900 dark:text-white">{myInfo?.name || '사용자'}</span>
                     <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">ME</span>
                   </div>
-                  <p className="text-[13px] font-medium text-gray-500 mt-0.5 truncate">{myInfo?.statusMessage || '상태 메시지가 없습니다.'}</p>
+                  <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400 mt-0.5 truncate">{myInfo?.statusMessage || '상태 메시지가 없습니다.'}</p>
                 </div>
               </div>
               <ChevronRight size={20} className="text-gray-300 shrink-0" />
@@ -289,26 +274,28 @@ const FriendList = () => {
         {/* 친구 목록 섹션 */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-[12px] font-bold text-gray-400">
+            <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500">
               친구 <span className="text-blue-600">{filteredFriends.length}</span>
             </h2>
           </div>
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
             {filteredFriends.length > 0 ? (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
                 {filteredFriends.map((friend) => (
-                  <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 transition-colors">
+                  <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-center gap-4 overflow-hidden flex-1">
                       <div className="w-[48px] h-[48px] rounded-[18px] shrink-0 cursor-pointer" onClick={() => friend.photoURL && setPreviewImage(friend.photoURL)}>
                         {friend.photoURL ? (
                           <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
                         ) : (
-                          <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg rounded-[18px]">{friend.name[0]}</div>
+                          <div className="w-full h-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
+                            {friend.name[0]}
+                          </div>
                         )}
                       </div>
                       <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[16px] font-bold text-gray-900 truncate">{friend.name}</span>
-                        <p className="text-[12px] font-medium truncate text-gray-500">{friend.statusMessage || '상태 메시지 없음'}</p>
+                        <span className="text-[16px] font-bold text-gray-900 dark:text-white truncate">{friend.name}</span>
+                        <p className="text-[12px] font-medium truncate text-gray-500 dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
                       </div>
                     </div>
                     <button
@@ -316,7 +303,7 @@ const FriendList = () => {
                         setSelectedFriend(friend);
                         setIsMenuOpen(true);
                       }}
-                      className="p-2 text-gray-300 hover:text-gray-600 active:bg-gray-100 rounded-full transition-all"
+                      className="p-2 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
                     >
                       <MoreVertical size={20} />
                     </button>
@@ -325,7 +312,7 @@ const FriendList = () => {
               </div>
             ) : (
               <div className="py-20 text-center">
-                <p className="text-gray-400 text-sm font-bold">검색 결과가 없어요.</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">검색 결과가 없어요.</p>
               </div>
             )}
           </div>
@@ -337,13 +324,13 @@ const FriendList = () => {
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
           <div
-            className="relative w-full max-w-md bg-white rounded-t-[32px] p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl"
             onTouchStart={onSheetTouchStart}
             onTouchMove={onSheetTouchMove}
             onTouchEnd={onSheetTouchEnd}
           >
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
-            <h3 className="text-[14px] font-black text-gray-400 mb-4 px-2 tracking-tight">{selectedFriend?.name}님 관리</h3>
+            <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
+            <h3 className="text-[14px] font-black text-gray-400 dark:text-gray-500 mb-4 px-2 tracking-tight">{selectedFriend?.name}님 관리</h3>
             <div className="space-y-2">
               <button
                 onClick={() => {
@@ -351,19 +338,19 @@ const FriendList = () => {
                   setIsEditModalOpen(true);
                   setIsMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 rounded-[22px] transition-colors"
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors"
               >
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
                   <Edit2 size={20} />
                 </div>
-                <span className="font-bold text-gray-700">이름 수정하기</span>
+                <span className="font-bold text-gray-700 dark:text-gray-300">이름 수정하기</span>
               </button>
               <button
                 onClick={() => {
                   setIsDeleteModalOpen(true);
                   setIsMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-4 p-4 hover:bg-red-50 rounded-[22px] transition-colors"
+                className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-[22px] transition-colors"
               >
                 <div className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center">
                   <Trash2 size={20} />
@@ -371,7 +358,7 @@ const FriendList = () => {
                 <span className="font-bold text-red-500">친구 삭제하기</span>
               </button>
             </div>
-            <button onClick={() => setIsMenuOpen(false)} className="w-full mt-4 py-4 font-bold text-gray-400">
+            <button onClick={() => setIsMenuOpen(false)} className="w-full mt-4 py-4 font-bold text-gray-400 dark:text-gray-500">
               취소
             </button>
           </div>
@@ -382,23 +369,23 @@ const FriendList = () => {
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
-          <div className="relative w-full max-w-sm bg-white rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-gray-900 mb-2">이름 수정</h3>
-            <p className="text-gray-400 text-[13px] mb-6 font-medium leading-relaxed">내가 알아보기 쉬운 이름으로 변경해보세요.</p>
+          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">이름 수정</h3>
+            <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">내가 알아보기 쉬운 이름으로 변경해보세요.</p>
             <input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               type="text"
               enterKeyHint="done"
               onKeyDown={(e) => handleKeyDownAction(e, handleEditSave)}
-              className="w-full h-[58px] bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-[18px] px-5 font-bold text-gray-800 outline-none mb-6 transition-all"
+              className="w-full h-[58px] bg-gray-50 dark:bg-gray-700 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-gray-700 rounded-[18px] px-5 font-bold text-gray-800 dark:text-white outline-none mb-6 transition-all"
               autoFocus
             />
             <div className="flex gap-3">
-              <button onClick={() => setIsEditModalOpen(false)} className="flex-1 py-4 bg-gray-100 text-gray-500 font-bold rounded-[20px]">
+              <button onClick={() => setIsEditModalOpen(false)} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold rounded-[20px]">
                 취소
               </button>
-              <button onClick={handleEditSave} className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-[20px] shadow-lg shadow-blue-100">
+              <button onClick={handleEditSave} className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-[20px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50">
                 저장
               </button>
             </div>
@@ -410,13 +397,13 @@ const FriendList = () => {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
-          <div className="relative w-full max-w-[320px] bg-white rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[320px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertCircle size={32} />
             </div>
-            <h3 className="text-xl font-black text-gray-900 mb-2">친구 삭제</h3>
-            <p className="text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-              정말 <span className="text-gray-900 font-bold">'{selectedFriend?.name}'</span>님을
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">친구 삭제</h3>
+            <p className="text-gray-400 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
+              정말 <span className="text-gray-900 dark:text-gray-200 font-bold">'{selectedFriend?.name}'</span>님을
               <br />
               친구 목록에서 삭제할까요?
             </p>
@@ -424,7 +411,7 @@ const FriendList = () => {
               <button onClick={handleDeleteConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
                 삭제하기
               </button>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-4 text-gray-400 font-bold hover:text-gray-600">
+              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
                 취소
               </button>
             </div>
@@ -439,10 +426,10 @@ const FriendList = () => {
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeAddModal} />
-          <div className="relative w-full max-w-sm bg-white rounded-[32px] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-gray-900 mb-1">새 친구 찾기</h3>
-            <p className="text-gray-400 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 주소를 정확히 입력해주세요.</p>
-            <div className="bg-gray-50 rounded-[20px] p-2 mb-6 border border-gray-100 focus-within:border-blue-500 focus-within:bg-white transition-all">
+          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">새 친구 찾기</h3>
+            <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 주소를 정확히 입력해주세요.</p>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
               <input
                 type="email"
                 value={newFriendEmail}
@@ -450,18 +437,18 @@ const FriendList = () => {
                 enterKeyHint="send"
                 onKeyDown={(e) => handleKeyDownAction(e, handleAddFriend)}
                 placeholder="example@email.com"
-                className="w-full bg-transparent outline-none p-3 text-[15px] font-bold"
+                className="w-full bg-transparent outline-none p-3 text-[15px] font-bold dark:text-white"
                 autoFocus
               />
             </div>
             <div className="flex gap-3">
-              <button onClick={closeAddModal} className="flex-1 py-3.5 rounded-[20px] bg-gray-100 text-gray-500 font-bold text-[14px]">
+              <button onClick={closeAddModal} className="flex-1 py-3.5 rounded-[20px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold text-[14px]">
                 취소
               </button>
               <button
                 onClick={handleAddFriend}
                 disabled={isAdding || !newFriendEmail.includes('@')}
-                className="flex-1 py-3.5 rounded-[20px] bg-blue-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300"
+                className="flex-1 py-3.5 rounded-[20px] bg-blue-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300 dark:disabled:bg-blue-800"
               >
                 {isAdding ? (
                   <Loader2 size={16} className="animate-spin" />

@@ -26,7 +26,7 @@ interface ColorPaletteProps {
 const ColorPalette: React.FC<ColorPaletteProps> = ({ selectedColor, onSelectColor }) => {
   return (
     <div className="flex flex-col gap-3 py-4">
-      <label className="text-sm font-bold text-gray-700 px-1">범주 색상 선택</label>
+      <label className="text-sm font-bold text-gray-700 dark:text-gray-300 px-1">범주 색상 선택</label>
       <div className="flex flex-wrap gap-3 px-1">
         {COLORS.map((color) => (
           <button

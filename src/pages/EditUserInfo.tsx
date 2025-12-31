@@ -173,7 +173,7 @@ const EditUserInfo = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-950">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
         <p className="text-gray-400 font-bold">정보를 불러오는 중...</p>
       </div>
@@ -181,10 +181,14 @@ const EditUserInfo = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
+      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
+          aria-label="뒤로 가기"
+        >
           <ChevronLeft size={28} />
         </button>
       </nav>
@@ -192,11 +196,11 @@ const EditUserInfo = () => {
       <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            내 소중한 <span className="text-blue-600">정보</span>를<br />
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            내 소중한 <span className="text-blue-600 dark:text-blue-400">정보</span>를<br />
             관리해볼까요?
           </h2>
         </header>
@@ -205,27 +209,27 @@ const EditUserInfo = () => {
         <div className="space-y-8">
           {/* 이름 필드 (성/이름 분리) */}
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">이름</label>
+            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">이름</label>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1">
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="성"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   />
                 </div>
               </div>
               <div className="col-span-2">
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="이름"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                   />
                 </div>
               </div>
@@ -234,21 +238,23 @@ const EditUserInfo = () => {
 
           {/* 휴대폰 번호 */}
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">휴대폰 번호 인증</label>
+            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
             <div className="flex gap-2">
               <div
-                className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
-                  isVerified ? 'bg-blue-50 border-blue-100' : 'focus-within:border-blue-500 focus-within:bg-white'
+                className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
+                  isVerified
+                    ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20'
+                    : 'focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
-                <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
+                <Smartphone size={20} className={isVerified ? 'text-blue-500 dark:text-blue-400 mr-4' : 'text-gray-300 dark:text-gray-600 mr-4'} />
                 <input
                   name="phone"
                   type="tel"
                   inputMode="numeric"
                   value={formData.phone}
                   placeholder="010-0000-0000"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white"
                   onChange={handleChange}
                   readOnly={!isPhoneEditing}
                   required
@@ -268,7 +274,7 @@ const EditUserInfo = () => {
                 <button
                   type="button"
                   onClick={() => setIsPhoneEditing(true)}
-                  className="flex-1 h-[60px] bg-gray-100 text-gray-600 rounded-[20px] text-[13px] font-black active:scale-[0.95]"
+                  className="flex-1 h-[60px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-[20px] text-[13px] font-black active:scale-[0.95]"
                 >
                   수정
                 </button>
@@ -277,7 +283,7 @@ const EditUserInfo = () => {
 
             {isPhoneEditing && isAuthSent && !isVerified && (
               <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
+                <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
                   <ShieldCheck size={20} className="text-blue-600 mr-4" />
                   <input
                     name="authCode"
@@ -286,7 +292,7 @@ const EditUserInfo = () => {
                     pattern="\d*"
                     value={authCode}
                     placeholder="인증번호 4자리"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                     onChange={handleChange}
                     maxLength={4}
                   />
@@ -300,23 +306,23 @@ const EditUserInfo = () => {
 
           {/* 생년월일 */}
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">생년월일</label>
-            <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">생년월일</label>
+            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
               <Calendar size={18} className="text-gray-300 mr-4" />
               <input
                 name="birthDate"
                 value={formData.birthDate}
                 onChange={handleChange}
                 placeholder="YYYY/MM/DD"
-                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
               />
             </div>
           </section>
 
           {/* 안내 메시지 카드 */}
-          <div className="bg-blue-50/50 rounded-[24px] p-5 border border-blue-100 flex gap-3 animate-in fade-in zoom-in-95 duration-500">
-            <CheckCircle2 className="text-blue-500 shrink-0 mt-0.5" size={18} />
-            <p className="text-[13px] text-blue-700 font-bold leading-relaxed">
+          <div className="bg-blue-50/50 dark:bg-blue-500/10 rounded-[24px] p-5 border border-blue-100 dark:border-blue-500/20 flex gap-3 animate-in fade-in zoom-in-95 duration-500">
+            <CheckCircle2 className="text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" size={18} />
+            <p className="text-[13px] text-blue-700 dark:text-blue-300 font-bold leading-relaxed">
               변경하신 정보는 실명 인증이 필요한 서비스나 <br />
               일정 공유 시 본인 확인용으로 사용됩니다.
             </p>
@@ -325,14 +331,14 @@ const EditUserInfo = () => {
       </div>
 
       {/* 하단 고정 저장 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-50">
+      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50">
         <button
           onClick={handleSave}
           disabled={isSaving}
           className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
             isSaving || (formData.phone !== originalPhone && !isVerified)
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-              : 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+              : 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
           }`}
         >
           {isSaving ? (
@@ -344,7 +350,7 @@ const EditUserInfo = () => {
             </>
           )}
         </button>
-        <p className="text-center text-[11px] text-gray-300 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
+        <p className="text-center text-[11px] text-gray-300 dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
       </footer>
     </div>
   );

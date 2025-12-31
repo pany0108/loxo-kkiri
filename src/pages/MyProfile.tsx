@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, ChevronLeft, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from '../contexts';
-// import { updateProfile } from 'firebase/auth';
+import { useFirestoreDoc } from '../hooks/useFirestore';
 
 /**
  * 사용자 프로필 데이터 인터페이스
@@ -29,35 +29,14 @@ const MyProfile = () => {
   const navigate = useNavigate();
   const { themeMode, toggleThemeMode } = useTheme();
 
-  // --- 상태 관리 ---
-  const [userData, setUserData] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isPushEnabled, setIsPushEnabled] = useState(true);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [tempStatus, setTempStatus] = useState('');
 
-  /**
-   * 컴포넌트 마운트 시 Firestore에서 사용자 정보를 불러옵니다.
-   */
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        try {
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            setUserData(userSnap.data() as UserProfile);
-          }
-        } catch (error) {
-          // 데이터 로드 실패 처리
-        }
-      }
-      setIsLoading(false);
-    };
-    fetchUserData();
-  }, []);
+  const user = auth.currentUser;
+  const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
+  const { data: userData, loading: isLoading } = useFirestoreDoc<UserProfile>(userDocRef);
 
   /**
    * [수정] 상태 메시지 수정 모달을 엽니다.
@@ -81,8 +60,7 @@ const MyProfile = () => {
       const userRef = doc(db, 'users', auth.currentUser!.uid);
       await updateDoc(userRef, { statusMessage: tempStatus });
 
-      // 로컬 상태 즉시 업데이트
-      setUserData((prev) => (prev ? { ...prev, statusMessage: tempStatus } : null));
+      // 실시간 리스너(useFirestoreDoc)가 자동으로 데이터를 업데이트하므로 수동 업데이트 불필요
       toast.success('상태 메시지가 변경되었습니다.');
     } catch (e) {
       toast.error('상태 메시지 변경 중 오류가 발생했습니다.');
@@ -295,6 +273,8 @@ interface MenuBtnProps {
 const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle, color = 'text-gray-900', hideArrow }: MenuBtnProps) => (
   <button
     onClick={isToggle ? onToggle : onClick}
+    role={isToggle ? 'switch' : 'button'}
+    aria-checked={isToggle ? toggleValue : undefined}
     className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 active:bg-gray-100 dark:active:bg-gray-700 transition-all rounded-[20px] group cursor-pointer"
   >
     <div className="flex items-center gap-4">
@@ -305,7 +285,10 @@ const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle
     <div className="flex items-center gap-2">
       {isToggle ? (
         // iOS 스타일 토글 스위치
-        <div className={`w-[48px] h-[28px] flex items-center rounded-full px-1 transition-colors duration-300 ${toggleValue ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}>
+        <div
+          className={`w-[48px] h-[28px] flex items-center rounded-full px-1 transition-colors duration-300 ${toggleValue ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'}`}
+          aria-hidden="true"
+        >
           <div
             className={`bg-white w-[22px] h-[22px] rounded-full shadow-md transform transition-transform duration-300 ${toggleValue ? 'translate-x-[20px]' : 'translate-x-0'}`}
           />

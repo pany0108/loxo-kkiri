@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Plus, Users, ChevronLeft, Settings, Trash2, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
+import { Plus, Users, ChevronLeft, Settings, Trash2, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
-import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useFirestoreQuery } from '../hooks/useFirestore';
 
 interface CalendarData {
   id: string;
@@ -19,7 +20,6 @@ interface CalendarData {
 const CalendarManager = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [calendars, setCalendars] = useState<CalendarData[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [calendarToDelete, setCalendarToDelete] = useState<CalendarData | null>(null);
 
@@ -31,26 +31,14 @@ const CalendarManager = () => {
     return () => unsubscribe();
   }, []);
 
-  // 2. 캘린더 목록 불러오기 (내가 포함된 캘린더)
-  useEffect(() => {
-    if (!user) return;
-
-    // 'calendars' 컬렉션에서 'members' 배열에 내 uid가 포함된 문서 찾기
-    // (지금은 CreateCalendar에서 members에 string을 넣었지만, 실제론 uid 저장을 권장)
-    // 여기서는 members 배열에 user.uid가 포함되어 있거나 ownerId가 user.uid인 것을 찾음
-    const q = query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loadedCalendars = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as CalendarData[];
-
-      setCalendars(loadedCalendars);
-    });
-
-    return () => unsubscribe();
+  // [수정] useFirestoreQuery 훅으로 캘린더 목록 실시간 로딩
+  const calendarsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
   }, [user]);
+
+  const { data: calendarsData, loading: isLoading } = useFirestoreQuery<CalendarData>(calendarsQuery);
+  const calendars = calendarsData || [];
 
   const formatMembers = (members: string[]) => {
     // 실제로는 uid를 이름으로 변환하는 과정이 필요하지만 지금은 배열 길이로 표현
@@ -94,6 +82,14 @@ const CalendarManager = () => {
     // 지금은 단순히 캘린더 메인으로 이동
     navigate('/calendar');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">

@@ -106,55 +106,59 @@ const ScheduleEdit = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
+      <nav className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ChevronLeft size={28} />
         </button>
-        <button onClick={handleSave} className="p-2 -mr-2 text-blue-600 hover:text-blue-700 transition-colors">
+        <button onClick={handleSave} className="p-2 -mr-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
           <Check size={28} strokeWidth={3} />
         </button>
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            일정을 <span className="text-blue-600">수정</span>해볼까요?
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            일정을 <span className="text-blue-600 dark:text-blue-400">수정</span>해볼까요?
           </h2>
         </header>
 
         <form className="space-y-6">
           <section className="space-y-4">
             <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <input
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                   placeholder="무엇을 하나요?"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                 />
               </div>
             </div>
 
             <div className="py-2">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-3">태그 색상</label>
-              <div className="bg-gray-50 rounded-[20px] p-4 border-2 border-transparent">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-3">태그 색상</label>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-4 border-2 border-transparent">
                 <ColorPalette selectedColor={formData.color} onSelectColor={handleColorChange} />
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-black text-gray-400">시간 설정</label>
+                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
                 <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
-                  <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
+                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                    종일
+                  </span>
+                  <div
+                    className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                  >
                     <div
                       className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
                         formData.isAllDay ? 'translate-x-4' : 'translate-x-0'
@@ -164,31 +168,31 @@ const ScheduleEdit = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-[24px] p-2 space-y-1 border border-gray-100">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-400 shrink-0" />
+                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-gray-400">시작</span>
+                    <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">시작</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 outline-none text-right font-mono"
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right font-mono"
                     />
                   </div>
                 </div>
-                <div className="h-[1px] bg-gray-200 mx-4" />
+                <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-400 shrink-0" />
+                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-gray-400">종료</span>
+                    <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">종료</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 outline-none text-right font-mono"
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right font-mono"
                     />
                   </div>
                 </div>
@@ -198,26 +202,26 @@ const ScheduleEdit = () => {
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-gray-400 ml-1">상세 정보</label>
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
 
-              <div className="flex items-center h-[56px] bg-white border-2 border-gray-100 rounded-[20px] px-4 gap-4 focus-within:border-blue-500 transition-all">
-                <MapPin size={18} className="text-gray-400" />
+              <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
+                <MapPin size={18} className="text-gray-300 dark:text-gray-600" />
                 <input
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600"
                   placeholder="장소"
                 />
               </div>
 
-              <div className="flex items-center h-[56px] bg-white border-2 border-gray-100 rounded-[20px] px-4 gap-4 focus-within:border-blue-500 transition-all relative">
-                <Bell size={18} className="text-gray-400" />
+              <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                <Bell size={18} className="text-gray-300 dark:text-gray-600" />
                 <select
                   name="notification"
                   value={formData.notification}
                   onChange={handleChange}
-                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 appearance-none z-10"
+                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 appearance-none z-10"
                 >
                   {NOTIFICATION_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -227,42 +231,41 @@ const ScheduleEdit = () => {
                 </select>
               </div>
 
-              <div className="flex items-start bg-white border-2 border-gray-100 rounded-[24px] p-4 gap-4 focus-within:border-blue-500 transition-all">
-                <AlignLeft size={18} className="text-gray-400 mt-1" />
+              <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
+                <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-1" />
                 <textarea
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
                   rows={3}
-                  className="bg-transparent outline-none w-full text-[14px] font-medium text-gray-800 resize-none placeholder:text-gray-300 leading-relaxed"
+                  className="bg-transparent outline-none w-full text-[14px] font-medium text-gray-800 dark:text-gray-200 resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
                   placeholder="메모"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between px-1 mb-2">
-                <label className="text-[13px] font-black text-gray-400">첨부파일</label>
+              <div className="flex items-center justify-between px-1 mb-2 ">
+                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">첨부파일</label>
                 <button
                   type="button"
                   onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                  className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors"
+                  className="text-[11px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
                 >
                   + 추가
                 </button>
               </div>
               <div className="space-y-2">
                 {attachments.map((file, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-[16px] border border-gray-100">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                  >
                     <div className="flex items-center gap-3 overflow-hidden">
                       {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-blue-500" />}
-                      <span className="text-[13px] font-bold text-gray-700 truncate">{file.name}</span>
+                      <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toast('파일 삭제 기능은 준비중입니다.')}
-                      className="text-gray-300 hover:text-red-500"
-                    >
+                    <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-gray-300 hover:text-red-500">
                       <X size={16} />
                     </button>
                   </div>
@@ -271,32 +274,32 @@ const ScheduleEdit = () => {
             </div>
 
             {!isShared && isPastEvent && (
-              <div className="space-y-4 pt-4 border-t border-gray-100">
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <BookOpen size={20} className="text-emerald-500" />
-                  <h3 className="text-[16px] font-black text-gray-900">후기 작성</h3>
+                  <h3 className="text-[16px] font-black text-gray-900 dark:text-white">후기 작성</h3>
                 </div>
-                <div className="bg-white border-2 border-dashed border-emerald-100 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 transition-colors">
+                <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
                   <textarea
                     placeholder="후기를 작성해주세요."
-                    className="w-full text-[14px] font-medium text-gray-700 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-gray-300 leading-relaxed"
+                    className="w-full text-[14px] font-medium text-gray-700 dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
                     value={formData.review}
                     onChange={(e) => setFormData({ ...formData, review: e.target.value })}
                   />
                   {formData.reviewImages && formData.reviewImages.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                       {formData.reviewImages.map((src: string, i: number) => (
-                        <div key={i} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-gray-100 relative">
+                        <div key={i} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700 relative">
                           <img src={src} alt="review" className="w-full h-full object-cover" />
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="flex justify-end border-t border-emerald-50 pt-3">
+                  <div className="flex justify-end border-t border-emerald-50 dark:border-emerald-900/50 pt-3">
                     <button
                       type="button"
                       onClick={() => toast('후기 사진 추가 기능은 준비중입니다.')}
-                      className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[12px] font-bold hover:bg-emerald-100 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 rounded-xl text-[12px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
                     >
                       <Camera size={14} /> 사진 추가
                     </button>

@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { useFirestoreQuery } from '../hooks/useFirestore';
 
 dayjs.extend(isSameOrBefore);
 
@@ -130,78 +131,48 @@ const expandRecurringEvents = (events: any[]) => {
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
-  const [myCalendars, setMyCalendars] = useState<CalendarType[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [activeCalendar, setActiveCalendar] = useState<CalendarType | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (!currentUser) {
-        setMyCalendars([]);
-        setEvents([]);
         setActiveCalendar(null);
       }
     });
     return () => unsubscribe();
   }, []);
 
+  const calendarsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
+  }, [user]);
+
+  const { data: myCalendarsData } = useFirestoreQuery<CalendarType>(calendarsQuery);
+  const myCalendars = myCalendarsData || [];
+
   useEffect(() => {
-    if (!user) return;
-
-    const q = query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loadedCalendars = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name,
-          members: data.members || [],
-          isPrivate: (data.members || []).length <= 1,
-          isDefault: data.isDefault || false,
-          color: data.color,
-        };
-      });
-
-      setMyCalendars(loadedCalendars);
-
+    if (myCalendars && myCalendars.length > 0) {
       setActiveCalendar((prev) => {
-        if (loadedCalendars.length === 0) return null;
-        if (prev && loadedCalendars.find((c) => c.id === prev.id)) return prev;
-        return loadedCalendars.find((c) => c.isDefault) || loadedCalendars[0];
+        if (prev && myCalendars.find((c) => c.id === prev.id)) return prev;
+        return myCalendars.find((c) => c.isDefault) || myCalendars[0];
       });
-    });
+    } else if (myCalendars) {
+      setActiveCalendar(null);
+    }
+  }, [myCalendars]);
 
-    return () => unsubscribe();
+  const eventsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
   }, [user]);
 
-  useEffect(() => {
-    if (!user) return;
+  const { data: rawEvents } = useFirestoreQuery<any>(eventsQuery);
 
-    const q = query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const rawEvents = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          start: data.start,
-          end: data.end,
-          allDay: data.isAllDay,
-          color: data.color,
-          location: data.location,
-          attendees: data.attendees || ['나'],
-          recurrence: data.recurrence,
-          calendarId: data.calendarId,
-        };
-      });
-
-      const processedEvents = expandRecurringEvents(rawEvents);
-      setEvents(processedEvents);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  const events = useMemo(() => {
+    if (!rawEvents) return [];
+    return expandRecurringEvents(rawEvents);
+  }, [rawEvents]);
 
   return <CalendarContext.Provider value={{ myCalendars, events, activeCalendar, setActiveCalendar }}>{children}</CalendarContext.Provider>;
 };
