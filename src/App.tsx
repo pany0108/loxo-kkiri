@@ -11,6 +11,7 @@ import {
   CalendarMain,
   AddSchedule,
   ScheduleDetail,
+  ScheduleEdit,
   CalendarManager,
   CreateCalendar,
   MyProfile,
@@ -23,6 +24,7 @@ import {
   MeetingVoting,
   MeetingReport,
   ScheduleChat,
+  SharedMediaList,
 } from './pages';
 import { Loader2 } from 'lucide-react';
 
@@ -55,19 +57,17 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signup-social" element={user ? <SignupSocial /> : <Navigate to="/" />} />
         <Route path="/change-password" element={user ? <ChangePassword /> : <Navigate to="/" />} />
-
         {/* --- 02. 사용자 및 소셜 --- */}
         <Route path="/profile" element={user ? <MyProfile /> : <Navigate to="/" />} />
         <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
         <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
-
         {/* --- 03. 캘린더 핵심 기능 --- */}
         <Route path="/calendar" element={user ? <CalendarMain /> : <Navigate to="/" />} />
         <Route path="/calendar-manager" element={user ? <CalendarManager /> : <Navigate to="/" />} />
         <Route path="/create-calendar" element={user ? <CreateCalendar /> : <Navigate to="/" />} />
         <Route path="/add-schedule" element={user ? <AddSchedule /> : <Navigate to="/" />} />
         <Route path="/schedule/:id" element={user ? <ScheduleDetail /> : <Navigate to="/" />} />
-
+        <Route path="/schedule/edit/:id" element={user ? <ScheduleEdit /> : <Navigate to="/" />} />
         {/* --- 04. 약속 조율 프로세스 --- */}
         <Route path="/propose" element={user ? <ProposeMeeting /> : <Navigate to="/" />} />
         <Route path="/propose/create" element={user ? <ProposeMeetingCreate /> : <Navigate to="/" />} />
@@ -75,10 +75,9 @@ function App() {
         <Route path="/meeting/response/:id" element={user ? <MeetingResponse /> : <Navigate to="/" />} />
         <Route path="/meeting/vote/:id" element={user ? <MeetingVoting /> : <Navigate to="/" />} />
         <Route path="/meeting/report/:id" element={user ? <MeetingReport /> : <Navigate to="/" />} />
-
         {/* --- 05. 커뮤니케이션 --- */}
         <Route path="/chat/:id" element={user ? <ScheduleChat /> : <Navigate to="/" />} />
-
+        <Route path="/schedule/:id/media" element={user ? <SharedMediaList /> : <Navigate to="/" />} />
         <Route
           path="/__/auth/handler"
           element={

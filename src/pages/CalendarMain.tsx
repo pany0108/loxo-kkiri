@@ -116,6 +116,16 @@ const CalendarMain = () => {
       location: '제주도 전역',
       attendees: ['나', '친구1'],
     },
+    {
+      id: '4',
+      title: '혼자 카페 공부 ☕',
+      start: '2025-12-12',
+      end: '2025-12-12',
+      allDay: false,
+      color: '#3b82f6',
+      location: '스타벅스 강남점',
+      attendees: ['나'],
+    },
   ]);
 
   /**

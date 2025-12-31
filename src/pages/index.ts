@@ -11,7 +11,8 @@ export { default as ChangePassword } from './ChangePassword'; // 비밀번호 �
 // =============================================================================
 export { default as CalendarMain } from './CalendarMain'; // 메인 캘린더 (월간/주간 뷰)
 export { default as AddSchedule } from './AddSchedule'; // 새 일정(개인/공유) 등록 화면
-export { default as ScheduleDetail } from './ScheduleDetail'; // 일정 상세 정보 및 수정/삭제 화면
+export { default as ScheduleDetail } from './ScheduleDetail'; // 일정 상세 및 삭제 화면
+export { default as ScheduleEdit } from './ScheduleEdit'; // 일정 수정 화면
 
 // =============================================================================
 // 캘린더 관리 (Calendar Management)
@@ -44,3 +45,4 @@ export { default as MeetingReport } from './MeetingReport'; // 최종 결과 리
 // 커뮤니케이션 (Communication)
 // =============================================================================
 export { default as ScheduleChat } from './ScheduleChat'; // 특정 일정/약속에 대한 채팅방
+export { default as SharedMediaList } from './SharedMediaList';
