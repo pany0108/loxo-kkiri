@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -137,6 +137,16 @@ const SignupSocial = () => {
         firstName,
         phone: formData.phone,
         birthDate: formData.birthDate,
+        createdAt: new Date().toISOString(),
+      });
+
+      // [수정] 소셜 로그인 시 기본 캘린더 자동 생성
+      await addDoc(collection(db, 'calendars'), {
+        name: '내 캘린더',
+        ownerId: uid,
+        members: [uid],
+        isDefault: true,
+        color: '#3b82f6', // 기본 파란색
         createdAt: new Date().toISOString(),
       });
 

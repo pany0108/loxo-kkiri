@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, X, Bell } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, Bell } from 'lucide-react';
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore'; // updateDoc, arrayUnion 추가
 import { db } from '../firebase';
@@ -94,7 +95,7 @@ const ScheduleDetail = () => {
           reviewImages: dbData.reviewImages || [],
         });
       } else {
-        alert('삭제된 일정입니다.');
+        toast.error('삭제된 일정입니다.');
         navigate('/calendar');
       }
     });
@@ -124,12 +125,12 @@ const ScheduleDetail = () => {
     try {
       if (id) {
         await deleteDoc(doc(db, 'schedules', id));
-        alert('삭제되었습니다.');
+        toast.success('일정이 삭제되었습니다.');
         navigate('/calendar');
       }
     } catch (error) {
       console.error('삭제 실패:', error);
-      alert('삭제 중 오류가 발생했습니다.');
+      toast.error('삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -144,12 +145,12 @@ const ScheduleDetail = () => {
           'recurrence.exceptions': arrayUnion(dateToDelete),
         });
 
-        alert('이 일정이 삭제되었습니다.');
+        toast.success('해당 날짜의 일정이 삭제되었습니다.');
         navigate('/calendar');
       }
     } catch (error) {
       console.error('개별 삭제 실패:', error);
-      alert('오류가 발생했습니다.');
+      toast.error('삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -165,12 +166,12 @@ const ScheduleDetail = () => {
           'recurrence.endDate': newEndDate,
         });
 
-        alert('이후 일정이 모두 삭제되었습니다.');
+        toast.success('이후 일정이 모두 삭제되었습니다.');
         navigate('/calendar');
       }
     } catch (error) {
       console.error('향후 일정 삭제 실패:', error);
-      alert('오류가 발생했습니다.');
+      toast.error('삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -311,7 +312,7 @@ const ScheduleDetail = () => {
             )}
 
             {/* 첨부파일 */}
-            {data.files && data.files.length > 0 && (
+            {/* {data.files && data.files.length > 0 && (
               <div className="pl-14">
                 <div className="flex gap-2 flex-wrap">
                   {data.files.map((file, idx) => (
@@ -322,7 +323,7 @@ const ScheduleDetail = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           <div className="h-[1px] bg-gray-100" />
@@ -356,7 +357,8 @@ const ScheduleDetail = () => {
                 </div>
               </button>
 
-              {/* 공유 미디어 갤러리 */}
+              {/* [주석 처리] 공유 미디어 갤러리 (기능 준비중) */}
+              {/*
               <div>
                 <div className="flex items-center justify-between px-1 mb-3">
                   <span className="text-[13px] font-bold text-gray-500">공유된 사진/문서</span>
@@ -383,6 +385,7 @@ const ScheduleDetail = () => {
                   </button>
                 </div>
               </div>
+              */}
             </div>
           )}
 
@@ -397,7 +400,8 @@ const ScheduleDetail = () => {
               {data.review ? (
                 <div className="bg-white border border-gray-100 rounded-[24px] p-5 shadow-sm space-y-4">
                   <p className="text-[14px] font-medium text-gray-700 leading-relaxed whitespace-pre-wrap">{data.review}</p>
-                  {data.reviewImages && data.reviewImages.length > 0 && (
+                  {/* [주석 처리] 후기 사진 (기능 준비중) */}
+                  {/* {data.reviewImages && data.reviewImages.length > 0 && (
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                       {data.reviewImages.map((src: string, i: number) => (
                         <div
@@ -409,7 +413,7 @@ const ScheduleDetail = () => {
                         </div>
                       ))}
                     </div>
-                  )}
+                  )} */}
                 </div>
               ) : (
                 <div onClick={handleEdit} className="py-8 text-center bg-gray-50 rounded-[24px] border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors">

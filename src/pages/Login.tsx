@@ -213,7 +213,11 @@ const Login = () => {
               <span className={`text-sm font-bold transition-colors ${rememberMe ? 'text-gray-800' : 'text-gray-400'}`}>이메일 저장</span>
             </label>
 
-            <button type="button" onClick={() => navigate('/change-password')} className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors">
+            <button
+              type="button"
+              onClick={() => navigate('/change-password', { state: { from: 'login' } })}
+              className="text-xs font-bold text-gray-300 hover:text-blue-500 transition-colors"
+            >
               비밀번호 재설정
             </button>
           </div>

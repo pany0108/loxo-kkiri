@@ -1,6 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, User } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ChevronLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, User, Loader2, Mail } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+
+const validatePasswordLocally = (password: string, email: string) => {
+  if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
+
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  const combinations = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
+  if (combinations < 2) return '영문, 숫자, 특수문자 중 2종류 이상을 조합해주세요.';
+
+  const emailId = (email || '').split('@')[0];
+  if (emailId && password.includes(emailId)) {
+    return '비밀번호에 아이디를 포함할 수 없습니다.';
+  }
+
+  return true;
+};
 
 /**
  * 비밀번호 변경 및 재설정 페이지 컴포넌트입니다.
@@ -25,7 +47,7 @@ const ChangePassword = () => {
    * 입력 폼 데이터 상태
    */
   const [formData, setFormData] = useState({
-    userId: '', // 재설정 모드용 ID
+    email: '', // 재설정 모드용 이메일
     currentPassword: '', // 변경 모드용 현재 비밀번호
     newPassword: '',
     confirmPassword: '',
@@ -37,6 +59,16 @@ const ChangePassword = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   /**
+   * [추가] 폼 제출 로딩 상태
+   */
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  /**
+   * [추가] 유효성 검사 에러 상태
+   */
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  /**
    * 진입 경로에 따라 모드를 결정합니다.
    * location.state.from === 'login'일 경우 재설정 모드로 전환합니다.
    */
@@ -46,6 +78,31 @@ const ChangePassword = () => {
     }
   }, [location]);
 
+  /**
+   * [추가] 새 비밀번호 실시간 유효성 검사
+   */
+  useEffect(() => {
+    if (!formData.newPassword) {
+      setErrors((prev) => ({ ...prev, newPassword: '' }));
+      return;
+    }
+    const emailForValidation = isResetMode ? formData.email : auth.currentUser?.email || '';
+    const validationResult = validatePasswordLocally(formData.newPassword, emailForValidation);
+
+    if (validationResult !== true) {
+      setErrors((prev) => ({ ...prev, newPassword: validationResult as string }));
+    } else {
+      setErrors((prev) => ({ ...prev, newPassword: '' }));
+    }
+  }, [formData.newPassword, formData.email, isResetMode]);
+
+  useEffect(() => {
+    if (formData.confirmPassword && formData.newPassword !== formData.confirmPassword) {
+      setErrors((prev) => ({ ...prev, confirmPassword: '비밀번호가 일치하지 않습니다.' }));
+    } else {
+      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
+    }
+  }, [formData.newPassword, formData.confirmPassword]);
   // --- 핸들러 ---
 
   /**
@@ -60,26 +117,86 @@ const ChangePassword = () => {
    * 폼 제출 및 비밀번호 변경 처리 핸들러
    * 유효성 검사를 통과하면 서버에 변경 요청을 보냅니다.
    */
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { currentPassword, newPassword } = formData;
+    const { email, currentPassword, newPassword } = formData;
 
-    // 1. 길이 검사
-    if (newPassword.length < 10) {
-      alert('새 비밀번호를 10자리 이상 입력해주세요.');
+    if (errors.newPassword || errors.confirmPassword) {
+      toast.error('입력 값을 다시 확인해주세요.');
       return;
     }
 
-    // 2. 기존 비밀번호 중복 검사 (변경 모드일 경우)
-    if (!isResetMode && currentPassword === newPassword) {
-      alert('기존 비밀번호와 다른 비밀번호를 사용해주세요.');
-      return;
+    setIsSubmitting(true);
+
+    if (isResetMode) {
+      // --- 비밀번호 재설정 로직 ---
+      try {
+        // [보안 강화] DB에 이메일이 존재하는지 먼저 확인
+        const q = query(collection(db, 'users'), where('email', '==', email.trim()));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          toast.error('가입되지 않은 이메일입니다.');
+          return; // 여기서 함수 종료
+        }
+
+        // 사용자가 존재하면 재설정 이메일 발송
+        await sendPasswordResetEmail(auth, email.trim());
+        toast.success('비밀번호 재설정 이메일을 발송했습니다. 메일함을 확인해주세요.');
+        setTimeout(() => navigate('/'), 1500);
+      } catch (error: any) {
+        toast.error('요청 처리 중 오류가 발생했습니다.');
+        console.error('비밀번호 재설정 오류:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // --- 비밀번호 변경 로직 ---
+      const user = auth.currentUser;
+      if (!user || !user.email) {
+        toast.error('로그인 정보가 유효하지 않습니다.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // [보안 강화] 이메일/비밀번호로 가입한 사용자인지 확인
+      const isPasswordProvider = user.providerData.some((provider) => provider.providerId === 'password');
+      if (!isPasswordProvider) {
+        toast.error('소셜 로그인 사용자는 앱 내에서 비밀번호를 변경할 수 없습니다.');
+        setIsSubmitting(false);
+        navigate('/profile');
+        return;
+      }
+
+      if (currentPassword === newPassword) {
+        toast.error('기존 비밀번호와 다른 비밀번호를 사용해주세요.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      try {
+        // 1. 사용자 재인증 (현재 비밀번호 확인)
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        // 2. 비밀번호 업데이트
+        await updatePassword(user, newPassword);
+
+        toast.success('비밀번호가 성공적으로 변경되었습니다.');
+        navigate('/profile');
+      } catch (error: any) {
+        if (error.code === 'auth/wrong-password') {
+          toast.error('현재 비밀번호가 일치하지 않습니다.');
+        } else if (error.code === 'auth/too-many-requests') {
+          toast.error('너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          toast.error('비밀번호 변경 중 오류가 발생했습니다.');
+        }
+        console.error('비밀번호 변경 오류:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
-
-    // TODO: 실제 API 연동 로직 필요
-
-    alert(isResetMode ? '비밀번호가 재설정되었습니다. 다시 로그인해주세요.' : '비밀번호가 성공적으로 변경되었습니다.');
-    setTimeout(() => navigate(isResetMode ? '/' : '/profile'), 1000);
   };
 
   return (
@@ -118,15 +235,15 @@ const ChangePassword = () => {
             {/* 1. 상단 입력란 (모드에 따라 아이디 또는 현재 비밀번호 입력) */}
             {isResetMode ? (
               <div className="group relative">
-                <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">아이디 확인</label>
+                <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">이메일</label>
                 <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
-                  <User size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+                  <Mail size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                   <input
-                    type="text"
-                    name="userId"
-                    value={formData.userId}
+                    type="email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleChange}
-                    placeholder="가입하신 아이디 입력"
+                    placeholder="가입하신 이메일 주소"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     required={isResetMode}
                   />
@@ -165,27 +282,37 @@ const ChangePassword = () => {
             {/* 2. 새 비밀번호 입력 */}
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">새 비밀번호</label>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
-                <ShieldCheck size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+              <div
+                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.newPassword ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                }`}
+              >
+                <ShieldCheck size={20} className={`${errors.newPassword ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="newPassword"
                   value={formData.newPassword}
                   onChange={handleChange}
-                  placeholder="새 비밀번호 (10자 이상)"
+                  placeholder="새 비밀번호 (10자 이상 조합)"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   required
                 />
               </div>
+              {errors.newPassword && (
+                <div className="flex items-center gap-1 ml-4 mt-1.5">
+                  <AlertCircle size={12} className="text-red-500" />
+                  <p className="text-[11px] text-red-500 font-bold">{errors.newPassword}</p>
+                </div>
+              )}
             </div>
 
             {/* 3. 새 비밀번호 확인 */}
             <div className="group relative">
               <div
                 className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
-                  formData.confirmPassword && formData.newPassword !== formData.confirmPassword
+                  formData.confirmPassword && errors.confirmPassword
                     ? 'border-red-400 bg-white'
-                    : formData.confirmPassword && formData.newPassword === formData.confirmPassword
+                    : formData.confirmPassword && !errors.confirmPassword
                     ? 'border-emerald-400 bg-white'
                     : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
                 }`}
@@ -193,15 +320,15 @@ const ChangePassword = () => {
                 <ShieldCheck
                   size={20}
                   className={`${
-                    formData.confirmPassword && formData.newPassword !== formData.confirmPassword
+                    formData.confirmPassword && errors.confirmPassword
                       ? 'text-red-400'
-                      : formData.confirmPassword && formData.newPassword === formData.confirmPassword
+                      : formData.confirmPassword && !errors.confirmPassword
                       ? 'text-emerald-500'
                       : 'text-gray-300 group-focus-within:text-blue-600'
                   } mr-4`}
                 />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="password"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -209,14 +336,14 @@ const ChangePassword = () => {
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                   required
                 />
-                {formData.confirmPassword && formData.newPassword === formData.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
+                {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
               </div>
 
               {/* 불일치 시 에러 메시지 표시 */}
-              {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
+              {formData.confirmPassword && errors.confirmPassword && (
                 <div className="flex items-center gap-1 ml-4 mt-1.5">
                   <AlertCircle size={12} className="text-red-500" />
-                  <p className="text-[11px] text-red-500 font-bold">비밀번호가 일치하지 않습니다.</p>
+                  <p className="text-[11px] text-red-500 font-bold">{errors.confirmPassword}</p>
                 </div>
               )}
             </div>
@@ -234,17 +361,28 @@ const ChangePassword = () => {
             <button
               type="submit"
               disabled={
-                // 필수 값 누락 또는 비밀번호 불일치 시 버튼 비활성화
-                (isResetMode ? !formData.userId : !formData.currentPassword) || !formData.newPassword || formData.newPassword !== formData.confirmPassword
+                isSubmitting ||
+                (isResetMode ? !formData.email : !formData.currentPassword) ||
+                !formData.newPassword ||
+                !formData.confirmPassword ||
+                !!errors.newPassword ||
+                !!errors.confirmPassword
               }
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
-                  formData.newPassword && formData.newPassword === formData.confirmPassword && (isResetMode ? formData.userId : formData.currentPassword)
+                  !(
+                    isSubmitting ||
+                    (isResetMode ? !formData.email : !formData.currentPassword) ||
+                    !formData.newPassword ||
+                    !formData.confirmPassword ||
+                    !!errors.newPassword ||
+                    !!errors.confirmPassword
+                  )
                     ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                 }`}
             >
-              {isResetMode ? '비밀번호 재설정하기' : '비밀번호 변경하기'}
+              {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : isResetMode ? '비밀번호 재설정하기' : '비밀번호 변경하기'}
             </button>
           </div>
         </form>

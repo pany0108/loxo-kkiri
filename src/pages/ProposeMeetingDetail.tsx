@@ -45,7 +45,7 @@ const ProposeMeetingDetail = () => {
    * 라우터 상태로부터 약속 기본 정보를 불러옵니다.
    * 데이터가 없을 경우 기본값을 사용하여 에러를 방지합니다.
    */
-  const { title, description, invitedFriends, selectedDates, calendarName } = (location.state as LocationState) || {
+  const { title, description, invitedFriends, selectedDates } = (location.state as LocationState) || {
     title: '새 약속',
     description: '',
     selectedDates: [dayjs().format('YYYY-MM-DD')],

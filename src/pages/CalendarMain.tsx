@@ -10,31 +10,9 @@ import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
 
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db, auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useCalendar, CalendarEvent, CalendarType } from '../contexts';
 
 dayjs.extend(isSameOrBefore);
-
-interface CalendarType {
-  id: string;
-  name: string;
-  members: string[];
-  isPrivate: boolean;
-}
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;
-  end?: string;
-  allDay: boolean;
-  color: string;
-  location?: string;
-  attendees: string[];
-  recurrence?: any;
-  originalId?: string;
-}
 
 const getWeekOfMonth = (date: Date): string => {
   const year = date.getFullYear();
@@ -43,98 +21,6 @@ const getWeekOfMonth = (date: Date): string => {
   const firstWeekday = firstDayOfMonth.getDay();
   const weekNumber = Math.ceil((date.getDate() + firstWeekday) / 7);
   return `${year}년 ${month}월 ${weekNumber}째주`;
-};
-
-/**
- * 반복 일정을 '실제 날짜'를 가진 개별 일정들로 확장
- */
-const expandRecurringEvents = (events: any[]) => {
-  const expandedEvents: any[] = [];
-
-  events.forEach((event) => {
-    if (!event.recurrence || event.recurrence.frequency === 'none') {
-      expandedEvents.push({ ...event, originalId: event.id });
-      return;
-    }
-
-    const { frequency, endType, daysOfWeek } = event.recurrence;
-    const interval = Math.max(1, parseInt(event.recurrence.interval || '1', 10));
-    const endDate = event.recurrence.endDate;
-    const endCount = event.recurrence.endCount ? parseInt(event.recurrence.endCount, 10) : 0;
-    const isAllDay = event.allDay;
-
-    let currentStart = dayjs(event.start);
-    let currentEnd = event.end ? dayjs(event.end) : null;
-
-    const durationDays = isAllDay && currentEnd ? currentEnd.diff(currentStart, 'day') : 0;
-    const durationMs = !isAllDay && currentEnd ? currentEnd.diff(currentStart) : 0;
-
-    const limitDate = endType === 'date' && endDate ? dayjs(endDate).endOf('day') : dayjs().add(2, 'year');
-
-    let count = 0;
-    let loopSafety = 0;
-    const targetDays = daysOfWeek ? daysOfWeek.map(String) : [];
-    const exceptions = event.recurrence.exceptions || [];
-
-    while (loopSafety < 2000) {
-      loopSafety++;
-
-      if (endType === 'date' && currentStart.isAfter(limitDate)) break;
-      if (endType === 'count' && count >= endCount) break;
-
-      let shouldAdd = true;
-      if (frequency === 'weekly' && targetDays.length > 0) {
-        const currentDayStr = currentStart.day().toString();
-        if (!targetDays.includes(currentDayStr)) {
-          shouldAdd = false;
-        }
-      }
-
-      const currentDateStr = currentStart.format('YYYY-MM-DD');
-      if (exceptions.includes(currentDateStr)) {
-        shouldAdd = false;
-      }
-
-      if (shouldAdd) {
-        let finalStartStr, finalEndStr;
-
-        if (isAllDay) {
-          finalStartStr = currentStart.format('YYYY-MM-DD');
-          finalEndStr = currentEnd ? currentStart.add(durationDays, 'day').format('YYYY-MM-DD') : null;
-        } else {
-          finalStartStr = currentStart.toISOString();
-          finalEndStr = currentEnd ? currentStart.add(durationMs, 'millisecond').toISOString() : null;
-        }
-
-        expandedEvents.push({
-          ...event,
-          id: `${event.id}_${currentStart.format('YYYYMMDD')}`,
-          originalId: event.id,
-          start: finalStartStr,
-          end: finalEndStr,
-        });
-        count++;
-      }
-
-      if (frequency === 'daily') {
-        currentStart = currentStart.add(interval, 'day');
-      } else if (frequency === 'weekly') {
-        if (targetDays.length > 0) {
-          currentStart = currentStart.add(1, 'day');
-        } else {
-          currentStart = currentStart.add(interval, 'week');
-        }
-      } else if (frequency === 'monthly') {
-        currentStart = currentStart.add(interval, 'month');
-      } else if (frequency === 'yearly') {
-        currentStart = currentStart.add(interval, 'year');
-      } else {
-        break;
-      }
-    }
-  });
-
-  return expandedEvents;
 };
 
 const CalendarMain = () => {
@@ -155,56 +41,20 @@ const CalendarMain = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
 
-  const [user, setUser] = useState<any>(null);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  // [수정] Context에서 데이터 가져오기
+  const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
 
-  const [activeCalendar, setActiveCalendar] = useState<CalendarType>({
-    id: '1',
-    name: '내 캘린더',
-    members: [],
-    isPrivate: true,
-  });
+  // [추가] 화면에 보여줄 일정 필터링 로직
+  // 기본 캘린더(isDefault)가 선택되어 있거나 선택된 캘린더가 없으면 -> 모든 일정 표시 (통합 뷰)
+  // 특정 공유 캘린더가 선택되어 있으면 -> 해당 캘린더 일정만 표시
+  const displayedEvents = React.useMemo(() => {
+    if (!activeCalendar || activeCalendar.isDefault) {
+      return events;
+    }
+    return events.filter((event: CalendarEvent) => event.calendarId === activeCalendar.id);
+  }, [events, activeCalendar]);
 
-  const [myCalendars] = useState<CalendarType[]>([
-    { id: '1', name: '내 캘린더', members: [], isPrivate: true },
-    { id: '2', name: '우리 가족 캘린더', members: ['엄마', '아빠', '동생'], isPrivate: false },
-  ]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(collection(db, 'schedules'), where('userId', '==', user.uid));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const rawEvents = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          start: data.start,
-          end: data.end,
-          allDay: data.isAllDay,
-          color: data.color,
-          location: data.location,
-          attendees: data.attendees || ['나'],
-          recurrence: data.recurrence,
-        };
-      });
-
-      const processedEvents = expandRecurringEvents(rawEvents);
-      setEvents(processedEvents);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
+  // --- UI 로직 (기존과 동일) ---
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -305,7 +155,7 @@ const CalendarMain = () => {
 
   const handleEventClick = (info: any) => {
     const originalId = info.event.extendedProps.originalId || info.event.id;
-    const eventData = events.find((e) => e.id === info.event.id);
+    const eventData = events.find((e: CalendarEvent) => e.id === info.event.id);
 
     if (currentView === 'dayGridMonth') {
       const dateStr = dayjs(info.event.start).format('YYYY-MM-DD');
@@ -336,7 +186,13 @@ const CalendarMain = () => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
     navigate('/add-schedule', {
-      state: { start: selectInfo.startStr, end: selectInfo.endStr, allDay: selectInfo.allDay },
+      // [중요] 일정을 등록할 때 현재 활성 캘린더 ID를 넘겨줍니다.
+      state: {
+        start: selectInfo.startStr,
+        end: selectInfo.endStr,
+        allDay: selectInfo.allDay,
+        calendarId: activeCalendar?.id, // 추가됨
+      },
     });
   };
 
@@ -370,7 +226,6 @@ const CalendarMain = () => {
   };
 
   const renderEventContent = (eventInfo: EventContentArg) => {
-    // 1. 월 뷰 처리
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
         return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
@@ -384,7 +239,6 @@ const CalendarMain = () => {
       );
     }
 
-    // 2. 주/일 뷰 처리
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -399,7 +253,6 @@ const CalendarMain = () => {
 
     return (
       <div className={`w-full h-full flex flex-col items-start overflow-hidden rounded-[4px] ${isWeekView ? 'p-0.5' : 'p-1'}`}>
-        {/* [수정] 종일 일정이 아닌 경우에만 시간 표시 */}
         {!eventInfo.event.allDay && (
           <div className="flex flex-wrap items-center gap-1 text-[10px] font-extrabold text-white/90 leading-tight mb-0.5 tracking-tight">
             <span>{startStr}</span>
@@ -419,20 +272,28 @@ const CalendarMain = () => {
     );
   };
 
+  // 활성 캘린더가 로딩 중일 때 처리 (선택 사항)
+  if (!activeCalendar && myCalendars.length === 0) {
+    // 캘린더가 하나도 없을 때 보여줄 화면 (예: 캘린더 생성 유도 등)
+    // 여기서는 일단 기본 렌더링을 유지하되 데이터만 비어있음
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white font-['Pretendard'] overflow-hidden relative">
       <header className="px-6 pt-6 pb-2 bg-white/90 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
           <div className="relative" ref={dropdownRef}>
             <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar.name}</h1>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">{activeCalendar?.name || '캘린더 선택'}</h1>
               <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isCalListOpen ? 'rotate-180' : ''}`} />
             </button>
-            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">{activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`}</p>
+            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">
+              {activeCalendar ? (activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
+            </p>
 
             {isCalListOpen && (
               <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                {myCalendars.map((cal) => (
+                {myCalendars.map((cal: CalendarType) => (
                   <button
                     key={cal.id}
                     onClick={() => {
@@ -440,13 +301,13 @@ const CalendarMain = () => {
                       setIsCalListOpen(false);
                     }}
                     className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all
-                      ${activeCalendar.id === cal.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                      ${activeCalendar?.id === cal.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-[14px] font-bold">{cal.name}</span>
-                      {!cal.isPrivate && <span className="text-[10px] opacity-70 mt-0.5">멤버: {cal.members.join(', ')}</span>}
+                      {!cal.isPrivate && <span className="text-[10px] opacity-70 mt-0.5">멤버: {cal.members.length}명</span>}
                     </div>
-                    {activeCalendar.id === cal.id && <Check size={16} />}
+                    {activeCalendar?.id === cal.id && <Check size={16} />}
                   </button>
                 ))}
                 <div className="h-[1px] bg-gray-50 my-2 mx-2" />
@@ -554,7 +415,7 @@ const CalendarMain = () => {
               const dateStr = arg.date.toLocaleDateString('en-CA');
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
-            events={events}
+            events={displayedEvents} // [수정] 필터링된 일정 목록 전달
             eventDidMount={(info) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
@@ -596,12 +457,12 @@ const CalendarMain = () => {
 
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
-              {events
-                .filter((event) => {
+              {displayedEvents
+                .filter((event: CalendarEvent) => {
                   if (!selectedDate) return true;
                   return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
                 })
-                .map((event, index) => (
+                .map((event: CalendarEvent, index: number) => (
                   <div
                     key={`${event.id}-${index}`}
                     onClick={() => handleListItemClick(event)}
@@ -628,7 +489,7 @@ const CalendarMain = () => {
                   </div>
                 ))}
 
-              {events.filter((e) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
+              {displayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
                 <div className="py-10 text-center text-gray-400 text-[13px] font-medium">일정이 없습니다.</div>
               )}
             </div>
@@ -644,7 +505,7 @@ const CalendarMain = () => {
               start: targetDate,
               end: targetDate,
               allDay: true,
-              calendarId: activeCalendar.id,
+              calendarId: activeCalendar?.id, // [수정] 활성 캘린더 ID 전달
             },
           });
         }}

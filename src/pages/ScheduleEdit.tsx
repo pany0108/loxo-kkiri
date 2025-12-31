@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, Image as ImageIcon, Paperclip, BookOpen, Sparkles } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
@@ -26,9 +27,6 @@ const ScheduleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const eventData = location.state;
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const reviewFileInputRef = useRef<HTMLInputElement>(null);
 
   // 초기 상태 설정
   const [formData, setFormData] = useState({
@@ -87,29 +85,6 @@ const ScheduleEdit = () => {
     setFormData((prev) => ({ ...prev, color }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map((file) => ({
-        name: file.name,
-        type: file.type.startsWith('image/') ? 'image' : 'doc',
-        url: URL.createObjectURL(file),
-      })) as Attachment[];
-
-      setAttachments((prev) => [...prev, ...newFiles]);
-    }
-  };
-
-  const handleFileRemove = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleReviewImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      setFormData((prev) => ({ ...prev, reviewImages: [...(prev.reviewImages || []), url] }));
-    }
-  };
-
   const handleSave = async () => {
     try {
       if (location.state?.id || location.pathname.split('/').pop()) {
@@ -121,12 +96,12 @@ const ScheduleEdit = () => {
           // attachments 등은 파일 업로드 로직 필요 (현재는 생략)
         });
 
-        alert('수정되었습니다!');
+        toast.success('수정되었습니다.');
         navigate(-1); // 뒤로 가기
       }
     } catch (error) {
       console.error('수정 실패:', error);
-      alert('수정 중 오류가 발생했습니다.');
+      toast.error('수정 중 오류가 발생했습니다.');
     }
   };
 
@@ -269,15 +244,12 @@ const ScheduleEdit = () => {
               <div className="flex items-center justify-between px-1 mb-2">
                 <label className="text-[13px] font-black text-gray-400">첨부파일</label>
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }}
+                  type="button"
+                  onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
                   className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors"
                 >
                   + 추가
                 </button>
-                <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileChange} />
               </div>
               <div className="space-y-2">
                 {attachments.map((file, idx) => (
@@ -287,10 +259,8 @@ const ScheduleEdit = () => {
                       <span className="text-[13px] font-bold text-gray-700 truncate">{file.name}</span>
                     </div>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFileRemove(idx);
-                      }}
+                      type="button"
+                      onClick={() => toast('파일 삭제 기능은 준비중입니다.')}
                       className="text-gray-300 hover:text-red-500"
                     >
                       <X size={16} />
@@ -323,12 +293,9 @@ const ScheduleEdit = () => {
                     </div>
                   )}
                   <div className="flex justify-end border-t border-emerald-50 pt-3">
-                    <input type="file" accept="image/*" className="hidden" ref={reviewFileInputRef} onChange={handleReviewImageAdd} />
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        reviewFileInputRef.current?.click();
-                      }}
+                      type="button"
+                      onClick={() => toast('후기 사진 추가 기능은 준비중입니다.')}
                       className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[12px] font-bold hover:bg-emerald-100 transition-colors"
                     >
                       <Camera size={14} /> 사진 추가

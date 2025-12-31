@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 /**
@@ -78,7 +78,7 @@ const Signup = () => {
     } else {
       setErrors((prev) => ({ ...prev, password: '' }));
     }
-  }, [formData.password, formData.email]);
+  }, [formData.password, formData.email, formData]);
 
   /**
    * 이메일 형식 실시간 검사 Effect
@@ -225,6 +225,16 @@ const Signup = () => {
         firstName: formData.firstName,
         phone: formData.phone,
         birthDate: formData.birthDate,
+        createdAt: new Date().toISOString(),
+      });
+
+      // [수정] 회원가입 시 기본 캘린더 자동 생성
+      await addDoc(collection(db, 'calendars'), {
+        name: '내 캘린더',
+        ownerId: user.uid,
+        members: [user.uid],
+        isDefault: true,
+        color: '#3b82f6', // 기본 파란색
         createdAt: new Date().toISOString(),
       });
 

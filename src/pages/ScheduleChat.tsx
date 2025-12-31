@@ -32,7 +32,7 @@ interface Message {
 const ScheduleChat = () => {
   const navigate = useNavigate();
   // URL 파라미터에서 현재 일정 ID를 가져옵니다 (추후 API 연동 시 사용)
-  const { id } = useParams();
+  useParams();
 
   // 자동 스크롤을 위한 메시지 리스트 하단 참조 Ref
   const scrollRef = useRef<HTMLDivElement>(null);

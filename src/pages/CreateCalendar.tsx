@@ -1,56 +1,108 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2 } from 'lucide-react';
+// [추가] Firebase 관련 import
+import { collection, addDoc, doc, onSnapshot } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
-/**
- * 새로운 공유 캘린더를 생성하는 페이지 컴포넌트입니다.
- * 캘린더 이름을 설정하고, 함께 사용할 친구들을 선택할 수 있습니다.
- * * @returns {JSX.Element} 캘린더 생성 화면
- */
+const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899']; // 랜덤 배정을 위한 색상 목록
+
+// [추가] 친구 데이터 타입 정의
+interface Friend {
+  uid: string;
+  name: string;
+  email: string;
+}
+
 const CreateCalendar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // --- 상태 관리 ---
+  // 로그인 유저 상태
+  const [user, setUser] = useState<any>(null);
+
   const [calName, setCalName] = useState('');
-  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [selectedFriendUids, setSelectedFriendUids] = useState<string[]>([]);
 
-  // TODO: 실제 API를 통해 불러온 내 친구 목록 데이터로 대체해야 함
-  const friends = ['엄마', '아빠', '동생', '언니', '김철수', '이영희'];
+  // [수정] DB에서 불러온 친구 목록 상태
+  const [friends, setFriends] = useState<Friend[]>([]);
 
-  /**
-   * 친구 선택/해제 토글 핸들러
-   * @param {string} name - 선택/해제할 친구 이름
-   */
-  const toggleFriend = (name: string) => {
-    setSelectedFriends((prev) => (prev.includes(name) ? prev.filter((f) => f !== name) : [...prev, name]));
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // [추가] 로그인된 사용자의 친구 목록을 실시간으로 불러오기
+  useEffect(() => {
+    if (!user) return;
+
+    const userDocRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setFriends(data.friendsList || []);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const toggleFriend = (friendUid: string) => {
+    setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
   };
 
-  /**
-   * 캘린더 이름 자동 생성 로직
-   * 사용자가 직접 입력하지 않으면 선택된 멤버 이름 조합으로 기본 이름을 제공합니다.
-   */
-  const finalName = calName || (selectedFriends.length > 0 ? `${selectedFriends.join(', ')}의 캘린더` : '');
+  const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
+  const finalName = calName || (selectedFriendNames.length > 0 ? `${selectedFriendNames.join(', ')}의 캘린더` : '');
 
-  /**
-   * 최소 1명 이상의 친구를 선택해야 생성 가능
-   */
-  const isSubmitDisabled = selectedFriends.length === 0;
+  // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
+  const isSubmitDisabled = !finalName.trim();
 
-  /**
-   * 캘린더 생성 요청 핸들러
-   */
-  const handleSubmit = () => {
-    if (isSubmitDisabled) return;
+  // [수정] DB에 캘린더 저장
+  const handleSubmit = async () => {
+    if (isSubmitDisabled || !user) {
+      if (!user) alert('로그인이 필요합니다.');
+      return;
+    }
 
-    // TODO: 서버에 새 캘린더 생성 요청 (POST)
-    // payload: { name: finalName, members: selectedFriends }
+    try {
+      // 랜덤 색상 선택
+      const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
 
-    navigate('/calendar');
+      const docRef = await addDoc(collection(db, 'calendars'), {
+        name: finalName,
+        ownerId: user.uid,
+        members: [user.uid, ...selectedFriendUids],
+        color: randomColor,
+        createdAt: new Date().toISOString(),
+        isDefault: false, // 기본 캘린더 여부
+      });
+
+      alert(`'${finalName}' 캘린더가 생성되었습니다!`);
+
+      // [수정] AddSchedule에서 왔다면, 생성된 캘린더 ID를 가지고 다시 돌아감
+      if (location.state?.from === '/add-schedule') {
+        navigate('/add-schedule', {
+          replace: true,
+          state: {
+            from: '/create-calendar',
+            newlyCreatedCalendarId: docRef.id,
+            scheduleData: location.state.scheduleData,
+          },
+        });
+      } else {
+        navigate('/calendar-manager'); // 기존: 관리 화면으로 이동
+      }
+    } catch (error) {
+      console.error('Error adding calendar: ', error);
+      alert('캘린더 생성 중 오류가 발생했습니다.');
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
@@ -58,7 +110,6 @@ const CreateCalendar = () => {
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-40 overflow-y-auto w-full">
-        {/* 헤더 타이틀 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
@@ -70,7 +121,6 @@ const CreateCalendar = () => {
         </header>
 
         <div className="space-y-8">
-          {/* 캘린더 이름 입력 섹션 */}
           <section className="space-y-3">
             <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 이름</label>
             <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all shadow-sm">
@@ -78,13 +128,12 @@ const CreateCalendar = () => {
               <input
                 value={calName}
                 onChange={(e) => setCalName(e.target.value)}
-                placeholder="멤버 이름으로 자동 설정됩니다"
+                placeholder="캘린더 이름을 입력해주세요"
                 className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-400/80"
               />
             </div>
           </section>
 
-          {/* 공유 멤버 선택 섹션 */}
           <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
@@ -92,19 +141,21 @@ const CreateCalendar = () => {
                 <label className="text-[13px] font-black text-gray-400">공유할 친구 선택</label>
               </div>
               <span
-                className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${selectedFriends.length > 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'}`}
+                className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                  selectedFriendUids.length > 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
+                }`}
               >
-                {selectedFriends.length}명 선택됨
+                {selectedFriendUids.length}명 선택됨
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {friends.map((friend) => {
-                const isSelected = selectedFriends.includes(friend);
+                const isSelected = selectedFriendUids.includes(friend.uid);
                 return (
                   <button
-                    key={friend}
-                    onClick={() => toggleFriend(friend)}
+                    key={friend.uid}
+                    onClick={() => toggleFriend(friend.uid)}
                     className={`
                       relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
                       ${
@@ -114,19 +165,16 @@ const CreateCalendar = () => {
                       }
                     `}
                   >
-                    {/* 친구 아바타 (이니셜 표시) */}
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
                         isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
                       }`}
                     >
-                      {friend[0]}
+                      {friend.name[0]}
                     </div>
-
                     <div className="flex-1">
-                      <span className={`text-[15px] font-bold block ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend}</span>
+                      <span className={`text-[15px] font-bold block ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
                     </div>
-
                     {isSelected && (
                       <div className="absolute top-3 right-3 text-white">
                         <CheckCircle2 size={18} />
@@ -135,25 +183,18 @@ const CreateCalendar = () => {
                   </button>
                 );
               })}
-
-              {/* 친구 초대 버튼 (추가 기능 구현 예정) */}
-              <button
-                className="p-4 rounded-[20px] border-2 border-dashed border-gray-200 text-gray-400 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 hover:border-blue-200 hover:text-blue-500 transition-all active:scale-[0.98]"
-                onClick={() => {
-                  /* TODO: 친구 초대 모달 오픈 */
-                }}
-              >
-                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-                  <UserPlus size={20} />
-                </div>
-                <span className="text-[13px] font-bold">새 친구 초대</span>
-              </button>
             </div>
+
+            <button className="w-full p-4 rounded-[20px] border-2 border-dashed border-gray-200 text-gray-400 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 hover:border-blue-200 hover:text-blue-500 transition-all active:scale-[0.98]">
+              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+                <UserPlus size={20} />
+              </div>
+              <span className="text-[13px] font-bold">새 친구 초대</span>
+            </button>
           </section>
         </div>
       </div>
 
-      {/* 하단 고정 생성 버튼 */}
       <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
         <div className="mb-3 text-center h-5">
           {finalName && <p className="text-[13px] font-bold text-blue-600 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}

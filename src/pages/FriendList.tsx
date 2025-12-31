@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, onSnapshot, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
+import ImagePreviewModal from '../components/ImagePreviewModal';
 
 /**
  * 친구 데이터 인터페이스
@@ -12,6 +14,7 @@ interface Friend {
   name: string;
   email: string;
   statusMessage?: string;
+  photoURL?: string;
 }
 
 /**
@@ -41,6 +44,12 @@ const FriendList = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  // 바텀시트 스와이프 제어 Ref
+  const sheetTouchStartY = useRef<number | null>(null);
+  const sheetTouchEndY = useRef<number | null>(null);
+  const minSheetSwipeDistance = 50;
 
   /**
    * 컴포넌트 마운트 시 Firestore의 내 문서(users/{uid})를 구독합니다.
@@ -63,6 +72,26 @@ const FriendList = () => {
   }, []);
 
   /**
+   * [추가] 바텀시트 스와이프 핸들러
+   */
+  const onSheetTouchStart = (e: React.TouchEvent) => {
+    sheetTouchEndY.current = null;
+    sheetTouchStartY.current = e.targetTouches[0].clientY;
+  };
+
+  const onSheetTouchMove = (e: React.TouchEvent) => {
+    sheetTouchEndY.current = e.targetTouches[0].clientY;
+  };
+
+  const onSheetTouchEnd = () => {
+    if (!sheetTouchStartY.current || !sheetTouchEndY.current) return;
+    const distance = sheetTouchEndY.current - sheetTouchStartY.current;
+    if (distance > minSheetSwipeDistance) {
+      setIsMenuOpen(false);
+    }
+  };
+
+  /**
    * 이메일로 사용자를 검색하여 친구 목록에 추가합니다.
    * - 자기 자신 추가 불가
    * - 이미 등록된 친구 중복 추가 불가
@@ -73,6 +102,7 @@ const FriendList = () => {
 
     // 자기 자신 추가 방지
     if (newFriendEmail === auth.currentUser.email) {
+      toast.error('자기 자신은 친구로 추가할 수 없습니다.');
       return;
     }
 
@@ -83,7 +113,7 @@ const FriendList = () => {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        // 유저를 찾을 수 없음
+        toast.error('존재하지 않는 이메일입니다.');
         return;
       }
 
@@ -92,6 +122,7 @@ const FriendList = () => {
 
       // 이미 친구인지 확인
       if (friends.some((f) => f.uid === targetUserDoc.id)) {
+        toast('이미 친구 목록에 있습니다.', { icon: '⚠️' });
         return;
       }
 
@@ -103,14 +134,17 @@ const FriendList = () => {
           name: targetUserData.name,
           email: targetUserData.email,
           statusMessage: targetUserData.statusMessage || '',
+          photoURL: targetUserData.photoURL || '',
         }),
       });
 
       // 성공 처리
+      toast.success(`${targetUserData.name}님을 친구로 추가했습니다.`);
       setNewFriendEmail('');
       setIsAddModalOpen(false);
     } catch (error) {
-      // 에러 발생 시 처리
+      console.error('친구 추가 오류:', error);
+      toast.error('친구 추가 중 오류가 발생했습니다.');
     } finally {
       setIsAdding(false);
     }
@@ -129,10 +163,12 @@ const FriendList = () => {
       const updatedList = friends.map((f) => (f.uid === selectedFriend.uid ? { ...f, name: editName.trim() } : f));
 
       await updateDoc(myRef, { friendsList: updatedList });
+      toast.success('이름이 수정되었습니다.');
       setIsEditModalOpen(false);
       setIsMenuOpen(false);
     } catch (e) {
-      // 에러 발생 시 처리
+      console.error('친구 이름 수정 오류:', e);
+      toast.error('이름 수정 중 오류가 발생했습니다.');
     }
   };
 
@@ -164,10 +200,12 @@ const FriendList = () => {
     try {
       const myRef = doc(db, 'users', auth.currentUser!.uid);
       await updateDoc(myRef, { friendsList: arrayRemove(selectedFriend) });
+      toast.success('친구를 삭제했습니다.');
       setIsDeleteModalOpen(false);
       setIsMenuOpen(false);
     } catch (e) {
-      // 에러 발생 시 처리
+      console.error('친구 삭제 오류:', e);
+      toast.error('친구 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -218,8 +256,22 @@ const FriendList = () => {
               onClick={() => navigate('/profile')}
             >
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-[56px] h-[56px] bg-gradient-to-br from-blue-500 to-blue-600 rounded-[22px] flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-100">
-                  <User size={26} strokeWidth={2.5} />
+                <div
+                  className="w-[56px] h-[56px] rounded-[22px] shrink-0 shadow-lg shadow-blue-100 overflow-hidden"
+                  onClick={(e) => {
+                    if (myInfo?.photoURL) {
+                      e.stopPropagation();
+                      setPreviewImage(myInfo.photoURL);
+                    }
+                  }}
+                >
+                  {myInfo?.photoURL ? (
+                    <img src={myInfo.photoURL} alt={myInfo.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                      <User size={26} strokeWidth={2.5} />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -247,7 +299,13 @@ const FriendList = () => {
                 {filteredFriends.map((friend) => (
                   <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-4 overflow-hidden flex-1">
-                      <div className="w-[48px] h-[48px] rounded-[18px] bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">{friend.name[0]}</div>
+                      <div className="w-[48px] h-[48px] rounded-[18px] shrink-0 cursor-pointer" onClick={() => friend.photoURL && setPreviewImage(friend.photoURL)}>
+                        {friend.photoURL ? (
+                          <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
+                        ) : (
+                          <div className="w-full h-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg rounded-[18px]">{friend.name[0]}</div>
+                        )}
+                      </div>
                       <div className="flex flex-col min-w-0 flex-1">
                         <span className="text-[16px] font-bold text-gray-900 truncate">{friend.name}</span>
                         <p className="text-[12px] font-medium truncate text-gray-500">{friend.statusMessage || '상태 메시지 없음'}</p>
@@ -278,7 +336,12 @@ const FriendList = () => {
       {isMenuOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-[32px] p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl">
+          <div
+            className="relative w-full max-w-md bg-white rounded-t-[32px] p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl"
+            onTouchStart={onSheetTouchStart}
+            onTouchMove={onSheetTouchMove}
+            onTouchEnd={onSheetTouchEnd}
+          >
             <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
             <h3 className="text-[14px] font-black text-gray-400 mb-4 px-2 tracking-tight">{selectedFriend?.name}님 관리</h3>
             <div className="space-y-2">
@@ -368,6 +431,9 @@ const FriendList = () => {
           </div>
         </div>
       )}
+
+      {/* 이미지 미리보기 모달 */}
+      {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}
 
       {/* 친구 추가 모달 */}
       {isAddModalOpen && (

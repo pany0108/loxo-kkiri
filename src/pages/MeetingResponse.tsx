@@ -24,7 +24,7 @@ interface MyNewSlot {
  */
 const MeetingResponse = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  useParams();
 
   // --- 상태 관리 ---
   const [currentMonth, setCurrentMonth] = useState(dayjs());

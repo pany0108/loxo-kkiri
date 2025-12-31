@@ -1,81 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, ChevronLeft, Settings, Trash2, CheckCircle2, Calendar as CalendarIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Plus, Users, ChevronLeft, Settings, Trash2, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
+// [추가] Firebase 관련 import
+import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
-/**
- * 캘린더 개별 데이터 구조 정의
- */
 interface CalendarData {
   id: string;
   name: string;
   members: string[];
   isDefault: boolean;
   color: string;
+  ownerId?: string; // 소유자 확인용
 }
 
-/**
- * 참여 중인 캘린더 목록을 관리하고 수정/삭제 및 전환 기능을 제공하는 컴포넌트입니다.
- * * @returns {JSX.Element} 캘린더 관리 화면
- */
 const CalendarManager = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [calendars, setCalendars] = useState<CalendarData[]>([]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [calendarToDelete, setCalendarToDelete] = useState<CalendarData | null>(null);
 
-  /**
-   * 캘린더 목록 상태 (실제 서비스 시 서버 API 연동 필요)
-   */
-  const [calendars, setCalendars] = useState<CalendarData[]>([
-    { id: '1', name: '가족 공유 캘린더', members: ['나', '엄마', '아빠'], isDefault: true, color: 'bg-blue-500' },
-    { id: '2', name: '신년회 모임', members: ['나', '김철수', '이영희', '박지성'], isDefault: false, color: 'bg-emerald-500' },
-    { id: '3', name: '데브 프로젝트', members: ['나', '팀장님', '에디'], isDefault: false, color: 'bg-purple-500' },
-  ]);
+  // 1. 유저 인증 상태 확인
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  /**
-   * 참여 멤버 이름을 요약된 문자열로 포맷팅합니다.
-   * * @param {string[]} members - 멤버 이름 배열
-   * @returns {string} 포맷팅된 멤버 리스트 문자열
-   */
-  const formatMembers = (members: string[]): string => {
-    const displayCount = 3;
-    if (members.length <= displayCount) {
-      return members.join(', ');
-    }
-    return `${members.slice(0, displayCount).join(', ')} 외 ${members.length - displayCount}명`;
+  // 2. 캘린더 목록 불러오기 (내가 포함된 캘린더)
+  useEffect(() => {
+    if (!user) return;
+
+    // 'calendars' 컬렉션에서 'members' 배열에 내 uid가 포함된 문서 찾기
+    // (지금은 CreateCalendar에서 members에 string을 넣었지만, 실제론 uid 저장을 권장)
+    // 여기서는 members 배열에 user.uid가 포함되어 있거나 ownerId가 user.uid인 것을 찾음
+    const q = query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const loadedCalendars = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as CalendarData[];
+
+      setCalendars(loadedCalendars);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const formatMembers = (members: string[]) => {
+    // 실제로는 uid를 이름으로 변환하는 과정이 필요하지만 지금은 배열 길이로 표현
+    const count = members.length;
+    return count <= 1 ? '나만 보기' : `나 포함 ${count}명`;
   };
 
-  /**
-   * 특정 캘린더를 삭제합니다. (기본 캘린더는 삭제 불가)
-   * * @param {string} id - 삭제할 캘린더 ID
-   * @param {React.MouseEvent} e - 클릭 이벤트
-   */
-  const handleDelete = (id: string, e: React.MouseEvent): void => {
+  // 삭제 모달 열기
+  const openDeleteModal = (calendar: CalendarData, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('정말 이 캘린더를 삭제하시겠습니까?\n포함된 모든 일정이 삭제됩니다.')) {
-      setCalendars(calendars.filter((cal) => cal.id !== id));
+    setCalendarToDelete(calendar);
+    setIsDeleteModalOpen(true);
+  };
+
+  // [수정] 캘린더 삭제 확인
+  const handleDeleteConfirm = async () => {
+    if (!calendarToDelete) return;
+
+    try {
+      await deleteDoc(doc(db, 'calendars', calendarToDelete.id));
+      // TODO: 해당 캘린더에 속한 일정(schedules)들도 삭제하는 로직 필요 (Batch 작업 등)
+      toast.success('캘린더가 삭제되었습니다.');
+    } catch (error) {
+      console.error('Delete failed:', error);
+      toast.error('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setCalendarToDelete(null);
     }
   };
 
-  /**
-   * 선택한 캘린더의 수정 페이지로 이동합니다.
-   * * @param {string} id - 수정할 캘린더 ID
-   * @param {React.MouseEvent} e - 클릭 이벤트
-   */
-  const handleEdit = (id: string, e: React.MouseEvent): void => {
+  const handleEdit = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/edit-calendar/${id}`);
+    // 수정 페이지가 있다면 이동 navigate(`/edit-calendar/${id}`);
+    toast('수정 기능은 준비중입니다.');
   };
 
-  /**
-   * 현재 활성 캘린더를 변경하고 메인 캘린더 화면으로 이동합니다.
-   * * @param {string} name - 전환할 캘린더 이름
-   */
-  const handleSwitch = (name: string): void => {
-    // TODO: 전역 상태 관리 로직(Context 또는 Redux) 연동 필요
+  const handleSwitch = (id: string) => {
+    // 여기서 선택한 캘린더 ID를 전역 상태나 로컬 스토리지에 저장하여
+    // CalendarMain에서 해당 캘린더의 일정만 보여주도록 해야 함.
+    // 지금은 단순히 캘린더 메인으로 이동
     navigate('/calendar');
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 상단 네비게이션 바 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
@@ -83,7 +104,6 @@ const CalendarManager = () => {
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-24 overflow-y-auto w-full">
-        {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <CalendarIcon className="text-blue-600 w-6 h-6" />
@@ -94,7 +114,6 @@ const CalendarManager = () => {
           </h2>
         </header>
 
-        {/* 캘린더 목록 섹션 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-[15px] font-black text-gray-900 flex items-center gap-2">
@@ -107,13 +126,12 @@ const CalendarManager = () => {
             {calendars.map((cal) => (
               <div
                 key={cal.id}
-                onClick={() => handleSwitch(cal.name)}
+                onClick={() => handleSwitch(cal.id)}
                 className="group relative w-full bg-white p-5 rounded-[24px] border-2 border-gray-50 flex items-start justify-between active:scale-[0.98] transition-all hover:border-blue-100 hover:shadow-lg hover:shadow-blue-50/20 cursor-pointer"
               >
                 <div className="flex gap-4">
-                  {/* 상태 아이콘 표시 */}
-                  <div className={`w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm ${cal.isDefault ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>
-                    {cal.isDefault ? <CheckCircle2 size={20} /> : <CalendarIcon size={20} />}
+                  <div className="w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                    <CalendarIcon size={20} />
                   </div>
 
                   <div className="flex flex-col pt-0.5 min-w-0">
@@ -121,21 +139,16 @@ const CalendarManager = () => {
                       <h4 className="text-[16px] font-black text-gray-900 leading-none truncate">{cal.name}</h4>
                       {cal.isDefault && <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md shrink-0">기본</span>}
                     </div>
-                    <p className="text-[13px] font-medium text-gray-400 flex items-center gap-1 min-w-0">
-                      <span className="whitespace-nowrap shrink-0">멤버 {cal.members.length}명</span>
-                      <span className="w-0.5 h-0.5 bg-gray-300 rounded-full mx-0.5 shrink-0" />
-                      <span className="truncate">{formatMembers(cal.members)}</span>
-                    </p>
+                    <p className="text-[13px] font-medium text-gray-400 flex items-center gap-1 min-w-0">{formatMembers(cal.members)}</p>
                   </div>
                 </div>
 
-                {/* 제어 버튼 영역 */}
                 <div className="flex gap-1">
                   <button onClick={(e) => handleEdit(cal.id, e)} className="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="수정">
                     <Settings size={18} />
                   </button>
                   {!cal.isDefault && (
-                    <button onClick={(e) => handleDelete(cal.id, e)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="삭제">
+                    <button onClick={(e) => openDeleteModal(cal, e)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="삭제">
                       <Trash2 size={18} />
                     </button>
                   )}
@@ -143,7 +156,6 @@ const CalendarManager = () => {
               </div>
             ))}
 
-            {/* 신규 생성 버튼 */}
             <button
               onClick={() => navigate('/create-calendar')}
               className="w-full h-[80px] border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all active:scale-[0.98]"
@@ -156,6 +168,34 @@ const CalendarManager = () => {
           </div>
         </section>
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {isDeleteModalOpen && calendarToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
+          <div className="relative w-full max-w-[340px] bg-white rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 mb-2">캘린더 삭제</h3>
+            <p className="text-gray-500 text-[14px] mb-8 font-medium leading-relaxed">
+              정말 <span className="text-gray-900 font-bold">'{calendarToDelete.name}'</span> 캘린더를
+              <br />
+              삭제하시겠습니까?
+              <br />
+              <span className="text-red-500 font-bold">포함된 모든 일정이 사라집니다.</span>
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={handleDeleteConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+                삭제하기
+              </button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-4 text-gray-400 font-bold hover:text-gray-600">
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
