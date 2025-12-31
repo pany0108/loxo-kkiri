@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -14,6 +14,9 @@ const SignupSocial = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- Refs (포커스 이동용) ---
+  const birthDateRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
   // --- 상태 관리 ---
 
   /**
@@ -97,6 +100,27 @@ const SignupSocial = () => {
   };
 
   /**
+   * 키보드 이벤트 핸들러
+   * - 비밀번호 필드에서 한글 입력 방지 (IME 조합 차단)
+   * - Enter 키 입력 시 다음 필드로 포커스 이동
+   */
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null>, isPasswordField: boolean = false) => {
+    if (isPasswordField) {
+      if (e.nativeEvent.isComposing || e.key === 'Process') {
+        e.preventDefault();
+        return;
+      }
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        nextRef.current.focus();
+      }
+    }
+  };
+
+  /**
    * 휴대폰 인증번호 발송 시뮬레이션
    */
   const handleSendAuth = () => {
@@ -170,7 +194,7 @@ const SignupSocial = () => {
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 leading-[1.3]">
-            반가워요,{' '}
+            반가워요,
             <span className="text-blue-600">
               {lastName}
               {firstName}님!
@@ -187,6 +211,7 @@ const SignupSocial = () => {
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input
+                  ref={birthDateRef}
                   name="birthDate"
                   type="tel"
                   inputMode="numeric"
@@ -194,6 +219,7 @@ const SignupSocial = () => {
                   placeholder="YYYY/MM/DD"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
                   onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, phoneRef)}
                   required
                   maxLength={10}
                 />
@@ -211,6 +237,7 @@ const SignupSocial = () => {
                 >
                   <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
                   <input
+                    ref={phoneRef}
                     name="phone"
                     type="tel"
                     inputMode="numeric"
@@ -218,6 +245,7 @@ const SignupSocial = () => {
                     placeholder="010-0000-0000"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
                     onChange={handleChange}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                     required
                     readOnly={isVerified}
                   />
