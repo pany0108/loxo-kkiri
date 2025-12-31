@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'; // [추가] dayjs 플러그인
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, Image as ImageIcon, Paperclip, BookOpen, Sparkles } from 'lucide-react';
-import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
+import { RecurrenceOptions, RecurrenceSettings } from '../components';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useCalendar } from '../contexts';
@@ -47,7 +47,7 @@ const ScheduleEdit = () => {
     reviewImages: eventData?.reviewImages || [],
   });
 
-  const [attachments, setAttachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
+  const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
 
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(
     eventData?.recurrence || {

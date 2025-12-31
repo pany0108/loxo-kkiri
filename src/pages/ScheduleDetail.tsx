@@ -56,11 +56,11 @@ const ScheduleDetail = () => {
     index: number;
   }>({ isOpen: false, images: [], index: 0 });
 
-  const [chatMedia] = useState([
-    'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&h=150&fit=crop',
-    'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=150&h=150&fit=crop',
-    'https://images.unsplash.com/photo-1526779218846-2731da2fbbf9?w=150&h=150&fit=crop',
-  ]);
+  // const [chatMedia] = useState([
+  //   'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&h=150&fit=crop',
+  //   'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=150&h=150&fit=crop',
+  //   'https://images.unsplash.com/photo-1526779218846-2731da2fbbf9?w=150&h=150&fit=crop',
+  // ]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 

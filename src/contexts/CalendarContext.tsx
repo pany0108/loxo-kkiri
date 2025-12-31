@@ -149,7 +149,7 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   const { data: myCalendarsData } = useFirestoreQuery<CalendarType>(calendarsQuery);
-  const myCalendars = myCalendarsData || [];
+  const myCalendars = useMemo(() => myCalendarsData || [], [myCalendarsData]);
 
   useEffect(() => {
     if (myCalendars && myCalendars.length > 0) {
