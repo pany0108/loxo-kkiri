@@ -213,6 +213,7 @@ const SignupSocial = () => {
                 <input
                   ref={birthDateRef}
                   name="birthDate"
+                  enterKeyHint="next"
                   type="tel"
                   inputMode="numeric"
                   value={formData.birthDate}
