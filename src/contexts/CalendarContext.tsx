@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import dayjs from 'dayjs';
@@ -171,7 +171,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
 
   const events = useMemo(() => {
     if (!rawEvents) return [];
-    return expandRecurringEvents(rawEvents);
+    // Firestore의 isAllDay를 FullCalendar가 사용하는 allDay 속성으로 매핑합니다.
+    const mappedEvents = rawEvents.map((event) => ({
+      ...event,
+      allDay: event.isAllDay,
+    }));
+    return expandRecurringEvents(mappedEvents);
   }, [rawEvents]);
 
   return <CalendarContext.Provider value={{ myCalendars, events, activeCalendar, setActiveCalendar }}>{children}</CalendarContext.Provider>;

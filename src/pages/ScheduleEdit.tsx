@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'; // [추가] dayjs 플러그인
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, Image as ImageIcon, Paperclip, BookOpen, Sparkles } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
+import { useCalendar } from '../contexts';
+
+dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
@@ -27,20 +31,18 @@ const ScheduleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const eventData = location.state;
+  const { myCalendars } = useCalendar();
 
   // 초기 상태 설정
   const [formData, setFormData] = useState({
     title: eventData?.title || '',
-    calendarId: '1',
+    calendarId: eventData?.calendarId || '',
     isAllDay: eventData?.allDay || false,
     start: eventData?.start ? dayjs(eventData.start).format('YYYY-MM-DDTHH:mm') : dayjs().format('YYYY-MM-DDTHH:mm'),
     end: eventData?.end ? dayjs(eventData.end).format('YYYY-MM-DDTHH:mm') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
     location: eventData?.location || '',
     content: eventData?.content || '',
-    color: eventData?.color || '#3b82f6',
-    // [수정] 이전 설정값 불러오기 (없으면 'none')
     notification: eventData?.notification || 'none',
-    attendees: eventData?.attendees || ['나'],
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
   });
@@ -59,14 +61,30 @@ const ScheduleEdit = () => {
     },
   );
 
-  const isShared = formData.attendees.length > 1;
+  const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
+  const isShared = selectedCalendar ? selectedCalendar.members.length > 1 : false;
   const isPastEvent = dayjs().isAfter(formData.end);
 
   // --- 핸들러 ---
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      // 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정
+      if (!newData.isAllDay && name === 'start') {
+        const duration = dayjs(prev.end).diff(dayjs(prev.start));
+        // 새로 설정된 시작 시간이 기존 종료 시간보다 늦거나 같으면, 종료 시간을 1시간 뒤로 조정
+        if (dayjs(value).isSameOrAfter(dayjs(prev.end))) {
+          newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+        } else {
+          // 그렇지 않으면 기존 간격을 유지
+          newData.end = dayjs(value).add(duration, 'ms').format('YYYY-MM-DDTHH:mm');
+        }
+      }
+      return newData;
+    });
   };
 
   const handleToggleAllDay = () => {
@@ -81,19 +99,19 @@ const ScheduleEdit = () => {
     });
   };
 
-  const handleColorChange = (color: string) => {
-    setFormData((prev) => ({ ...prev, color }));
-  };
-
   const handleSave = async () => {
     try {
       if (location.state?.id || location.pathname.split('/').pop()) {
         const docId = location.state?.id || location.pathname.split('/').pop();
 
+        const finalSelectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
+        const attendees = finalSelectedCalendar ? finalSelectedCalendar.members : auth.currentUser ? [auth.currentUser.uid] : [];
+
         await updateDoc(doc(db, 'schedules', docId), {
           ...formData,
+          color: finalSelectedCalendar?.color || '#3b82f6',
+          attendees,
           recurrence,
-          // attachments 등은 파일 업로드 로직 필요 (현재는 생략)
         });
 
         toast.success('수정되었습니다.');
@@ -139,13 +157,6 @@ const ScheduleEdit = () => {
                   placeholder="무엇을 하나요?"
                   className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                 />
-              </div>
-            </div>
-
-            <div className="py-2">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-3">태그 색상</label>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-4 border-2 border-transparent">
-                <ColorPalette selectedColor={formData.color} onSelectColor={handleColorChange} />
               </div>
             </div>
 

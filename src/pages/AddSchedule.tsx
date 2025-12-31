@@ -2,12 +2,15 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X, ChevronDown, Plus, Check } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, ColorPalette } from '../components';
 import { collection, addDoc, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from '../hooks/useFirestore';
+
+dayjs.extend(isSameOrAfter);
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
@@ -164,16 +167,13 @@ const AddSchedule = () => {
     const { name, value } = e.target;
 
     setFormData((prev: FormDataState) => {
-      const newData = { ...prev, [name]: value }; // 먼저 현재 변경사항 반영
+      const newData = { ...prev, [name]: value };
 
       // 종일 일정이 아닐 때만 시간 자동 조정
-      if (!prev.isAllDay) {
-        if (name === 'start') {
-          // 시작 시간 변경 시, 종료 시간을 시작 시간 + 1시간으로 설정
+      if (!newData.isAllDay && name === 'start') {
+        // 새로 설정된 시작 시간이 기존 종료 시간보다 늦거나 같으면, 종료 시간을 1시간 뒤로 조정
+        if (dayjs(value).isSameOrAfter(dayjs(newData.end))) {
           newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
-        } else if (name === 'end') {
-          // 종료 시간 변경 시, 시작 시간을 종료 시간 - 1시간으로 설정
-          newData.start = dayjs(value).subtract(1, 'hour').format('YYYY-MM-DDTHH:mm');
         }
       }
 
@@ -189,10 +189,6 @@ const AddSchedule = () => {
       color: calendar.color || '#3b82f6',
     }));
     setIsCalListOpen(false);
-  };
-
-  const handleColorChange = (color: string) => {
-    setFormData((prev: FormDataState) => ({ ...prev, color }));
   };
 
   const handleToggle = () => {
@@ -341,13 +337,6 @@ const AddSchedule = () => {
                   </button>
                 </div>
               )}
-            </div>
-
-            <div className="py-2">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-3">태그 색상</label>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-4 border-2 border-transparent">
-                <ColorPalette selectedColor={formData.color} onSelectColor={handleColorChange} />
-              </div>
             </div>
 
             <div className="space-y-3">

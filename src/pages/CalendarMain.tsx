@@ -446,7 +446,6 @@ const CalendarMain = () => {
 
           <div className="flex items-center justify-between px-6 pt-2 pb-4 bg-white dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
               <h3 className="text-[16px] font-black text-gray-900 dark:text-white">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
             </div>
             <button

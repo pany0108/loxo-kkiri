@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, Bell } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell } from 'lucide-react';
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore'; // getDoc 추가
-import { db, auth } from '../firebase'; // auth 추가
+import { db } from '../firebase'; // auth 추가
 
 interface LocationState {
   id?: string;
@@ -16,6 +16,7 @@ interface LocationState {
   content?: string;
   color?: string;
   notification?: string;
+  calendarId?: string;
   allDay?: boolean;
   attendees?: string[];
   recurrence?: RecurrenceSettings;
@@ -39,6 +40,7 @@ const ScheduleDetail = () => {
     location: initialState?.location || '',
     content: initialState?.content || '',
     color: initialState?.color || '#3b82f6',
+    calendarId: initialState?.calendarId || '',
     notification: initialState?.notification || 'none',
     allDay: initialState?.allDay || false,
     attendees: initialState?.attendees || ['나'],
@@ -69,31 +71,24 @@ const ScheduleDetail = () => {
     const unsubscribe = onSnapshot(doc(db, 'schedules', id), async (docSnap) => {
       if (docSnap.exists()) {
         const dbData = docSnap.data();
-
         // [추가] 참석자 UID를 이름으로 변환
         const attendeeNames = await Promise.all(
           (dbData.attendees || []).map(async (uid: string) => {
-            if (uid === auth.currentUser?.uid) {
-              return auth.currentUser?.displayName || '나';
-            }
             try {
               const userDoc = await getDoc(doc(db, 'users', uid));
               return userDoc.exists() ? userDoc.data().name : '?';
             } catch {
+              // In case of error, return a placeholder
               return '?';
             }
           }),
         );
-
         // [핵심 수정] 반복 일정 처리 로직
         const isRecurring = dbData.recurrence && dbData.recurrence.frequency !== 'none';
-
         // 1. 반복 일정이고, 2. 캘린더에서 클릭해서 들어온 정보(initialState)가 있다면?
         // => DB의 원본 날짜(1월 2일) 대신 클릭한 날짜(1월 3일, 4일...)를 사용한다.
         const displayStart = isRecurring && initialState?.start ? dayjs(initialState.start) : dayjs(dbData.start);
-
         const displayEnd = isRecurring && initialState?.end ? dayjs(initialState.end) : dayjs(dbData.end);
-
         setData({
           title: dbData.title,
           start: displayStart, // 보정된 날짜 사용
@@ -101,9 +96,10 @@ const ScheduleDetail = () => {
           location: dbData.location || '',
           content: dbData.content || '',
           color: dbData.color || '#3b82f6',
+          calendarId: dbData.calendarId,
           notification: dbData.notification || 'none',
           allDay: dbData.isAllDay || false,
-          attendees: attendeeNames, // [수정] 변환된 이름 배열 사용
+          attendees: attendeeNames,
           recurrence: dbData.recurrence,
           files: dbData.files || [],
           review: dbData.review || '',
@@ -200,20 +196,6 @@ const ScheduleDetail = () => {
       end: data.end.toISOString(),
     };
     navigate(`/schedule/edit/${id}`, { state: safeData });
-  };
-
-  const handleViewAllMedia = () => {
-    navigate(`/schedule/${id}/media`, {
-      state: {
-        media: chatMedia,
-        files: data.files,
-        title: data.title,
-      },
-    });
-  };
-
-  const openPreview = (images: string[], index: number) => {
-    setPreviewState({ isOpen: true, images, index });
   };
 
   const formatDate = (date: dayjs.Dayjs, isAllDay: boolean) => {
