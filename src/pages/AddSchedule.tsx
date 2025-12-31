@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, X } from 'lucide-react';
-import ColorPalette from '../components/calendar/ColorPalette';
+import { ColorPalette, RecurrenceOptions, RecurrenceSettings } from '../components';
 
 /**
  * 일정 알림 설정을 위한 옵션 리스트
@@ -50,6 +50,16 @@ const AddSchedule = () => {
     if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
     return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
   };
+
+  const [recurrence, setRecurrence] = useState<RecurrenceSettings>({
+    frequency: 'none',
+    interval: 1,
+    daysOfWeek: [], // 매주 반복 시 선택된 요일들
+    monthlyType: 'date',
+    endType: 'none',
+    endDate: dayjs().add(1, 'month').format('YYYY-MM-DD'),
+    endCount: 10,
+  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -239,6 +249,9 @@ const AddSchedule = () => {
                 </div>
               </div>
             </div>
+
+            {/* 반복 설정 */}
+            <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             {/* 알림 설정 */}
             <div className="group relative">

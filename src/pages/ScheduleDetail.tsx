@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, MessageCircle, BookOpen, Paperclip, X, Trash2, Sparkles, Users, Image as ImageIcon, FileText } from 'lucide-react';
+import { RecurrenceOptions, RecurrenceSettings } from '../components';
 
 /**
  * 캘린더 선택 옵션 목록 (Mock Data)
@@ -35,11 +36,13 @@ interface LocationState {
   color?: string;
   allDay?: boolean;
   attendees?: string[];
+  recurrence?: RecurrenceSettings; // [추가] 반복 설정 데이터
 }
 
 /**
  * 일정 상세 조회 및 수정 페이지 컴포넌트입니다.
  * - 일정의 기본 정보(제목, 시간, 장소 등)를 수정할 수 있습니다.
+ * - 반복 일정 설정을 수정할 수 있습니다.
  * - 공유 일정인 경우 채팅방 입장 버튼과 공유 미디어를 표시합니다.
  * - 지난 개인 일정인 경우 후기(Review) 작성 폼을 제공합니다.
  * * @returns {JSX.Element} 일정 상세 화면
@@ -56,6 +59,21 @@ const ScheduleDetail = () => {
   const reviewFileInputRef = useRef<HTMLInputElement>(null);
 
   // --- 상태 관리 ---
+
+  /**
+   * 반복 설정 상태 (초기값: 전달받은 데이터가 없으면 기본값 설정)
+   */
+  const [recurrence, setRecurrence] = useState<RecurrenceSettings>(
+    eventData?.recurrence || {
+      frequency: 'none',
+      interval: 1,
+      daysOfWeek: [],
+      monthlyType: 'date',
+      endType: 'none',
+      endDate: dayjs().add(1, 'month').format('YYYY-MM-DD'),
+      endCount: 10,
+    },
+  );
 
   /**
    * 폼 데이터 상태
@@ -98,8 +116,6 @@ const ScheduleDetail = () => {
 
   /**
    * 종일 일정 여부 토글 핸들러
-   * - 종일 설정 시: 날짜 포맷(YYYY-MM-DD)으로 변경
-   * - 시간 설정 시: 날짜+시간 포맷(YYYY-MM-DDTHH:mm)으로 변경 및 기본 시간(09:00/10:00) 할당
    */
   const handleToggleAllDay = () => {
     setFormData((prev) => {
@@ -125,7 +141,6 @@ const ScheduleDetail = () => {
 
   /**
    * 후기 이미지 추가 핸들러
-   * (실제 구현 시 서버 업로드 로직 필요)
    */
   const handleReviewImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -148,7 +163,8 @@ const ScheduleDetail = () => {
    * 수정 사항 저장 핸들러
    */
   const handleSave = () => {
-    // TODO: 서버 수정 API 호출
+    // TODO: 서버 수정 API 호출 (recurrence 데이터 포함 전송)
+    console.log('수정 데이터:', { ...formData, recurrence });
     navigate('/calendar');
   };
 
@@ -248,6 +264,9 @@ const ScheduleDetail = () => {
                 </div>
               </div>
             </div>
+
+            {/* [추가] 반복 설정 */}
+            <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             {/* 장소 & 알림 & 내용 입력 */}
             <div className="space-y-3">
