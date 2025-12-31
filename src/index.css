@@ -8,3 +8,19 @@
     'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
 }
+
+/* --- [추가] 모바일 앱 환경 최적화 --- */
+html,
+body {
+  /* 핀치 줌, 더블 탭 줌 방지 (스크롤과 클릭만 허용) */
+  touch-action: manipulation;
+
+  /* 스크롤 끝 도달 시 바운스 효과 방지 (앱 같은 느낌) */
+  overscroll-behavior-y: none;
+
+  /* 가로 스크롤 방지 */
+  overflow-x: hidden;
+
+  /* 텍스트 크기 자동 조정 방지 */
+  -webkit-text-size-adjust: 100%;
+}
