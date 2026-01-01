@@ -27,10 +27,30 @@ interface Attachment {
   url?: string;
 }
 
+// [추가] location.state로 전달되는 데이터의 타입을 명확하게 정의합니다.
+// ScheduleDetail.tsx에서 navigate시 전달하는 state 객체의 구조와 일치시킵니다.
+interface EventDataState {
+  id: string;
+  title: string;
+  calendarId: string;
+  allDay: boolean;
+  start: string; // ISO String
+  end: string; // ISO String
+  location?: string;
+  content?: string;
+  notification?: string;
+  review?: string;
+  reviewImages?: string[];
+  files?: Attachment[];
+  recurrence?: RecurrenceSettings;
+  attendees?: string[]; // 이 페이지에서는 직접 사용하지 않지만, 타입 정의에 포함
+}
+
 const ScheduleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const eventData = location.state;
+  // [수정] location.state에 any 대신 명시적인 타입을 지정하여 타입 안정성을 높입니다.
+  const eventData = location.state as EventDataState | null;
   const { myCalendars } = useCalendar();
 
   // 초기 상태 설정

@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Plus, ChevronDown, Check, X, Settings, User, Users } from 'lucide-react';
-import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg } from '@fullcalendar/core';
+import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
@@ -47,12 +47,14 @@ const CalendarMain = () => {
   // [추가] 화면에 보여줄 일정 필터링 로직
   // 기본 캘린더(isDefault)가 선택되어 있거나 선택된 캘린더가 없으면 -> 모든 일정 표시 (통합 뷰)
   // 특정 공유 캘린더가 선택되어 있으면 -> 해당 캘린더 일정만 표시
-  const displayedEvents = React.useMemo(() => {
-    if (!activeCalendar || activeCalendar.isDefault) {
+  const displayedEvents = useMemo(() => {
+    // 선택된 캘린더가 내 캘린더 목록에 있는지 확인 (통합 캘린더 처리)
+    const isSpecificCalendar = myCalendars.some((c: CalendarType) => c.id === activeCalendar?.id);
+    if (!activeCalendar || !isSpecificCalendar) {
       return events;
     }
     return events.filter((event: CalendarEvent) => event.calendarId === activeCalendar.id);
-  }, [events, activeCalendar]);
+  }, [events, activeCalendar, myCalendars]);
 
   // --- UI 로직 (기존과 동일) ---
   useEffect(() => {
@@ -153,9 +155,9 @@ const CalendarMain = () => {
     executeDateSelection(arg.dateStr);
   };
 
-  const handleEventClick = (info: any) => {
+  const handleEventClick = (info: EventClickArg) => {
     const originalId = info.event.extendedProps.originalId || info.event.id;
-    const eventData = events.find((e: CalendarEvent) => e.id === info.event.id);
+    const eventData = events.find((e: CalendarEvent) => e.id === originalId);
 
     if (currentView === 'dayGridMonth') {
       const dateStr = dayjs(info.event.start).format('YYYY-MM-DD');
@@ -288,7 +290,7 @@ const CalendarMain = () => {
               <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isCalListOpen ? 'rotate-180' : ''}`} />
             </button>
             <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">
-              {activeCalendar ? (activeCalendar.isPrivate ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
+              {activeCalendar ? (activeCalendar.members.length === 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
             </p>
 
             {isCalListOpen && (
@@ -308,7 +310,7 @@ const CalendarMain = () => {
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-[14px] font-bold ">{cal.name}</span>
-                      {!cal.isPrivate && <span className="text-[10px] opacity-70 dark:opacity-50 mt-0.5">멤버: {cal.members.length}명</span>}
+                      {cal.members.length > 1 && <span className="text-[10px] opacity-70 dark:opacity-50 mt-0.5">멤버: {cal.members.length}명</span>}
                     </div>
                     {activeCalendar?.id === cal.id && <Check size={16} />}
                   </button>
@@ -415,12 +417,12 @@ const CalendarMain = () => {
             slotLabelContent={(args: SlotLabelContentArg) => args.text.replace(':00', '')}
             allDayText="종일"
             displayEventTime={false}
-            dayCellClassNames={(arg) => {
+            dayCellClassNames={(arg: DayCellContentArg) => {
               const dateStr = arg.date.toLocaleDateString('en-CA');
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
             events={displayedEvents} // [수정] 필터링된 일정 목록 전달
-            eventDidMount={(info) => {
+            eventDidMount={(info: EventMountArg) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
                 info.el.style.setProperty('--event-color', color);
@@ -435,7 +437,7 @@ const CalendarMain = () => {
           onTouchStart={onSheetTouchStart}
           onTouchMove={onSheetTouchMove}
           onTouchEnd={onSheetTouchEnd}
-          className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-800 z-30 transition-transform duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] border-t border-gray-100 dark:border-gray-700 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px] ${
+          className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-800 z-30 transition-transform duration-300 ease-sheet-ease border-t border-gray-100 dark:border-gray-700 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px] ${
             isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'
           }`}
           style={{ height: '50%' }}

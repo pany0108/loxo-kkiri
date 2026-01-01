@@ -9,6 +9,9 @@ module.exports = {
       fontFamily: {
         sans: ["'Pretendard'", ...fontFamily.sans],
       },
+      transitionTimingFunction: {
+        'sheet-ease': 'cubic-bezier(0.33, 1, 0.68, 1)',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

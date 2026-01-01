@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Image as ImageIcon, FileText } from 'lucide-react';
 import ImagePreviewModal from '../components/ImagePreviewModal';
@@ -7,11 +7,12 @@ const SharedMediaList = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ScheduleDetail에서 전달받은 데이터
-  const { media = [], files = [], title = '일정' } = location.state || {};
+  // [수정] location.state의 타입을 명확히 하여 타입 안정성 확보
+  // location.state가 any 타입으로 취급되어 발생할 수 있는 빌드 오류를 방지합니다.
+  const { media = [], files = [], title = '일정' } = (location.state as { media?: string[]; files?: { name: string; type: string }[]; title?: string }) || {};
 
-  const [activeTab, setActiveTab] = useState<'photo' | 'doc'>('photo');
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = React.useState<'photo' | 'doc'>('photo');
+  const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
 
   return (
     <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
@@ -50,13 +51,14 @@ const SharedMediaList = () => {
             {media.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {media.map((src: string, idx: number) => (
-                  <div
+                  // [개선] div 대신 button을 사용하여 웹 접근성 향상
+                  <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
                     className="aspect-square rounded-[12px] overflow-hidden border border-gray-100 relative group cursor-pointer"
                   >
                     <img src={src} alt={`shared-${idx}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -69,7 +71,7 @@ const SharedMediaList = () => {
         ) : (
           <div className="space-y-3">
             {files.length > 0 ? (
-              files.map((file: any, idx: number) => (
+              files.map((file: { name: string; type: string }, idx: number) => (
                 <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-[20px] border border-gray-100">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-blue-500">
                     <FileText size={20} />

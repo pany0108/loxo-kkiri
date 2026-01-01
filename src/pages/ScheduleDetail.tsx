@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, Bell } from 'lucide-react';
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore'; // getDoc 추가
-import { db } from '../firebase'; // auth 추가
+import { db, auth } from '../firebase'; // auth 추가
 
 interface LocationState {
   id?: string;
@@ -55,6 +55,9 @@ const ScheduleDetail = () => {
     images: string[];
     index: number;
   }>({ isOpen: false, images: [], index: 0 });
+
+  // [수정] 빌드 오류 방지를 위해 chatMedia 변수 임시 선언
+  const chatMedia: string[] = []; // TODO: 채팅 미디어 데이터 연동 필요
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -190,6 +193,21 @@ const ScheduleDetail = () => {
       end: data.end.toISOString(),
     };
     navigate(`/schedule/edit/${id}`, { state: safeData });
+  };
+
+  // const handleViewAllMedia = () => {
+  //   navigate(`/schedule/${id}/media`, {
+  //     state: {
+  //       media: chatMedia,
+  //       files: data.files,
+  //       title: data.title,
+  //     },
+  //   });
+  // };
+
+  const openPreview = (images: string[], index: number) => {
+    // [수정] 클릭한 이미지의 인덱스가 정상적으로 반영되도록 수정
+    setPreviewState({ isOpen: true, images, index });
   };
 
   const formatDate = (date: dayjs.Dayjs, isAllDay: boolean) => {

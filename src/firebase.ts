@@ -5,9 +5,9 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCatGVUjIC50vXsAuaCr9Qdmj-nOgN8Ei0',
-  authDomain: 'super-scheduler-c99f7.firebaseapp.com',
+  authDomain: 'super-scheduler-c99f7.web.app',
   projectId: 'super-scheduler-c99f7',
-  storageBucket: 'super-scheduler-c99f7.firebasestorage.app',
+  storageBucket: 'super-scheduler-c99f7.appspot.com',
   messagingSenderId: '260376909396',
   appId: '1:260376909396:web:c423df6dcf26b60dd13fc1',
   measurementId: 'G-2PJ3FMH867',
