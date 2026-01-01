@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, ChevronLeft } from 'lucide-react';
+import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, ChevronLeft, Loader2 } from 'lucide-react';
+import { collection, query, where } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useFirestoreQuery } from '../hooks/useFirestore';
 
 /**
  * 약속 데이터 인터페이스
@@ -23,12 +27,33 @@ interface Meeting {
 const ProposeMeeting = () => {
   const navigate = useNavigate();
 
-  // 진행 중인 약속 목록 데이터 (Mock Data)
-  const ongoingMeetings: Meeting[] = [
-    { id: '1', title: '강남역 삼겹살 파티 🥓', status: 'VOTING', members: 4, dday: 'D-2' },
-    { id: '2', title: '주말 한강 피크닉 돗자리', status: 'PENDING', members: 3, dday: '투표중' },
-    { id: '3', title: '연말 개발팀 회식 🍻', status: 'CONFIRMED', members: 8, dday: 'D-5' },
-  ];
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // [수정] DB에서 내가 참여 중인 약속 목록 불러오기
+  const meetingsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'meetings'), where('participants', 'array-contains', user.uid));
+  }, [user]);
+
+  const { data: meetingsData, loading } = useFirestoreQuery<any>(meetingsQuery);
+
+  const ongoingMeetings: Meeting[] = useMemo(() => {
+    if (!meetingsData) return [];
+    return meetingsData.map((m: any) => ({
+      id: m.id,
+      title: m.title,
+      status: m.status,
+      members: m.participants?.length || 0,
+      dday: m.status === 'VOTING' ? '투표중' : m.status === 'CONFIRMED' ? '확정' : '진행중',
+    }));
+  }, [meetingsData]);
 
   /**
    * 약속 아이템 클릭 시 현재 상태에 따라 적절한 페이지로 이동합니다.
@@ -68,6 +93,14 @@ const ProposeMeeting = () => {
         return { className: 'bg-blue-50 text-blue-600', text: '시간 조율중' };
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">

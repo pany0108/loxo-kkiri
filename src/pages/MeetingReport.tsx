@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Loader2 } from 'lucide-react';
 import ConfirmMeetingDialog from './ConfirmMeetingDialog';
+import { doc, updateDoc, addDoc, collection, deleteDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { useFirestoreDoc } from '../hooks/useFirestore';
+import dayjs from 'dayjs';
 
 /**
  * 리포트 슬롯 데이터 인터페이스
@@ -21,12 +25,26 @@ interface ReportSlot {
 }
 
 /**
+ * Firestore에서 가져온 미팅 데이터 인터페이스
+ */
+interface MeetingData {
+  id: string;
+  title: string;
+  description?: string;
+  participants: string[];
+  dates: string[];
+  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
+  votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
+}
+
+/**
  * 일정 조율 결과 리포트 컴포넌트입니다.
  * 멤버들의 투표 결과를 종합하여 보여주고, 최종 약속 시간을 확정하거나 재요청/취소할 수 있습니다.
  * * @returns {JSX.Element} 투표 결과 리포트 화면
  */
 const MeetingReport = () => {
   const navigate = useNavigate();
+  const { id: meetingId } = useParams<{ id: string }>();
 
   /**
    * 확정 확인 모달의 열림 상태
@@ -43,36 +61,40 @@ const MeetingReport = () => {
    */
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
 
-  /**
-   * 조율 결과 모의 데이터 (Mock Data)
-   * 실제 구현 시 API를 통해 데이터를 받아와야 합니다.
-   */
-  const reportData: ReportSlot[] = [
-    {
-      id: 'slot_1',
-      date: '2025-01-10',
-      time: '18:00 ~ 20:00',
-      responses: {
-        available: ['김철수', '이영희', '나'],
-        maybe: [],
-        unavailable: [],
-      },
-      memos: [{ user: '이영희', text: '조금 일찍 갈 수 있어요!' }],
-      isAllAvailable: true,
-    },
-    {
-      id: 'slot_2',
-      date: '2025-01-11',
-      time: '14:00 ~ 16:00',
-      responses: {
-        available: ['나'],
-        maybe: ['김철수'],
-        unavailable: ['이영희'],
-      },
-      memos: [{ user: '김철수', text: '이날은 재택근무라 확인해봐야 함' }],
-      isAllAvailable: false,
-    },
-  ];
+  const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
+  const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  const reportData: ReportSlot[] = useMemo(() => {
+    if (!meetingData) return [];
+
+    const slots: ReportSlot[] = [];
+    const totalParticipants = meetingData.participants.length;
+
+    meetingData.dates.sort().forEach((dateStr) => {
+      meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+        const slotId = `${dateStr}_${index}`;
+        const votesForSlot = meetingData.votes?.[slotId] || {};
+        const voteValues = Object.values(votesForSlot);
+
+        const available = voteValues.filter((v) => v.vote === 'available').map((v) => v.name);
+        const maybe = voteValues.filter((v) => v.vote === 'maybe').map((v) => v.name);
+        const unavailable = voteValues.filter((v) => v.vote === 'unavailable').map((v) => v.name);
+        const memos = voteValues.filter((v) => v.memo).map((v) => ({ user: v.name, text: v.memo }));
+
+        slots.push({
+          id: slotId,
+          date: dateStr,
+          time: ts.isAllDay ? '종일' : `${ts.start} ~ ${ts.end}`,
+          responses: { available, maybe, unavailable },
+          memos,
+          isAllAvailable: available.length === totalParticipants && maybe.length === 0 && unavailable.length === 0,
+        });
+      });
+    });
+
+    // '모두 가능'인 슬롯을 위로 정렬
+    return slots.sort((a, b) => (b.isAllAvailable ? 1 : 0) - (a.isAllAvailable ? 1 : 0));
+  }, [meetingData]);
 
   /**
    * 특정 시간대 선택 핸들러
@@ -88,10 +110,40 @@ const MeetingReport = () => {
    * 최종 확정 핸들러
    * 모달에서 확정 버튼 클릭 시 실행되며, API 호출 후 캘린더 화면으로 이동합니다.
    */
-  const handleFinalConfirm = () => {
+  const handleFinalConfirm = async () => {
+    if (!selectedSlot || !meetingData || !meetingId) return;
+
     setIsConfirmOpen(false);
-    // TODO: 약속 확정 API 호출 (POST)
-    navigate('/calendar');
+
+    try {
+      // 1. 약속 상태를 'CONFIRMED'로 변경
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        status: 'CONFIRMED',
+        confirmedSlot: selectedSlot,
+      });
+
+      // 2. 'schedules' 컬렉션에 새 일정 생성
+      const [startTime, endTime] = selectedSlot.time.split(' ~ ');
+      const isAllDay = selectedSlot.time === '종일';
+
+      await addDoc(collection(db, 'schedules'), {
+        title: meetingData.title,
+        content: meetingData.description || '',
+        calendarId: '', // 약속으로 생성된 일정은 특정 캘린더에 속하지 않음 (또는 별도 정책 필요)
+        isAllDay,
+        start: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${startTime}`).toISOString(),
+        end: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${endTime}`).toISOString(),
+        attendees: meetingData.participants,
+        createdAt: new Date().toISOString(),
+        userId: auth.currentUser?.uid,
+      });
+
+      toast.success('약속이 확정되어 캘린더에 추가되었습니다!');
+      navigate('/calendar');
+    } catch (error) {
+      console.error('Error confirming meeting:', error);
+      toast.error('약속 확정 중 오류가 발생했습니다.');
+    }
   };
 
   /**
@@ -100,6 +152,7 @@ const MeetingReport = () => {
    */
   const handleRequestRetry = () => {
     // TODO: 재요청 알림 전송 로직 구현
+    toast('재요청 기능은 준비 중입니다.', { icon: '🚧' });
   };
 
   /**
@@ -114,12 +167,26 @@ const MeetingReport = () => {
    * [추가] 약속 취소 최종 확인 핸들러
    * 모달에서 취소 버튼 클릭 시 실행됩니다.
    */
-  const handleCancelConfirm = () => {
-    // TODO: 약속 취소 API 호출
-    setIsCancelModalOpen(false);
-    toast.success('약속이 취소되었습니다.');
-    navigate('/calendar');
+  const handleCancelConfirm = async () => {
+    if (!meetingId) return;
+    try {
+      await deleteDoc(doc(db, 'meetings', meetingId));
+      setIsCancelModalOpen(false);
+      toast.success('약속이 취소되었습니다.');
+      navigate('/propose');
+    } catch (error) {
+      console.error('Error canceling meeting:', error);
+      toast.error('약속 취소 중 오류가 발생했습니다.');
+    }
   };
+
+  if (loading || !meetingData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
@@ -136,6 +203,7 @@ const MeetingReport = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
+          <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             가장 <span className="text-blue-600 dark:text-blue-400">적절한 시간</span>을<br />
             확정해주세요!
@@ -162,7 +230,7 @@ const MeetingReport = () => {
               <div className={`px-6 py-5 flex justify-between items-start ${slot.isAllAvailable ? 'bg-emerald-50/30 dark:bg-emerald-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[16px] font-black text-gray-900 dark:text-white">{slot.date}</span>
+                    <span className="text-[16px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
                     {slot.isAllAvailable && (
                       <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm shadow-emerald-200">BEST CHOICE</span>
                     )}

@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, MessageSquare, Sparkles, Clock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, MessageSquare, Sparkles, Clock, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { db, auth } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useFirestoreDoc } from '../hooks/useFirestore';
 
 dayjs.locale('ko');
 
@@ -14,8 +18,20 @@ interface VotingSlot {
   date: string;
   time: string;
   registeredMembers: string[];
-  myVote: string; // 'available' | 'maybe' | 'unavailable' | ''
+  myVote: 'available' | 'maybe' | 'unavailable' | '';
   myMemo: string;
+}
+
+/**
+ * Firestore에서 가져온 미팅 데이터 인터페이스
+ */
+interface MeetingData {
+  id: string;
+  title: string;
+  participants: string[];
+  dates: string[];
+  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
+  votes?: Record<string, Record<string, { vote: string; memo: string; name: string }>>;
 }
 
 /**
@@ -25,38 +41,58 @@ interface VotingSlot {
  */
 const MeetingVoting = () => {
   const navigate = useNavigate();
+  const { id: meetingId } = useParams<{ id: string }>();
 
   // --- 상태 관리 ---
+  const [user, setUser] = useState<any>(null);
+  const [votingSlots, setVotingSlots] = useState<VotingSlot[]>([]);
 
-  /**
-   * 투표 대상 슬롯 목록 상태
-   * (실제 구현 시 API를 통해 취합된 중복 일정 데이터를 불러와야 합니다)
-   */
-  const [votingSlots, setVotingSlots] = useState<VotingSlot[]>([
-    {
-      id: 'slot_1',
-      date: '2025-01-10',
-      time: '18:00 ~ 20:00',
-      registeredMembers: ['김철수', '이영희', '나'],
-      myVote: '',
-      myMemo: '',
-    },
-    {
-      id: 'slot_2',
-      date: '2025-01-11',
-      time: '14:00 ~ 16:00',
-      registeredMembers: ['김철수', '나'],
-      myVote: '',
-      myMemo: '',
-    },
-  ]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
+  const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // DB 데이터가 변경될 때마다 로컬 votingSlots 상태를 재구성합니다.
+  useEffect(() => {
+    if (!meetingData || !user) return;
+
+    const slots: VotingSlot[] = [];
+    meetingData.dates.sort().forEach((dateStr) => {
+      meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+        const slotId = `${dateStr}_${index}`;
+        const votesForSlot = meetingData.votes?.[slotId] || {};
+
+        // '가능' 투표자 이름 목록 생성
+        const availableVoterNames = Object.values(votesForSlot)
+          .filter((v: any) => v.vote === 'available')
+          .map((v: any) => v.name || '?');
+
+        const myVoteData = votesForSlot[user.uid];
+
+        slots.push({
+          id: slotId,
+          date: dateStr,
+          time: ts.isAllDay ? '종일' : `${ts.start} ~ ${ts.end}`,
+          registeredMembers: availableVoterNames,
+          myVote: (myVoteData?.vote as any) || '',
+          myMemo: myVoteData?.memo || '',
+        });
+      });
+    });
+    setVotingSlots(slots);
+  }, [meetingData, user]);
 
   /**
    * 특정 슬롯에 대한 투표 상태를 업데이트합니다.
    * @param {string} slotId - 슬롯 고유 ID
    * @param {string} status - 투표 상태 ('available' | 'maybe' | 'unavailable')
    */
-  const handleVote = (slotId: string, status: string) => {
+  const handleVote = (slotId: string, status: 'available' | 'maybe' | 'unavailable') => {
     setVotingSlots((prev) => prev.map((slot) => (slot.id === slotId ? { ...slot, myVote: status } : slot)));
   };
 
@@ -78,17 +114,43 @@ const MeetingVoting = () => {
    * 투표 제출 핸들러
    * 모든 항목에 응답했는지 검증 후 서버로 데이터를 전송합니다.
    */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isAllVoted) {
       alert('모든 일정에 대해 가능 여부를 선택해주세요.');
       return;
     }
+    if (!meetingDocRef || !user || !user.displayName) return;
 
-    // TODO: 서버에 투표 데이터 전송 (POST)
-    // payload: { votingData: votingSlots }
+    try {
+      const updates: Record<string, any> = {};
+      votingSlots.forEach((slot) => {
+        // Firestore 필드 경로에 '.'을 사용할 수 있으므로 `votes.slotId.userId` 형식으로 업데이트
+        updates[`votes.${slot.id}.${user.uid}`] = {
+          vote: slot.myVote,
+          memo: slot.myMemo,
+          name: user.displayName, // 투표자 이름 저장
+        };
+      });
 
-    navigate('/calendar');
+      await updateDoc(meetingDocRef, updates);
+
+      // TODO: 모든 참여자가 투표했는지 확인하고 meeting.status를 'CONFIRMED'로 변경하는 로직 추가 가능
+
+      alert('투표가 완료되었습니다!');
+      navigate('/propose');
+    } catch (error) {
+      console.error('Error submitting vote:', error);
+      alert('투표 제출 중 오류가 발생했습니다.');
+    }
   };
+
+  if (loading || !meetingData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
@@ -105,10 +167,10 @@ const MeetingVoting = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            나의 <span className="text-blue-600 dark:text-blue-400">가능 여부</span>를<br />
-            알려주세요.
-          </h2>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight mb-2">{meetingData.title}</h2>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">
+            나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+          </p>
         </header>
 
         {/* 투표 슬롯 리스트 */}
@@ -121,7 +183,7 @@ const MeetingVoting = () => {
               {/* 일정 정보 및 등록 멤버 표시 */}
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-2">
                     <span className="text-[15px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
@@ -131,7 +193,7 @@ const MeetingVoting = () => {
                 </div>
 
                 {/* 등록 멤버 아바타 */}
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex flex-col items-end gap-1.5">
                   <div className="flex -space-x-2">
                     {slot.registeredMembers.map((m, i) => (
                       <div
@@ -142,7 +204,7 @@ const MeetingVoting = () => {
                       </div>
                     ))}
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">{slot.registeredMembers.length}명 가능</span>
+                  {slot.registeredMembers.length > 0 && <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">{slot.registeredMembers.length}명 가능</span>}
                 </div>
               </div>
 

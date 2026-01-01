@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users } from 'lucide-react';
+import { collection, addDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 
 /**
  * 초대된 친구 데이터 인터페이스
@@ -131,11 +133,26 @@ const ProposeMeetingDetail = () => {
    * 최종 약속 생성 핸들러
    * 설정된 모든 데이터를 서버로 전송하고 완료 처리를 합니다.
    */
-  const handleFinalConfirm = () => {
-    // TODO: 서버에 약속 생성 요청 (POST)
-    // payload: { title, description, friends: invitedFriends, slots: timeSlots }
+  const handleFinalConfirm = async () => {
+    if (!auth.currentUser) return;
 
-    navigate('/calendar');
+    try {
+      await addDoc(collection(db, 'meetings'), {
+        title,
+        description,
+        hostId: auth.currentUser.uid,
+        hostName: auth.currentUser.displayName || '알 수 없음',
+        participants: [auth.currentUser.uid, ...invitedFriends.map((f) => f.id)],
+        dates: selectedDates,
+        timeSlots,
+        status: 'VOTING', // 생성 시 기본 상태는 투표 중
+        createdAt: new Date().toISOString(),
+      });
+      navigate('/propose'); // 목록 페이지로 이동
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      alert('약속 생성 중 오류가 발생했습니다.');
+    }
   };
 
   return (

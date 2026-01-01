@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, Send, AlignLeft, Sparkles, CheckCircle2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { auth, db } from '../firebase';
+import { doc } from 'firebase/firestore';
+import { useFirestoreDoc } from '../hooks/useFirestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.locale('ko');
 
@@ -29,14 +33,24 @@ const ProposeMeetingCreate = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  // 친구 목록 및 초대 상태
-  const [friendsList] = useState<Friend[]>([
-    { id: '1', name: '김철수' },
-    { id: '2', name: '이영희' },
-    { id: '3', name: '박지성' },
-    { id: '4', name: '홍길동' },
-    { id: '5', name: '강백호' },
-  ]);
+  // [수정] 친구 목록 DB 연동
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
+  const { data: userData } = useFirestoreDoc<any>(userDocRef);
+
+  const friendsList: Friend[] = useMemo(() => {
+    if (!userData?.friendsList) return [];
+    return userData.friendsList.map((f: any) => ({ id: f.uid, name: f.name }));
+  }, [userData]);
+
   const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
 
   // 캘린더 및 날짜 선택 상태
