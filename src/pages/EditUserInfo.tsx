@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
+import dayjs from 'dayjs';
 import { auth, db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 
 /**
@@ -28,6 +29,8 @@ const EditUserInfo = () => {
   const [isAuthSent, setIsAuthSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false); // 휴대폰 번호 인증 여부
   const [authCode, setAuthCode] = useState('');
+  const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
+  const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
 
   /**
    * 컴포넌트 마운트 시 Firestore에서 현재 로그인된 사용자의 정보를 불러옵니다.
@@ -53,6 +56,8 @@ const EditUserInfo = () => {
             setIsVerified(!!data.phone); // 전화번호가 있으면 인증된 것으로 시작
             setIsAuthSent(false); // 인증번호 발송 상태 초기화
             setIsPhoneEditing(false); // 수정 모드 초기화
+            setIsLeapMonth(data.isLeapMonth || false); // [추가] 윤달 여부 설정
+            setIsLunar(data.birthDateType === 'lunar'); // [추가] 생일 타입 설정
           }
         } catch (error) {
           // 데이터 로드 실패 시 조용히 처리하거나 에러 UI 표시
@@ -155,12 +160,60 @@ const EditUserInfo = () => {
         name: fullName, // 검색 및 표시 편의를 위한 전체 이름 필드
         phone: formData.phone,
         birthDate: formData.birthDate,
+        isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
+        birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
       });
 
       // Auth 프로필 동기화
       await updateProfile(auth.currentUser, {
         displayName: fullName,
       });
+
+      // [추가] 생일 일정 업데이트 로직
+      const birthdayScheduleQuery = query(collection(db, 'schedules'), where('userId', '==', auth.currentUser.uid), where('title', '==', '내 생일'));
+      const birthdayScheduleSnapshot = await getDocs(birthdayScheduleQuery);
+
+      if (formData.birthDate) {
+        const birthDate = dayjs(formData.birthDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
+        const birthdayData = {
+          title: '내 생일',
+          isAllDay: true,
+          start: birthDate,
+          isLeapMonth: isLunar && isLeapMonth,
+          isLunar: isLunar,
+          color: '#ec4899',
+          attendees: [auth.currentUser.uid],
+          userId: auth.currentUser.uid,
+          recurrence: {
+            frequency: 'yearly',
+            interval: 1,
+          },
+        };
+
+        if (birthdayScheduleSnapshot.empty) {
+          // 기존 생일 일정이 없으면 새로 생성
+          const defaultCalendarQuery = query(collection(db, 'calendars'), where('ownerId', '==', auth.currentUser.uid), where('isDefault', '==', true));
+          const defaultCalendarSnapshot = await getDocs(defaultCalendarQuery);
+          if (!defaultCalendarSnapshot.empty) {
+            const calendarId = defaultCalendarSnapshot.docs[0].id;
+            await addDoc(collection(db, 'schedules'), { ...birthdayData, calendarId, createdAt: new Date().toISOString() });
+          }
+        } else {
+          // 기존 생일 일정이 있으면 업데이트
+          const batch = writeBatch(db);
+          birthdayScheduleSnapshot.forEach((doc) => {
+            batch.update(doc.ref, birthdayData);
+          });
+          await batch.commit();
+        }
+      } else {
+        // 생년월일 필드가 비워졌으면 기존 생일 일정 삭제
+        if (!birthdayScheduleSnapshot.empty) {
+          const batch = writeBatch(db);
+          birthdayScheduleSnapshot.forEach((doc) => batch.delete(doc.ref));
+          await batch.commit();
+        }
+      }
 
       toast.success('개인 정보가 안전하게 변경되었습니다. ✨');
       navigate(-1);
@@ -306,7 +359,30 @@ const EditUserInfo = () => {
 
           {/* 생년월일 */}
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">생년월일</label>
+            {/* [추가] 양력/음력 선택 토글 */}
+            <div className="flex items-center justify-between px-1">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500">생년월일</label>
+              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsLunar(false)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                    !isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                  }`}
+                >
+                  양력
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLunar(true)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                    isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                  }`}
+                >
+                  음력
+                </button>
+              </div>
+            </div>
             <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
               <Calendar size={18} className="text-gray-300 mr-4" />
               <input

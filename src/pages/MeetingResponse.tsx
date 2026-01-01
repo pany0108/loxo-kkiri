@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Plus, Sparkles, Clock, Calendar as CalendarIcon, MapPin, AlignLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, Plus, Sparkles, Clock, Calendar as CalendarIcon, MapPin, AlignLeft, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { db, auth } from '../firebase';
+import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
+import { useFirestoreDoc } from '../hooks/useFirestore';
+import toast from 'react-hot-toast';
+import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.locale('ko');
 
@@ -17,6 +22,20 @@ interface MyNewSlot {
 }
 
 /**
+ * Firestore 약속 데이터 인터페이스
+ */
+interface MeetingData {
+  id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  hostName?: string;
+  dates: string[];
+  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
+  responses?: Record<string, any>;
+}
+
+/**
  * 초대받은 약속에 대해 응답하는 페이지 컴포넌트입니다.
  * - 주최자가 제안한 시간 중 가능한 시간을 선택할 수 있습니다.
  * - 주최자의 제안 외에 새로운 시간을 역으로 제안할 수 있습니다 (달력 인터랙션).
@@ -24,33 +43,49 @@ interface MyNewSlot {
  */
 const MeetingResponse = () => {
   const navigate = useNavigate();
-  useParams();
+  const { id: meetingId } = useParams<{ id: string }>();
 
   // --- 상태 관리 ---
+  const [user, setUser] = useState<any>(null);
   const [currentMonth, setCurrentMonth] = useState(dayjs());
-  const [selectedHostSlots, setSelectedHostSlots] = useState<number[]>([]);
+  const [selectedHostSlots, setSelectedHostSlots] = useState<string[]>([]); // ID를 string으로 변경
   const [myNewSlots, setMyNewSlots] = useState<MyNewSlot[]>([]);
 
-  // 모의 데이터 (실제 구현 시 API 호출 필요)
-  const [hostProposal] = useState({
-    title: '강남역 삼겹살 파티 🥓',
-    host: '김철수',
-    description: '오랜만에 다같이 모여서 맛있는 삼겹살 먹자! 🐷\n강남역 10번 출구 근처 맛집으로 예약할 예정이야.',
-    location: '강남역 하남돼지집',
-    slots: [
-      { id: 1, date: '2025-01-10', time: '18:00 ~ 20:00' },
-      { id: 2, date: '2025-01-11', time: '14:00 ~ 16:00' },
-    ],
-  });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
+  const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // 주최자 제안 슬롯 데이터 변환
+  const hostSlots = useMemo(() => {
+    if (!meetingData) return [];
+    const slots: any[] = [];
+    meetingData.dates.sort().forEach((dateStr) => {
+      meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+        slots.push({
+          id: `${dateStr}_${index}`,
+          date: dateStr,
+          time: ts.isAllDay ? '종일' : `${ts.start} ~ ${ts.end}`,
+        });
+      });
+    });
+    return slots;
+  }, [meetingData]);
 
   // 내 기존 일정 데이터 (충돌 확인용)
-  const myExistingSchedules = ['2025-01-10', '2025-01-15', '2025-01-22'];
+  // TODO: 실제 내 일정 쿼리 연동 필요
+  const myExistingSchedules: string[] = [];
 
   /**
    * 주최자가 제안한 슬롯의 선택 상태를 토글합니다.
-   * @param {number} slotId - 슬롯 고유 ID
+   * @param {string} slotId - 슬롯 고유 ID
    */
-  const toggleHostSlot = (slotId: number) => {
+  const toggleHostSlot = (slotId: string) => {
     setSelectedHostSlots((prev) => (prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId]));
   };
 
@@ -62,7 +97,7 @@ const MeetingResponse = () => {
    * @param {string} dateStr - 선택한 날짜 문자열 (YYYY-MM-DD)
    */
   const toggleMyNewSlot = (dateStr: string) => {
-    const isHostDate = hostProposal.slots.some((s) => s.date === dateStr);
+    const isHostDate = hostSlots.some((s) => s.date === dateStr);
 
     // 주최자 제안 날짜는 상단 카드에서 선택하도록 유도 (UI상 클릭 방지 처리)
     if (isHostDate) {
@@ -109,12 +144,105 @@ const MeetingResponse = () => {
    * 최종 응답 제출 핸들러
    * 선택한 주최자 제안 슬롯과 새로 추가한 역제안 슬롯을 서버로 전송합니다.
    */
-  const handleSubmitResponse = () => {
-    // TODO: 서버에 응답 데이터 전송 (POST)
-    // payload: { meetingId: id, selectedSlots: selectedHostSlots, newProposals: myNewSlots }
+  const handleSubmitResponse = async () => {
+    if (!meetingDocRef || !user || !meetingData) return;
 
-    navigate('/calendar');
+    try {
+      // 1. 내 응답을 먼저 업데이트
+      await updateDoc(meetingDocRef, {
+        [`responses.${user.uid}`]: {
+          responded: true,
+          name: user.displayName,
+          selectedSlots: selectedHostSlots,
+          newSlots: myNewSlots,
+        },
+      });
+
+      // 2. 업데이트된 문서를 다시 읽어와서 모든 참여자가 응답했는지 확인
+      const updatedDocSnap = await getDoc(meetingDocRef);
+      if (!updatedDocSnap.exists()) return;
+
+      const updatedMeetingData = updatedDocSnap.data();
+      const totalInvited = updatedMeetingData.participants.length - 1;
+      const respondedCount = Object.keys(updatedMeetingData.responses || {}).length;
+
+      // 모든 응답이 완료되었고, 아직 PENDING 상태일 때만 실행
+      if (respondedCount >= totalInvited && updatedMeetingData.status === 'PENDING') {
+        // [수정] 모든 응답자의 제안을 취합하여 새로운 투표 슬롯 생성
+        const allProposedSlots: { date: string; start: string; end: string; isAllDay: boolean }[] = [];
+        const uniqueSlotChecker = new Set<string>();
+
+        // 1. 주최자의 원래 제안 추가
+        Object.entries(updatedMeetingData.timeSlots).forEach(([date, slots]) => {
+          (slots as any[]).forEach((slot) => {
+            const slotString = `${date}_${slot.start}_${slot.end}_${slot.isAllDay}`;
+            if (!uniqueSlotChecker.has(slotString)) {
+              allProposedSlots.push({ date, ...slot });
+              uniqueSlotChecker.add(slotString);
+            }
+          });
+        });
+
+        // 2. 모든 참여자의 역제안 추가
+        Object.values(updatedMeetingData.responses).forEach((response: any) => {
+          if (response.newSlots && Array.isArray(response.newSlots)) {
+            response.newSlots.forEach((newSlot: MyNewSlot) => {
+              const slotData = { date: newSlot.date, start: newSlot.startTime, end: newSlot.endTime, isAllDay: newSlot.isAllDay };
+              const slotString = `${slotData.date}_${slotData.start}_${slotData.end}_${slotData.isAllDay}`;
+              if (!uniqueSlotChecker.has(slotString)) {
+                allProposedSlots.push(slotData);
+                uniqueSlotChecker.add(slotString);
+              }
+            });
+          }
+        });
+
+        // 3. 취합된 슬롯으로 dates와 timeSlots 재구성
+        const newTimeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]> = {};
+        const newDates = new Set<string>();
+        allProposedSlots.forEach((slot) => {
+          newDates.add(slot.date);
+          if (!newTimeSlots[slot.date]) newTimeSlots[slot.date] = [];
+          newTimeSlots[slot.date].push({ start: slot.start, end: slot.end, isAllDay: slot.isAllDay });
+        });
+
+        // 4. 약속 상태를 VOTING으로 변경하고, 취합된 시간 정보로 업데이트
+        await updateDoc(meetingDocRef, { status: 'VOTING', dates: Array.from(newDates).sort(), timeSlots: newTimeSlots });
+
+        // 투표 시작 알림 전송 (모든 참여자에게)
+        const batch = writeBatch(db);
+        updatedMeetingData.participants.forEach((uid: string) => {
+          const notiRef = doc(collection(db, 'notifications'));
+          batch.set(notiRef, {
+            userId: uid,
+            type: 'MEETING_VOTING_STARTED',
+            message: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
+            relatedId: meetingId,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        });
+        await batch.commit();
+
+        toast.success('모든 친구가 응답하여 투표가 시작됩니다!');
+      } else {
+        toast.success('응답이 제출되었습니다.');
+      }
+
+      navigate('/propose');
+    } catch (error) {
+      console.error('Error submitting response:', error);
+      toast.error('응답 제출 중 오류가 발생했습니다.');
+    }
   };
+
+  if (loading || !meetingData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
@@ -136,7 +264,7 @@ const MeetingResponse = () => {
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            {hostProposal.host}님의 제안에
+            {meetingData.hostName}님의 제안에
             <br />
             <span className="text-blue-600 dark:text-blue-400">응답해주세요</span>
           </h2>
@@ -148,18 +276,19 @@ const MeetingResponse = () => {
             <span className="text-[10px] font-bold text-blue-500 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded-md">INVITATION</span>
           </div>
 
-          <h3 className="text-[19px] font-black text-gray-900 dark:text-white mb-3">{hostProposal.title}</h3>
+          <h3 className="text-[19px] font-black text-gray-900 dark:text-white mb-3">{meetingData.title}</h3>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-start gap-2.5">
               <AlignLeft size={16} className="text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
-              <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{hostProposal.description}</p>
+              <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{meetingData.description || '설명 없음'}</p>
             </div>
-
-            <div className="flex items-center gap-2.5">
-              <MapPin size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
-              <p className="text-[14px] font-bold text-gray-700 dark:text-gray-200">{hostProposal.location}</p>
-            </div>
+            {meetingData.location && (
+              <div className="flex items-start gap-2.5">
+                <MapPin size={16} className="text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed">{meetingData.location}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -173,7 +302,7 @@ const MeetingResponse = () => {
           </div>
 
           <div className="space-y-3">
-            {hostProposal.slots.map((slot) => {
+            {hostSlots.map((slot) => {
               const isSelected = selectedHostSlots.includes(slot.id);
               const isConflict = myExistingSchedules.includes(slot.date);
 
@@ -267,7 +396,7 @@ const MeetingResponse = () => {
                 if (!date) return <div key={`empty-${idx}`} />;
 
                 const hasMySchedule = myExistingSchedules.includes(date);
-                const isHostProposed = hostProposal.slots.some((s) => s.date === date);
+                const isHostProposed = hostSlots.some((s) => s.date === date);
                 const isMyNewProposal = myNewSlots.some((s) => s.date === date);
 
                 return (

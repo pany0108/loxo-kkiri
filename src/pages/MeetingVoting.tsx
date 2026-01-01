@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, MessageSquare, Sparkles, Clock, Loader2 } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, MessageSquare, Sparkles, Clock, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { db, auth } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import toast from 'react-hot-toast';
 import { useFirestoreDoc } from '../hooks/useFirestore';
 
 dayjs.locale('ko');
@@ -28,6 +29,8 @@ interface VotingSlot {
 interface MeetingData {
   id: string;
   title: string;
+  hostId: string;
+  location?: string;
   participants: string[];
   dates: string[];
   timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
@@ -56,6 +59,9 @@ const MeetingVoting = () => {
 
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // [추가] 현재 사용자가 주최자인지 확인
+  const isHost = useMemo(() => user && meetingData && user.uid === meetingData.hostId, [user, meetingData]);
 
   // DB 데이터가 변경될 때마다 로컬 votingSlots 상태를 재구성합니다.
   useEffect(() => {
@@ -116,31 +122,71 @@ const MeetingVoting = () => {
    */
   const handleSubmit = async () => {
     if (!isAllVoted) {
-      alert('모든 일정에 대해 가능 여부를 선택해주세요.');
+      toast.error('모든 일정에 대해 가능 여부를 선택해주세요.');
       return;
     }
-    if (!meetingDocRef || !user || !user.displayName) return;
+    if (!meetingDocRef || !user || !user.displayName || !meetingData) return;
 
     try {
+      // 1. 내 투표 결과를 먼저 업데이트
       const updates: Record<string, any> = {};
       votingSlots.forEach((slot) => {
-        // Firestore 필드 경로에 '.'을 사용할 수 있으므로 `votes.slotId.userId` 형식으로 업데이트
         updates[`votes.${slot.id}.${user.uid}`] = {
           vote: slot.myVote,
           memo: slot.myMemo,
           name: user.displayName, // 투표자 이름 저장
         };
       });
-
       await updateDoc(meetingDocRef, updates);
 
-      // TODO: 모든 참여자가 투표했는지 확인하고 meeting.status를 'CONFIRMED'로 변경하는 로직 추가 가능
+      // 2. 모든 참여자가 투표했는지 확인
+      const updatedDocSnap = await getDoc(meetingDocRef);
+      if (!updatedDocSnap.exists()) return;
 
-      alert('투표가 완료되었습니다!');
+      const updatedMeetingData = updatedDocSnap.data();
+      const totalParticipants = updatedMeetingData.participants.length;
+      const firstSlotVotes = updatedMeetingData.votes?.[`${updatedMeetingData.dates[0]}_0`] || {};
+      const votedCount = Object.keys(firstSlotVotes).length;
+
+      if (votedCount >= totalParticipants) {
+        // 3. 모두 투표 완료 시, 주최자와 참여자에게 각각 다른 알림 전송
+        const batch = writeBatch(db);
+        updatedMeetingData.participants.forEach((uid: string) => {
+          const notiRef = doc(collection(db, 'notifications'));
+          const isHostNotification = uid === updatedMeetingData.hostId;
+
+          if (isHostNotification) {
+            batch.set(notiRef, {
+              userId: uid,
+              type: 'MEETING_VOTING_COMPLETE_FOR_HOST',
+              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
+              relatedId: meetingId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+          } else {
+            batch.set(notiRef, {
+              userId: uid,
+              type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT',
+              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
+              relatedId: meetingId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        });
+        await batch.commit();
+
+        toast.success('모든 투표가 완료되었습니다!');
+        navigate('/propose');
+        return;
+      }
+
+      toast.success('투표가 완료되었습니다!');
       navigate('/propose');
     } catch (error) {
       console.error('Error submitting vote:', error);
-      alert('투표 제출 중 오류가 발생했습니다.');
+      toast.error('투표 제출 중 오류가 발생했습니다.');
     }
   };
 
@@ -168,6 +214,12 @@ const MeetingVoting = () => {
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight mb-2">{meetingData.title}</h2>
+          {meetingData.location && (
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+              <MapPin size={16} />
+              <span>{meetingData.location}</span>
+            </div>
+          )}
           <p className="text-gray-500 dark:text-gray-400 font-medium">
             나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
           </p>
@@ -269,18 +321,28 @@ const MeetingVoting = () => {
 
       {/* 하단 고정 제출 버튼 */}
       <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
-        <button
-          onClick={handleSubmit}
-          disabled={!isAllVoted}
-          className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${
-              isAllVoted
-                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
-            }`}
-        >
-          투표 완료하기
-        </button>
+        <div className="flex gap-3">
+          {isHost && (
+            <button
+              onClick={() => navigate(`/meeting/status/${meetingId}`)}
+              className="h-[62px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all flex-1"
+            >
+              현황 보기
+            </button>
+          )}
+          <button
+            onClick={handleSubmit}
+            disabled={!isAllVoted}
+            className={`h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${isHost ? 'flex-[2]' : 'w-full'}
+              ${
+                isAllVoted
+                  ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+              }`}
+          >
+            투표 완료하기
+          </button>
+        </div>
       </footer>
     </div>
   );

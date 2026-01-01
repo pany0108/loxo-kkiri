@@ -6,6 +6,7 @@ import { Plus, Users, ChevronLeft, Settings, Trash2, Calendar as CalendarIcon, A
 import { collection, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { EditCalendarModal } from '../components';
 import { useFirestoreQuery } from '../hooks/useFirestore';
 
 interface CalendarData {
@@ -21,6 +22,8 @@ const CalendarManager = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [calendarToEdit, setCalendarToEdit] = useState<CalendarData | null>(null);
   const [calendarToDelete, setCalendarToDelete] = useState<CalendarData | null>(null);
 
   // 1. 유저 인증 상태 확인
@@ -47,8 +50,8 @@ const CalendarManager = () => {
   };
 
   // 삭제 모달 열기
-  const openDeleteModal = (calendar: CalendarData, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const openDeleteModal = (calendar: CalendarData, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setCalendarToDelete(calendar);
     setIsDeleteModalOpen(true);
   };
@@ -68,12 +71,6 @@ const CalendarManager = () => {
       setIsDeleteModalOpen(false);
       setCalendarToDelete(null);
     }
-  };
-
-  const handleEdit = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // 수정 페이지가 있다면 이동 navigate(`/edit-calendar/${id}`);
-    toast('수정 기능은 준비중입니다.');
   };
 
   const handleSwitch = (id: string) => {
@@ -139,16 +136,17 @@ const CalendarManager = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-1">
-                  <button onClick={(e) => handleEdit(cal.id, e)} className="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="수정">
-                    <Settings size={18} />
-                  </button>
-                  {!cal.isDefault && (
-                    <button onClick={(e) => openDeleteModal(cal, e)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="삭제">
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCalendarToEdit(cal);
+                    setIsEditModalOpen(true);
+                  }}
+                  className="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                  title="수정"
+                >
+                  <Settings size={18} />
+                </button>
               </div>
             ))}
 
@@ -192,6 +190,17 @@ const CalendarManager = () => {
           </div>
         </div>
       )}
+
+      {/* 캘린더 수정 모달 */}
+      <EditCalendarModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        calendar={calendarToEdit}
+        onDelete={() => {
+          setIsEditModalOpen(false);
+          openDeleteModal(calendarToEdit!);
+        }}
+      />
     </div>
   );
 };

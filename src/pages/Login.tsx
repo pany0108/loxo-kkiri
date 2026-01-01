@@ -4,6 +4,7 @@ import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
 import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth, db, googleProvider } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
@@ -56,7 +57,7 @@ const Login = () => {
       } catch (error: any) {
         // 네트워크 또는 권한 오류 발생 시 처리
         setIsLoading(false);
-        alert('사용자 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
     },
     [navigate],
@@ -119,7 +120,7 @@ const Login = () => {
 
       // onAuthStateChanged에서 라우팅 처리하므로 별도 navigate 불필요
     } catch (error: any) {
-      alert('이메일 또는 비밀번호를 다시 확인해주세요.');
+      toast.error('이메일 또는 비밀번호를 다시 확인해주세요.');
       setIsLoading(false);
     }
   };
@@ -140,10 +141,10 @@ const Login = () => {
     } catch (error: any) {
       // 팝업이 차단된 경우 리다이렉트로 대체 시도
       if (error.code === 'auth/popup-blocked') {
-        alert('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.');
+        toast('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.', { icon: 'ℹ️' });
         await signInWithRedirect(auth, googleProvider);
       } else {
-        alert('로그인 중 오류가 발생했습니다.');
+        toast.error('로그인 중 오류가 발생했습니다.');
         setIsLoading(false);
       }
     }

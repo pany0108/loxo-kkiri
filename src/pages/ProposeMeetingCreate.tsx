@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, Send, AlignLeft, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, Send, AlignLeft, Sparkles, CheckCircle2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { auth, db } from '../firebase';
@@ -32,6 +32,7 @@ const ProposeMeetingCreate = () => {
   // 약속 기본 정보
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
 
   // [수정] 친구 목록 DB 연동
   const [user, setUser] = useState<any>(null);
@@ -105,7 +106,7 @@ const ProposeMeetingCreate = () => {
     const calendarName = `나와 ${invitedFriends.map((f) => f.name).join(', ')}의 약속`;
 
     navigate('/propose/detail', {
-      state: { title, description, invitedFriends, selectedDates, calendarName },
+      state: { title, description, location, invitedFriends, selectedDates, calendarName },
     });
   };
 
@@ -163,6 +164,20 @@ const ProposeMeetingCreate = () => {
                   placeholder="장소나 준비물 등을 적어주세요"
                   rows={3}
                   className="bg-transparent border-none outline-none w-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* 장소 입력 */}
+            <div className="group relative">
+              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">장소 (선택)</label>
+              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <MapPin size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="예: 강남역 2번 출구"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-300"
                 />
               </div>
             </div>

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import dayjs from 'dayjs';
 import { auth, db } from '../firebase';
 
 /**
@@ -61,6 +63,8 @@ const Signup = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
+  const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
 
   /**
    * 비밀번호 실시간 유효성 검사 Effect
@@ -175,11 +179,11 @@ const Signup = () => {
    */
   const handleSendAuth = () => {
     if (!formData.phone || formData.phone.length < 13) {
-      alert('올바른 휴대폰 번호를 입력해주세요.');
+      toast.error('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
     setIsAuthSent(true);
-    alert('인증번호가 발송되었습니다.');
+    toast.success('인증번호가 발송되었습니다.');
   };
 
   /**
@@ -189,7 +193,7 @@ const Signup = () => {
     if (formData.authCode === '1234') {
       setIsVerified(true);
     } else {
-      alert('인증번호가 일치하지 않습니다.');
+      toast.error('인증번호가 일치하지 않습니다.');
     }
   };
 
@@ -202,7 +206,10 @@ const Signup = () => {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isVerified) return alert('본인인증을 완료해주세요.');
+    if (!isVerified) {
+      toast.error('본인인증을 완료해주세요.');
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -225,11 +232,13 @@ const Signup = () => {
         firstName: formData.firstName,
         phone: formData.phone,
         birthDate: formData.birthDate,
+        isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
+        birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
         createdAt: new Date().toISOString(),
       });
 
       // [수정] 회원가입 시 기본 캘린더 자동 생성
-      await addDoc(collection(db, 'calendars'), {
+      const calendarDocRef = await addDoc(collection(db, 'calendars'), {
         name: '내 캘린더',
         ownerId: user.uid,
         members: [user.uid],
@@ -238,10 +247,33 @@ const Signup = () => {
         createdAt: new Date().toISOString(),
       });
 
-      alert(`${fullName}님, 가입을 축하합니다!`);
-      navigate('/calendar');
+      // [추가] 생일 캘린더 자동 생성
+      if (formData.birthDate) {
+        const birthDate = dayjs(formData.birthDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
+        await addDoc(collection(db, 'schedules'), {
+          title: '내 생일', // [수정] 타이틀 변경
+          calendarId: calendarDocRef.id,
+          isAllDay: true,
+          start: birthDate,
+          isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
+          isLunar: isLunar, // [추가] 음력 여부 저장
+          color: '#ec4899', // Pink color for birthdays
+          attendees: [user.uid],
+          userId: user.uid,
+          recurrence: {
+            frequency: 'yearly',
+            interval: 1,
+          },
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      toast.success(`${fullName}님, 가입을 축하합니다!`);
+      // navigate('/calendar');
+      // The user is now authenticated. The top-level router in App.tsx will
+      // detect the authenticated state and automatically navigate to the main page.
     } catch (error: any) {
-      alert('가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      toast.error('가입 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -319,7 +351,6 @@ const Signup = () => {
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
-                  pattern='[a-zA-Z0-9!@#$%^&*(),.?":{}|<>-]*'
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-300 hover:text-gray-500 transition-colors">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -404,6 +435,42 @@ const Signup = () => {
 
             {/* 생년월일 입력 */}
             <div className="group">
+              {/* [수정] 양력/음력/윤달 선택 UI */}
+              <div className="flex items-center justify-between mb-2 px-1 h-6">
+                <label className="text-[13px] font-bold text-gray-400">생년월일</label>
+                <div className="flex items-center gap-2">
+                  {isLunar && (
+                    <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
+                      <input
+                        type="checkbox"
+                        checked={isLeapMonth}
+                        onChange={(e) => setIsLeapMonth(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-[11px] font-bold text-gray-500">윤달</span>
+                    </label>
+                  )}
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLunar(false);
+                        setIsLeapMonth(false);
+                      }}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      양력
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsLunar(true)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      음력
+                    </button>
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input

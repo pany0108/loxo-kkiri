@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2 } from 'lucide-react';
 // [추가] Firebase 관련 import
@@ -6,7 +6,23 @@ import { collection, addDoc, doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
-const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899']; // 랜덤 배정을 위한 색상 목록
+const COLORS = [
+  '#3b82f6',
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#84cc16',
+  '#10b981',
+  '#14b8a6',
+  '#06b6d4',
+  '#0ea5e9',
+  '#6366f1',
+  '#8b5cf6',
+  '#d946ef',
+  '#ec4899',
+  '#f43f5e',
+  '#64748b',
+];
 
 // [추가] 친구 데이터 타입 정의
 interface Friend {
@@ -24,6 +40,7 @@ const CreateCalendar = () => {
 
   const [calName, setCalName] = useState('');
   const [selectedFriendUids, setSelectedFriendUids] = useState<string[]>([]);
+  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
   // [수정] DB에서 불러온 친구 목록 상태
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -54,8 +71,15 @@ const CreateCalendar = () => {
     setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
   };
 
-  const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
-  const finalName = calName || (selectedFriendNames.length > 0 ? `${selectedFriendNames.join(', ')}의 캘린더` : '');
+  // [수정] 캘린더 이름 자동 생성 로직 변경
+  const finalName = useMemo(() => {
+    if (calName) return calName;
+    if (selectedFriendUids.length > 0 && user?.displayName) {
+      const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
+      return `${user.displayName}과 ${selectedFriendNames.join('과 ')}의 캘린더`;
+    }
+    return '';
+  }, [calName, selectedFriendUids, friends, user?.displayName]);
 
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
   const isSubmitDisabled = !finalName.trim();
@@ -68,14 +92,11 @@ const CreateCalendar = () => {
     }
 
     try {
-      // 랜덤 색상 선택
-      const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-
       const docRef = await addDoc(collection(db, 'calendars'), {
         name: finalName,
         ownerId: user.uid,
         members: [user.uid, ...selectedFriendUids],
-        color: randomColor,
+        color: selectedColor,
         createdAt: new Date().toISOString(),
         isDefault: false, // 기본 캘린더 여부
       });
@@ -131,6 +152,25 @@ const CreateCalendar = () => {
                 placeholder="캘린더 이름을 입력해주세요"
                 className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-400/80"
               />
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 색상</label>
+            <div className="flex flex-wrap gap-3 px-1">
+              {COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectedColor(color)}
+                  className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
+                    selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: color }}
+                >
+                  {selectedColor === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                </button>
+              ))}
             </div>
           </section>
 

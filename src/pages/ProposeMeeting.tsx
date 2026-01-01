@@ -15,6 +15,7 @@ interface Meeting {
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   members: number;
   dday: string;
+  hostId: string; // [추가] 주최자 ID
 }
 
 /**
@@ -52,6 +53,7 @@ const ProposeMeeting = () => {
       status: m.status,
       members: m.participants?.length || 0,
       dday: m.status === 'VOTING' ? '투표중' : m.status === 'CONFIRMED' ? '확정' : '진행중',
+      hostId: m.hostId, // [추가]
     }));
   }, [meetingsData]);
 
@@ -63,11 +65,39 @@ const ProposeMeeting = () => {
    * @param {Meeting} meeting - 선택된 약속 객체
    */
   const handleMeetingClick = (meeting: Meeting) => {
+    if (!meetingsData) return;
+    const fullMeetingData = meetingsData.find((m: any) => m.id === meeting.id);
+
     switch (meeting.status) {
       case 'PENDING':
-        navigate(`/meeting/response/${meeting.id}`);
+        // [수정] PENDING 상태에서도 주최자는 현황판으로 이동
+        if (user && user.uid === meeting.hostId) {
+          navigate(`/meeting/status/${meeting.id}`);
+        } else {
+          navigate(`/meeting/response/${meeting.id}`);
+        }
         break;
       case 'VOTING':
+        // [수정] 투표 완료 여부에 따라 분기
+        if (fullMeetingData) {
+          const totalParticipants = fullMeetingData.participants?.length ?? 0;
+          const firstDate = fullMeetingData.dates?.[0];
+          // 투표 수를 확인하기 위한 대표 슬롯 ID 생성 로직을 더 명확하게 개선
+          const representativeSlotId = firstDate && fullMeetingData.timeSlots?.[firstDate]?.[0] ? `${firstDate}_0` : null;
+
+          if (representativeSlotId) {
+            const votes = fullMeetingData.votes?.[representativeSlotId] || {};
+            const votedCount = Object.keys(votes).length;
+            const isVotingComplete = totalParticipants > 0 && votedCount >= totalParticipants;
+
+            if (isVotingComplete) {
+              // 투표 완료: 주최자는 확정 페이지로, 참여자는 현황판으로
+              navigate(user && user.uid === meeting.hostId ? `/meeting/report/${meeting.id}` : `/meeting/participant-status/${meeting.id}`);
+              return;
+            }
+          }
+        }
+        // 투표 미완료: 모두 투표 페이지로
         navigate(`/meeting/vote/${meeting.id}`);
         break;
       case 'CONFIRMED':

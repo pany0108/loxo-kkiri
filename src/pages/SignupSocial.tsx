@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import toast from 'react-hot-toast';
+import dayjs from 'dayjs';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
 
 /**
@@ -37,6 +39,8 @@ const SignupSocial = () => {
   const [isAuthSent, setIsAuthSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
+  const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
 
   // userData 구조 분해 할당 (없을 경우를 대비해 빈 객체 기본값 처리)
   const { uid, email, lastName, firstName } = userData || {};
@@ -44,15 +48,28 @@ const SignupSocial = () => {
   /**
    * 데이터 유실 방지 Effect
    * 필수 데이터(uid)가 없으면 로그인 페이지로 리다이렉트합니다.
+   * [수정] 또한, 이미 프로필이 완성된 유저가 이 페이지에 접근하면 캘린더로 리다이렉트합니다.
    */
   useEffect(() => {
-    if (!uid) {
-      const timer = setTimeout(() => {
-        alert('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/login', { replace: true });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
+    const checkUserStatus = async () => {
+      if (uid) {
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          // 이미 프로필이 완성된 유저이므로 캘린더로 보냅니다.
+          navigate('/calendar', { replace: true });
+        }
+      } else {
+        // 인증 정보가 없으므로 로그인 페이지로 보냅니다.
+        const timer = setTimeout(() => {
+          toast.error('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
+          navigate('/login', { replace: true });
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    checkUserStatus();
   }, [uid, navigate]);
 
   // 필수 데이터가 로딩되지 않았을 때 로딩 화면 표시
@@ -125,11 +142,11 @@ const SignupSocial = () => {
    */
   const handleSendAuth = () => {
     if (!formData.phone || formData.phone.length < 13) {
-      alert('올바른 휴대폰 번호를 입력해주세요.');
+      toast.error('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
     setIsAuthSent(true);
-    alert('인증번호가 발송되었습니다.');
+    toast.success('인증번호가 발송되었습니다.');
   };
 
   /**
@@ -139,7 +156,7 @@ const SignupSocial = () => {
     if (formData.authCode === '1234') {
       setIsVerified(true);
     } else {
-      alert('인증번호가 일치하지 않습니다.');
+      toast.error('인증번호가 일치하지 않습니다.');
     }
   };
 
@@ -149,7 +166,10 @@ const SignupSocial = () => {
    */
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isVerified) return alert('본인인증을 완료해주세요.');
+    if (!isVerified) {
+      toast.error('본인인증을 완료해주세요.');
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -161,11 +181,13 @@ const SignupSocial = () => {
         firstName,
         phone: formData.phone,
         birthDate: formData.birthDate,
+        isLeapMonth: isLunar && isLeapMonth, // [추가]
+        birthDateType: isLunar ? 'lunar' : 'solar', // [추가]
         createdAt: new Date().toISOString(),
       });
 
       // [수정] 소셜 로그인 시 기본 캘린더 자동 생성
-      await addDoc(collection(db, 'calendars'), {
+      const calendarDocRef = await addDoc(collection(db, 'calendars'), {
         name: '내 캘린더',
         ownerId: uid,
         members: [uid],
@@ -174,13 +196,34 @@ const SignupSocial = () => {
         createdAt: new Date().toISOString(),
       });
 
+      // [추가] 생일 캘린더 자동 생성
+      if (formData.birthDate) {
+        const birthDate = dayjs(formData.birthDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
+        await addDoc(collection(db, 'schedules'), {
+          title: '내 생일', // [수정]
+          calendarId: calendarDocRef.id,
+          isAllDay: true,
+          start: birthDate,
+          isLeapMonth: isLunar && isLeapMonth, // [추가]
+          isLunar: isLunar, // [추가]
+          color: '#ec4899', // Pink
+          attendees: [uid],
+          userId: uid,
+          recurrence: {
+            frequency: 'yearly',
+            interval: 1,
+          },
+          createdAt: new Date().toISOString(),
+        });
+      }
+
       // 가입 완료 후 임시 데이터 삭제 (보안 및 정합성 유지)
       localStorage.removeItem('pendingSignup');
 
-      alert('회원가입이 완료되었습니다! ✨');
+      toast.success('회원가입이 완료되었습니다! ✨');
       navigate('/calendar', { replace: true });
     } catch (error) {
-      alert('저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      toast.error('저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +250,42 @@ const SignupSocial = () => {
           <div className="space-y-6">
             {/* 생년월일 입력 */}
             <div className="group">
-              <label className="block text-[13px] font-black text-gray-400 ml-1 mb-2">생년월일</label>
+              {/* [추가] 양력/음력 선택 토글 */}
+              <div className="flex items-center justify-between mb-2 px-1 h-6">
+                <label className="text-[13px] font-black text-gray-400">생년월일</label>
+                <div className="flex items-center gap-2">
+                  {isLunar && (
+                    <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
+                      <input
+                        type="checkbox"
+                        checked={isLeapMonth}
+                        onChange={(e) => setIsLeapMonth(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-[11px] font-bold text-gray-500">윤달</span>
+                    </label>
+                  )}
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLunar(false);
+                        setIsLeapMonth(false);
+                      }}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      양력
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsLunar(true)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                    >
+                      음력
+                    </button>
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input

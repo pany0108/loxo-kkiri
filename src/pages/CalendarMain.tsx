@@ -4,13 +4,16 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, ChevronDown, Check, X, Settings, User, Users } from 'lucide-react';
+import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell } from 'lucide-react';
 import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
 
 import { useCalendar, CalendarEvent, CalendarType } from '../contexts';
+import { useFirestoreQuery } from '../hooks/useFirestore';
+import { collection, query, where } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
 dayjs.extend(isSameOrBefore);
 
@@ -41,20 +44,71 @@ const CalendarMain = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
 
+  // [추가] 공휴일 데이터 상태
+  const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
+  const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
+
   // [수정] Context에서 데이터 가져오기
   const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
+
+  // [추가] 읽지 않은 알림 확인
+  const notificationsQuery = useMemo(() => {
+    if (!auth.currentUser) return null;
+    return query(collection(db, 'notifications'), where('userId', '==', auth.currentUser.uid), where('isRead', '==', false));
+  }, [auth.currentUser]);
+
+  const { data: unreadNotifications } = useFirestoreQuery(notificationsQuery);
+  const hasUnread = useMemo(() => (unreadNotifications ? unreadNotifications.length > 0 : false), [unreadNotifications]);
 
   // [추가] 화면에 보여줄 일정 필터링 로직
   // 기본 캘린더(isDefault)가 선택되어 있거나 선택된 캘린더가 없으면 -> 모든 일정 표시 (통합 뷰)
   // 특정 공유 캘린더가 선택되어 있으면 -> 해당 캘린더 일정만 표시
   const displayedEvents = useMemo(() => {
-    // 선택된 캘린더가 내 캘린더 목록에 있는지 확인 (통합 캘린더 처리)
-    const isSpecificCalendar = myCalendars.some((c: CalendarType) => c.id === activeCalendar?.id);
-    if (!activeCalendar || !isSpecificCalendar) {
+    // 1. 활성 캘린더가 없으면 모든 일정을 표시합니다. (초기 로딩 등)
+    if (!activeCalendar) {
       return events;
     }
+    // 2. 활성 캘린더가 '내 캘린더'(기본 캘린더)이면 모든 일정을 표시합니다.
+    if (activeCalendar.isDefault) {
+      return events;
+    }
+    // 3. 특정 공유 캘린더가 선택된 경우, 해당 캘린더의 일정만 필터링하여 표시합니다.
     return events.filter((event: CalendarEvent) => event.calendarId === activeCalendar.id);
-  }, [events, activeCalendar, myCalendars]);
+  }, [events, activeCalendar]);
+
+  // [추가] 공휴일과 사용자 이벤트를 합친 최종 이벤트 목록
+  const allDisplayedEvents = useMemo(() => {
+    return [...displayedEvents, ...holidays];
+  }, [displayedEvents, holidays]);
+
+  // [추가] 공휴일 정보 가져오기
+  const fetchHolidays = async (year: number) => {
+    if (fetchedYears.has(year)) return;
+
+    try {
+      const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+      if (!response.ok) {
+        console.error(`Failed to fetch holidays for ${year}`);
+        return;
+      }
+      const data = await response.json();
+      const holidayEvents: CalendarEvent[] = data.map((holiday: any) => ({
+        id: `holiday-${holiday.date}`,
+        title: holiday.localName,
+        start: holiday.date,
+        allDay: true,
+        color: 'transparent', // 배경색 없앰
+        calendarId: 'holidays', // 공휴일용 특수 ID
+        attendees: [],
+        extendedProps: { isHoliday: true },
+      }));
+
+      setHolidays((prev) => [...prev.filter((p) => !holidayEvents.some((h) => h.id === p.id)), ...holidayEvents]);
+      setFetchedYears((prev) => new Set(prev).add(year));
+    } catch (error) {
+      console.error('Error fetching holidays:', error);
+    }
+  };
 
   // --- UI 로직 (기존과 동일) ---
   useEffect(() => {
@@ -156,6 +210,12 @@ const CalendarMain = () => {
   };
 
   const handleEventClick = (info: EventClickArg) => {
+    // [추가] 공휴일 이벤트는 클릭 무시
+    if (info.event.extendedProps.isHoliday) {
+      info.jsEvent.preventDefault();
+      return;
+    }
+
     const originalId = info.event.extendedProps.originalId || info.event.id;
     const eventData = events.find((e: CalendarEvent) => e.id === originalId);
 
@@ -204,6 +264,15 @@ const CalendarMain = () => {
       const customTitle = arg.view.type === 'timeGridWeek' ? getWeekOfMonth(arg.view.currentStart) : arg.view.title;
       titleEl.setAttribute('data-custom-title', customTitle);
     }
+
+    // [추가] 년도가 바뀔 때 공휴일 정보 가져오기
+    const startYear = arg.view.activeStart.getFullYear();
+    const endYear = arg.view.activeEnd.getFullYear();
+
+    fetchHolidays(startYear);
+    if (startYear !== endYear) {
+      fetchHolidays(endYear);
+    }
   };
 
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
@@ -228,6 +297,13 @@ const CalendarMain = () => {
   };
 
   const renderEventContent = (eventInfo: EventContentArg) => {
+    const isHoliday = eventInfo.event.extendedProps.isHoliday;
+
+    // [추가] 공휴일 스타일링
+    if (isHoliday) {
+      return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
+    }
+
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
         return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
@@ -241,6 +317,7 @@ const CalendarMain = () => {
       );
     }
 
+    // --- 주/일 뷰 이벤트 렌더링 ---
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -284,12 +361,12 @@ const CalendarMain = () => {
     <div className="flex flex-col h-[calc(100vh-64px)] bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative">
       <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
-          <div className="relative" ref={dropdownRef}>
-            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity">
-              <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{activeCalendar?.name || '캘린더 선택'}</h1>
-              <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 ${isCalListOpen ? 'rotate-180' : ''}`} />
+          <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
+            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
+              <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate text-left">{activeCalendar?.name || '캘린더 선택'}</h1>
+              <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
             </button>
-            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5">
+            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5 truncate">
               {activeCalendar ? (activeCalendar.members.length === 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
             </p>
 
@@ -335,7 +412,13 @@ const CalendarMain = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
+            {/* [추가] 알림 아이콘 */}
+            <button onClick={() => navigate('/notifications')} className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full">
+              <Bell size={22} />
+              {hasUnread && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />}
+            </button>
+
             <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[14px]">
               {[
                 { id: 'dayGridMonth', label: '월' },
@@ -421,7 +504,7 @@ const CalendarMain = () => {
               const dateStr = arg.date.toLocaleDateString('en-CA');
               return dateStr === selectedDate ? 'selected-day' : '';
             }}
-            events={displayedEvents} // [수정] 필터링된 일정 목록 전달
+            events={allDisplayedEvents} // [수정] 공휴일 포함된 일정 목록 전달
             eventDidMount={(info: EventMountArg) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
@@ -463,7 +546,7 @@ const CalendarMain = () => {
 
           <div className="px-6 pb-24 overflow-y-auto h-full">
             <div className="space-y-3">
-              {displayedEvents
+              {allDisplayedEvents
                 .filter((event: CalendarEvent) => {
                   if (!selectedDate) return true;
                   return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
@@ -495,7 +578,7 @@ const CalendarMain = () => {
                   </div>
                 ))}
 
-              {displayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
+              {allDisplayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
                 <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-[13px] font-medium">일정이 없습니다.</div>
               )}
             </div>

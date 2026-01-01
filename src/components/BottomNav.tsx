@@ -12,7 +12,7 @@ const BottomNav = () => {
   const navItems = [
     { icon: <Calendar size={24} />, label: '캘린더', path: '/calendar' },
     { icon: <Users size={24} />, label: '친구', path: '/friend-list' },
-    { icon: <Send size={24} />, label: '약속제안', path: '/propose' },
+    { icon: <Send size={24} />, label: '약속', path: '/propose' },
     { icon: <User size={24} />, label: '내정보', path: '/profile' },
   ];
 

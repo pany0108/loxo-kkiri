@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users, MapPin, AlignLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 
 /**
@@ -19,6 +20,7 @@ interface InvitedFriend {
 interface LocationState {
   title: string;
   description: string;
+  location?: string;
   invitedFriends: InvitedFriend[];
   selectedDates: string[];
   calendarName: string;
@@ -47,9 +49,16 @@ const ProposeMeetingDetail = () => {
    * 라우터 상태로부터 약속 기본 정보를 불러옵니다.
    * 데이터가 없을 경우 기본값을 사용하여 에러를 방지합니다.
    */
-  const { title, description, invitedFriends, selectedDates } = (location.state as LocationState) || {
+  const {
+    title,
+    description,
+    location: meetingLocation,
+    invitedFriends,
+    selectedDates,
+  } = (location.state as LocationState) || {
     title: '새 약속',
     description: '',
+    location: '',
     selectedDates: [dayjs().format('YYYY-MM-DD')],
     invitedFriends: [] as InvitedFriend[],
     calendarName: '',
@@ -137,21 +146,39 @@ const ProposeMeetingDetail = () => {
     if (!auth.currentUser) return;
 
     try {
-      await addDoc(collection(db, 'meetings'), {
+      const meetingRef = await addDoc(collection(db, 'meetings'), {
         title,
         description,
+        location: meetingLocation,
         hostId: auth.currentUser.uid,
         hostName: auth.currentUser.displayName || '알 수 없음',
         participants: [auth.currentUser.uid, ...invitedFriends.map((f) => f.id)],
+        invitedFriends: invitedFriends.map((f) => ({ uid: f.id, name: f.name })), // [추가] 이름 표시용 데이터
         dates: selectedDates,
         timeSlots,
-        status: 'VOTING', // 생성 시 기본 상태는 투표 중
+        status: 'PENDING', // [수정] 생성 시 기본 상태는 조율 중(PENDING)
         createdAt: new Date().toISOString(),
       });
+
+      // [추가] 초대된 친구들에게 알림 전송
+      const batch = writeBatch(db);
+      invitedFriends.forEach((friend) => {
+        const notiRef = doc(collection(db, 'notifications'));
+        batch.set(notiRef, {
+          userId: friend.id,
+          type: 'MEETING_INVITE',
+          message: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
+          relatedId: meetingRef.id,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      });
+      await batch.commit();
+
       navigate('/propose'); // 목록 페이지로 이동
     } catch (error) {
       console.error('Error creating meeting:', error);
-      alert('약속 생성 중 오류가 발생했습니다.');
+      toast.error('약속 생성 중 오류가 발생했습니다.');
     }
   };
 
@@ -182,7 +209,21 @@ const ProposeMeetingDetail = () => {
             <span className="text-[10px] font-bold text-blue-500 bg-blue-100 px-2 py-1 rounded-md">SUMMARY</span>
           </div>
           <h3 className="text-[18px] font-black text-gray-900 mb-2">{title}</h3>
-          {description && <p className="text-[14px] font-medium text-gray-500 leading-relaxed mb-4">{description}</p>}
+
+          <div className="space-y-3 mb-4">
+            {description && (
+              <div className="flex items-start gap-2.5">
+                <AlignLeft size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-gray-600 leading-relaxed whitespace-pre-wrap">{description}</p>
+              </div>
+            )}
+            {meetingLocation && (
+              <div className="flex items-start gap-2.5">
+                <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-gray-600 leading-relaxed">{meetingLocation}</p>
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 pt-4 border-t border-gray-200/60">
             <Users size={16} className="text-gray-400" />

@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Loader2 } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Loader2, MapPin } from 'lucide-react';
 import ConfirmMeetingDialog from './ConfirmMeetingDialog';
-import { doc, updateDoc, addDoc, collection, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, deleteDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useFirestoreDoc } from '../hooks/useFirestore';
 import dayjs from 'dayjs';
@@ -31,10 +31,14 @@ interface MeetingData {
   id: string;
   title: string;
   description?: string;
+  location?: string;
+  hostId: string;
   participants: string[];
   dates: string[];
   timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
   votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
+  status: 'PENDING' | 'VOTING' | 'CONFIRMED';
+  confirmedSlot?: { date: string; time: string };
 }
 
 /**
@@ -111,11 +115,37 @@ const MeetingReport = () => {
    * 모달에서 확정 버튼 클릭 시 실행되며, API 호출 후 캘린더 화면으로 이동합니다.
    */
   const handleFinalConfirm = async () => {
-    if (!selectedSlot || !meetingData || !meetingId) return;
+    if (!selectedSlot || !meetingData || !meetingId || !auth.currentUser) return;
 
     setIsConfirmOpen(false);
 
     try {
+      // [수정] 약속이 등록될 캘린더를 결정하는 로직
+      let targetCalendarId = '';
+      const participants = meetingData.participants;
+      const calendarsRef = collection(db, 'calendars');
+
+      // 1. 약속 참여자들과 정확히 일치하는 공유 캘린더를 찾습니다.
+      const q = query(calendarsRef, where('members', 'array-contains', auth.currentUser.uid));
+      const querySnapshot = await getDocs(q);
+
+      const sharedCalendar = querySnapshot.docs.find((doc) => {
+        const calMembers = doc.data().members;
+        // 멤버 수와 멤버 목록이 모두 일치하는지 확인
+        return calMembers.length === participants.length && participants.every((p) => calMembers.includes(p));
+      });
+
+      if (sharedCalendar) {
+        targetCalendarId = sharedCalendar.id;
+      } else {
+        // 2. 일치하는 공유 캘린더가 없으면, 내 기본 캘린더를 찾습니다.
+        const defaultCalQ = query(calendarsRef, where('ownerId', '==', auth.currentUser.uid), where('isDefault', '==', true));
+        const defaultCalSnapshot = await getDocs(defaultCalQ);
+        if (!defaultCalSnapshot.empty) {
+          targetCalendarId = defaultCalSnapshot.docs[0].id;
+        }
+      }
+
       // 1. 약속 상태를 'CONFIRMED'로 변경
       await updateDoc(doc(db, 'meetings', meetingId), {
         status: 'CONFIRMED',
@@ -129,7 +159,8 @@ const MeetingReport = () => {
       await addDoc(collection(db, 'schedules'), {
         title: meetingData.title,
         content: meetingData.description || '',
-        calendarId: '', // 약속으로 생성된 일정은 특정 캘린더에 속하지 않음 (또는 별도 정책 필요)
+        location: meetingData.location || '',
+        calendarId: targetCalendarId, // [수정] 찾은 캘린더 ID로 설정
         isAllDay,
         start: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${startTime}`).toISOString(),
         end: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${endTime}`).toISOString(),
@@ -137,6 +168,22 @@ const MeetingReport = () => {
         createdAt: new Date().toISOString(),
         userId: auth.currentUser?.uid,
       });
+
+      // [추가] 약속 확정 알림 전송
+      const batch = writeBatch(db);
+      meetingData.participants.forEach((uid) => {
+        if (uid === auth.currentUser?.uid) return; // 본인 제외
+        const notiRef = doc(collection(db, 'notifications'));
+        batch.set(notiRef, {
+          userId: uid,
+          type: 'MEETING_CONFIRMED',
+          message: `'${meetingData.title}' 약속이 확정되었습니다.`,
+          relatedId: meetingId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      });
+      await batch.commit();
 
       toast.success('약속이 확정되어 캘린더에 추가되었습니다!');
       navigate('/calendar');
@@ -204,14 +251,34 @@ const MeetingReport = () => {
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
           <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            가장 <span className="text-blue-600 dark:text-blue-400">적절한 시간</span>을<br />
-            확정해주세요!
-          </h2>
-          <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm font-medium flex items-center gap-1.5">
-            <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
-            전원 가능인 시간을 우선 추천합니다.
-          </p>
+          {meetingData.location && (
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+              <MapPin size={16} />
+              <span>{meetingData.location}</span>
+            </div>
+          )}
+          {meetingData.status === 'CONFIRMED' ? (
+            <>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+                약속이 <span className="text-blue-600 dark:text-blue-400">확정</span>되었습니다!
+              </h2>
+              <div className="mt-4 bg-blue-50 dark:bg-blue-900/50 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
+                <p className="text-center text-lg font-black text-blue-600 dark:text-blue-300">{meetingData.confirmedSlot?.date}</p>
+                <p className="text-center text-2xl font-black text-blue-600 dark:text-blue-300">{meetingData.confirmedSlot?.time}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+                가장 <span className="text-blue-600 dark:text-blue-400">적절한 시간</span>을<br />
+                확정해주세요!
+              </h2>
+              <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm font-medium flex items-center gap-1.5">
+                <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
+                전원 가능인 시간을 우선 추천합니다.
+              </p>
+            </>
+          )}
         </header>
 
         {/* 리포트 카드 리스트 */}
@@ -367,46 +434,50 @@ const MeetingReport = () => {
                 )}
 
                 {/* 선택/확정 버튼 */}
-                <button
-                  onClick={() => handleConfirmClick(slot)}
-                  className={`w-full py-4 rounded-[20px] font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2
-                    ${
-                      slot.isAllAvailable
-                        ? 'bg-emerald-500 text-white shadow-emerald-200 dark:shadow-emerald-900/50 hover:bg-emerald-600'
-                        : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-2 border-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shadow-none'
-                    }`}
-                >
-                  {slot.isAllAvailable ? (
-                    <>
-                      <CheckCircle2 size={18} /> 이 시간으로 확정하기
-                    </>
-                  ) : (
-                    '선택하기'
-                  )}
-                </button>
+                {meetingData.status !== 'CONFIRMED' && (
+                  <button
+                    onClick={() => handleConfirmClick(slot)}
+                    className={`w-full py-4 rounded-[20px] font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2
+                      ${
+                        slot.isAllAvailable
+                          ? 'bg-emerald-500 text-white shadow-emerald-200 dark:shadow-emerald-900/50 hover:bg-emerald-600'
+                          : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-2 border-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shadow-none'
+                      }`}
+                  >
+                    {slot.isAllAvailable ? (
+                      <>
+                        <CheckCircle2 size={18} /> 이 시간으로 확정하기
+                      </>
+                    ) : (
+                      '선택하기'
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
 
         {/* 하단 관리 메뉴 (재요청/취소) */}
-        <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-800">
-          <p className="text-center text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-4">마음에 드는 시간이 없으신가요?</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={handleRequestRetry}
-              className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
-            >
-              <RefreshCw size={16} /> 일정 재요청
-            </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-white dark:bg-gray-800 border-2 border-rose-100 dark:border-rose-500/30 text-rose-500 dark:text-rose-400 font-bold text-[14px] hover:bg-rose-50 dark:hover:bg-rose-500/10 active:scale-[0.98] transition-all"
-            >
-              <Trash2 size={16} /> 약속 취소
-            </button>
+        {meetingData.status !== 'CONFIRMED' && (
+          <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-center text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-4">마음에 드는 시간이 없으신가요?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleRequestRetry}
+                className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
+              >
+                <RefreshCw size={16} /> 일정 재요청
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-white dark:bg-gray-800 border-2 border-rose-100 dark:border-rose-500/30 text-rose-500 dark:text-rose-400 font-bold text-[14px] hover:bg-rose-50 dark:hover:bg-rose-500/10 active:scale-[0.98] transition-all"
+              >
+                <Trash2 size={16} /> 약속 취소
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 확정 확인 다이얼로그 */}
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} />

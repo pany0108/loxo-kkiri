@@ -4,6 +4,7 @@ import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import lunisolar from 'lunisolar';
 import { useFirestoreQuery } from '../hooks/useFirestore';
 
 dayjs.extend(isSameOrBefore);
@@ -29,6 +30,8 @@ export interface CalendarEvent {
   recurrence?: any;
   originalId?: string;
   calendarId: string;
+  isLeapMonth?: boolean; // [추가] 윤달 여부
+  isLunar?: boolean; // [추가] 음력 여부
 }
 
 interface CalendarContextType {
@@ -39,6 +42,18 @@ interface CalendarContextType {
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
+
+/**
+ * Firestore Timestamp 또는 날짜 문자열을 dayjs 객체로 안전하게 변환합니다.
+ * @param date - Firestore Timestamp, ISO 문자열, 또는 Date 객체
+ * @returns dayjs 객체 또는 null
+ */
+const safeDayjs = (date: any): dayjs.Dayjs | null => {
+  if (!date) return null;
+  if (typeof date === 'string') return dayjs(date);
+  if (date.toDate && typeof date.toDate === 'function') return dayjs(date.toDate()); // Firestore Timestamp
+  return dayjs(date); // Fallback for Date objects
+};
 
 const expandRecurringEvents = (events: any[]) => {
   const expandedEvents: any[] = [];
@@ -55,23 +70,47 @@ const expandRecurringEvents = (events: any[]) => {
     const endCount = event.recurrence.endCount ? parseInt(event.recurrence.endCount, 10) : 0;
     const isAllDay = event.allDay;
 
-    let currentStart = dayjs(event.start);
-    let currentEnd = event.end ? dayjs(event.end) : null;
+    const initialStart = safeDayjs(event.start);
+    if (!initialStart) return; // 유효한 시작 날짜가 없으면 이벤트를 건너뜁니다.
+    let currentStart: dayjs.Dayjs = initialStart;
 
-    const durationDays = isAllDay && currentEnd ? currentEnd.diff(currentStart, 'day') : 0;
-    const durationMs = !isAllDay && currentEnd ? currentEnd.diff(currentStart) : 0;
+    const durationDays = isAllDay && event.end ? safeDayjs(event.end)!.diff(initialStart, 'day') : 0;
+    const durationMs = !isAllDay && event.end ? safeDayjs(event.end)!.diff(initialStart, 'ms') : 0;
 
-    const limitDate = endType === 'date' && endDate ? dayjs(endDate).endOf('day') : dayjs().add(2, 'year');
+    // 반복 종료일이 없으면, 넉넉하게 5년 후까지 이벤트를 확장합니다.
+    const viewLimit = dayjs().add(5, 'year');
+    const limitDate = endType === 'date' && endDate ? dayjs(endDate).endOf('day') : viewLimit;
 
     let count = 0;
-    let loopSafety = 0;
+    let loopSafety = 0; // 무한 루프 방지 장치
     const targetDays = daysOfWeek ? daysOfWeek.map(String) : [];
     const exceptions = event.recurrence.exceptions || [];
 
-    while (loopSafety < 2000) {
+    while (loopSafety < 500) {
+      // 최대 500회 반복으로 제한
       loopSafety++;
 
-      if (endType === 'date' && currentStart.isAfter(limitDate)) break;
+      // [추가] 음력 생일인 경우, 현재 반복 연도에 맞는 양력 날짜로 변환합니다.
+      if (event.isLunar && frequency === 'yearly') {
+        const originalLunarDate = safeDayjs(event.start);
+        if (originalLunarDate) {
+          const lunarMonth = originalLunarDate.month() + 1;
+          const lunarDay = originalLunarDate.date();
+          const currentLoopYear = currentStart.year();
+
+          // lunisolar 라이브러리를 사용하여 해당 연도의 양력 날짜를 계산합니다.
+          const luni = lunisolar.fromLunar({
+            year: currentLoopYear,
+            month: lunarMonth,
+            day: lunarDay,
+            isLeapMonth: event.isLeapMonth || false, // [추가] 윤달 여부 전달
+          });
+          const solarDate = luni.toDate();
+          currentStart = dayjs(solarDate);
+        }
+      }
+
+      if (currentStart.isAfter(limitDate)) break;
       if (endType === 'count' && count >= endCount) break;
 
       let shouldAdd = true;
@@ -92,10 +131,21 @@ const expandRecurringEvents = (events: any[]) => {
 
         if (isAllDay) {
           finalStartStr = currentStart.format('YYYY-MM-DD');
-          finalEndStr = currentEnd ? currentStart.add(durationDays, 'day').format('YYYY-MM-DD') : null;
+          const originalStart = safeDayjs(event.start);
+          const originalEnd = safeDayjs(event.end);
+
+          // 하루짜리 '종일' 일정 (생일 등)은 end 속성이 없어야 FullCalendar에서 올바르게 렌더링됩니다.
+          // 1. end가 없거나, 2. start와 end가 같은 날짜인 경우(이전 데이터 호환)
+          if (!originalEnd || (originalStart && originalStart.isSame(originalEnd, 'day'))) {
+            finalEndStr = null;
+          } else {
+            // 여러 날에 걸친 '종일' 일정의 경우, 기간을 유지합니다.
+            // diff는 이미 위에서 계산된 durationDays를 사용합니다.
+            finalEndStr = currentStart.add(durationDays, 'day').format('YYYY-MM-DD');
+          }
         } else {
           finalStartStr = currentStart.toISOString();
-          finalEndStr = currentEnd ? currentStart.add(durationMs, 'millisecond').toISOString() : null;
+          finalEndStr = event.end ? currentStart.add(durationMs, 'millisecond').toISOString() : null;
         }
 
         expandedEvents.push({

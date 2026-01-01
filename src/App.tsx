@@ -24,8 +24,11 @@ import {
   MeetingResponse,
   MeetingVoting,
   MeetingReport,
+  MeetingParticipantStatus,
+  MeetingHostStatus,
   ScheduleChat,
   SharedMediaList,
+  NotificationCenter,
 } from './pages';
 import { Loader2 } from 'lucide-react';
 import { CalendarProvider, ThemeProvider } from './contexts';
@@ -45,7 +48,7 @@ function App() {
   }, []);
 
   // 2. 네비게이션 바 숨김 처리 로직
-  const hideNavPaths = ['/', '/signup', '/login', '/change-password', '/edit-info', '/create-calendar', '/add-schedule', '/propose/create', '/propose/detail'];
+  const hideNavPaths = ['/', '/signup', '/login', '/change-password', '/edit-info', '/create-calendar', '/add-schedule', '/propose/create', '/propose/detail', '/notifications'];
 
   const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/'].some((path) => location.pathname.startsWith(path));
 
@@ -76,7 +79,7 @@ function App() {
           <Routes>
             {/* --- 01. 계정 및 인증 --- */}
             <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/calendar" replace />} />
             <Route path="/signup-social" element={<SignupSocial />} />
             <Route path="/change-password" element={<ChangePassword />} />
             {/* --- 02. 사용자 및 소셜 --- */}
@@ -96,10 +99,13 @@ function App() {
             <Route path="/propose/detail" element={user ? <ProposeMeetingDetail /> : <Navigate to="/" />} />
             <Route path="/meeting/response/:id" element={user ? <MeetingResponse /> : <Navigate to="/" />} />
             <Route path="/meeting/vote/:id" element={user ? <MeetingVoting /> : <Navigate to="/" />} />
+            <Route path="/meeting/status/:id" element={user ? <MeetingHostStatus /> : <Navigate to="/" />} /> {/* [추가] 라우트 */}
+            <Route path="/meeting/participant-status/:id" element={user ? <MeetingParticipantStatus /> : <Navigate to="/" />} />
             <Route path="/meeting/report/:id" element={user ? <MeetingReport /> : <Navigate to="/" />} />
             {/* --- 05. 커뮤니케이션 --- */}
             <Route path="/chat/:id" element={user ? <ScheduleChat /> : <Navigate to="/" />} />
             <Route path="/schedule/:id/media" element={user ? <SharedMediaList /> : <Navigate to="/" />} />
+            <Route path="/notifications" element={user ? <NotificationCenter /> : <Navigate to="/" />} />
             <Route
               path="/__/auth/handler"
               element={
