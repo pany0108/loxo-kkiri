@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'; // [추가] dayjs 플러그인
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, Image as ImageIcon, Paperclip, BookOpen, Sparkles } from 'lucide-react';
-import { RecurrenceOptions, RecurrenceSettings } from '../components';
-import { doc, updateDoc } from 'firebase/firestore';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Trash2, Plus } from 'lucide-react';
+import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal } from '../components';
+import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useCalendar } from '../contexts';
+import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
@@ -53,6 +54,20 @@ const ScheduleEdit = () => {
   const eventData = location.state as EventDataState | null;
   const { myCalendars } = useCalendar();
 
+  // --- [추가] 상태 관리 ---
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const [isCalListOpen, setIsCalListOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
   // 초기 상태 설정
   const [formData, setFormData] = useState({
     title: eventData?.title || '',
@@ -85,6 +100,92 @@ const ScheduleEdit = () => {
   const isShared = selectedCalendar ? selectedCalendar.members.length > 1 : false;
   const isPastEvent = dayjs().isAfter(formData.end);
 
+  // [추가] 드롭다운 외부 클릭 시 닫기
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCalListOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  const handleCalendarSelect = (calendar: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      calendarId: calendar.id,
+    }));
+    setIsCalListOpen(false);
+  };
+
+  // [추가] 삭제 관련 핸들러 (ScheduleDetail.tsx에서 가져옴)
+  const handleDeleteClick = async () => {
+    // 1. 반복 일정이 아니면 바로 삭제 컨펌
+    if (!recurrence || recurrence.frequency === 'none') {
+      setIsSimpleDeleteModalOpen(true);
+      return;
+    }
+    // 2. 반복 일정이면 모달 띄우기
+    setIsDeleteModalOpen(true);
+  };
+
+  const getDocId = () => eventData?.id || location.pathname.split('/').pop();
+
+  // 1. 전체 삭제 (문서 자체 삭제)
+  const deleteEntireSchedule = async () => {
+    try {
+      const docId = getDocId();
+      if (docId) {
+        await deleteDoc(doc(db, 'schedules', docId));
+        toast.success('일정이 삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 2. 이 일정만 삭제 (exceptions 배열에 현재 날짜 추가)
+  const deleteOnlyThis = async () => {
+    try {
+      const docId = getDocId();
+      if (docId) {
+        const dateToDelete = dayjs(formData.start).format('YYYY-MM-DD');
+        await updateDoc(doc(db, 'schedules', docId), {
+          'recurrence.exceptions': arrayUnion(dateToDelete),
+        });
+        toast.success('해당 날짜의 일정이 삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('개별 삭제 실패:', error);
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 3. 향후 일정 모두 삭제 (endDate를 어제로 수정)
+  const deleteFollowing = async () => {
+    try {
+      const docId = getDocId();
+      if (docId) {
+        const newEndDate = dayjs(formData.start).subtract(1, 'day').format('YYYY-MM-DD');
+        await updateDoc(doc(db, 'schedules', docId), {
+          'recurrence.endType': 'date',
+          'recurrence.endDate': newEndDate,
+        });
+        toast.success('이후 일정이 모두 삭제되었습니다.');
+        navigate('/calendar');
+      }
+    } catch (error) {
+      console.error('향후 일정 삭제 실패:', error);
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   // --- 핸들러 ---
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -92,15 +193,13 @@ const ScheduleEdit = () => {
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
 
-      // 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정
+      // [수정] 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정 (AddSchedule.tsx와 동일한 로직 적용)
       if (!newData.isAllDay && name === 'start') {
-        const duration = dayjs(prev.end).diff(dayjs(prev.start));
-        // 새로 설정된 시작 시간이 기존 종료 시간보다 늦거나 같으면, 종료 시간을 1시간 뒤로 조정
-        if (dayjs(value).isSameOrAfter(dayjs(prev.end))) {
+        const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
+        const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
+
+        if (isInitialTime || isStartTimeAfterEndTime) {
           newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
-        } else {
-          // 그렇지 않으면 기존 간격을 유지
-          newData.end = dayjs(value).add(duration, 'ms').format('YYYY-MM-DDTHH:mm');
         }
       }
       return newData;
@@ -113,27 +212,50 @@ const ScheduleEdit = () => {
       return {
         ...prev,
         isAllDay: nextIsAllDay,
-        start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
-        end: nextIsAllDay ? dayjs(prev.end).format('YYYY-MM-DD') : dayjs(prev.end).format('YYYY-MM-DDT10:00'),
+        // [수정] 종일 옵션을 켜면 시간을 00:00 ~ 23:59로 설정하고, 끄면 기본 시간으로 되돌립니다.
+        start: nextIsAllDay ? dayjs(prev.start).startOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
+        end: nextIsAllDay ? dayjs(prev.end).endOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.end).format('YYYY-MM-DDT10:00'),
       };
     });
   };
 
   const handleSave = async () => {
     try {
-      if (location.state?.id || location.pathname.split('/').pop()) {
-        const docId = location.state?.id || location.pathname.split('/').pop();
+      const docId = getDocId();
+      if (docId) {
+        // [수정] 저장 시점에 선택된 캘린더의 멤버를 참석자로 설정합니다.
+        const attendees = selectedCalendar?.members || (user ? [user.uid] : []);
 
-        const finalSelectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
-        const attendees = finalSelectedCalendar ? finalSelectedCalendar.members : auth.currentUser ? [auth.currentUser.uid] : [];
-
-        await updateDoc(doc(db, 'schedules', docId), {
+        const scheduleUpdateData: any = {
           ...formData,
-          color: finalSelectedCalendar?.color || '#3b82f6',
           attendees,
+          color: selectedCalendar?.color || '#3b82f6',
           recurrence,
-        });
+        };
+        await updateDoc(doc(db, 'schedules', docId!), scheduleUpdateData);
 
+        // [추가] 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
+        if (attendees.length > 1) {
+          const batch = writeBatch(db);
+          const notificationsCollection = collection(db, 'notifications');
+          const editorName = user?.displayName || '누군가';
+
+          attendees.forEach((memberId) => {
+            // 일정을 수정한 본인에게는 알림을 보내지 않음
+            if (memberId === user?.uid) return;
+
+            const newNotiRef = doc(notificationsCollection);
+            batch.set(newNotiRef, {
+              userId: memberId,
+              type: 'SCHEDULE_UPDATED',
+              message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
+              relatedId: docId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+          });
+          await batch.commit();
+        }
         toast.success('수정되었습니다.');
         navigate(-1); // 뒤로 가기
       }
@@ -178,6 +300,60 @@ const ScheduleEdit = () => {
                   className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
                 />
               </div>
+            </div>
+
+            {/* [추가] 캘린더 선택 드롭다운 */}
+            <div className="group relative" ref={dropdownRef}>
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
+              <button
+                type="button"
+                onClick={() => setIsCalListOpen(!isCalListOpen)}
+                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
+                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
+                </div>
+                <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isCalListOpen && (
+                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  {myCalendars.map((cal) => (
+                    <button
+                      key={cal.id}
+                      type="button"
+                      onClick={() => handleCalendarSelect(cal)}
+                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
+                        selectedCalendar?.id === cal.id
+                          ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
+                        <span className="text-[14px] font-bold">{cal.name}</span>
+                      </div>
+                      {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                    </button>
+                  ))}
+                  <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate('/create-calendar', {
+                        state: {
+                          from: `/schedule/edit/${getDocId()}`, // 돌아올 경로 지정
+                          scheduleData: { ...formData, recurrence, id: getDocId() }, // 현재 폼 데이터 전달
+                        },
+                      })
+                    }
+                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
+                  >
+                    <Plus size={16} /> 새 캘린더 만들기
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -230,7 +406,8 @@ const ScheduleEdit = () => {
               </div>
             </div>
 
-            <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
+            {/* [추가] 약속 잡기로 생성된 일정(recurrence 필드가 없음)은 반복 설정 옵션을 숨깁니다. */}
+            {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
 
             <div className="space-y-3">
               <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
@@ -339,8 +516,52 @@ const ScheduleEdit = () => {
               </div>
             )}
           </section>
+          {/* [추가] 삭제 버튼 */}
+          <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3"
+            >
+              이 일정 삭제하기
+            </button>
+          </div>
         </form>
       </div>
+
+      {/* [추가] 반복 일정 삭제 모달 */}
+      {isDeleteModalOpen && (
+        <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
+      )}
+
+      {/* [추가] 일반 일정 삭제 확인 모달 */}
+      {isSimpleDeleteModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSimpleDeleteModalOpen(false)} />
+          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">일정 삭제</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
+              정말 이 일정을 삭제하시겠습니까?
+              <br />
+              삭제된 일정은 복구할 수 없습니다.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={deleteEntireSchedule} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+                삭제하기
+              </button>
+              <button
+                onClick={() => setIsSimpleDeleteModalOpen(false)}
+                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

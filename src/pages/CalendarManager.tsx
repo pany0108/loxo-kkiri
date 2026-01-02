@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Plus, Users, ChevronLeft, Settings, Trash2, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Users, ChevronLeft, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
 import { collection, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';

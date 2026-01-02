@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, ChevronLeft, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
+import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -106,14 +106,8 @@ const MyProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard'] pb-24">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="뒤로 가기">
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
-
-      <div className="px-6 pt-4 space-y-8">
+      {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
+      <div className="px-6 pt-6 space-y-8">
         <header className="mb-2">
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             <span className="text-blue-600 dark:text-blue-400">{userData?.name || '사용자'}</span>님,

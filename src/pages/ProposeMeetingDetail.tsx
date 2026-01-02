@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users, MapPin, AlignLeft } from 'lucide-react';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users, MapPin, AlignLeft, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+
+dayjs.extend(isSameOrAfter);
 
 /**
  * 초대된 친구 데이터 인터페이스
@@ -75,6 +78,10 @@ const ProposeMeetingDetail = () => {
     }, {}),
   );
 
+  // [추가] 시간 통일 모달 상태
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
+
   /**
    * 특정 날짜에 새로운 시간 슬롯을 추가합니다.
    * 기본값: 12:00 ~ 13:00
@@ -111,7 +118,18 @@ const ProposeMeetingDetail = () => {
    */
   const handleTimeChange = (dateStr: string, index: number, field: 'start' | 'end', value: string) => {
     const newSlots = [...timeSlots[dateStr]];
-    newSlots[index] = { ...newSlots[index], [field]: value };
+    const newSlotData = { ...newSlots[index], [field]: value };
+
+    // 시작 시간을 변경했을 때, 종료 시간이 시작 시간보다 빠르거나 같으면 종료 시간을 1시간 뒤로 자동 조정
+    if (field === 'start') {
+      const startTime = dayjs(`${dateStr}T${value}`);
+      const endTime = dayjs(`${dateStr}T${newSlotData.end}`);
+      if (startTime.isSameOrAfter(endTime)) {
+        newSlotData.end = startTime.add(1, 'hour').format('HH:mm');
+      }
+    }
+
+    newSlots[index] = newSlotData;
     setTimeSlots({ ...timeSlots, [dateStr]: newSlots });
   };
 
@@ -136,6 +154,63 @@ const ProposeMeetingDetail = () => {
         [dateStr]: [{ start: '00:00', end: '23:59', isAllDay: true }],
       });
     }
+  };
+
+  /**
+   * [수정] 시간 통일 모달을 엽니다.
+   */
+  const handleSyncTimes = () => {
+    if (selectedDates.length < 1) {
+      toast('시간을 설정할 날짜를 먼저 선택해주세요.');
+      return;
+    }
+
+    const firstDate = selectedDates.sort()[0];
+    const firstSlot = timeSlots[firstDate]?.[0];
+
+    // 모달의 초기 시간을 첫 번째 날짜의 시간으로 설정 (종일이 아닐 경우)
+    if (firstSlot && !firstSlot.isAllDay) {
+      setSyncTime({ start: firstSlot.start, end: firstSlot.end });
+    }
+
+    setIsSyncModalOpen(true);
+  };
+
+  /**
+   * [추가] 시간 통일 모달에서 설정한 시간으로 모든 슬롯을 업데이트합니다.
+   */
+  const applySyncedTime = () => {
+    const newTimeSlots = { ...timeSlots };
+
+    for (const dateStr of selectedDates) {
+      newTimeSlots[dateStr] = [
+        {
+          start: syncTime.start,
+          end: syncTime.end,
+          isAllDay: false, // 시간을 지정하므로 종일 옵션은 해제
+        },
+      ];
+    }
+
+    setTimeSlots(newTimeSlots);
+    toast.success('모든 시간대가 통일되었습니다.');
+    setIsSyncModalOpen(false);
+  };
+
+  /**
+   * [추가] 시간 통일 모달의 시간 입력 변경을 처리합니다.
+   */
+  const handleSyncTimeChange = (field: 'start' | 'end', value: string) => {
+    const newSyncTime = { ...syncTime, [field]: value };
+
+    if (field === 'start') {
+      const startTime = dayjs(`2000-01-01T${value}`);
+      const endTime = dayjs(`2000-01-01T${newSyncTime.end}`);
+      if (startTime.isSameOrAfter(endTime)) {
+        newSyncTime.end = startTime.add(1, 'hour').format('HH:mm');
+      }
+    }
+    setSyncTime(newSyncTime);
   };
 
   /**
@@ -231,6 +306,20 @@ const ProposeMeetingDetail = () => {
           </div>
         </section>
 
+        {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
+        <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-800">
+          <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
+            <Clock size={18} className="text-blue-600" />
+            시간대 설정
+          </h3>
+          <button
+            onClick={handleSyncTimes}
+            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            시간 일괄 설정
+          </button>
+        </div>
+
         {/* 날짜별 시간 설정 리스트 */}
         <div className="space-y-10">
           {selectedDates.sort().map((dateStr: string) => {
@@ -321,6 +410,52 @@ const ProposeMeetingDetail = () => {
           })}
         </div>
       </div>
+
+      {/* [추가] 시간 통일 모달 */}
+      {isSyncModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSyncModalOpen(false)} />
+          <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">시간 일괄 설정</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-6 font-medium leading-relaxed">
+              모든 날짜의 시간을
+              <br />
+              아래 시간으로 통일합니다.
+            </p>
+
+            {/* [수정] 시간 입력 UI를 세로로 변경하여 가독성 확보 */}
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center justify-between h-[50px] bg-gray-50 dark:bg-gray-700/50 rounded-[16px] px-4 border border-gray-100 dark:border-gray-700">
+                <label className="text-[14px] font-bold text-gray-500 dark:text-gray-400">시작 시간</label>
+                <input
+                  type="time"
+                  value={syncTime.start}
+                  onChange={(e) => handleSyncTimeChange('start', e.target.value)}
+                  className="bg-transparent border-none outline-none w-auto text-[14px] font-bold text-gray-900 dark:text-white text-right"
+                />
+              </div>
+              <div className="flex items-center justify-between h-[50px] bg-gray-50 dark:bg-gray-700/50 rounded-[16px] px-4 border border-gray-100 dark:border-gray-700">
+                <label className="text-[14px] font-bold text-gray-500 dark:text-gray-400">종료 시간</label>
+                <input
+                  type="time"
+                  value={syncTime.end}
+                  onChange={(e) => handleSyncTimeChange('end', e.target.value)}
+                  className="bg-transparent border-none outline-none w-auto text-[14px] font-bold text-gray-900 dark:text-white text-right"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button onClick={applySyncedTime} className="w-full py-4 bg-blue-600 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+                적용하기
+              </button>
+              <button onClick={() => setIsSyncModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 하단 고정 제안 발송 버튼 */}
       <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">

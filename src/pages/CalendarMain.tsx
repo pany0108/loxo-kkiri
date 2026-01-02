@@ -1,19 +1,22 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell } from 'lucide-react';
-import { SlotLabelContentArg, DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
+import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
 
 import { useCalendar, CalendarEvent, CalendarType } from '../contexts';
 import { useFirestoreQuery } from '../hooks/useFirestore';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { setupPushNotifications } from '../utils/pushNotificationSetup';
+import { DeleteRecurringModal } from '../components';
+import toast from 'react-hot-toast';
 
 dayjs.extend(isSameOrBefore);
 
@@ -28,9 +31,11 @@ const getWeekOfMonth = (date: Date): string => {
 
 const CalendarMain = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const calendarRef = useRef<FullCalendar>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -43,10 +48,47 @@ const CalendarMain = () => {
   const [currentView, setCurrentView] = useState('dayGridMonth');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
+  const [animationClass, setAnimationClass] = useState(''); // [추가] 스와이프 애니메이션 클래스 상태
+  const [isNavigating, setIsNavigating] = useState(false); // [추가] 캘린더 이동 애니메이션 중복 방지 상태
+
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+  // [추가] Jiggle 모드 및 삭제 관련 상태
+  const [isJiggleMode, setIsJiggleMode] = useState(false);
+  const [jigglingItemId, setJigglingItemId] = useState<string | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
 
   // [추가] 공휴일 데이터 상태
   const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
   const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
+
+  // [추가] 다른 페이지에서 특정 날짜로 이동 요청 시 처리
+  useEffect(() => {
+    const calendarApi = calendarRef.current?.getApi();
+    // [수정] targetView도 함께 처리하도록 로직 개선
+    if (calendarApi && (location.state?.targetDate || location.state?.targetView)) {
+      const { targetDate, targetView } = location.state;
+      if (targetView) {
+        calendarApi.changeView(targetView);
+        setCurrentView(targetView); // 뷰 버튼 UI 동기화
+      }
+      if (targetDate) {
+        calendarApi.gotoDate(targetDate);
+      }
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]); // location이 변경될 때마다 실행
+
+  // [추가] 푸시 알림 설정
+  useEffect(() => {
+    if (auth.currentUser) {
+      setupPushNotifications(auth.currentUser.uid, navigate);
+    }
+  }, [navigate]);
 
   // [수정] Context에서 데이터 가져오기
   const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
@@ -55,7 +97,7 @@ const CalendarMain = () => {
   const notificationsQuery = useMemo(() => {
     if (!auth.currentUser) return null;
     return query(collection(db, 'notifications'), where('userId', '==', auth.currentUser.uid), where('isRead', '==', false));
-  }, [auth.currentUser]);
+  }, []);
 
   const { data: unreadNotifications } = useFirestoreQuery(notificationsQuery);
   const hasUnread = useMemo(() => (unreadNotifications ? unreadNotifications.length > 0 : false), [unreadNotifications]);
@@ -136,8 +178,17 @@ const CalendarMain = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsCalListOpen(false);
       }
+      // [추가] Jiggle 모드일 때 외부 클릭 시 모드 종료
+      if (isJiggleMode && listRef.current && !listRef.current.contains(event.target as Node)) {
+        exitJiggleMode();
+      }
+      // [추가] Date picker 외부 클릭 시 닫기
+      const titleEl = document.querySelector('.fc-toolbar-title');
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node) && titleEl && !titleEl.contains(event.target as Node)) {
+        setIsDatePickerOpen(false);
+      }
     };
-    if (isCalListOpen) {
+    if (isCalListOpen || isJiggleMode || isDatePickerOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
@@ -145,7 +196,115 @@ const CalendarMain = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isCalListOpen]);
+  }, [isCalListOpen, isJiggleMode, isDatePickerOpen]);
+
+  // [추가] 캘린더 타이틀 클릭 핸들러 추가
+  useEffect(() => {
+    const titleEl = document.querySelector('.fc-toolbar-title');
+    if (titleEl) {
+      (titleEl as HTMLElement).style.cursor = 'pointer';
+      const handleClick = () => {
+        const calendarApi = calendarRef.current?.getApi();
+        if (calendarApi) {
+          setPickerYear(calendarApi.getDate().getFullYear());
+          setIsDatePickerOpen((prev) => !prev);
+        }
+      };
+      titleEl.addEventListener('click', handleClick);
+      return () => {
+        titleEl.removeEventListener('click', handleClick);
+      };
+    }
+  }, []);
+
+  // [추가] Jiggle 모드 및 삭제 관련 핸들러
+  const handlePointerDown = (event: CalendarEvent) => {
+    if (isJiggleMode) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsJiggleMode(true);
+      setJigglingItemId(event.id!);
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const exitJiggleMode = () => {
+    setIsJiggleMode(false);
+    setJigglingItemId(null);
+  };
+
+  const handleDeleteClick = (event: CalendarEvent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEventToDelete(event);
+    if (event.recurrence && event.recurrence.frequency !== 'none') {
+      setIsDeleteModalOpen(true);
+    } else {
+      setIsSimpleDeleteModalOpen(true);
+    }
+  };
+
+  const getDocId = (event: CalendarEvent | null) => event?.originalId || event?.id;
+
+  const deleteEntireSchedule = async () => {
+    if (!eventToDelete) return;
+    const docId = getDocId(eventToDelete);
+    try {
+      if (docId) {
+        await deleteDoc(doc(db, 'schedules', docId));
+        toast.success('일정이 삭제되었습니다.');
+      }
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsSimpleDeleteModalOpen(false);
+      setIsDeleteModalOpen(false);
+      exitJiggleMode();
+    }
+  };
+
+  const deleteOnlyThis = async () => {
+    if (!eventToDelete) return;
+    const docId = getDocId(eventToDelete);
+    try {
+      if (docId) {
+        const dateToDelete = dayjs(eventToDelete.start).format('YYYY-MM-DD');
+        await updateDoc(doc(db, 'schedules', docId), {
+          'recurrence.exceptions': arrayUnion(dateToDelete),
+        });
+        toast.success('해당 날짜의 일정이 삭제되었습니다.');
+      }
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      exitJiggleMode();
+    }
+  };
+
+  const deleteFollowing = async () => {
+    if (!eventToDelete) return;
+    const docId = getDocId(eventToDelete);
+    try {
+      if (docId) {
+        const newEndDate = dayjs(eventToDelete.start).subtract(1, 'day').format('YYYY-MM-DD');
+        await updateDoc(doc(db, 'schedules', docId), {
+          'recurrence.endType': 'date',
+          'recurrence.endDate': newEndDate,
+        });
+        toast.success('이후 일정이 모두 삭제되었습니다.');
+      }
+    } catch (error) {
+      toast.error('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      exitJiggleMode();
+    }
+  };
 
   const onCalendarTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
@@ -160,11 +319,8 @@ const CalendarMain = () => {
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
-    const calendarApi = calendarRef.current?.getApi();
-    if (calendarApi) {
-      if (isLeftSwipe) calendarApi.next();
-      if (isRightSwipe) calendarApi.prev();
-    }
+    if (isLeftSwipe) goToNext();
+    if (isRightSwipe) goToPrev();
   };
 
   const onSheetTouchStart = (e: React.TouchEvent) => {
@@ -182,6 +338,45 @@ const CalendarMain = () => {
       setIsListVisible(false);
       setSelectedDate(null);
     }
+  };
+
+  // [추가] 이전/다음 이동 함수 (애니메이션 제어 포함)
+  const goToNext = () => {
+    if (isNavigating) return; // [수정] 애니메이션 중복 실행 방지
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      setIsNavigating(true);
+      setAnimationClass('calendar-swipe-left');
+      calendarApi.next();
+      setTimeout(() => {
+        setAnimationClass('');
+        setIsNavigating(false);
+      }, 350);
+    }
+  };
+
+  const goToPrev = () => {
+    if (isNavigating) return; // [수정] 애니메이션 중복 실행 방지
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      setIsNavigating(true);
+      setAnimationClass('calendar-swipe-right');
+      calendarApi.prev();
+      setTimeout(() => {
+        setAnimationClass('');
+        setIsNavigating(false);
+      }, 350);
+    }
+  };
+
+  // [추가] 연/월 선택기에서 월 선택 시
+  const handleMonthSelect = (month: number) => {
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      const newDate = new Date(pickerYear, month, 1);
+      calendarApi.gotoDate(newDate);
+    }
+    setIsDatePickerOpen(false);
   };
 
   const handleViewChange = (view: string) => {
@@ -211,7 +406,8 @@ const CalendarMain = () => {
 
   const handleEventClick = (info: EventClickArg) => {
     // [추가] 공휴일 이벤트는 클릭 무시
-    if (info.event.extendedProps.isHoliday) {
+    // [수정] isHoliday 대신 calendarId로 공휴일 식별
+    if (info.event.extendedProps.calendarId === 'holidays') {
       info.jsEvent.preventDefault();
       return;
     }
@@ -233,6 +429,7 @@ const CalendarMain = () => {
         navigate(`/schedule/${originalId}`, {
           state: {
             ...clickedEventData,
+            fromView: currentView, // [추가] 현재 뷰 정보를 전달
           },
         });
       }
@@ -279,8 +476,8 @@ const CalendarMain = () => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
     const dayOfWeek = args.date.getDay();
-    let dateColor = 'text-gray-900';
-    let dayNameColor = 'text-gray-400';
+    let dateColor = 'text-gray-900 dark:text-gray-200';
+    let dayNameColor = 'text-gray-400 dark:text-gray-500';
     if (dayOfWeek === 0) {
       dateColor = 'text-red-500';
       dayNameColor = 'text-red-400';
@@ -297,7 +494,7 @@ const CalendarMain = () => {
   };
 
   const renderEventContent = (eventInfo: EventContentArg) => {
-    const isHoliday = eventInfo.event.extendedProps.isHoliday;
+    const isHoliday = eventInfo.event.extendedProps.calendarId === 'holidays';
 
     // [추가] 공휴일 스타일링
     if (isHoliday) {
@@ -441,12 +638,49 @@ const CalendarMain = () => {
       </header>
 
       <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
+        {/* [추가] 연/월 선택 팝업 */}
+        {isDatePickerOpen && (
+          <div
+            ref={datePickerRef}
+            className="absolute top-[72px] left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between mb-4 px-2">
+              <button onClick={() => setPickerYear((y) => y - 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">{pickerYear}년</span>
+              <button onClick={() => setPickerYear((y) => y + 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <ChevronRight size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {Array.from({ length: 12 }).map((_, i) => {
+                const calendarApi = calendarRef.current?.getApi();
+                const currentDate = calendarApi ? calendarApi.getDate() : new Date();
+                const isCurrentSelection = dayjs(currentDate).year() === pickerYear && dayjs(currentDate).month() === i;
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => handleMonthSelect(i)}
+                    className={`p-3 rounded-lg text-sm font-bold transition-colors ${
+                      isCurrentSelection ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                    }`}
+                  >
+                    {i + 1}월
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div
           onTouchStart={onCalendarTouchStart}
           onTouchMove={onCalendarTouchMove}
           onTouchEnd={onCalendarTouchEnd}
-          className={`flex-shrink-0 flex flex-col overflow-hidden calendar-transition 
-            ${currentView === 'dayGridMonth' && isListVisible ? 'compact-mode' : 'h-full'}`}
+          className={`flex-shrink-0 flex flex-col overflow-hidden calendar-transition ${
+            currentView === 'dayGridMonth' && isListVisible ? 'compact-mode' : 'h-full'
+          } ${animationClass}`}
           style={{
             height: currentView === 'dayGridMonth' && isListVisible ? '50%' : '100%',
             paddingBottom: isListVisible ? '0' : '64px',
@@ -476,9 +710,24 @@ const CalendarMain = () => {
             headerToolbar={{
               left: 'title',
               center: '',
-              right: 'today,prev,next',
+              right: 'myToday,myPrev,myNext',
             }}
-            buttonText={{ today: '오늘' }}
+            customButtons={{
+              myPrev: {
+                icon: 'chevron-left',
+                click: goToPrev,
+              },
+              myToday: {
+                text: '오늘',
+                click: () => {
+                  calendarRef.current?.getApi().today();
+                },
+              },
+              myNext: {
+                icon: 'chevron-right',
+                click: goToNext,
+              },
+            }}
             datesSet={handleDatesSet}
             views={{
               dayGridMonth: {
@@ -494,10 +743,9 @@ const CalendarMain = () => {
                 dayHeaderContent: renderTimeGridHeader,
               },
             }}
-            slotMinTime="06:00:00"
+            slotMinTime="00:00:00"
             slotMaxTime="24:00:00"
-            slotLabelFormat={{ hour: 'numeric', minute: '2-digit', hour12: true, meridiem: 'short' }}
-            slotLabelContent={(args: SlotLabelContentArg) => args.text.replace(':00', '')}
+            slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
             allDayText="종일"
             displayEventTime={false}
             dayCellClassNames={(arg: DayCellContentArg) => {
@@ -544,41 +792,72 @@ const CalendarMain = () => {
             </button>
           </div>
 
-          <div className="px-6 pb-24 overflow-y-auto h-full">
+          <div
+            className="px-6 pb-24 overflow-y-auto h-full"
+            onClick={() => {
+              if (isJiggleMode) {
+                exitJiggleMode();
+              }
+            }}
+          >
             <div className="space-y-3">
               {allDisplayedEvents
                 .filter((event: CalendarEvent) => {
-                  if (!selectedDate) return true;
+                  if (!selectedDate) return false;
+                  // [수정] 공휴일(calendarId === 'holidays')은 리스트에 표시하지 않음
+                  if (event.calendarId === 'holidays') return false;
                   return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
                 })
-                .map((event: CalendarEvent, index: number) => (
-                  <div
-                    key={`${event.id}-${index}`}
-                    onClick={() => handleListItemClick(event)}
-                    className="relative bg-white dark:bg-gray-800/50 p-5 rounded-[24px] border border-gray-100 dark:border-gray-700/50 shadow-sm active:scale-[0.98] transition-all cursor-pointer group hover:shadow-md overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#3b82f6' }} />
+                .map((event: CalendarEvent, index: number) => {
+                  const originalId = event.originalId || event.id!;
+                  return (
+                    <div
+                      key={`${originalId}-${index}`}
+                      onPointerDown={() => handlePointerDown(event)}
+                      onPointerUp={handlePointerUp}
+                      onPointerLeave={handlePointerUp}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isJiggleMode) {
+                          exitJiggleMode();
+                          return;
+                        }
+                        handleListItemClick(event);
+                      }}
+                      className={`relative bg-white dark:bg-gray-800/50 p-5 rounded-[24px] border border-gray-100 dark:border-gray-700/50 shadow-sm active:scale-[0.98] transition-all cursor-pointer group hover:shadow-md overflow-hidden ${
+                        isJiggleMode ? 'jiggle-animation' : ''
+                      }`}
+                    >
+                      {isJiggleMode && jigglingItemId === event.id && (
+                        <button
+                          onClick={(e) => handleDeleteClick(event, e)}
+                          className="absolute bottom-4 right-4 w-9 h-9 bg-red-500 text-white rounded-full flex items-center justify-center z-20 shadow-lg animate-in zoom-in-95"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                      <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#3b82f6' }} />
 
-                    <div className="pl-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-300 rounded-[8px]">
-                          {event.allDay ? '종일' : `${dayjs(event.start).format('A h:mm')} - ${event.end ? dayjs(event.end).format('A h:mm') : ''}`}
-                        </span>
+                      <div className="pl-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-300 rounded-[8px]">
+                            {event.allDay ? '종일' : `${dayjs(event.start).format('A h:mm')} - ${event.end ? dayjs(event.end).format('A h:mm') : ''}`}
+                          </span>
 
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                          {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
-                          <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">
+                            {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
+                            <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                          </div>
                         </div>
+
+                        <h4 className="text-[15px] font-black text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 transition-colors truncate">{event.title}</h4>
+
+                        {event.location && <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">{event.location}</p>}
                       </div>
-
-                      <h4 className="text-[15px] font-black text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 transition-colors truncate">{event.title}</h4>
-
-                      {event.location && <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">{event.location}</p>}
                     </div>
-                  </div>
-                ))}
-
-              {allDisplayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate).length === 0 && (
+                  );
+                })}
+              {allDisplayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate && e.calendarId !== 'holidays').length === 0 && (
                 <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-[13px] font-medium">일정이 없습니다.</div>
               )}
             </div>
@@ -602,6 +881,38 @@ const CalendarMain = () => {
       >
         <Plus size={24} strokeWidth={3} />
       </button>
+
+      {/* [추가] 삭제 관련 모달 */}
+      {isDeleteModalOpen && eventToDelete && (
+        <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
+      )}
+      {isSimpleDeleteModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSimpleDeleteModalOpen(false)} />
+          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">일정 삭제</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
+              정말 이 일정을 삭제하시겠습니까?
+              <br />
+              삭제된 일정은 복구할 수 없습니다.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={deleteEntireSchedule} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+                삭제하기
+              </button>
+              <button
+                onClick={() => setIsSimpleDeleteModalOpen(false)}
+                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

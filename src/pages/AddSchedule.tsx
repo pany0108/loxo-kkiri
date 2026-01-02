@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings } from '../components';
-import { collection, addDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from '../hooks/useFirestore';
@@ -171,8 +171,11 @@ const AddSchedule = () => {
 
       // 종일 일정이 아닐 때만 시간 자동 조정
       if (!newData.isAllDay && name === 'start') {
-        // 새로 설정된 시작 시간이 기존 종료 시간보다 늦거나 같으면, 종료 시간을 1시간 뒤로 조정
-        if (dayjs(value).isSameOrAfter(dayjs(newData.end))) {
+        // [수정] 최초 시간이 설정되지 않았거나(시작=종료), 시작 시간이 종료 시간을 넘어서는 경우에만 종료 시간을 1시간 뒤로 자동 조정
+        const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
+        const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
+
+        if (isInitialTime || isStartTimeAfterEndTime) {
           newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
         }
       }
@@ -197,9 +200,9 @@ const AddSchedule = () => {
       return {
         ...prev,
         isAllDay: nextIsAllDay,
-        // 종일 여부에 따라 날짜 포맷 변경 (YYYY-MM-DD 혹은 YYYY-MM-DDTHH:mm)
-        start: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
-        end: nextIsAllDay ? dayjs(prev.start).format('YYYY-MM-DD') : dayjs(prev.start).format('YYYY-MM-DDT10:00'),
+        // [수정] 종일 옵션을 켜면 시간을 00:00 ~ 23:59로 설정하고, 끄면 기본 시간으로 되돌립니다.
+        start: nextIsAllDay ? dayjs(prev.start).startOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
+        end: nextIsAllDay ? dayjs(prev.start).endOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT10:00'),
       };
     });
   };
@@ -231,14 +234,34 @@ const AddSchedule = () => {
     const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
 
     try {
-      await addDoc(collection(db, 'schedules'), {
+      const scheduleDocRef = await addDoc(collection(db, 'schedules'), {
         userId: user.uid,
         ...formData,
         recurrence,
         createdAt: new Date().toISOString(),
         attendees: selectedCalendar ? selectedCalendar.members : [user.uid],
       });
+      // [추가] 공유 캘린더에 일정이 추가되면 멤버들에게 알림 전송
+      if (selectedCalendar && selectedCalendar.members.length > 1) {
+        const batch = writeBatch(db);
+        const notificationsCollection = collection(db, 'notifications');
 
+        selectedCalendar.members.forEach((memberId) => {
+          // 일정을 생성한 본인에게는 알림을 보내지 않음
+          if (memberId === user.uid) return;
+
+          const newNotiRef = doc(notificationsCollection);
+          batch.set(newNotiRef, {
+            userId: memberId,
+            type: 'SCHEDULE_ADDED',
+            message: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
+            relatedId: scheduleDocRef.id,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        });
+        await batch.commit();
+      }
       toast.success('일정이 저장되었습니다! ☁️');
       navigate('/calendar');
     } catch (error) {

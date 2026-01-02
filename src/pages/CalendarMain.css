@@ -60,23 +60,47 @@
   font-size: 18px !important;
 }
 
-.fc-prev-button,
-.fc-next-button {
+/* [수정] 커스텀 버튼(myPrev, myNext)에 대한 스타일 적용 */
+.fc-myPrev-button,
+.fc-myNext-button {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   color: #9ca3af !important; /* gray-400 */
   padding: 4px !important;
-  border-radius: 50% !important;
 }
 
-.fc-prev-button:hover,
-.fc-next-button:hover {
+.fc-myPrev-button:hover,
+.fc-myNext-button:hover {
   background-color: #f3f4f6 !important; /* gray-100 */
   color: #111827 !important;
 }
 
-.fc-today-button {
+/* [추가] 이전/다음 버튼 다크모드 및 인터랙션(active, focus) 스타일 */
+.dark .fc-myPrev-button:hover,
+.dark .fc-myNext-button:hover {
+  background-color: #374151 !important; /* gray-700 */
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.fc-myPrev-button:active,
+.fc-myNext-button:active {
+  background-color: #e5e7eb !important; /* gray-200 */
+}
+
+.dark .fc-myPrev-button:active,
+.dark .fc-myNext-button:active {
+  background-color: #1f2937 !important; /* gray-800 */
+}
+
+.fc-myPrev-button:focus-visible,
+.fc-myNext-button:focus-visible {
+  outline: 2px solid #60a5fa !important; /* blue-400 */
+  outline-offset: 2px !important;
+}
+
+/* [수정] 커스텀 '오늘' 버튼 스타일 */
+.fc-myToday-button {
   background-color: #eff6ff !important;
   border: none !important;
   color: #2563eb !important;
@@ -93,6 +117,12 @@
   align-items: center !important;
   justify-content: center !important;
   line-height: 1 !important;
+}
+
+/* [추가] 커스텀 '오늘' 버튼 다크모드 스타일 */
+.dark .fc-myToday-button {
+  background-color: #1e3a8a !important; /* blue-900 */
+  color: #93c5fd !important; /* blue-300 */
 }
 
 /* ==========================================================
@@ -137,6 +167,61 @@
   letter-spacing: -0.5px;
 }
 
+/* [수정] 주/일 뷰 헤더 하단 구분선 (축 라벨 포함) */
+.fc-timegrid .fc-col-header-cell,
+.fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
+  border-bottom: 1px solid #e5e7eb !important; /* Tailwind gray-200 */
+}
+
+.dark .fc-timegrid .fc-col-header-cell,
+.dark .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
+  border-bottom-color: #374151 !important; /* Tailwind gray-700 */
+}
+
+/* [수정] 주/일 뷰 '종일' 섹션 하단 구분선 */
+.fc-timegrid .fc-daygrid-body .fc-scrollgrid-sync-table td {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.dark .fc-timegrid .fc-daygrid-body .fc-scrollgrid-sync-table td {
+  border-bottom-color: #374151 !important;
+}
+
+/* [추가] 주/일 뷰 '종일' 라벨 우측 구분선 */
+.fc-timegrid .fc-daygrid-body .fc-timegrid-axis-frame {
+  border-right: 1px solid #e5e7eb;
+}
+
+.dark .fc-timegrid .fc-daygrid-body .fc-timegrid-axis-frame {
+  border-right-color: #374151;
+}
+
+/* [수정] 주/일 뷰 세로 구분선 (다른 스타일에 덮어쓰이지 않도록 수정) */
+.fc-timegrid-col-frame {
+  border-right: 1px solid #e5e7eb; /* Tailwind gray-200 */
+}
+.dark .fc-timegrid-col-frame {
+  border-right-color: #374151; /* Tailwind gray-700 */
+}
+/* 마지막 열의 오른쪽 선은 제거 */
+.fc-timegrid-col:last-child .fc-timegrid-col-frame {
+  border-right: none;
+}
+
+/* [수정] 주/일 뷰 '종일' 그리드 세로 구분선 (다른 스타일에 덮어쓰이지 않도록 수정) */
+.fc-timegrid .fc-daygrid-day-frame {
+  border-right: 1px solid #e5e7eb; /* Tailwind gray-200 */
+}
+
+.dark .fc-timegrid .fc-daygrid-day-frame {
+  border-right-color: #374151; /* Tailwind gray-700 */
+}
+
+/* 마지막 열의 오른쪽 선은 제거 */
+.fc-timegrid .fc-daygrid-day:last-child .fc-daygrid-day-frame {
+  border-right: none;
+}
+
 /* ==========================================================
    [4] 월(Month) 뷰 기본 스타일
    ========================================================== */
@@ -167,6 +252,16 @@
 /* 오늘 날짜 */
 .fc-day-today .fc-daygrid-day-number {
   background-color: #111827 !important; /* gray-900 */
+  color: #ffffff !important;
+}
+
+/* [추가] 오늘 날짜 다크모드 스타일 */
+.dark .fc-day-today {
+  background-color: rgba(59, 130, 246, 0.08) !important; /* blue-500 with 8% opacity */
+}
+
+.dark .fc-day-today .fc-daygrid-day-number {
+  background-color: #3b82f6 !important; /* blue-500 */
   color: #ffffff !important;
 }
 
@@ -363,4 +458,52 @@
 .calendar-transition {
   transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: height;
+}
+
+/* [추가] 캘린더 월/주/일 이동 애니메이션 */
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.calendar-swipe-left .fc-view-harness {
+  animation: slide-in-from-right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.calendar-swipe-right .fc-view-harness {
+  animation: slide-in-from-left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* [추가] Jiggle 모드 애니메이션 */
+@keyframes jiggle {
+  0% {
+    transform: rotate(-0.7deg);
+  }
+  50% {
+    transform: rotate(0.7deg);
+  }
+  100% {
+    transform: rotate(-0.7deg);
+  }
+}
+
+.jiggle-animation {
+  animation: jiggle 0.25s ease-in-out infinite;
 }

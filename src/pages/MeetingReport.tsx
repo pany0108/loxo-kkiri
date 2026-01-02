@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Loader2, MapPin } from 'lucide-react';
 import ConfirmMeetingDialog from './ConfirmMeetingDialog';
-import { doc, updateDoc, addDoc, collection, deleteDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useFirestoreDoc } from '../hooks/useFirestore';
 import dayjs from 'dayjs';
@@ -215,9 +215,31 @@ const MeetingReport = () => {
    * 모달에서 취소 버튼 클릭 시 실행됩니다.
    */
   const handleCancelConfirm = async () => {
-    if (!meetingId) return;
+    if (!meetingId || !meetingData || !auth.currentUser) return;
     try {
-      await deleteDoc(doc(db, 'meetings', meetingId));
+      const batch = writeBatch(db);
+
+      // 1. 약속 문서 삭제
+      const meetingRef = doc(db, 'meetings', meetingId);
+      batch.delete(meetingRef);
+
+      // 2. 참여자들에게 취소 알림 전송 (주최자 제외)
+      meetingData.participants.forEach((uid) => {
+        if (uid === auth.currentUser?.uid) return;
+
+        const notiRef = doc(collection(db, 'notifications'));
+        batch.set(notiRef, {
+          userId: uid,
+          type: 'MEETING_CANCELED',
+          message: `'${meetingData.title}' 약속이 주최자에 의해 취소되었습니다.`,
+          relatedId: meetingId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      });
+
+      await batch.commit();
+
       setIsCancelModalOpen(false);
       toast.success('약속이 취소되었습니다.');
       navigate('/propose');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, ChevronLeft, Loader2 } from 'lucide-react';
+import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -133,15 +133,9 @@ const ProposeMeeting = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="뒤로 가기">
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
-
-      <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+      {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
+      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

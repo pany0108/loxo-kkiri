@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, Send, AlignLeft, Sparkles, CheckCircle2, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Users, Send, AlignLeft, Sparkles, CheckCircle2, MapPin, X, Clock } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { auth, db } from '../firebase';
-import { doc } from 'firebase/firestore';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { doc, collection, query, where } from 'firebase/firestore';
+import { useFirestoreDoc, useFirestoreQuery } from '../hooks/useFirestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.locale('ko');
@@ -58,8 +58,35 @@ const ProposeMeetingCreate = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
-  // 기존 내 일정 데이터 (날짜별 점 표시용)
-  const myExistingSchedules = [dayjs().date(5).format('YYYY-MM-DD'), dayjs().date(12).format('YYYY-MM-DD'), dayjs().date(20).format('YYYY-MM-DD')];
+  // [추가] 내 일정 불러오기
+  const schedulesQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
+  }, [user]);
+  const { data: mySchedulesData } = useFirestoreQuery<any>(schedulesQuery);
+
+  // [추가] 날짜별로 일정 그룹화 (반복일정 미확장)
+  const schedulesByDate = useMemo(() => {
+    const map = new Map<string, any[]>();
+    if (!mySchedulesData) return map;
+
+    mySchedulesData.forEach((schedule) => {
+      // 참고: 이 로직은 반복일정을 확장하지 않고, 시작일 기준으로만 표시합니다.
+      const dateStr = dayjs(schedule.start).format('YYYY-MM-DD');
+      if (!map.has(dateStr)) {
+        map.set(dateStr, []);
+      }
+      map.get(dateStr)!.push(schedule);
+    });
+    return map;
+  }, [mySchedulesData]);
+
+  // [추가] 일정 팝업 상태
+  const [schedulePopup, setSchedulePopup] = useState<{
+    isOpen: boolean;
+    date: string;
+    schedules: any[];
+  } | null>(null);
 
   /**
    * 날짜 선택 토글 핸들러
@@ -261,20 +288,45 @@ const ProposeMeetingCreate = () => {
                 {generateDates().map((date, idx) => {
                   if (!date) return <div key={`empty-${idx}`} />;
 
+                  // [수정] DB에서 불러온 내 일정 정보 사용
+                  const dailySchedules = schedulesByDate.get(date) || [];
+                  const hasMySchedule = dailySchedules.length > 0;
                   const isSelected = selectedDates.includes(date);
-                  const hasMySchedule = myExistingSchedules.includes(date);
 
                   return (
                     <button
                       key={date}
-                      onClick={() => toggleDate(date)}
+                      onClick={() => {
+                        // [수정] 선택/해제 로직 변경
+                        // 1. 이미 선택된 날짜는 팝업 없이 바로 선택 해제
+                        if (isSelected) {
+                          toggleDate(date);
+                          // 2. 선택되지 않았고, 내 일정이 있는 경우 팝업 열기
+                        } else if (hasMySchedule) {
+                          setSchedulePopup({ isOpen: true, date, schedules: dailySchedules });
+                          // 3. 선택되지 않았고, 일정이 없는 경우 바로 날짜 선택
+                        } else {
+                          toggleDate(date);
+                        }
+                      }}
                       className={`
                         relative w-full aspect-square flex flex-col items-center justify-center rounded-[14px] transition-all duration-200
                         ${isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105 z-10' : 'bg-white text-gray-700 hover:bg-gray-100'}
                       `}
                     >
-                      <span className={`text-[13px] font-bold ${isSelected ? 'text-white' : 'text-gray-700'}`}>{dayjs(date).date()}</span>
-                      {hasMySchedule && !isSelected && <div className="absolute bottom-2 w-1 h-1 rounded-full bg-red-400 ring-2 ring-white" />}
+                      {/* [수정] 일정이 있을 경우, 숫자 위치를 살짝 위로 조정하여 칩과 공간을 확보합니다. */}
+                      <span
+                        className={`text-[13px] font-bold relative transition-all ${isSelected ? 'text-white' : 'text-gray-700'} ${hasMySchedule && !isSelected ? 'bottom-1' : ''}`}
+                      >
+                        {dayjs(date).date()}
+                      </span>
+                      {/* [수정] 점 대신 일정 제목 표시 */}
+                      {hasMySchedule && !isSelected && (
+                        <div className="absolute bottom-1.5 left-1 right-1 px-1 text-white bg-red-400/90 text-[9px] font-bold rounded-sm truncate leading-tight flex items-center justify-center">
+                          <span className="truncate">{dailySchedules[0].title}</span>
+                          {dailySchedules.length > 1 && <span className="ml-0.5 shrink-0">+{dailySchedules.length - 1}</span>}
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -283,6 +335,48 @@ const ProposeMeetingCreate = () => {
           </section>
         </div>
       </div>
+
+      {/* [추가] 내 일정 확인 팝업 */}
+      {schedulePopup?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-6 shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-black text-gray-900 dark:text-white">{dayjs(schedulePopup.date).format('M월 D일의 일정')}</h3>
+              <button onClick={() => setSchedulePopup(null)} className="p-2 -mr-2 text-gray-300 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+              {schedulePopup.schedules.map((schedule) => (
+                <div key={schedule.id} className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl">
+                  <p className="font-bold text-sm text-gray-800 dark:text-gray-200">{schedule.title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1 mt-1">
+                    <Clock size={12} />
+                    {schedule.isAllDay ? '하루 종일' : `${dayjs(schedule.start).format('HH:mm')} - ${dayjs(schedule.end).format('HH:mm')}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setSchedulePopup(null)}
+                className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-[18px] text-sm"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => {
+                  toggleDate(schedulePopup.date);
+                  setSchedulePopup(null);
+                }}
+                className="flex-1 py-3.5 bg-blue-600 text-white font-bold rounded-[18px] text-sm shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+              >
+                이 날짜 선택하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 하단 고정 버튼 */}
       <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">

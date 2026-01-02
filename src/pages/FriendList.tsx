@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle, X, Users } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import ImagePreviewModal from '../components/ImagePreviewModal';
@@ -33,8 +33,9 @@ const FriendList = () => {
 
   // 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newFriendEmail, setNewFriendEmail] = useState('');
+  const [newFriendInput, setNewFriendInput] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [addFriendMethod, setAddFriendMethod] = useState<'email' | 'phone'>('email');
 
   // 더보기 메뉴 및 수정/삭제 팝업 상태
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
@@ -43,6 +44,7 @@ const FriendList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [profilePopupFriend, setProfilePopupFriend] = useState<Friend | null>(null);
 
   // 바텀시트 스와이프 제어 Ref
   const sheetTouchStartY = useRef<number | null>(null);
@@ -83,22 +85,29 @@ const FriendList = () => {
    * - 존재하지 않는 이메일 처리
    */
   const handleAddFriend = async () => {
-    if (!newFriendEmail.trim() || !auth.currentUser) return;
+    if (!newFriendInput.trim() || !auth.currentUser) return;
+
+    const searchField = addFriendMethod;
+    const searchValue = newFriendInput.trim();
 
     // 자기 자신 추가 방지
-    if (newFriendEmail === auth.currentUser.email) {
+    if (searchField === 'email' && searchValue === auth.currentUser.email) {
+      toast.error('자기 자신은 친구로 추가할 수 없습니다.');
+      return;
+    }
+    if (searchField === 'phone' && searchValue === myInfo?.phone) {
       toast.error('자기 자신은 친구로 추가할 수 없습니다.');
       return;
     }
 
     setIsAdding(true);
     try {
-      // 이메일로 유저 검색
-      const q = query(collection(db, 'users'), where('email', '==', newFriendEmail.trim()));
+      // 이메일 또는 휴대폰 번호로 유저 검색
+      const q = query(collection(db, 'users'), where(searchField, '==', searchValue));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        toast.error('존재하지 않는 이메일입니다.');
+        toast.error(`존재하지 않는 ${searchField === 'email' ? '이메일' : '휴대폰 번호'}입니다.`);
         return;
       }
 
@@ -125,8 +134,7 @@ const FriendList = () => {
 
       // 성공 처리
       toast.success(`${targetUserData.name}님을 친구로 추가했습니다.`);
-      setNewFriendEmail('');
-      setIsAddModalOpen(false);
+      closeAddModal();
     } catch (error) {
       console.error('친구 추가 오류:', error);
       toast.error('친구 추가 중 오류가 발생했습니다.');
@@ -161,8 +169,27 @@ const FriendList = () => {
    * 친구 추가 모달을 닫고 입력값을 초기화합니다.
    */
   const closeAddModal = () => {
-    setNewFriendEmail('');
+    setNewFriendInput('');
     setIsAddModalOpen(false);
+    setAddFriendMethod('email'); // 탭 초기화
+  };
+
+  /**
+   * [추가] 휴대폰 번호 자동 포맷팅 (010-0000-0000)
+   */
+  const formatPhone = (value: string) => {
+    const nums = value.replace(/[^\d]/g, '');
+    if (nums.length <= 3) return nums;
+    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
+    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (addFriendMethod === 'phone') {
+      setNewFriendInput(formatPhone(e.target.value));
+    } else {
+      setNewFriendInput(e.target.value);
+    }
   };
 
   /**
@@ -208,30 +235,45 @@ const FriendList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard'] pb-[100px] relative">
-      {/* 헤더 및 검색바 */}
-      <header className="sticky top-0 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-40 px-6 pt-6 pb-4 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">친구</h1>
-          <button className="p-2.5 bg-gray-900 text-white rounded-full shadow-lg active:scale-90" onClick={() => setIsAddModalOpen(true)} aria-label="친구 추가">
-            <UserPlus size={20} />
-          </button>
-        </div>
-        <div className="relative mt-2">
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 focus-within:bg-white dark:focus-within:bg-gray-800/50 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-            <Search size={18} className="text-gray-400 mr-3 shrink-0" />
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard'] pb-24">
+      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
+        {/* 헤더 섹션 */}
+        <header className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+                <Users className="text-blue-600 w-6 h-6" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+                소중한 <span className="text-blue-600 dark:text-blue-400">친구</span>들과
+                <br />
+                일정을 함께 관리하세요
+              </h2>
+            </div>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
+              aria-label="친구 추가"
+            >
+              <UserPlus size={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* 검색바 */}
+        <div className="relative mb-8">
+          <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+            <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
             <input
               type="text"
               value={searchTerm}
               placeholder="친구 이름 검색"
-              className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-medium"
+              className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-bold placeholder:text-gray-300 dark:placeholder:text-gray-600"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-      </header>
 
-      <div className="px-6 space-y-6 mt-4">
         {/* 내 프로필 섹션 (검색 시 숨김) */}
         {!searchTerm && (
           <section>
@@ -283,8 +325,16 @@ const FriendList = () => {
               <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
                 {filteredFriends.map((friend) => (
                   <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-center gap-4 overflow-hidden flex-1">
-                      <div className="w-[48px] h-[48px] rounded-[18px] shrink-0 cursor-pointer" onClick={() => friend.photoURL && setPreviewImage(friend.photoURL)}>
+                    <div className="flex items-center gap-4 overflow-hidden flex-1 cursor-pointer" onClick={() => setProfilePopupFriend(friend)}>
+                      <div
+                        className="w-[48px] h-[48px] rounded-[18px] shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (friend.photoURL) {
+                            setPreviewImage(friend.photoURL);
+                          }
+                        }}
+                      >
                         {friend.photoURL ? (
                           <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
                         ) : (
@@ -300,6 +350,7 @@ const FriendList = () => {
                     </div>
                     <button
                       onClick={() => {
+                        // [추가] 메뉴 버튼 클릭 시 프로필 팝업이 열리지 않도록 이벤트 전파 중단
                         setSelectedFriend(friend);
                         setIsMenuOpen(true);
                       }}
@@ -422,23 +473,73 @@ const FriendList = () => {
       {/* 이미지 미리보기 모달 */}
       {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}
 
+      {/* [추가] 친구 프로필 팝업 */}
+      {profilePopupFriend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setProfilePopupFriend(null)} />
+          <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-[32px] p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setProfilePopupFriend(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+              <X size={20} />
+            </button>
+            <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
+              {profilePopupFriend.photoURL ? (
+                <img src={profilePopupFriend.photoURL} alt={profilePopupFriend.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-4xl font-bold">
+                  {profilePopupFriend.name[0]}
+                </div>
+              )}
+            </div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white">{profilePopupFriend.name}</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500 font-medium mt-1 mb-4">{profilePopupFriend.email}</p>
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-4 py-3">
+              {profilePopupFriend.statusMessage || '상태 메시지가 없습니다.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 친구 추가 모달 */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeAddModal} />
           <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">새 친구 찾기</h3>
-            <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 주소를 정확히 입력해주세요.</p>
+            <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 또는 휴대폰 번호로 추가하세요.</p>
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl mb-4">
+              <button
+                onClick={() => {
+                  setAddFriendMethod('email');
+                  setNewFriendInput('');
+                }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${addFriendMethod === 'email' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-400'}`}
+              >
+                이메일
+              </button>
+              <button
+                onClick={() => {
+                  setAddFriendMethod('phone');
+                  setNewFriendInput('');
+                }}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${addFriendMethod === 'phone' ? 'bg-white dark:bg-gray-600 shadow-sm' : 'text-gray-400'}`}
+              >
+                휴대폰 번호
+              </button>
+            </div>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
               <input
-                type="email"
-                value={newFriendEmail}
-                onChange={(e) => setNewFriendEmail(e.target.value)}
+                type={addFriendMethod === 'email' ? 'email' : 'tel'}
+                value={newFriendInput}
+                onChange={handleInputChange}
                 enterKeyHint="send"
                 onKeyDown={(e) => handleKeyDownAction(e, handleAddFriend)}
-                placeholder="example@email.com"
+                placeholder={addFriendMethod === 'email' ? 'example@email.com' : '010-0000-0000'}
                 className="w-full bg-transparent outline-none p-3 text-[15px] font-bold dark:text-white"
                 autoFocus
+                maxLength={addFriendMethod === 'phone' ? 13 : undefined}
               />
             </div>
             <div className="flex gap-3">
@@ -447,7 +548,7 @@ const FriendList = () => {
               </button>
               <button
                 onClick={handleAddFriend}
-                disabled={isAdding || !newFriendEmail.includes('@')}
+                disabled={isAdding || !newFriendInput.trim()}
                 className="flex-1 py-3.5 rounded-[20px] bg-blue-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300 dark:disabled:bg-blue-800"
               >
                 {isAdding ? (

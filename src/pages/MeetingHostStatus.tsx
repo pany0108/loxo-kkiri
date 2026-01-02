@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, ArrowRight, BellRing, MapPin } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
-import { doc, collection, query, where, writeBatch } from 'firebase/firestore';
+import { doc, collection, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useFirestoreDoc } from '../hooks/useFirestore';
 

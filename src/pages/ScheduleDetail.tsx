@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Paperclip, Trash2, Sparkles, Edit2, FileText, Bell } from 'lucide-react';
+import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
-import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore'; // getDoc 추가
-import { db, auth } from '../firebase'; // auth 추가
+import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { useCalendar } from '../contexts';
 
 interface LocationState {
   id?: string;
@@ -23,12 +24,21 @@ interface LocationState {
   review?: string;
   reviewImages?: string[];
   files?: { name: string; type: string; url?: string }[];
+  fromView?: string; // [추가] 캘린더에서 어떤 뷰에서 왔는지 식별
+}
+
+// [추가] 참석자 프로필 타입 정의
+interface AttendeeProfile {
+  uid: string;
+  name: string;
+  photoURL?: string;
 }
 
 const ScheduleDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
+  const { myCalendars } = useCalendar();
 
   // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
   const initialState = location.state as LocationState | null;
@@ -43,7 +53,7 @@ const ScheduleDetail = () => {
     calendarId: initialState?.calendarId || '',
     notification: initialState?.notification || 'none',
     allDay: initialState?.allDay || false,
-    attendees: initialState?.attendees || ['나'],
+    attendees: [] as AttendeeProfile[],
     recurrence: initialState?.recurrence,
     files: initialState?.files || [],
     review: initialState?.review || '',
@@ -56,10 +66,9 @@ const ScheduleDetail = () => {
     index: number;
   }>({ isOpen: false, images: [], index: 0 });
 
-  // [수정] 빌드 오류 방지를 위해 chatMedia 변수 임시 선언
-  const chatMedia: string[] = []; // TODO: 채팅 미디어 데이터 연동 필요
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
+  const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
 
   // DB 실시간 구독
   useEffect(() => {
@@ -69,14 +78,18 @@ const ScheduleDetail = () => {
       if (docSnap.exists()) {
         const dbData = docSnap.data();
         // [추가] 참석자 UID를 이름으로 변환
-        const attendeeNames = await Promise.all(
+        const attendeeProfiles: AttendeeProfile[] = await Promise.all(
           (dbData.attendees || []).map(async (uid: string) => {
             try {
               const userDoc = await getDoc(doc(db, 'users', uid));
-              return userDoc.exists() ? userDoc.data().name : '?';
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                return { uid, name: userData.name || '알 수 없음', photoURL: userData.photoURL };
+              }
+              return { uid, name: '알 수 없음', photoURL: undefined };
             } catch {
               // In case of error, return a placeholder
-              return '?';
+              return { uid, name: '알 수 없음', photoURL: undefined };
             }
           }),
         );
@@ -85,18 +98,34 @@ const ScheduleDetail = () => {
         // 1. 반복 일정이고, 2. 캘린더에서 클릭해서 들어온 정보(initialState)가 있다면?
         // => DB의 원본 날짜(1월 2일) 대신 클릭한 날짜(1월 3일, 4일...)를 사용한다.
         const displayStart = isRecurring && initialState?.start ? dayjs(initialState.start) : dayjs(dbData.start);
-        const displayEnd = isRecurring && initialState?.end ? dayjs(initialState.end) : dayjs(dbData.end);
+        let displayEnd;
+
+        if (isRecurring && initialState?.start) {
+          // 반복 일정의 특정 발생(occurrence)을 보는 경우
+          if (initialState.end) {
+            // FullCalendar가 전달한 인스턴스의 종료 시간을 사용
+            displayEnd = dayjs(initialState.end);
+          } else {
+            // end가 없으면(예: 종일 일정), 원본 이벤트의 기간(duration)을 계산하여 적용
+            const originalDuration = dayjs(dbData.end || dbData.start).diff(dayjs(dbData.start));
+            displayEnd = dayjs(initialState.start).add(originalDuration);
+          }
+        } else {
+          // 반복 일정이 아니거나, 직접 접근한 경우 DB의 종료 시간 사용
+          displayEnd = dayjs(dbData.end || dbData.start);
+        }
+
         setData({
           title: dbData.title,
           start: displayStart, // 보정된 날짜 사용
-          end: displayEnd, // 보정된 날짜 사용
+          end: displayEnd, // 보정된 종료 날짜 사용
           location: dbData.location || '',
           content: dbData.content || '',
           color: dbData.color || '#3b82f6',
           calendarId: dbData.calendarId,
           notification: dbData.notification || 'none',
           allDay: dbData.isAllDay || false,
-          attendees: attendeeNames,
+          attendees: attendeeProfiles,
           recurrence: dbData.recurrence,
           files: dbData.files || [],
           review: dbData.review || '',
@@ -113,14 +142,30 @@ const ScheduleDetail = () => {
   }, [id, navigate, initialState]);
 
   const isShared = data.attendees.length > 1;
-  const isPastEvent = dayjs().isAfter(data.end);
+  // [수정] '지난 일정' 여부 판단 로직 개선
+  // 종일 일정의 경우, 해당 날짜가 완전히 지나야 '지난 일정'으로 판단합니다.
+  // 예를 들어 1월 8일 일정은 1월 9일 00:00부터 후기 작성이 가능합니다.
+  const isPastEvent = dayjs().startOf('day').isAfter(data.end);
+
+  // [추가] 뒤로가기 핸들러. 일정의 월로 캘린더를 이동시킵니다.
+  const handleBack = () => {
+    if (data.start) {
+      // [수정] 뒤로 갈 때, 원래 있던 뷰(주/일) 정보도 함께 전달
+      navigate('/calendar', {
+        state: {
+          targetDate: data.start.toISOString(),
+          targetView: initialState?.fromView,
+        },
+      });
+    } else {
+      navigate(-1); // Fallback
+    }
+  };
 
   const handleDeleteClick = async () => {
     // 1. 반복 일정이 아니면 바로 삭제 컨펌
     if (!data.recurrence || data.recurrence.frequency === 'none') {
-      if (window.confirm('정말 이 일정을 삭제하시겠습니까?')) {
-        deleteEntireSchedule();
-      }
+      setIsSimpleDeleteModalOpen(true);
       return;
     }
 
@@ -205,11 +250,6 @@ const ScheduleDetail = () => {
   //   });
   // };
 
-  const openPreview = (images: string[], index: number) => {
-    // [수정] 클릭한 이미지의 인덱스가 정상적으로 반영되도록 수정
-    setPreviewState({ isOpen: true, images, index });
-  };
-
   const formatDate = (date: dayjs.Dayjs, isAllDay: boolean) => {
     if (isAllDay) return date.format('YYYY년 M월 D일 (ddd)');
     return date.format('YYYY년 M월 D일 (ddd) A h:mm');
@@ -239,7 +279,7 @@ const ScheduleDetail = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       <nav className="px-6 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+        <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ChevronLeft size={28} />
         </button>
         <div className="flex gap-1">
@@ -260,7 +300,7 @@ const ScheduleDetail = () => {
               <Sparkles className="text-blue-600 dark:text-blue-400 w-5 h-5" />
             </div>
 
-            {data.recurrence?.frequency !== 'none' && (
+            {data.recurrence && data.recurrence.frequency !== 'none' && (
               <span className="text-[12px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">반복 일정</span>
             )}
           </div>
@@ -290,6 +330,20 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
+            {/* [추가] 캘린더 정보 */}
+            {scheduleCalendar && (
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                  <CalendarIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                </div>
+                {/* [수정] 클릭 기능이 제거됨에 따라, 다른 항목과 일관성을 위해 UI를 단순화합니다. */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
+                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">{scheduleCalendar.name}</span>
+                </div>
+              </div>
+            )}
+
             {/* 장소 */}
             {data.location && (
               <div className="flex items-center gap-4">
@@ -298,6 +352,18 @@ const ScheduleDetail = () => {
                 </div>
                 <div className="flex-1">
                   <p className="text-[15px] font-bold text-gray-900 dark:text-white">{data.location}</p>
+                </div>
+              </div>
+            )}
+
+            {/* 메모 */}
+            {data.content && (
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                  <AlignLeft size={20} className="text-gray-500 dark:text-gray-400" />
+                </div>
+                <div className="flex-1 py-2">
+                  <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
                 </div>
               </div>
             )}
@@ -311,18 +377,6 @@ const ScheduleDetail = () => {
                 <p className="text-[15px] font-bold text-gray-900 dark:text-white">{getNotificationLabel(data.notification)}</p>
               </div>
             </div>
-
-            {/* 메모 */}
-            {data.content && (
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <AlignLeft size={20} className="text-gray-500 dark:text-gray-400" />
-                </div>
-                <div className="flex-1 py-2">
-                  <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
-                </div>
-              </div>
-            )}
 
             {/* 첨부파일 */}
             {/* {data.files && data.files.length > 0 && (
@@ -349,12 +403,13 @@ const ScheduleDetail = () => {
                   <MessageCircle size={18} className="text-blue-600 dark:text-blue-400" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
-                  {data.attendees.map((user, i) => (
+                  {data.attendees.map((attendee) => (
                     <div
-                      key={i}
-                      className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-300"
+                      key={attendee.uid}
+                      title={attendee.name}
+                      className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-300 overflow-hidden"
                     >
-                      {user[0]}
+                      {attendee.photoURL ? <img src={attendee.photoURL} alt={attendee.name} className="w-full h-full object-cover" /> : attendee.name[0] || '?'}
                     </div>
                   ))}
                 </div>
@@ -451,6 +506,35 @@ const ScheduleDetail = () => {
       {/* [추가] 반복 일정 삭제 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
+      )}
+
+      {/* [추가] 일반 일정 삭제 확인 모달 */}
+      {isSimpleDeleteModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSimpleDeleteModalOpen(false)} />
+          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">일정 삭제</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
+              정말 이 일정을 삭제하시겠습니까?
+              <br />
+              삭제된 일정은 복구할 수 없습니다.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={deleteEntireSchedule} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+                삭제하기
+              </button>
+              <button
+                onClick={() => setIsSimpleDeleteModalOpen(false)}
+                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {previewState.isOpen && (
