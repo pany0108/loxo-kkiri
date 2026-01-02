@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { auth, db } from '../firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
-import { useFirestoreDoc, useFirestoreQuery } from '../hooks/useFirestore';
+import { useFirestoreDoc, useFirestoreQuery } from 'hooks';
 import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.locale('ko');

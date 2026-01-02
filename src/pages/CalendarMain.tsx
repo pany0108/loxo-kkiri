@@ -9,13 +9,12 @@ import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, Event
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
-
-import { useCalendar, CalendarEvent, CalendarType } from '../contexts';
-import { useFirestoreQuery } from '../hooks/useFirestore';
+import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
+import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { setupPushNotifications } from '../utils/pushNotificationSetup';
-import { DeleteRecurringModal } from '../components';
+import { setupPushNotifications } from 'utils';
+import { DeleteRecurringModal } from 'components';
 import toast from 'react-hot-toast';
 
 dayjs.extend(isSameOrBefore);

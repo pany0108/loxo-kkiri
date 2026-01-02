@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle, X, Users } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
-import ImagePreviewModal from '../components/ImagePreviewModal';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { ImagePreviewModal } from 'components';
+import { useFirestoreDoc } from 'hooks';
 
 /**
  * 친구 데이터 인터페이스

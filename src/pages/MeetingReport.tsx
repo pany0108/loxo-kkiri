@@ -2,10 +2,10 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, MessageSquare, Trash2, RefreshCw, Clock, Loader2, MapPin } from 'lucide-react';
-import ConfirmMeetingDialog from './ConfirmMeetingDialog';
+import { ConfirmMeetingDialog } from 'pages';
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { useFirestoreDoc } from 'hooks';
 import dayjs from 'dayjs';
 
 /**

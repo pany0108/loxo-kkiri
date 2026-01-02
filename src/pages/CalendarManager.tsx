@@ -6,8 +6,8 @@ import { Plus, Users, ChevronLeft, Settings, Calendar as CalendarIcon, AlertCirc
 import { collection, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { EditCalendarModal } from '../components';
-import { useFirestoreQuery } from '../hooks/useFirestore';
+import { EditCalendarModal } from 'components';
+import { useFirestoreQuery } from 'hooks';
 
 interface CalendarData {
   id: string;

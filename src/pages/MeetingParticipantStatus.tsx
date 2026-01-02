@@ -4,7 +4,7 @@ import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users
 import dayjs from 'dayjs';
 import { doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { useFirestoreDoc } from 'hooks';
 
 interface MeetingData {
   id: string;

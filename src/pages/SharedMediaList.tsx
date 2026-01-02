@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Image as ImageIcon, FileText } from 'lucide-react';
-import ImagePreviewModal from '../components/ImagePreviewModal';
+import { ImagePreviewModal } from 'components';
 
 const SharedMediaList = () => {
   const navigate = useNavigate();

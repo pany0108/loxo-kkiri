@@ -4,11 +4,11 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
-import { RecurrenceOptions, RecurrenceSettings } from '../components';
+import { RecurrenceOptions, RecurrenceSettings } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useFirestoreQuery } from '../hooks/useFirestore';
+import { useFirestoreQuery } from 'hooks';
 
 dayjs.extend(isSameOrAfter);
 

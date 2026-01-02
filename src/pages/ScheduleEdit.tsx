@@ -4,10 +4,10 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Trash2, Plus } from 'lucide-react';
-import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal } from '../components';
+import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { useCalendar } from '../contexts';
+import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
 
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화

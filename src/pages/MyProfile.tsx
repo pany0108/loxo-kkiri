@@ -5,8 +5,8 @@ import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, Cl
 import { auth, db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { useTheme } from '../contexts';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { useTheme } from 'contexts';
+import { useFirestoreDoc } from 'hooks';
 
 /**
  * 사용자 프로필 데이터 인터페이스

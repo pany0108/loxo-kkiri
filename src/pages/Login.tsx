@@ -127,26 +127,18 @@ const Login = () => {
 
   /**
    * Google 소셜 로그인 핸들러
-   * 1. 팝업 방식을 우선 시도합니다.
-   * 2. 팝업 차단 등으로 실패 시 리다이렉트 방식으로 자동 전환합니다.
+   * 리다이렉트 방식으로 로그인을 처리합니다.
    */
   const handleGoogleLogin = async () => {
     setIsLoading(true);
 
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result.user) {
-        await handleUserRegistration(result.user);
-      }
+      await signInWithRedirect(auth, googleProvider);
+      // 리다이렉트 후에는 이 페이지가 다시 로드되며,
+      // useEffect의 getRedirectResult에서 로그인 결과를 처리합니다.
     } catch (error: any) {
-      // 팝업이 차단된 경우 리다이렉트로 대체 시도
-      if (error.code === 'auth/popup-blocked') {
-        toast('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.', { icon: 'ℹ️' });
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        toast.error('로그인 중 오류가 발생했습니다.');
-        setIsLoading(false);
-      }
+      toast.error('로그인 중 오류가 발생했습니다.');
+      setIsLoading(false);
     }
   };
 
@@ -155,7 +147,7 @@ const Login = () => {
       <div className="flex-1 px-6 pt-28 pb-12 overflow-y-auto max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-14 text-left">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 ring-4 ring-blue-50">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/50 ring-4 ring-blue-50 dark:ring-blue-500/10">
             <Sparkles className="text-white w-7 h-7 fill-white/20" />
           </div>
           <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">

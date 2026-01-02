@@ -4,7 +4,7 @@ import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, Loader2 } fr
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useFirestoreQuery } from '../hooks/useFirestore';
+import { useFirestoreQuery } from 'hooks';
 
 /**
  * 약속 데이터 인터페이스

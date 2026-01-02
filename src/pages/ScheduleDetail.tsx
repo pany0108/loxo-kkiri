@@ -3,10 +3,10 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
-import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from '../components';
+import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useCalendar } from '../contexts';
+import { useCalendar } from 'contexts';
 
 interface LocationState {
   id?: string;

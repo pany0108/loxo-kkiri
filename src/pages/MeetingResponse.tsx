@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { db, auth } from '../firebase';
 import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
-import { useFirestoreDoc } from '../hooks/useFirestore';
+import { useFirestoreDoc } from 'hooks';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 

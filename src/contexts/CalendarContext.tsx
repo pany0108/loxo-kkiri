@@ -5,7 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import lunisolar from 'lunisolar';
-import { useFirestoreQuery } from '../hooks/useFirestore';
+import { useFirestoreQuery } from 'hooks';
 
 dayjs.extend(isSameOrBefore);
 
