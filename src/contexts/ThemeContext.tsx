@@ -11,12 +11,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const savedThemeMode = localStorage.getItem('app-theme-mode') as ThemeMode;
-    if (savedThemeMode) {
-      return savedThemeMode;
-    }
-    // 시스템 설정 확인
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // 로컬 스토리지에 저장된 테마가 있으면 사용하고, 없으면 'light'를 기본값으로 합니다.
+    return (localStorage.getItem('app-theme-mode') as ThemeMode) || 'light';
   });
 
   useEffect(() => {
