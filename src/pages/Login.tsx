@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth, db, googleProvider } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { Capacitor } from '@capacitor/core';
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
@@ -63,36 +65,31 @@ const Login = () => {
     [navigate],
   );
 
+  // 앱 실행 시 GoogleAuth 초기화 (한 번만 실행)
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize();
+    }
+  }, []);
+
   /**
    * 컴포넌트 마운트 시 인증 상태 및 리다이렉트 결과를 확인합니다.
    */
   useEffect(() => {
     setIsLoading(true);
-
     // 1. 소셜 로그인 리다이렉트 결과 처리 (모바일 환경 대응)
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
           handleUserRegistration(result.user);
-        } else if (auth.currentUser) {
-          // 2. 이미 로그인된 세션이 있는 경우
-          handleUserRegistration(auth.currentUser);
         } else {
           setIsLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        toast.error(`로그인 정보를 가져오는 중 오류가 발생했습니다. (${error.code || error.message})`);
         setIsLoading(false);
       });
-
-    // 3. 실시간 인증 상태 변화 감지
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        handleUserRegistration(user);
-      }
-    });
-
-    return () => unsubscribe();
   }, [handleUserRegistration]);
 
   /**
@@ -127,18 +124,78 @@ const Login = () => {
 
   /**
    * Google 소셜 로그인 핸들러
-   * 리다이렉트 방식으로 로그인을 처리합니다.
+   * 1. 팝업 방식을 우선 시도합니다.
+   * 2. 팝업 차단 등으로 실패 시 리다이렉트 방식으로 자동 전환합니다.
    */
   const handleGoogleLogin = async () => {
     setIsLoading(true);
 
     try {
-      await signInWithRedirect(auth, googleProvider);
-      // 리다이렉트 후에는 이 페이지가 다시 로드되며,
-      // useEffect의 getRedirectResult에서 로그인 결과를 처리합니다.
+      // 1. 네이티브 앱(Android/iOS)인 경우
+      if (Capacitor.isNativePlatform()) {
+        // 네이티브 구글 로그인 팝업 실행
+        const googleUser = await GoogleAuth.signIn();
+
+        // 받아온 ID 토큰으로 Firebase 자격 증명 생성
+        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+
+        // Firebase 로그인 처리
+        const result = await signInWithCredential(auth, credential);
+
+        if (result.user) {
+          await handleUserRegistration(result.user);
+        }
+      }
+      // 2. 웹 브라우저 환경인 경우 (기존 방식 유지)
+      else {
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result.user) {
+          await handleUserRegistration(result.user);
+        }
+      }
     } catch (error: any) {
-      toast.error('로그인 중 오류가 발생했습니다.');
+      console.error('Google Login Error:', error);
       setIsLoading(false);
+
+      // 팝업 닫힘이나 취소는 에러로 처리하지 않음
+      if (error.message === 'User cancelled login') {
+        toast('구글 로그인을 취소했습니다.', { icon: '👋' });
+        return;
+      }
+
+      // Firebase Auth 에러 코드 처리
+      let errorMessage = '로그인에 실패했습니다. 다시 시도해주세요.';
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/network-request-failed':
+            errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+            break;
+          case 'auth/invalid-credential':
+          case 'auth/user-disabled':
+            errorMessage = '유효하지 않은 계정 정보입니다. 관리자에게 문의해주세요.';
+            break;
+          case 'auth/account-exists-with-different-credential':
+            errorMessage = '다른 방식으로 이미 가입된 계정입니다. 해당 방식으로 로그인해주세요.';
+            break;
+          case 'auth/popup-blocked': // 웹 환경에서 팝업 차단 시
+            toast('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.', { icon: 'ℹ️' });
+            await signInWithRedirect(auth, googleProvider);
+            return;
+          case 'auth/operation-not-allowed':
+            errorMessage = '구글 로그인이 활성화되어 있지 않습니다. 관리자에게 문의해주세요.';
+            break;
+          case '12501': // Common Google Sign-In error code for configuration issues on Android
+            errorMessage = '구글 로그인 설정에 문제가 있습니다. 앱 개발자에게 문의해주세요. (에러 코드: 12501)';
+            break;
+          case '10': // Google Sign-In error code for DEVELOPER_ERROR
+            errorMessage = '앱 설정에 오류가 있습니다. SHA-1 지문 또는 패키지 이름이 올바르게 등록되었는지 확인해주세요. (에러 코드: 10)';
+            break;
+          default:
+            errorMessage = `로그인 중 오류가 발생했습니다. (${error.code})`;
+            break;
+        }
+      }
+      toast.error(errorMessage);
     }
   };
 

@@ -4,4 +4,5 @@
     <string name="title_activity_main">super-scheduler</string>
     <string name="package_name">com.kairos.superscheduler</string>
     <string name="custom_url_scheme">com.kairos.superscheduler</string>
+    <string name="server_client_id">260376909396-8sejv1afr7p7ddbbesbbqvdeo2ru58bv.apps.googleusercontent.com</string>
 </resources>

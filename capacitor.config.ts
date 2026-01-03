@@ -18,6 +18,11 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
     },
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '260376909396-3oto6s0uevl8mudqgdh0h5ih3efqo93v.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true,
+    },
   },
   android: {},
 };
