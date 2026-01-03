@@ -66,19 +66,18 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+      <div className="flex items-center justify-center min-h-[100dvh] bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-      {/* --- [추가] react-hot-toast 컨테이너 --- */}
+    // [수정] 전체 컨테이너의 하단 패딩을 제거합니다. 하단 safe-area는 마지막 요소가 처리합니다.
+    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <Toaster
         position="top-center"
         containerStyle={{
-          // 안드로이드 상단 바 등 시스템 UI와 겹치지 않도록 안전 영역(safe-area)을 고려합니다.
           top: 'calc(env(safe-area-inset-top, 0px) + 20px)',
         }}
         toastOptions={{
@@ -92,7 +91,7 @@ function App() {
       />
       <ThemeProvider>
         <CalendarProvider>
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             <Routes>
               {/* --- 01. 계정 및 인증 --- */}
               <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
@@ -135,8 +134,13 @@ function App() {
             </Routes>
           </div>
 
-          {/* 로그인했을 때만 하단 탭 바 표시 (필요한 경우 조건 추가) */}
-          {user && !shouldHideNav && <BottomNav />}
+          {user && !shouldHideNav && (
+            // [수정 2] BottomNav를 감싸는 div에 직접 Safe Area 패딩을 적용합니다.
+            // pb-[env(safe-area-inset-bottom)]를 여기에 적용하면, 배경색은 확장되면서 내용은 위로 밀려 올라갑니다.
+            <div className="shrink-0 border-t border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900 pb-[env(safe-area-inset-bottom)]">
+              <BottomNav />
+            </div>
+          )}
         </CalendarProvider>
       </ThemeProvider>
     </div>

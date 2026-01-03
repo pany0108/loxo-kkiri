@@ -554,7 +554,7 @@ const CalendarMain = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative">
       <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
         <div className="flex items-center justify-between pb-2">
           <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
