@@ -238,7 +238,7 @@
 }
 
 .fc-daygrid-day-number {
-  font-size: 12px !important;
+  font-size: 10px !important;
   font-weight: 600 !important;
   color: #4b5563;
   width: 28px;
@@ -247,17 +247,6 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-}
-
-/* 오늘 날짜 */
-.fc-day-today .fc-daygrid-day-number {
-  background-color: #111827 !important; /* gray-900 */
-  color: #ffffff !important;
-}
-
-/* [추가] 오늘 날짜 다크모드 스타일 */
-.dark .fc-day-today {
-  background-color: rgba(59, 130, 246, 0.08) !important; /* blue-500 with 8% opacity */
 }
 
 .dark .fc-day-today .fc-daygrid-day-number {
@@ -407,7 +396,7 @@
 
 .fc-event-title {
   font-weight: 700 !important;
-  font-size: 10px !important;
+  font-size: 9px !important;
 }
 
 .fc-event-time {
@@ -436,6 +425,17 @@
 /* 선택된 날짜 텍스트 가독성 확보 */
 .selected-day .fc-daygrid-day-number {
   color: #ffffff !important;
+}
+
+/* 오늘 날짜 */
+.fc-day-today .fc-daygrid-day-number {
+  background-color: #111827 !important; /* gray-900 */
+  color: #ffffff !important;
+}
+
+/* [추가] 오늘 날짜 다크모드 스타일 */
+.dark .fc-day-today {
+  background-color: rgba(59, 130, 246, 0.08) !important; /* blue-500 with 8% opacity */
 }
 
 /* ==========================================================
