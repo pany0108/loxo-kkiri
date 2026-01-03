@@ -280,14 +280,14 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
+    <div className="flex flex-col h-full bg-white font-['Pretendard']">
       <div className="px-4 pt-6">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
           <ChevronLeft size={28} />
         </button>
       </div>
 
-      <div className="flex-1 px-8 pt-6 pb-12 overflow-y-auto max-w-md mx-auto w-full">
+      <div className="flex-1 px-8 pt-2 pb-8 overflow-y-auto max-w-md mx-auto w-full">
         {/* 헤더 섹션 */}
         <div className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">

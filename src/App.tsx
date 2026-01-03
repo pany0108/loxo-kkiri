@@ -54,14 +54,14 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* --- [추가] react-hot-toast 컨테이너 --- */}
       <Toaster
         position="top-center"
@@ -76,46 +76,48 @@ function App() {
       />
       <ThemeProvider>
         <CalendarProvider>
-          <Routes>
-            {/* --- 01. 계정 및 인증 --- */}
-            <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
-            <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/calendar" replace />} />
-            <Route path="/signup-social" element={<SignupSocial />} />
-            <Route path="/change-password" element={<ChangePassword />} />
-            {/* --- 02. 사용자 및 소셜 --- */}
-            <Route path="/profile" element={user ? <MyProfile /> : <Navigate to="/" />} />
-            <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
-            <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
-            {/* --- 03. 캘린더 핵심 기능 --- */}
-            <Route path="/calendar" element={user ? <CalendarMain /> : <Navigate to="/" />} />
-            <Route path="/calendar-manager" element={user ? <CalendarManager /> : <Navigate to="/" />} />
-            <Route path="/create-calendar" element={user ? <CreateCalendar /> : <Navigate to="/" />} />
-            <Route path="/add-schedule" element={user ? <AddSchedule /> : <Navigate to="/" />} />
-            <Route path="/schedule/:id" element={user ? <ScheduleDetail /> : <Navigate to="/" />} />
-            <Route path="/schedule/edit/:id" element={user ? <ScheduleEdit /> : <Navigate to="/" />} />
-            {/* --- 04. 약속 조율 프로세스 --- */}
-            <Route path="/propose" element={user ? <ProposeMeeting /> : <Navigate to="/" />} />
-            <Route path="/propose/create" element={user ? <ProposeMeetingCreate /> : <Navigate to="/" />} />
-            <Route path="/propose/detail" element={user ? <ProposeMeetingDetail /> : <Navigate to="/" />} />
-            <Route path="/meeting/response/:id" element={user ? <MeetingResponse /> : <Navigate to="/" />} />
-            <Route path="/meeting/vote/:id" element={user ? <MeetingVoting /> : <Navigate to="/" />} />
-            <Route path="/meeting/status/:id" element={user ? <MeetingHostStatus /> : <Navigate to="/" />} /> {/* [추가] 라우트 */}
-            <Route path="/meeting/participant-status/:id" element={user ? <MeetingParticipantStatus /> : <Navigate to="/" />} />
-            <Route path="/meeting/report/:id" element={user ? <MeetingReport /> : <Navigate to="/" />} />
-            {/* --- 05. 커뮤니케이션 --- */}
-            <Route path="/chat/:id" element={user ? <ScheduleChat /> : <Navigate to="/" />} />
-            <Route path="/schedule/:id/media" element={user ? <SharedMediaList /> : <Navigate to="/" />} />
-            <Route path="/notifications" element={user ? <NotificationCenter /> : <Navigate to="/" />} />
-            <Route
-              path="/__/auth/handler"
-              element={
-                <div className="flex items-center justify-center min-h-screen">
-                  <Loader2 className="animate-spin" />
-                </div>
-              }
-            />
-            <Route path="/__/auth/iframe" element={null} />
-          </Routes>
+          <div className="flex-1 min-h-0">
+            <Routes>
+              {/* --- 01. 계정 및 인증 --- */}
+              <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
+              <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/calendar" replace />} />
+              <Route path="/signup-social" element={<SignupSocial />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+              {/* --- 02. 사용자 및 소셜 --- */}
+              <Route path="/profile" element={user ? <MyProfile /> : <Navigate to="/" />} />
+              <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
+              <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
+              {/* --- 03. 캘린더 핵심 기능 --- */}
+              <Route path="/calendar" element={user ? <CalendarMain /> : <Navigate to="/" />} />
+              <Route path="/calendar-manager" element={user ? <CalendarManager /> : <Navigate to="/" />} />
+              <Route path="/create-calendar" element={user ? <CreateCalendar /> : <Navigate to="/" />} />
+              <Route path="/add-schedule" element={user ? <AddSchedule /> : <Navigate to="/" />} />
+              <Route path="/schedule/:id" element={user ? <ScheduleDetail /> : <Navigate to="/" />} />
+              <Route path="/schedule/edit/:id" element={user ? <ScheduleEdit /> : <Navigate to="/" />} />
+              {/* --- 04. 약속 조율 프로세스 --- */}
+              <Route path="/propose" element={user ? <ProposeMeeting /> : <Navigate to="/" />} />
+              <Route path="/propose/create" element={user ? <ProposeMeetingCreate /> : <Navigate to="/" />} />
+              <Route path="/propose/detail" element={user ? <ProposeMeetingDetail /> : <Navigate to="/" />} />
+              <Route path="/meeting/response/:id" element={user ? <MeetingResponse /> : <Navigate to="/" />} />
+              <Route path="/meeting/vote/:id" element={user ? <MeetingVoting /> : <Navigate to="/" />} />
+              <Route path="/meeting/status/:id" element={user ? <MeetingHostStatus /> : <Navigate to="/" />} /> {/* [추가] 라우트 */}
+              <Route path="/meeting/participant-status/:id" element={user ? <MeetingParticipantStatus /> : <Navigate to="/" />} />
+              <Route path="/meeting/report/:id" element={user ? <MeetingReport /> : <Navigate to="/" />} />
+              {/* --- 05. 커뮤니케이션 --- */}
+              <Route path="/chat/:id" element={user ? <ScheduleChat /> : <Navigate to="/" />} />
+              <Route path="/schedule/:id/media" element={user ? <SharedMediaList /> : <Navigate to="/" />} />
+              <Route path="/notifications" element={user ? <NotificationCenter /> : <Navigate to="/" />} />
+              <Route
+                path="/__/auth/handler"
+                element={
+                  <div className="flex items-center justify-center min-h-screen">
+                    <Loader2 className="animate-spin" />
+                  </div>
+                }
+              />
+              <Route path="/__/auth/iframe" element={null} />
+            </Routes>
+          </div>
 
           {/* 로그인했을 때만 하단 탭 바 표시 (필요한 경우 조건 추가) */}
           {user && !shouldHideNav && <BottomNav />}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth, db, googleProvider } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -143,10 +143,10 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      <div className="flex-1 px-6 pt-28 pb-12 overflow-y-auto max-w-md mx-auto w-full">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard']">
+      <div className="flex flex-1 flex-col justify-center px-6 max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
-        <div className="mb-14 text-left">
+        <div className="mb-10 text-left">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/50 ring-4 ring-blue-50 dark:ring-blue-500/10">
             <Sparkles className="text-white w-7 h-7 fill-white/20" />
           </div>

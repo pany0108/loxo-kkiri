@@ -230,8 +230,8 @@ const SignupSocial = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      <div className="px-8 pt-20 pb-12 max-w-md mx-auto w-full">
+    <div className="flex flex-col h-full bg-white font-['Pretendard']">
+      <div className="flex flex-1 flex-col justify-center px-8 w-full max-w-md mx-auto">
         <div className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />

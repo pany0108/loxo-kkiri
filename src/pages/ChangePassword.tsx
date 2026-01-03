@@ -200,7 +200,7 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <div className="px-6 pt-6 flex items-center">
         <button onClick={() => navigate(-1)} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" aria-label="뒤로 가기">
@@ -208,7 +208,7 @@ const ChangePassword = () => {
         </button>
       </div>
 
-      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 pb-8 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-5">
