@@ -4,7 +4,7 @@ import { doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
+import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2, ChevronLeft } from 'lucide-react';
 
 /**
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
@@ -19,6 +19,7 @@ const SignupSocial = () => {
   // --- Refs (포커스 이동용) ---
   const birthDateRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
+  const authCodeRef = useRef<HTMLInputElement>(null); // [추가] 인증번호 입력 필드 Ref
   // --- 상태 관리 ---
 
   /**
@@ -45,6 +46,34 @@ const SignupSocial = () => {
   // userData 구조 분해 할당 (없을 경우를 대비해 빈 객체 기본값 처리)
   const { uid, email, lastName, firstName } = userData || {};
 
+  // [추가] 양력/음력 상태에 따른 윤달 상태 동기화
+  // 양력일 경우, 윤달은 존재하지 않으므로 isLeapMonth 상태를 false로 강제합니다.
+  useEffect(() => {
+    if (!isLunar) {
+      setIsLeapMonth(false);
+    }
+  }, [isLunar]);
+
+  // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
+  useEffect(() => {
+    if (isAuthSent && !isVerified) {
+      // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
+      setTimeout(() => {
+        authCodeRef.current?.focus();
+      }, 100); // 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
+    }
+  }, [isAuthSent, isVerified]);
+
+  // [추가] 뒤로가기 핸들러
+  const handleBack = () => {
+    // 소셜 로그인 진행 중 뒤로가기 시, 임시 데이터를 삭제하고
+    // 로그인 화면으로 돌아가 다른 로그인 방법을 선택할 수 있도록 합니다.
+    // 이렇게 하면 사용자가 다른 로그인 방법을 선택하거나 앱을 종료할 수 있습니다.
+    localStorage.removeItem('pendingSignup');
+    // `replace: true`를 사용하여 뒤로가기 스택에 현재 페이지가 남지 않도록 합니다.
+    navigate('/login', { replace: true });
+  };
+
   /**
    * 데이터 유실 방지 Effect
    * 필수 데이터(uid)가 없으면 로그인 페이지로 리다이렉트합니다.
@@ -70,6 +99,13 @@ const SignupSocial = () => {
     };
 
     checkUserStatus();
+
+    // [추가] 사용자가 가입을 완료하지 않고 페이지를 이탈하는 경우(뒤로가기 등)
+    // 임시 데이터를 정리합니다.
+    return () => {
+      // handleComplete에서도 호출되지만, 브라우저 뒤로가기 등 예외 케이스를 처리합니다.
+      localStorage.removeItem('pendingSignup');
+    };
   }, [uid, navigate]);
 
   // 필수 데이터가 로딩되지 않았을 때 로딩 화면 표시
@@ -231,8 +267,16 @@ const SignupSocial = () => {
 
   return (
     <div className="flex flex-col h-full bg-white font-['Pretendard']">
-      <div className="flex flex-1 flex-col justify-center px-8 w-full max-w-md mx-auto">
-        <div className="mb-10">
+      {/* [추가] 뒤로가기 버튼 헤더 */}
+      <div className="px-4 pt-6">
+        <button onClick={handleBack} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+          <ChevronLeft size={28} />
+        </button>
+      </div>
+
+      {/* [수정] 콘텐츠를 세로 중앙 정렬하도록 레이아웃 변경 */}
+      <div className="flex-1 flex flex-col justify-center px-8 pb-8 w-full max-w-md mx-auto">
+        <div className="mb-12 text-left">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
@@ -247,7 +291,7 @@ const SignupSocial = () => {
         </div>
 
         <form onSubmit={handleComplete} className="space-y-8">
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* 생년월일 입력 */}
             <div className="group">
               {/* [추가] 양력/음력 선택 토글 */}
@@ -268,10 +312,7 @@ const SignupSocial = () => {
                   <div className="flex bg-gray-100 rounded-lg p-0.5">
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsLunar(false);
-                        setIsLeapMonth(false);
-                      }}
+                      onClick={() => setIsLunar(false)}
                       className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
                     >
                       양력
@@ -324,7 +365,13 @@ const SignupSocial = () => {
                     placeholder="010-0000-0000"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
                     onChange={handleChange}
-                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault(); // 폼 전체 제출 방지
+                        if (isVerified) return; // 이미 인증되었으면 실행 안함
+                        handleSendAuth();
+                      }
+                    }}
                     required
                     readOnly={isVerified}
                   />
@@ -345,6 +392,7 @@ const SignupSocial = () => {
                 <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
                   <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
                     <input
+                      ref={authCodeRef}
                       name="authCode"
                       type="tel"
                       inputMode="numeric"
@@ -353,6 +401,12 @@ const SignupSocial = () => {
                       className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                       onChange={(e) => setFormData({ ...formData, authCode: e.target.value })}
                       maxLength={4}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleVerify();
+                        }
+                      }}
                     />
                   </div>
                   <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-blue-600 text-white rounded-[20px] text-[15px] font-black">
@@ -362,15 +416,17 @@ const SignupSocial = () => {
               )}
             </div>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !isVerified}
-            className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${isVerified ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 shadow-none'}`}
-          >
-            {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '슈퍼 스케줄러 시작하기'}
-          </button>
+          {/* [수정] 버튼을 form 내부로 이동 */}
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isLoading || !isVerified}
+              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
+              ${isVerified ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
+            >
+              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '슈퍼 스케줄러 시작하기'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -45,6 +45,7 @@ const Signup = () => {
   const firstNameRef = useRef<HTMLInputElement>(null);
   const birthDateRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
+  const authCodeRef = useRef<HTMLInputElement>(null); // [추가] 인증번호 입력 필드 Ref
 
   // --- State ---
   const [formData, setFormData] = useState({
@@ -65,6 +66,24 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
   const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
+
+  // [추가] 양력/음력 상태에 따른 윤달 상태 동기화
+  // 양력일 경우, 윤달은 존재하지 않으므로 isLeapMonth 상태를 false로 강제합니다.
+  useEffect(() => {
+    if (!isLunar) {
+      setIsLeapMonth(false);
+    }
+  }, [isLunar]);
+
+  // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
+  useEffect(() => {
+    if (isAuthSent && !isVerified) {
+      // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
+      setTimeout(() => {
+        authCodeRef.current?.focus();
+      }, 100); // 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
+    }
+  }, [isAuthSent, isVerified]);
 
   /**
    * 비밀번호 실시간 유효성 검사 Effect
@@ -453,10 +472,7 @@ const Signup = () => {
                   <div className="flex bg-gray-100 rounded-lg p-0.5">
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsLunar(false);
-                        setIsLeapMonth(false);
-                      }}
+                      onClick={() => setIsLunar(false)}
                       className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
                     >
                       양력
@@ -509,7 +525,13 @@ const Signup = () => {
                     placeholder="휴대폰 번호"
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                     onChange={handleChange}
-                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault(); // 폼 전체 제출 방지
+                        if (isVerified) return; // 이미 인증되었으면 실행 안함
+                        handleSendAuth();
+                      }
+                    }}
                     required
                     readOnly={isVerified}
                   />
@@ -529,6 +551,7 @@ const Signup = () => {
                 <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
                   <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
                     <input
+                      ref={authCodeRef}
                       name="authCode"
                       type="tel"
                       inputMode="numeric"
@@ -538,6 +561,12 @@ const Signup = () => {
                       className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
                       onChange={handleChange}
                       maxLength={4}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleVerify();
+                        }
+                      }}
                     />
                   </div>
                   <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-blue-600 text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">

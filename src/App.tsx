@@ -48,7 +48,19 @@ function App() {
   }, []);
 
   // 2. 네비게이션 바 숨김 처리 로직
-  const hideNavPaths = ['/', '/signup', '/login', '/change-password', '/edit-info', '/create-calendar', '/add-schedule', '/propose/create', '/propose/detail', '/notifications'];
+  const hideNavPaths = [
+    '/',
+    '/signup',
+    '/signup-social',
+    '/login',
+    '/change-password',
+    '/edit-info',
+    '/create-calendar',
+    '/add-schedule',
+    '/propose/create',
+    '/propose/detail',
+    '/notifications',
+  ];
 
   const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/'].some((path) => location.pathname.startsWith(path));
 
@@ -65,6 +77,10 @@ function App() {
       {/* --- [추가] react-hot-toast 컨테이너 --- */}
       <Toaster
         position="top-center"
+        containerStyle={{
+          // 안드로이드 상단 바 등 시스템 UI와 겹치지 않도록 안전 영역(safe-area)을 고려합니다.
+          top: 'calc(env(safe-area-inset-top, 0px) + 20px)',
+        }}
         toastOptions={{
           duration: 2500,
           style: {

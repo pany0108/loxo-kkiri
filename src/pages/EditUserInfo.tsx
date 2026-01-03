@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
@@ -14,6 +14,7 @@ import { updateProfile } from 'firebase/auth';
  */
 const EditUserInfo = () => {
   const navigate = useNavigate();
+  const authCodeRef = useRef<HTMLInputElement>(null); // [추가]
 
   // --- 상태 관리 ---
   const [formData, setFormData] = useState({
@@ -68,6 +69,16 @@ const EditUserInfo = () => {
 
     fetchUserData();
   }, []);
+
+  // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
+  useEffect(() => {
+    if (isPhoneEditing && isAuthSent && !isVerified) {
+      // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
+      setTimeout(() => {
+        authCodeRef.current?.focus();
+      }, 100); // 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
+    }
+  }, [isPhoneEditing, isAuthSent, isVerified]);
 
   // [추가] DB에서 불러온 초기 휴대폰 번호 (변경 여부 확인용)
   const [originalPhone, setOriginalPhone] = useState('');
@@ -309,6 +320,13 @@ const EditUserInfo = () => {
                   placeholder="010-0000-0000"
                   className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white"
                   onChange={handleChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault(); // 폼 전체 제출 방지
+                      if (isVerified) return; // 이미 인증되었으면 실행 안함
+                      handleSendAuth();
+                    }
+                  }}
                   readOnly={!isPhoneEditing}
                   required
                 />
@@ -339,6 +357,7 @@ const EditUserInfo = () => {
                 <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
                   <ShieldCheck size={20} className="text-blue-600 mr-4" />
                   <input
+                    ref={authCodeRef}
                     name="authCode"
                     type="tel"
                     inputMode="numeric"
@@ -348,6 +367,12 @@ const EditUserInfo = () => {
                     className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
                     onChange={handleChange}
                     maxLength={4}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleVerify();
+                      }
+                    }}
                   />
                 </div>
                 <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-blue-600 text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
