@@ -292,7 +292,18 @@ const Signup = () => {
       // The user is now authenticated. The top-level router in App.tsx will
       // detect the authenticated state and automatically navigate to the main page.
     } catch (error: any) {
-      toast.error('가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('Signup Error:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('이미 가입된 이메일입니다. 다른 이메일을 사용해주세요.');
+        emailRef.current?.focus();
+      } else if (error.code === 'auth/invalid-email') {
+        toast.error('유효하지 않은 이메일 형식입니다.');
+        emailRef.current?.focus();
+      } else if (error.code === 'auth/weak-password') {
+        toast.error('비밀번호가 안전하지 않습니다. 10자 이상, 영문/숫자/특수문자를 조합해주세요.');
+      } else {
+        toast.error('가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }
