@@ -29,6 +29,7 @@ import {
   ScheduleChat,
   SharedMediaList,
   NotificationCenter,
+  UserProfile,
 } from './pages';
 import { Loader2 } from 'lucide-react';
 import { CalendarProvider, ThemeProvider } from './contexts';
@@ -62,7 +63,7 @@ function App() {
     '/notifications',
   ];
 
-  const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/'].some((path) => location.pathname.startsWith(path));
+  const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/', '/profile/'].some((path) => location.pathname.startsWith(path));
 
   if (loading) {
     return (
@@ -100,6 +101,7 @@ function App() {
               <Route path="/change-password" element={<ChangePassword />} />
               {/* --- 02. 사용자 및 소셜 --- */}
               <Route path="/profile" element={user ? <MyProfile /> : <Navigate to="/" />} />
+              <Route path="/profile/:userId" element={user ? <UserProfile /> : <Navigate to="/" />} />
               <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
               <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
               {/* --- 03. 캘린더 핵심 기능 --- */}

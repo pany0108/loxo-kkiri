@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDoc, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast, { Toast } from 'react-hot-toast';
 import { motion, AnimatePresence, AnimatePresenceProps, useDragControls, useMotionValue, useTransform, animate } from 'framer-motion';
@@ -15,12 +15,14 @@ dayjs.locale('ko');
 
 interface Notification {
   id: string;
-  userId: string;
+  userId: string; // [수정] fromUserId, fromUserName 추가
   type: string;
   message: string;
   relatedId?: string;
   isRead: boolean;
   createdAt: string;
+  fromUserId?: string;
+  fromUserName?: string;
 }
 
 const TABS = [
@@ -126,6 +128,12 @@ const NotificationCenter = () => {
 
     // [수정] 관련 페이지로 이동 로직 개선
     if (notification.relatedId) {
+      // [추가] 친구 요청 알림 클릭 시 프로필로 이동
+      if (notification.type === 'FRIEND_REQUEST') {
+        navigate(`/profile/${notification.relatedId}`);
+        return;
+      }
+
       // [추가] 캘린더 초대 알림 클릭 시 해당 캘린더로 이동
       if (notification.type === 'CALENDAR_INVITE') {
         navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
@@ -346,6 +354,8 @@ const NotificationCenter = () => {
         return <FileCheck size={20} className="text-indigo-500" />;
       case 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT':
         return <FileCheck size={20} className="text-gray-500" />;
+      case 'FRIEND_REQUEST':
+        return <UserPlus size={20} className="text-sky-500" />;
       default:
         return <Bell size={20} className="text-gray-500" />;
     }

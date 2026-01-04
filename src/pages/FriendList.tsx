@@ -1,9 +1,9 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle, X, Users } from 'lucide-react';
 import { auth, db } from '../firebase';
-import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import { ImagePreviewModal } from 'components';
 import { useFirestoreDoc } from 'hooks';
 
@@ -27,6 +27,7 @@ interface Friend {
  */
 const FriendList = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // --- 상태 관리 ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,18 +46,35 @@ const FriendList = () => {
   const [editName, setEditName] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [profilePopupFriend, setProfilePopupFriend] = useState<Friend | null>(null);
+  const [newFriendId, setNewFriendId] = useState<string | null>(location.state?.newFriendId || null);
 
   // 바텀시트 스와이프 제어 Ref
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
+  const addFriendInputRef = useRef<HTMLInputElement>(null);
 
   const user = auth.currentUser;
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
 
   // myInfo 데이터가 변경될 때마다 friends 목록을 파생시킵니다.
-  const friends: Friend[] = myInfo?.friendsList || [];
+  const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
+
+  // [추가] 다른 페이지에서 친구 추가 후 돌아왔을 때, 해당 친구를 목록 상단에 표시하기 위해 state를 관리합니다.
+  useEffect(() => {
+    if (location.state?.newFriendId) {
+      setNewFriendId(location.state.newFriendId);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
+  // [추가] 친구 추가 모달이 열리거나 탭이 변경될 때 입력창에 포커스합니다.
+  useEffect(() => {
+    if (isAddModalOpen) {
+      setTimeout(() => addFriendInputRef.current?.focus(), 100);
+    }
+  }, [isAddModalOpen, addFriendMethod]);
 
   /**
    * [추가] 바텀시트 스와이프 핸들러
@@ -130,6 +148,17 @@ const FriendList = () => {
           statusMessage: targetUserData.statusMessage || '',
           photoURL: targetUserData.photoURL || '',
         }),
+      });
+
+      // [추가] 상대방에게 친구 추가 알림 보내기
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetUserDoc.id, // 알림을 받을 사용자 (상대방)
+        type: 'FRIEND_REQUEST',
+        message: `${myInfo?.name || '누군가'}님이 당신을 친구로 추가했습니다.`,
+        relatedId: auth.currentUser.uid, // 나를 다시 추가할 수 있도록 내 UID를 전달
+        fromUserName: myInfo?.name || '누군가',
+        isRead: false,
+        createdAt: new Date().toISOString(),
       });
 
       // 성공 처리
@@ -224,7 +253,18 @@ const FriendList = () => {
   /**
    * 검색어에 따라 친구 목록을 필터링하고 이름순으로 정렬합니다.
    */
-  const filteredFriends = friends.filter((f) => f.name.includes(searchTerm)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const orderedFriends = useMemo(() => {
+    const filtered = friends.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+    if (!newFriendId) return filtered;
+
+    const newFriend = filtered.find((f) => f.uid === newFriendId);
+    if (!newFriend) return filtered;
+
+    const otherFriends = filtered.filter((f) => f.uid !== newFriendId);
+    // 새 친구를 맨 위로, 나머지는 이름순으로 정렬
+    return [newFriend, ...otherFriends];
+  }, [friends, searchTerm, newFriendId]);
 
   if (isLoading) {
     return (
@@ -235,33 +275,32 @@ const FriendList = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard'] pb-24">
-      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
-        {/* 헤더 섹션 */}
-        <header className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-                <Users className="text-blue-600 w-6 h-6" />
-              </div>
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-                소중한 <span className="text-blue-600 dark:text-blue-400">친구</span>들과
-                <br />
-                일정을 함께 관리하세요
-              </h2>
-            </div>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
-              aria-label="친구 추가"
-            >
-              <UserPlus size={20} />
-            </button>
-          </div>
-        </header>
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+      {/* 헤더 섹션 (타이틀) */}
+      <div className="px-6 pt-6 shrink-0">
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+          <Users className="text-blue-600 w-6 h-6" />
+        </div>
+        <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+          소중한 <span className="text-blue-600 dark:text-blue-400">친구</span>들과
+          <br />
+          일정을 함께 관리하세요
+        </h2>
+      </div>
 
-        {/* 검색바 */}
-        <div className="relative mb-8">
+      {/* [수정] 친구 추가 버튼 및 검색창을 포함하는 sticky 헤더 */}
+      <div className="sticky top-0 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-10 px-6 pt-6 pb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-black text-gray-900 dark:text-white">친구 목록</h3>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
+            aria-label="친구 추가"
+          >
+            <UserPlus size={20} />
+          </button>
+        </div>
+        <div className="relative">
           <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
             <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
             <input
@@ -273,10 +312,12 @@ const FriendList = () => {
             />
           </div>
         </div>
+      </div>
 
+      <div className="flex-1 px-6 pt-4 pb-24 overflow-y-auto w-full">
         {/* 내 프로필 섹션 (검색 시 숨김) */}
         {!searchTerm && (
-          <section>
+          <section className="mb-8">
             <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-3 px-1">내 프로필</h2>
             <div
               className="bg-white dark:bg-gray-800 p-4 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
@@ -317,13 +358,13 @@ const FriendList = () => {
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500">
-              친구 <span className="text-blue-600">{filteredFriends.length}</span>
+              친구 <span className="text-blue-600">{orderedFriends.length}</span>
             </h2>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-            {filteredFriends.length > 0 ? (
+            {orderedFriends.length > 0 ? (
               <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                {filteredFriends.map((friend) => (
+                {orderedFriends.map((friend) => (
                   <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <div className="flex items-center gap-4 overflow-hidden flex-1 cursor-pointer" onClick={() => setProfilePopupFriend(friend)}>
                       <div
@@ -375,11 +416,14 @@ const FriendList = () => {
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsMenuOpen(false)} />
           <div
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] p-6 animate-in slide-in-from-bottom duration-300 shadow-2xl"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300 shadow-2xl"
             onTouchStart={onSheetTouchStart}
             onTouchMove={onSheetTouchMove}
             onTouchEnd={onSheetTouchEnd}
           >
+            <button onClick={() => setIsMenuOpen(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+              <X size={20} />
+            </button>
             <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
             <h3 className="text-[14px] font-black text-gray-400 dark:text-gray-500 mb-4 px-2 tracking-tight">{selectedFriend?.name}님 관리</h3>
             <div className="space-y-2">
@@ -409,9 +453,6 @@ const FriendList = () => {
                 <span className="font-bold text-red-500">친구 삭제하기</span>
               </button>
             </div>
-            <button onClick={() => setIsMenuOpen(false)} className="w-full mt-4 py-4 font-bold text-gray-400 dark:text-gray-500">
-              취소
-            </button>
           </div>
         </div>
       )}
@@ -531,6 +572,7 @@ const FriendList = () => {
             </div>
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
               <input
+                ref={addFriendInputRef}
                 type={addFriendMethod === 'email' ? 'email' : 'tel'}
                 value={newFriendInput}
                 onChange={handleInputChange}
@@ -538,7 +580,6 @@ const FriendList = () => {
                 onKeyDown={(e) => handleKeyDownAction(e, handleAddFriend)}
                 placeholder={addFriendMethod === 'email' ? 'example@email.com' : '010-0000-0000'}
                 className="w-full bg-transparent outline-none p-3 text-[15px] font-bold dark:text-white"
-                autoFocus
                 maxLength={addFriendMethod === 'phone' ? 13 : undefined}
               />
             </div>

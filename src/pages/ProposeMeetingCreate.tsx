@@ -379,7 +379,7 @@ const ProposeMeetingCreate = () => {
       )}
 
       {/* 하단 고정 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleNext}
           disabled={!isValid}

@@ -26,6 +26,7 @@ export { default as CreateCalendar } from './CreateCalendar'; // 새로운 공�
 export { default as MyProfile } from './MyProfile'; // 내 프로필 설정
 export { default as EditUserInfo } from './EditUserInfo'; // 개인 정보 수정 화면
 export { default as FriendList } from './FriendList'; // 친구 목록 및 관리 (초대 등)
+export { default as UserProfile } from './UserProfile'; //
 
 // =============================================================================
 // 약속 조율 - 주최자 Flow (Host)
