@@ -74,10 +74,8 @@ const CalendarManager = () => {
   };
 
   const handleSwitch = (id: string) => {
-    // 여기서 선택한 캘린더 ID를 전역 상태나 로컬 스토리지에 저장하여
-    // CalendarMain에서 해당 캘린더의 일정만 보여주도록 해야 함.
-    // 지금은 단순히 캘린더 메인으로 이동
-    navigate('/calendar');
+    // [수정] 선택한 캘린더 ID를 state로 전달하고, 뒤로가기 스택에 남지 않도록 replace: true 사용
+    navigate('/calendar', { state: { targetCalendarId: id }, replace: true });
   };
 
   if (isLoading) {

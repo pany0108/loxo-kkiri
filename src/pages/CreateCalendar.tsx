@@ -205,7 +205,7 @@ const CreateCalendar = () => {
           },
         });
       } else {
-        navigate('/calendar-manager'); // 기존: 관리 화면으로 이동
+        navigate('/calendar-manager', { replace: true });
       }
     } catch (error) {
       console.error('Error adding calendar: ', error);
