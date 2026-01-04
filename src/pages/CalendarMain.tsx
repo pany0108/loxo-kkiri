@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -61,12 +61,23 @@ const CalendarMain = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
 
+  // [추가] 소셜 로그인 후 신규/기존 유저 확인 중 캘린더가 잠깐 보이는 현상 방지
+  const [isInitialAuthChecking, setIsInitialAuthChecking] = useState(() => sessionStorage.getItem('isAuthChecking') === 'true');
+
   // [추가] 공휴일 데이터 상태
   const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
   const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
 
   // [수정] Context에서 데이터 가져오기 (useEffect보다 먼저 선언)
   const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
+
+  // [추가] 소셜 로그인 플래시 방지 로직
+  useEffect(() => {
+    if (isInitialAuthChecking) {
+      sessionStorage.removeItem('isAuthChecking');
+      setIsInitialAuthChecking(false);
+    }
+  }, [isInitialAuthChecking]);
 
   // [추가] 다른 페이지에서 특정 날짜로 이동 요청 시 처리
   useEffect(() => {
@@ -569,6 +580,15 @@ const CalendarMain = () => {
   if (!activeCalendar && myCalendars.length === 0) {
     // 캘린더가 하나도 없을 때 보여줄 화면 (예: 캘린더 생성 유도 등)
     // 여기서는 일단 기본 렌더링을 유지하되 데이터만 비어있음
+  }
+
+  // [추가] 소셜 로그인 처리 중 전체 화면 로더 표시
+  if (isInitialAuthChecking) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white dark:bg-gray-950">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
   }
 
   return (

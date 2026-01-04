@@ -97,7 +97,7 @@ function App() {
               {/* --- 01. 계정 및 인증 --- */}
               <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
               <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/calendar" replace />} />
-              <Route path="/signup-social" element={<SignupSocial />} />
+              <Route path="/signup-social" element={user ? <SignupSocial /> : <Navigate to="/" />} />
               <Route path="/change-password" element={<ChangePassword />} />
               {/* --- 02. 사용자 및 소셜 --- */}
               <Route path="/profile" element={user ? <MyProfile /> : <Navigate to="/" />} />

@@ -19,7 +19,9 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   /**
    * 인증된 사용자의 Firestore 등록 여부를 확인하고 페이지를 라우팅합니다.
@@ -30,8 +32,6 @@ const Login = () => {
   const handleUserRegistration = useCallback(
     async (user: any) => {
       try {
-        setIsLoading(true);
-
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
@@ -58,8 +58,9 @@ const Login = () => {
         }
       } catch (error: any) {
         // 네트워크 또는 권한 오류 발생 시 처리
-        setIsLoading(false);
         toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        // 에러를 다시 던져서 호출한 쪽에서 로딩 상태를 처리하도록 합니다.
+        throw error;
       }
     },
     [navigate],
@@ -76,19 +77,23 @@ const Login = () => {
    * 컴포넌트 마운트 시 인증 상태 및 리다이렉트 결과를 확인합니다.
    */
   useEffect(() => {
-    setIsLoading(true);
     // 1. 소셜 로그인 리다이렉트 결과 처리 (모바일 환경 대응)
     getRedirectResult(auth)
-      .then((result) => {
+      .then(async (result) => {
         if (result?.user) {
-          handleUserRegistration(result.user);
+          sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 리다이렉트 후 캘린더 플래시 방지
+          try {
+            await handleUserRegistration(result.user);
+          } catch (e) {
+            setIsPageLoading(false); // handleUserRegistration에서 에러 발생 시 로딩 종료
+          }
         } else {
-          setIsLoading(false);
+          setIsPageLoading(false);
         }
       })
       .catch((error) => {
         toast.error(`로그인 정보를 가져오는 중 오류가 발생했습니다. (${error.code || error.message})`);
-        setIsLoading(false);
+        setIsPageLoading(false);
       });
   }, [handleUserRegistration]);
 
@@ -108,7 +113,7 @@ const Login = () => {
    */
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsEmailLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
 
@@ -118,7 +123,7 @@ const Login = () => {
       // onAuthStateChanged에서 라우팅 처리하므로 별도 navigate 불필요
     } catch (error: any) {
       toast.error('이메일 또는 비밀번호를 다시 확인해주세요.');
-      setIsLoading(false);
+      setIsEmailLoading(false);
     }
   };
 
@@ -128,7 +133,8 @@ const Login = () => {
    * 2. 팝업 차단 등으로 실패 시 리다이렉트 방식으로 자동 전환합니다.
    */
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
+    sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 캘린더 플래시 방지를 위한 플래그 설정
 
     try {
       // 1. 네이티브 앱(Android/iOS)인 경우
@@ -165,7 +171,8 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error('Google Login Error:', error);
-      setIsLoading(false);
+      setIsGoogleLoading(false);
+      sessionStorage.removeItem('isAuthChecking'); // [추가] 에러 발생 시 플래그 제거
 
       // 팝업 닫힘이나 취소는 에러로 처리하지 않음
       if (error.message === 'User cancelled login') {
@@ -289,20 +296,20 @@ const Login = () => {
             {/* 로그인 버튼 */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isEmailLoading || isGoogleLoading || isPageLoading}
               className="w-full h-[60px] bg-blue-600 text-white rounded-[20px] font-black text-[17px] shadow-lg flex items-center justify-center"
             >
-              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '로그인'}
+              {isEmailLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '로그인'}
             </button>
 
             {/* 구글 로그인 버튼 */}
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={isLoading}
+              disabled={isEmailLoading || isGoogleLoading || isPageLoading}
               className="w-full h-[60px] bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center gap-3"
             >
-              {isLoading ? (
+              {isGoogleLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>

@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import toast from 'react-hot-toast';
+import { signOut } from 'firebase/auth';
 import dayjs from 'dayjs';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2, ChevronLeft } from 'lucide-react';
 
 /**
@@ -54,6 +57,13 @@ const SignupSocial = () => {
     }
   }, [isLunar]);
 
+  // [추가] 소셜 로그인 플래시 방지 플래그 제거
+  useEffect(() => {
+    if (sessionStorage.getItem('isAuthChecking')) {
+      sessionStorage.removeItem('isAuthChecking');
+    }
+  }, []);
+
   // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
   useEffect(() => {
     if (isAuthSent && !isVerified) {
@@ -65,14 +75,37 @@ const SignupSocial = () => {
   }, [isAuthSent, isVerified]);
 
   // [추가] 뒤로가기 핸들러
-  const handleBack = () => {
+  const handleBack = useCallback(async () => {
     // 소셜 로그인 진행 중 뒤로가기 시, 임시 데이터를 삭제하고
     // 로그인 화면으로 돌아가 다른 로그인 방법을 선택할 수 있도록 합니다.
     // 이렇게 하면 사용자가 다른 로그인 방법을 선택하거나 앱을 종료할 수 있습니다.
-    localStorage.removeItem('pendingSignup');
-    // `replace: true`를 사용하여 뒤로가기 스택에 현재 페이지가 남지 않도록 합니다.
-    navigate('/login', { replace: true });
-  };
+    try {
+      localStorage.removeItem('pendingSignup');
+      await signOut(auth);
+      // [수정] history 스택에 남기지 않고 페이지를 교체하여 이동합니다.
+      window.location.replace('/');
+    } catch (error) {
+      console.error('Sign out error on social signup back:', error);
+      toast.error('로그아웃 중 오류가 발생했습니다.');
+    }
+  }, []);
+
+  // [추가] 안드로이드 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    // addListener는 Promise를 반환하므로, 비동기적으로 처리해야 합니다.
+    const listenerPromise = CapacitorApp.addListener('backButton', () => {
+      handleBack();
+    });
+
+    return () => {
+      // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
+      listenerPromise.then((listener: PluginListenerHandle) => listener.remove());
+    };
+  }, [handleBack]);
 
   /**
    * 데이터 유실 방지 Effect
