@@ -154,10 +154,25 @@ const CreateCalendar = () => {
 
     setIsSubmitting(true);
     try {
+      // [추가] 중복 캘린더 생성 방지 로직
+      const newMembers = [user.uid, ...selectedFriendUids].sort();
+
+      // 1. 멤버 구성이 같은 캘린더가 있는지 확인
+      const q = query(collection(db, 'calendars'), where('members', '==', newMembers));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // 2. 중복 캘린더가 있으면 토스트 메시지 표시 후 종료
+        const existingCalendarName = querySnapshot.docs[0].data().name;
+        toast.error(`'${existingCalendarName}' 캘린더가 이미 같은 멤버로 생성되어 있습니다.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       const docRef = await addDoc(collection(db, 'calendars'), {
         name: finalName,
         ownerId: user.uid,
-        members: [user.uid, ...selectedFriendUids],
+        members: newMembers, // 정렬된 멤버 배열 저장
         color: selectedColor,
         createdAt: new Date().toISOString(),
         isDefault: false, // 기본 캘린더 여부
