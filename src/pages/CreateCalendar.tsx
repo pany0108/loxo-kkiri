@@ -172,7 +172,7 @@ const CreateCalendar = () => {
             message: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
             fromUserId: user.uid,
             fromUserName: user.displayName,
-            calendarId: docRef.id,
+            relatedId: docRef.id,
             calendarName: finalName,
             isRead: false,
             createdAt: new Date().toISOString(),

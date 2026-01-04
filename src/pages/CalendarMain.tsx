@@ -65,22 +65,43 @@ const CalendarMain = () => {
   const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
   const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
 
+  // [수정] Context에서 데이터 가져오기 (useEffect보다 먼저 선언)
+  const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
+
   // [추가] 다른 페이지에서 특정 날짜로 이동 요청 시 처리
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
-    // [수정] targetView도 함께 처리하도록 로직 개선
-    if (calendarApi && (location.state?.targetDate || location.state?.targetView)) {
-      const { targetDate, targetView } = location.state;
-      if (targetView) {
-        calendarApi.changeView(targetView);
-        setCurrentView(targetView); // 뷰 버튼 UI 동기화
-      }
-      if (targetDate) {
-        calendarApi.gotoDate(targetDate);
-      }
+    if (!location.state) return;
+
+    const { targetDate, targetView, targetCalendarId } = location.state;
+
+    let stateModified = false;
+
+    // 1. 캘린더 뷰 변경
+    if (calendarApi && targetView) {
+      calendarApi.changeView(targetView);
+      setCurrentView(targetView); // 뷰 버튼 UI 동기화
+      stateModified = true;
+    }
+
+    // 2. 특정 날짜로 이동
+    if (calendarApi && targetDate) {
+      calendarApi.gotoDate(targetDate);
+      stateModified = true;
+    }
+
+    // 3. 활성 캘린더 변경 (알림 클릭 시)
+    if (targetCalendarId && myCalendars.length > 0) {
+      const targetCalendar = myCalendars.find((c: CalendarType) => c.id === targetCalendarId);
+      if (targetCalendar) setActiveCalendar(targetCalendar);
+      stateModified = true;
+    }
+
+    // 처리된 state는 비워서 중복 실행 방지
+    if (stateModified) {
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate]); // location이 변경될 때마다 실행
+  }, [location, myCalendars, setActiveCalendar, navigate]);
 
   // [추가] 푸시 알림 설정
   useEffect(() => {
@@ -88,9 +109,6 @@ const CalendarMain = () => {
       setupPushNotifications(auth.currentUser.uid, navigate);
     }
   }, [navigate]);
-
-  // [수정] Context에서 데이터 가져오기
-  const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
 
   // [추가] 읽지 않은 알림 확인
   const notificationsQuery = useMemo(() => {

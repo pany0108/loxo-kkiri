@@ -126,6 +126,12 @@ const NotificationCenter = () => {
 
     // [수정] 관련 페이지로 이동 로직 개선
     if (notification.relatedId) {
+      // [추가] 캘린더 초대 알림 클릭 시 해당 캘린더로 이동
+      if (notification.type === 'CALENDAR_INVITE') {
+        navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
+        return;
+      }
+
       // [수정] 일정 추가/수정 알림 클릭 시 해당 일정 상세로 이동
       if (notification.type === 'SCHEDULE_ADDED' || notification.type === 'SCHEDULE_UPDATED') {
         try {
