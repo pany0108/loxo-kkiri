@@ -14,6 +14,12 @@ interface Friend {
   uid: string;
   name: string;
   email: string;
+  group?: string;
+}
+
+interface FriendGroup {
+  id: string;
+  name: string;
 }
 
 const CreateCalendar = () => {
@@ -29,6 +35,7 @@ const CreateCalendar = () => {
 
   // [수정] DB에서 불러온 친구 목록 상태
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
 
   // [추가] 친구 검색어 상태
   const [friendSearchTerm, setFriendSearchTerm] = useState('');
@@ -55,6 +62,7 @@ const CreateCalendar = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setFriends(data.friendsList || []);
+        setFriendGroups(data.friendGroups || []);
       }
     });
 
@@ -115,10 +123,33 @@ const CreateCalendar = () => {
   };
 
   // [추가] 검색어에 따라 친구 목록 필터링
-  const filteredFriends = useMemo(() => {
-    if (!friendSearchTerm) return friends;
-    return friends.filter((friend) => friend.name.toLowerCase().includes(friendSearchTerm.toLowerCase()));
-  }, [friendSearchTerm, friends]);
+  const groupedAndFilteredFriends = useMemo(() => {
+    const groupMap = new Map<string, { name: string; friends: Friend[] }>();
+    friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
+    groupMap.set('uncategorized', { name: '미분류', friends: [] });
+
+    const filteredBySearch = friends.filter((f) => f.name.toLowerCase().includes(friendSearchTerm.toLowerCase()));
+
+    filteredBySearch.forEach((friend) => {
+      const groupId = friend.group || 'uncategorized';
+      if (groupMap.has(groupId)) {
+        groupMap.get(groupId)!.friends.push(friend);
+      } else {
+        groupMap.get('uncategorized')!.friends.push(friend);
+      }
+    });
+
+    groupMap.forEach((groupData) => groupData.friends.sort((a, b) => a.name.localeCompare(b.name, 'ko')));
+
+    return Array.from(groupMap.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => {
+        if (a.id === 'uncategorized') return 1;
+        if (b.id === 'uncategorized') return -1;
+        return a.name.localeCompare(b.name, 'ko');
+      })
+      .filter((group) => group.friends.length > 0);
+  }, [friends, friendGroups, friendSearchTerm]);
 
   // [수정] 캘린더 이름 자동 생성 로직 변경
   const finalName = useMemo(() => {
@@ -315,42 +346,47 @@ const CreateCalendar = () => {
               </div>
             </div>
 
-            {filteredFriends.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {filteredFriends.map((friend) => {
-                  const isSelected = selectedFriendUids.includes(friend.uid);
-                  return (
-                    <button
-                      key={friend.uid}
-                      onClick={() => toggleFriend(friend.uid)}
-                      className={`
-                        relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
-                        ${
-                          isSelected
-                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100'
-                            : 'bg-white border-gray-100 text-gray-600 hover:border-blue-100 hover:bg-gray-50'
-                        }
-                      `}
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
-                          isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {friend.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
-                      </div>
-                      {isSelected && (
-                        <div className="absolute top-3 right-3 text-white">
-                          <CheckCircle2 size={18} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+            {groupedAndFilteredFriends.length > 0 ? (
+              groupedAndFilteredFriends.map((group) => (
+                <div key={group.id} className="mb-4">
+                  <h4 className="text-xs font-bold text-gray-400 mb-2 px-1">{group.name}</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {group.friends.map((friend) => {
+                      const isSelected = selectedFriendUids.includes(friend.uid);
+                      return (
+                        <button
+                          key={friend.uid}
+                          onClick={() => toggleFriend(friend.uid)}
+                          className={`
+                            relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
+                            ${
+                              isSelected
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100'
+                                : 'bg-white border-gray-100 text-gray-600 hover:border-blue-100 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
+                              isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
+                            }`}
+                          >
+                            {friend.name[0]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-3 right-3 text-white">
+                              <CheckCircle2 size={18} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
             ) : (
               <div className="py-10 text-center">
                 <p className="text-gray-400 text-sm font-bold">검색 결과가 없습니다.</p>

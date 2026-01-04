@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle, X, Users } from 'lucide-react';
+import { Search, UserPlus, User, ChevronRight, Check, Loader2, MoreVertical, Edit2, Trash2, AlertCircle, X, Users, Folder, FolderPlus } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, query, collection, where, getDocs, arrayUnion, arrayRemove, addDoc } from 'firebase/firestore';
 import { ImagePreviewModal } from 'components';
@@ -16,6 +16,15 @@ interface Friend {
   email: string;
   statusMessage?: string;
   photoURL?: string;
+  group?: string; // 그룹 ID
+}
+
+/**
+ * [추가] 친구 그룹 데이터 인터페이스
+ */
+interface FriendGroup {
+  id: string;
+  name: string;
 }
 
 /**
@@ -48,11 +57,25 @@ const FriendList = () => {
   const [profilePopupFriend, setProfilePopupFriend] = useState<Friend | null>(null);
   const [newFriendId, setNewFriendId] = useState<string | null>(location.state?.newFriendId || null);
 
+  // [추가] 다중 선택 상태
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedFriendUids, setSelectedFriendUids] = useState<Set<string>>(new Set());
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // [추가] 그룹 관리 상태
+  const [isGroupManagerOpen, setIsGroupManagerOpen] = useState(false);
+  const [isMoveToGroupOpen, setIsMoveToGroupOpen] = useState(false);
+  const [groups, setGroups] = useState<FriendGroup[]>([]);
+
   // 바텀시트 스와이프 제어 Ref
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
   const addFriendInputRef = useRef<HTMLInputElement>(null);
+  const groupInputsContainerRef = useRef<HTMLDivElement>(null);
+
+  // 스크롤 컨테이너 Ref 정의
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const user = auth.currentUser;
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
@@ -60,6 +83,13 @@ const FriendList = () => {
 
   // myInfo 데이터가 변경될 때마다 friends 목록을 파생시킵니다.
   const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
+
+  // [추가] 그룹 목록 상태 초기화
+  useEffect(() => {
+    if (myInfo?.friendGroups) {
+      setGroups(myInfo.friendGroups);
+    }
+  }, [myInfo]);
 
   // [추가] 다른 페이지에서 친구 추가 후 돌아왔을 때, 해당 친구를 목록 상단에 표시하기 위해 state를 관리합니다.
   useEffect(() => {
@@ -76,6 +106,64 @@ const FriendList = () => {
     }
   }, [isAddModalOpen, addFriendMethod]);
 
+  const prevGroupsLengthRef = useRef(groups.length);
+  useEffect(() => {
+    // 그룹 추가 시 새로 생긴 입력창에 자동 포커스
+    if (isGroupManagerOpen && groups.length > prevGroupsLengthRef.current) {
+      // [수정] last-of-type 선택자 대신, 모든 input을 가져와 마지막 요소를 선택하는 방식으로 변경
+      const inputs = groupInputsContainerRef.current?.querySelectorAll<HTMLInputElement>('input');
+      if (inputs && inputs.length > 0) {
+        const lastInput = inputs[inputs.length - 1];
+        lastInput.focus();
+        lastInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+    // 현재 길이를 ref에 저장하여 다음 렌더링에서 비교
+    prevGroupsLengthRef.current = groups.length;
+  }, [groups, isGroupManagerOpen]);
+
+  // --- [추가] 다중 선택 로직 ---
+  const handlePointerDown = (friendUid: string) => {
+    if (isSelectionMode) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsSelectionMode(true);
+      setSelectedFriendUids((prev) => new Set(prev).add(friendUid));
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
+  const handleFriendClick = (friend: Friend) => {
+    if (isSelectionMode) {
+      setSelectedFriendUids((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(friend.uid)) {
+          newSet.delete(friend.uid);
+        } else {
+          newSet.add(friend.uid);
+        }
+        return newSet;
+      });
+    } else {
+      setProfilePopupFriend(friend);
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allFriendUids = new Set(friends.map((f) => f.uid));
+    setSelectedFriendUids(selectedFriendUids.size === friends.length ? new Set() : allFriendUids);
+  };
   /**
    * [추가] 바텀시트 스와이프 핸들러
    */
@@ -250,21 +338,135 @@ const FriendList = () => {
     }
   };
 
+  // --- [추가] 그룹 관리 로직 ---
+
+  const handleSaveGroups = async (newGroups: FriendGroup[]) => {
+    if (!user) return;
+
+    // [추가] 그룹 이름 유효성 검사
+    if (newGroups.some((g) => g.name.trim() === '')) {
+      toast.error('그룹 이름은 비워둘 수 없습니다.');
+      return;
+    }
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { friendGroups: newGroups });
+      setGroups(newGroups);
+      toast.success('그룹이 저장되었습니다.');
+      setIsGroupManagerOpen(false);
+    } catch (error) {
+      toast.error('그룹 저장 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
+
+  const handleMoveFriendToGroup = async (groupId: string | null) => {
+    if (!selectedFriend || !user) return;
+
+    const updatedFriendsList = friends.map((f) => {
+      if (f.uid === selectedFriend.uid) {
+        // groupId가 null이면 group 속성을 제거 (미분류로 이동)
+        if (groupId === null) {
+          const { group, ...rest } = f;
+          return rest;
+        }
+        return { ...f, group: groupId };
+      }
+      return f;
+    });
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { friendsList: updatedFriendsList });
+      toast.success(`${selectedFriend.name}님을 이동했습니다.`);
+      setIsMoveToGroupOpen(false);
+      setIsMenuOpen(false);
+    } catch (error) {
+      toast.error('그룹 이동 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
+
+  const handleMoveMultipleFriendsToGroup = async (groupId: string | null) => {
+    if (selectedFriendUids.size === 0 || !user) return;
+
+    const updatedFriendsList = friends.map((f) => {
+      if (selectedFriendUids.has(f.uid)) {
+        if (groupId === null) {
+          const { group, ...rest } = f;
+          return rest;
+        }
+        return { ...f, group: groupId };
+      }
+      return f;
+    });
+
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { friendsList: updatedFriendsList });
+      toast.success(`${selectedFriendUids.size}명의 친구를 이동했습니다.`);
+      setIsMoveToGroupOpen(false);
+      setIsSelectionMode(false);
+      setSelectedFriendUids(new Set());
+    } catch (error) {
+      toast.error('그룹 이동 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  };
+
+  // -----------------------------
+
   /**
    * 검색어에 따라 친구 목록을 필터링하고 이름순으로 정렬합니다.
    */
-  const orderedFriends = useMemo(() => {
-    const filtered = friends.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  const groupedFriends = useMemo(() => {
+    const groupMap = new Map<string, { name: string; friends: Friend[] }>();
 
-    if (!newFriendId) return filtered;
+    // 그룹 목록 초기화 (사용자 정의 그룹 + 기본 그룹)
+    groups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
+    groupMap.set('uncategorized', { name: '미분류', friends: [] });
 
-    const newFriend = filtered.find((f) => f.uid === newFriendId);
-    if (!newFriend) return filtered;
+    // 1. 검색어로 친구 필터링
+    const filteredBySearch = friends.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const otherFriends = filtered.filter((f) => f.uid !== newFriendId);
-    // 새 친구를 맨 위로, 나머지는 이름순으로 정렬
-    return [newFriend, ...otherFriends];
-  }, [friends, searchTerm, newFriendId]);
+    // 2. 필터링된 친구들을 그룹에 할당
+    filteredBySearch.forEach((friend) => {
+      const groupId = friend.group || 'uncategorized';
+      if (groupMap.has(groupId)) {
+        groupMap.get(groupId)!.friends.push(friend);
+      } else {
+        // 정의되지 않은 그룹에 속한 친구는 '미분류'로
+        groupMap.get('uncategorized')!.friends.push(friend);
+      }
+    });
+
+    // 3. 각 그룹 내에서 친구 정렬
+    groupMap.forEach((groupData, groupId) => {
+      groupData.friends.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      // '새 친구'를 해당 그룹의 최상단으로 올리는 로직
+      if (newFriendId) {
+        const newFriendIndex = groupData.friends.findIndex((f) => f.uid === newFriendId);
+        if (newFriendIndex > -1) {
+          const [newFriend] = groupData.friends.splice(newFriendIndex, 1);
+          groupData.friends.unshift(newFriend);
+        }
+      }
+    });
+
+    // 4. 최종 렌더링을 위한 배열 생성 (이름순 정렬, '미분류'는 마지막)
+    const sortedGroupArray = Array.from(groupMap.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => {
+        if (a.id === 'uncategorized') return 1;
+        if (b.id === 'uncategorized') return -1;
+        return a.name.localeCompare(b.name, 'ko');
+      })
+      // 검색 결과가 없는 그룹은 숨김
+      .filter((group) => group.friends.length > 0);
+
+    return sortedGroupArray;
+  }, [friends, groups, searchTerm, newFriendId]);
 
   if (isLoading) {
     return (
@@ -275,141 +477,157 @@ const FriendList = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
-      {/* 헤더 섹션 (타이틀) */}
-      <div className="px-6 pt-6 shrink-0">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-          <Users className="text-blue-600 w-6 h-6" />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-          소중한 <span className="text-blue-600 dark:text-blue-400">친구</span>들과
-          <br />
-          일정을 함께 관리하세요
-        </h2>
-      </div>
-
-      {/* [수정] 친구 추가 버튼 및 검색창을 포함하는 sticky 헤더 */}
-      <div className="sticky top-0 bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-10 px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-black text-gray-900 dark:text-white">친구 목록</h3>
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
-            aria-label="친구 추가"
-          >
-            <UserPlus size={20} />
-          </button>
-        </div>
-        <div className="relative">
-          <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-            <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
-            <input
-              type="text"
-              value={searchTerm}
-              placeholder="친구 이름 검색"
-              className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-bold placeholder:text-gray-300 dark:placeholder:text-gray-600"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 px-6 pt-4 pb-24 overflow-y-auto w-full">
-        {/* 내 프로필 섹션 (검색 시 숨김) */}
-        {!searchTerm && (
-          <section className="mb-8">
-            <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-3 px-1">내 프로필</h2>
-            <div
-              className="bg-white dark:bg-gray-800 p-4 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
-              onClick={() => navigate('/profile')}
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+      {isSelectionMode ? (
+        <div className="sticky top-0 bg-gray-50/95 dark:bg-gray-950/95 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 z-40">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedFriendUids(new Set());
+              }}
+              className="p-2 -ml-2 text-gray-500"
             >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div
-                  className="w-[56px] h-[56px] rounded-[22px] shrink-0 shadow-lg shadow-blue-100 dark:shadow-blue-900/50 overflow-hidden"
-                  onClick={(e) => {
-                    if (myInfo?.photoURL) {
-                      e.stopPropagation();
-                      setPreviewImage(myInfo.photoURL);
-                    }
-                  }}
-                >
-                  {myInfo?.photoURL ? (
-                    <img src={myInfo.photoURL} alt={myInfo.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                      <User size={26} strokeWidth={2.5} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[17px] font-black text-gray-900 dark:text-white">{myInfo?.name || '사용자'}</span>
-                    <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">ME</span>
-                  </div>
-                  <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400 mt-0.5 truncate">{myInfo?.statusMessage || '상태 메시지가 없습니다.'}</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-gray-300 shrink-0" />
-            </div>
-          </section>
-        )}
-
-        {/* 친구 목록 섹션 */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500">
-              친구 <span className="text-blue-600">{orderedFriends.length}</span>
-            </h2>
+              <X size={24} />
+            </button>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">{selectedFriendUids.size}명 선택됨</h3>
+            <button onClick={handleSelectAll} className="text-sm font-bold text-blue-600 p-2">
+              {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
+            </button>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-            {orderedFriends.length > 0 ? (
-              <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                {orderedFriends.map((friend) => (
-                  <div key={friend.uid} className="group flex items-center justify-between p-4 pl-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <div className="flex items-center gap-4 overflow-hidden flex-1 cursor-pointer" onClick={() => setProfilePopupFriend(friend)}>
+        </div>
+      ) : (
+        <div className="sticky top-0 bg-gray-50/95 dark:bg-gray-950/95 z-20 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">친구 목록</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
+                aria-label="친구 추가"
+              >
+                <UserPlus size={20} />
+              </button>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+              <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                placeholder="친구 이름 검색"
+                className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-bold placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-24 overflow-y-auto w-full min-h-0 overscroll-y-contain" onScroll={cancelLongPress}>
+        <>
+          {groupedFriends.length > 0 ? (
+            groupedFriends.map((group) => (
+              <section key={group.id} className="pt-4 first:pt-0">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500 flex items-center gap-2">
+                    <Folder size={14} /> {group.name}
+                    <span className="text-blue-600">{group.friends.length}</span>
+                  </h2>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                  <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
+                    {group.friends.map((friend) => (
                       <div
-                        className="w-[48px] h-[48px] rounded-[18px] shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (friend.photoURL) {
-                            setPreviewImage(friend.photoURL);
-                          }
-                        }}
+                        key={friend.uid}
+                        className={`group flex items-center justify-between p-4 pl-5 transition-colors cursor-pointer touch-pan-y ${
+                          selectedFriendUids.has(friend.uid) ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                        }`}
+                        onPointerDown={() => handlePointerDown(friend.uid)}
+                        onPointerUp={handlePointerUp}
+                        onPointerLeave={handlePointerUp}
+                        onClick={() => handleFriendClick(friend)}
                       >
-                        {friend.photoURL ? (
-                          <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
-                        ) : (
-                          <div className="w-full h-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
-                            {friend.name[0]}
+                        {isSelectionMode && (
+                          <div className="mr-4">
+                            <div
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                selectedFriendUids.has(friend.uid) ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                              }`}
+                            >
+                              {selectedFriendUids.has(friend.uid) && <Check size={16} className="text-white" />}
+                            </div>
                           </div>
                         )}
+                        <div className="flex items-center gap-4 overflow-hidden flex-1">
+                          <div
+                            className="w-[48px] h-[48px] rounded-[18px] shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (friend.photoURL) setPreviewImage(friend.photoURL);
+                            }}
+                          >
+                            {friend.photoURL ? (
+                              <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
+                            ) : (
+                              <div className="w-full h-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
+                                {friend.name[0]}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-[16px] font-bold text-gray-900 dark:text-white truncate">{friend.name}</span>
+                            <p className="text-[12px] font-medium truncate text-gray-500 dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
+                          </div>
+                        </div>
+                        {!isSelectionMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFriend(friend);
+                              setIsMenuOpen(true);
+                            }}
+                            className="p-2 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
+                          >
+                            <MoreVertical size={20} />
+                          </button>
+                        )}
                       </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-[16px] font-bold text-gray-900 dark:text-white truncate">{friend.name}</span>
-                        <p className="text-[12px] font-medium truncate text-gray-500 dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        // [추가] 메뉴 버튼 클릭 시 프로필 팝업이 열리지 않도록 이벤트 전파 중단
-                        setSelectedFriend(friend);
-                        setIsMenuOpen(true);
-                      }}
-                      className="p-2 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
-                    >
-                      <MoreVertical size={20} />
-                    </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-20 text-center">
-                <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">검색 결과가 없어요.</p>
-              </div>
-            )}
-          </div>
-        </section>
+                </div>
+              </section>
+            ))
+          ) : (
+            <div className="py-20 text-center">
+              <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
+            </div>
+          )}
+          <section className="pt-4">
+            <button
+              onClick={() => setIsGroupManagerOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[32px] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <FolderPlus size={16} />
+              <span className="text-sm font-bold">그룹 추가 / 관리</span>
+            </button>
+          </section>
+        </>
       </div>
+
+      {/* [추가] 다중 선택 시 하단 액션 바 */}
+      {isSelectionMode && selectedFriendUids.size > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 z-40 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-bottom duration-300">
+          <button
+            onClick={() => setIsMoveToGroupOpen(true)}
+            className="w-full h-[52px] bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+          >
+            <FolderPlus size={20} />
+            그룹 변경
+          </button>
+        </div>
+      )}
 
       {/* 친구 관리 바텀시트 메뉴 */}
       {isMenuOpen && (
@@ -442,15 +660,134 @@ const FriendList = () => {
               </button>
               <button
                 onClick={() => {
+                  setIsMoveToGroupOpen(true);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors"
+              >
+                <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
+                  <FolderPlus size={20} />
+                </div>
+                <span className="font-bold text-gray-700 dark:text-gray-300">그룹 변경</span>
+              </button>
+              <button
+                onClick={() => {
                   setIsDeleteModalOpen(true);
                   setIsMenuOpen(false);
                 }}
                 className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-[22px] transition-colors"
               >
-                <div className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-red-50 dark:bg-blue-500/10 text-red-500 rounded-xl flex items-center justify-center">
                   <Trash2 size={20} />
                 </div>
                 <span className="font-bold text-red-500">친구 삭제하기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [추가] 그룹 이동 모달 */}
+      {isMoveToGroupOpen && selectedFriend && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsMoveToGroupOpen(false)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300 shadow-2xl">
+            <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
+            <h3 className="text-[14px] font-black text-gray-400 dark:text-gray-500 mb-4 px-2 tracking-tight">
+              {isSelectionMode ? `${selectedFriendUids.size}명 그룹 이동` : `${selectedFriend?.name}님 그룹 이동`}
+            </h3>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {/* '미분류'로 이동하는 버튼 */}
+              <button
+                onClick={() => (isSelectionMode ? handleMoveMultipleFriendsToGroup(null) : handleMoveFriendToGroup(null))}
+                className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors"
+              >
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl flex items-center justify-center">
+                  <Folder size={20} />
+                </div>
+                <span className="font-bold text-gray-700 dark:text-gray-300">미분류</span>
+              </button>
+              {/* 사용자 정의 그룹 목록 */}
+              {groups.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => (isSelectionMode ? handleMoveMultipleFriendsToGroup(group.id) : handleMoveFriendToGroup(group.id))}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors"
+                >
+                  <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl flex items-center justify-center">
+                    <Folder size={20} />
+                  </div>
+                  <span className="font-bold text-gray-700 dark:text-gray-300">{group.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [추가] 그룹 관리 모달 */}
+      {isGroupManagerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsGroupManagerOpen(false)} />
+          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4">그룹 관리</h3>
+            <div ref={groupInputsContainerRef} className="space-y-2 mb-6 max-h-60 overflow-y-auto">
+              {groups.map((group, index) => (
+                <div key={group.id} className="flex items-center gap-2">
+                  <input
+                    value={group.name}
+                    placeholder="그룹 이름 입력"
+                    onChange={(e) => {
+                      const newName = e.target.value;
+                      setGroups((prev) => prev.map((g) => (g.id === group.id ? { ...g, name: newName } : g)));
+                    }}
+                    className="flex-1 h-12 bg-gray-50 dark:bg-gray-700 rounded-xl px-4 font-bold text-sm text-gray-800 dark:text-white min-w-0 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  />
+                  <button
+                    onClick={async () => {
+                      // 그룹 삭제 시, 해당 그룹의 친구들은 '미분류'로 이동됩니다.
+                      const updatedFriends = friends.map((f) => {
+                        if (f.group === group.id) {
+                          const { group, ...rest } = f;
+                          return rest;
+                        }
+                        return f;
+                      });
+                      await updateDoc(doc(db, 'users', user!.uid), { friendsList: updatedFriends });
+                      setGroups((prev) => prev.filter((g) => g.id !== group.id));
+                    }}
+                    className="p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-xl"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                const newGroup: FriendGroup = { id: `group_${Date.now()}`, name: '' };
+                setGroups((prev) => [...prev, newGroup]);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-xl text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 mb-6"
+            >
+              <FolderPlus size={16} />
+              <span className="text-sm font-bold">새 그룹 추가</span>
+            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsGroupManagerOpen(false);
+                  setGroups(myInfo?.friendGroups || []); // 변경사항 취소
+                }}
+                className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold rounded-[20px]"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => handleSaveGroups(groups)}
+                className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-[20px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+              >
+                저장
               </button>
             </div>
           </div>

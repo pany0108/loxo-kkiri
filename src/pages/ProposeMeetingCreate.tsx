@@ -16,6 +16,12 @@ dayjs.locale('ko');
 interface Friend {
   id: string;
   name: string;
+  group?: string;
+}
+
+interface FriendGroup {
+  id: string;
+  name: string;
 }
 
 /**
@@ -49,8 +55,36 @@ const ProposeMeetingCreate = () => {
 
   const friendsList: Friend[] = useMemo(() => {
     if (!userData?.friendsList) return [];
-    return userData.friendsList.map((f: any) => ({ id: f.uid, name: f.name }));
+    return userData.friendsList.map((f: any) => ({ id: f.uid, name: f.name, group: f.group }));
   }, [userData]);
+
+  const friendGroups: FriendGroup[] = useMemo(() => userData?.friendGroups || [], [userData]);
+
+  const groupedFriends = useMemo(() => {
+    // ... (CreateCalendar.tsx와 동일한 그룹화 로직)
+    const groupMap = new Map<string, { name: string; friends: Friend[] }>();
+    friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
+    groupMap.set('uncategorized', { name: '미분류', friends: [] });
+
+    friendsList.forEach((friend) => {
+      const groupId = friend.group || 'uncategorized';
+      if (groupMap.has(groupId)) {
+        groupMap.get(groupId)!.friends.push(friend);
+      } else {
+        groupMap.get('uncategorized')!.friends.push(friend);
+      }
+    });
+
+    groupMap.forEach((groupData) => groupData.friends.sort((a, b) => a.name.localeCompare(b.name, 'ko')));
+
+    return Array.from(groupMap.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => {
+        if (a.id === 'uncategorized') return 1;
+        if (b.id === 'uncategorized') return -1;
+        return a.name.localeCompare(b.name, 'ko');
+      });
+  }, [friendsList, friendGroups]);
 
   const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
 
@@ -222,24 +256,29 @@ const ProposeMeetingCreate = () => {
             </div>
 
             <div className="bg-gray-50 rounded-[24px] p-4 border-2 border-transparent">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {friendsList.map((friend) => {
-                  const isSelected = invitedFriends.some((f) => f.id === friend.id);
-                  return (
-                    <button
-                      key={friend.id}
-                      onClick={() => toggleFriend(friend)}
-                      className={`
-                        flex items-center gap-1.5 px-4 py-2.5 rounded-[16px] text-[13px] font-bold transition-all whitespace-nowrap border-2
-                        ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white border-white text-gray-500 hover:bg-gray-100'}
-                      `}
-                    >
-                      {friend.name}
-                      {isSelected && <CheckCircle2 size={14} className="text-blue-200" />}
-                    </button>
-                  );
-                })}
-              </div>
+              {groupedFriends.map((group) => (
+                <div key={group.id} className="mb-3 last:mb-0">
+                  <h5 className="text-xs font-bold text-gray-400 mb-2 px-1">{group.name}</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {group.friends.map((friend) => {
+                      const isSelected = invitedFriends.some((f) => f.id === friend.id);
+                      return (
+                        <button
+                          key={friend.id}
+                          onClick={() => toggleFriend(friend)}
+                          className={`
+                            flex items-center gap-1.5 px-4 py-2.5 rounded-[16px] text-[13px] font-bold transition-all whitespace-nowrap border-2
+                            ${isSelected ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white border-white text-gray-500 hover:bg-gray-100'}
+                          `}
+                        >
+                          {friend.name}
+                          {isSelected && <CheckCircle2 size={14} className="text-blue-200" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
               {invitedFriends.length > 0 && <p className="text-[11px] font-bold text-blue-600 mt-2 ml-1">총 {invitedFriends.length}명 선택됨</p>}
             </div>
           </section>
