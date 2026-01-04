@@ -1,29 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2 } from 'lucide-react';
+import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
 // [추가] Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, arrayUnion, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
-const COLORS = [
-  '#3b82f6',
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#84cc16',
-  '#10b981',
-  '#14b8a6',
-  '#06b6d4',
-  '#0ea5e9',
-  '#6366f1',
-  '#8b5cf6',
-  '#d946ef',
-  '#ec4899',
-  '#f43f5e',
-  '#64748b',
-];
+const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
 
 // [추가] 친구 데이터 타입 정의
 interface Friend {
@@ -45,6 +29,9 @@ const CreateCalendar = () => {
 
   // [수정] DB에서 불러온 친구 목록 상태
   const [friends, setFriends] = useState<Friend[]>([]);
+
+  // [추가] 친구 검색어 상태
+  const [friendSearchTerm, setFriendSearchTerm] = useState('');
 
   // [추가] 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -126,14 +113,32 @@ const CreateCalendar = () => {
     }
   };
 
+  // [추가] 검색어에 따라 친구 목록 필터링
+  const filteredFriends = useMemo(() => {
+    if (!friendSearchTerm) return friends;
+    return friends.filter((friend) => friend.name.toLowerCase().includes(friendSearchTerm.toLowerCase()));
+  }, [friendSearchTerm, friends]);
+
   // [수정] 캘린더 이름 자동 생성 로직 변경
   const finalName = useMemo(() => {
-    if (calName) return calName;
-    if (selectedFriendUids.length > 0 && user?.displayName) {
-      const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
-      return `${user.displayName}과 ${selectedFriendNames.join('과 ')}의 캘린더`;
+    if (calName) return calName; // 1. 사용자가 직접 입력한 이름이 최우선
+
+    // 2. 친구를 선택하지 않았거나 사용자 정보가 없으면 자동 생성 안함
+    if (selectedFriendUids.length === 0 || !user?.displayName) {
+      return '';
     }
-    return '';
+
+    // 3. 선택된 친구 목록을 기반으로 캘린더 이름을 요약하여 생성
+    const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
+    const totalMemberNames = [user.displayName, ...selectedFriendNames];
+    const totalCount = totalMemberNames.length;
+
+    if (totalCount <= 2) {
+      // 2명 이하일 경우: "홍길동, 김철수의 캘린더"
+      return `${totalMemberNames.join(', ')}의 캘린더`;
+    }
+    // 3명 이상일 경우: "홍길동님 외 2명의 캘린더"
+    return `${totalMemberNames[0]}님 외 ${totalCount - 1}명의 캘린더`;
   }, [calName, selectedFriendUids, friends, user?.displayName]);
 
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
@@ -253,42 +258,61 @@ const CreateCalendar = () => {
                 {selectedFriendUids.length}명 선택됨
               </span>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {friends.map((friend) => {
-                const isSelected = selectedFriendUids.includes(friend.uid);
-                return (
-                  <button
-                    key={friend.uid}
-                    onClick={() => toggleFriend(friend.uid)}
-                    className={`
-                      relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
-                      ${
-                        isSelected
-                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100'
-                          : 'bg-white border-gray-100 text-gray-600 hover:border-blue-100 hover:bg-gray-50'
-                      }
-                    `}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
-                      }`}
-                    >
-                      {friend.name[0]}
-                    </div>
-                    <div className="flex-1">
-                      <span className={`text-[15px] font-bold block ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
-                    </div>
-                    {isSelected && (
-                      <div className="absolute top-3 right-3 text-white">
-                        <CheckCircle2 size={18} />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
+            {/* [추가] 친구 검색 입력란 */}
+            <div className="relative">
+              <div className="flex items-center h-[52px] bg-gray-50 rounded-[20px] px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white">
+                <Search size={18} className="text-gray-400 mr-3 shrink-0" />
+                <input
+                  type="text"
+                  value={friendSearchTerm}
+                  onChange={(e) => setFriendSearchTerm(e.target.value)}
+                  placeholder="친구 이름으로 검색"
+                  className="flex-1 bg-transparent outline-none text-gray-900 text-[15px] font-bold placeholder:text-gray-300"
+                />
+              </div>
             </div>
+
+            {filteredFriends.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredFriends.map((friend) => {
+                  const isSelected = selectedFriendUids.includes(friend.uid);
+                  return (
+                    <button
+                      key={friend.uid}
+                      onClick={() => toggleFriend(friend.uid)}
+                      className={`
+                        relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
+                        ${
+                          isSelected
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100'
+                            : 'bg-white border-gray-100 text-gray-600 hover:border-blue-100 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {friend.name[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-3 right-3 text-white">
+                          <CheckCircle2 size={18} />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-10 text-center">
+                <p className="text-gray-400 text-sm font-bold">검색 결과가 없습니다.</p>
+              </div>
+            )}
 
             <button
               type="button"
@@ -304,7 +328,7 @@ const CreateCalendar = () => {
         </div>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="mb-3 text-center h-5">
           {finalName && <p className="text-[13px] font-bold text-blue-600 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
         </div>
