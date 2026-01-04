@@ -310,12 +310,17 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white font-['Pretendard']">
-      <div className="px-4 pt-6">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+      {/* 상단 네비게이션 */}
+      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
+          aria-label="뒤로 가기"
+        >
           <ChevronLeft size={28} />
         </button>
-      </div>
+      </nav>
 
       <div className="flex-1 px-8 pt-2 pb-8 overflow-y-auto max-w-md mx-auto w-full">
         {/* 헤더 섹션 */}

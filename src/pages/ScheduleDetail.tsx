@@ -278,6 +278,7 @@ const ScheduleDetail = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ChevronLeft size={28} />
@@ -295,9 +296,9 @@ const ScheduleDetail = () => {
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-              <Sparkles className="text-blue-600 dark:text-blue-400 w-5 h-5" />
+          <div className="flex items-center gap-2 mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
+              <Sparkles className="text-blue-600 w-6 h-6" />
             </div>
 
             {data.recurrence && data.recurrence.frequency !== 'none' && (

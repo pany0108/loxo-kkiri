@@ -15,15 +15,18 @@ const SharedMediaList = () => {
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 네비게이션 */}
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+      {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 pb-2 flex items-center gap-3 sticky top-0 bg-white/90 backdrop-blur-md z-40 border-b border-gray-50">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
+          aria-label="뒤로 가기"
+        >
           <ChevronLeft size={28} />
         </button>
         <h1 className="text-[17px] font-black text-gray-900 truncate">공유된 미디어 ({title})</h1>
       </nav>
-
       {/* 탭 컨트롤 */}
       <div className="px-6 pt-4">
         <div className="flex p-1 bg-gray-100 rounded-[16px]">
@@ -43,7 +46,6 @@ const SharedMediaList = () => {
           </button>
         </div>
       </div>
-
       {/* 콘텐츠 영역 */}
       <div className="flex-1 px-6 pt-6 pb-12 overflow-y-auto">
         {activeTab === 'photo' ? (
@@ -91,7 +93,6 @@ const SharedMediaList = () => {
           </div>
         )}
       </div>
-
       {/* 이미지 뷰어 모달 연결 */}
       {selectedImageIndex !== null && <ImagePreviewModal images={media} initialIndex={selectedImageIndex} onClose={() => setSelectedImageIndex(null)} />}
     </div>

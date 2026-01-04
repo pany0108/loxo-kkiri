@@ -92,15 +92,14 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="뒤로 가기">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+      <nav className="sticky top-0 px-6 pt-6 pb-2 flex items-center justify-between bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-10">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 pb-32 overflow-y-auto">
         <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
           {userData.photoURL ? (
             <img src={userData.photoURL} alt={userData.name} className="w-full h-full object-cover" />
@@ -119,7 +118,7 @@ const UserProfile = () => {
         </div>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 shrink-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleAddFriend}
           disabled={isAdding || isAlreadyFriend}
