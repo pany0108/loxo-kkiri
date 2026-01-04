@@ -37,6 +37,7 @@ const CreateCalendar = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newFriendEmail, setNewFriendEmail] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -142,7 +143,7 @@ const CreateCalendar = () => {
   }, [calName, selectedFriendUids, friends, user?.displayName]);
 
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
-  const isSubmitDisabled = !finalName.trim();
+  const isSubmitDisabled = !finalName.trim() || isSubmitting;
 
   // [수정] DB에 캘린더 저장
   const handleSubmit = async () => {
@@ -151,6 +152,7 @@ const CreateCalendar = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const docRef = await addDoc(collection(db, 'calendars'), {
         name: finalName,
@@ -160,6 +162,25 @@ const CreateCalendar = () => {
         createdAt: new Date().toISOString(),
         isDefault: false, // 기본 캘린더 여부
       });
+
+      // [추가] 공유된 친구들에게 알림 보내기
+      if (selectedFriendUids.length > 0 && user?.displayName) {
+        const notificationPromises = selectedFriendUids.map((friendUid) => {
+          return addDoc(collection(db, 'notifications'), {
+            userId: friendUid, // 알림을 받을 사용자 ID
+            type: 'CALENDAR_INVITE',
+            message: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
+            fromUserId: user.uid,
+            fromUserName: user.displayName,
+            calendarId: docRef.id,
+            calendarName: finalName,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        });
+        // Promise.all로 모든 알림 생성을 동시에 처리
+        await Promise.all(notificationPromises);
+      }
 
       toast.success(`'${finalName}' 캘린더가 생성되었습니다!`);
 
@@ -189,18 +210,20 @@ const CreateCalendar = () => {
     } catch (error) {
       console.error('Error adding calendar: ', error);
       toast.error('캘린더 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white font-['Pretendard']">
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
+    <div className="flex flex-col h-screen bg-white font-['Pretendard']">
+      <nav className="shrink-0 px-6 pt-6 flex items-center bg-white/80 backdrop-blur-md z-10">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
           <ChevronLeft size={28} />
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-40 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
@@ -328,7 +351,7 @@ const CreateCalendar = () => {
         </div>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="mb-3 text-center h-5">
           {finalName && <p className="text-[13px] font-bold text-blue-600 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
         </div>
@@ -340,8 +363,14 @@ const CreateCalendar = () => {
             ${!isSubmitDisabled ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}
           `}
         >
-          <span>캘린더 생성하기</span>
-          <Check size={20} strokeWidth={3} />
+          {isSubmitting ? (
+            <Loader2 size={20} className="animate-spin" />
+          ) : (
+            <>
+              <span>캘린더 생성하기</span>
+              <Check size={20} strokeWidth={3} />
+            </>
+          )}
         </button>
       </footer>
 
