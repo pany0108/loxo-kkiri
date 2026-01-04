@@ -5,7 +5,7 @@ import { db, auth } from '../firebase';
 import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast, { Toast } from 'react-hot-toast';
-import { motion, AnimatePresence, AnimatePresenceProps, useDragControls, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, AnimatePresence, AnimatePresenceProps, useMotionValue, useTransform, animate } from 'framer-motion';
 import 'dayjs/locale/ko';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -13,9 +13,10 @@ import { onAuthStateChanged } from 'firebase/auth';
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
+// ... (Notification 인터페이스 및 TABS, SafeAnimatePresence 등 기존 코드 유지) ...
 interface Notification {
   id: string;
-  userId: string; // [수정] fromUserId, fromUserName 추가
+  userId: string;
   type: string;
   message: string;
   relatedId?: string;
@@ -31,7 +32,6 @@ const TABS = [
   { id: 'meeting', label: '약속' },
 ];
 
-// [수정] framer-motion과 @types/react 버전 호환성 문제로 인한 타입 에러 해결
 const SafeAnimatePresence = AnimatePresence as React.FC<React.PropsWithChildren<AnimatePresenceProps>>;
 
 const NotificationCenter = () => {
@@ -41,17 +41,21 @@ const NotificationCenter = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState('all');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dragControls = useDragControls();
 
-  // [추가] Pull-to-refresh 애니메이션을 위한 motion value
+  // --- Pull to Refresh 상태 및 변수 ---
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const y = useMotionValue(0);
-  // y 값에 따라 아이콘의 투명도와 크기를 조절합니다.
-  const iconOpacity = useTransform(y, [0, 80], [0, 1]);
-  const iconScale = useTransform(y, [0, 80], [0.5, 1.2]);
+  const containerRef = useRef<HTMLDivElement>(null); // 스크롤 컨테이너 Ref
+  const touchStart = useRef(0); // 터치 시작 지점 저장
 
+  // 당기는 거리에 따라 아이콘의 투명도, 크기, 회전 조절
+  const iconOpacity = useTransform(y, [0, 60], [0, 1]);
+  const iconScale = useTransform(y, [0, 80], [0.5, 1.2]);
+  // const iconRotate = useTransform(y, [0, 100], [0, 360]);
+
+  // ... (useEffect 및 Firestore 관련 로직은 기존과 동일) ...
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser: any) => {
       setUser(currentUser);
@@ -61,63 +65,41 @@ const NotificationCenter = () => {
 
   useEffect(() => {
     if (!user) return;
-
-    // Firestore 인덱스 없이 작동하도록 클라이언트 사이드 정렬 사용 (userId로만 필터링)
     const q = query(collection(db, 'notifications'), where('userId', '==', user.uid));
-
     const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot) => {
       const notis = snapshot.docs.map((doc: QueryDocumentSnapshot) => ({
         id: doc.id,
         ...doc.data(),
       })) as Notification[];
-
-      // 최신순 정렬
       notis.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
       setNotifications(notis);
     });
-
     return () => unsubscribe();
   }, [user]);
 
-  // [추가] 안 읽은 알림 개수 계산
+  // ... (unreadCount, filteredNotifications, handleNotificationClick 등 기존 로직 유지) ...
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
   const filteredNotifications = useMemo(() => {
-    if (activeFilter === 'all') {
-      return notifications;
-    }
-    // [추가] '안 읽음' 탭 필터링
-    if (activeFilter === 'unread') {
-      return notifications.filter((n) => !n.isRead);
-    }
-    // [추가] '일정' 탭은 SCHEDULE_ADDED와 SCHEDULE_UPDATED를 모두 포함
-    if (activeFilter === 'schedule') {
-      return notifications.filter((n) => n.type === 'SCHEDULE_ADDED' || n.type === 'SCHEDULE_UPDATED');
-    }
-    // [추가] '약속' 탭은 MEETING_ 으로 시작하는 모든 알림을 포함
-    if (activeFilter === 'meeting') {
-      return notifications.filter((n) => n.type.startsWith('MEETING_'));
-    }
+    if (activeFilter === 'all') return notifications;
+    if (activeFilter === 'unread') return notifications.filter((n) => !n.isRead);
+    if (activeFilter === 'schedule') return notifications.filter((n) => n.type === 'SCHEDULE_ADDED' || n.type === 'SCHEDULE_UPDATED');
+    if (activeFilter === 'meeting') return notifications.filter((n) => n.type.startsWith('MEETING_'));
     return notifications.filter((n: Notification) => n.type === activeFilter);
   }, [notifications, activeFilter]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    // [추가] 선택 모드일 때의 클릭 동작
+    // ... (기존 로직 동일) ...
     if (isSelectionMode) {
       setSelectedIds((prev: Set<string>) => {
         const newSet = new Set(prev);
-        if (newSet.has(notification.id)) {
-          newSet.delete(notification.id);
-        } else {
-          newSet.add(notification.id);
-        }
+        if (newSet.has(notification.id)) newSet.delete(notification.id);
+        else newSet.add(notification.id);
         return newSet;
       });
       return;
     }
 
-    // 읽음 처리
     if (!notification.isRead) {
       try {
         await updateDoc(doc(db, 'notifications', notification.id), { isRead: true });
@@ -126,38 +108,25 @@ const NotificationCenter = () => {
       }
     }
 
-    // [수정] 관련 페이지로 이동 로직 개선
     if (notification.relatedId) {
-      // [추가] 친구 요청 알림 클릭 시 프로필로 이동
       if (notification.type === 'FRIEND_REQUEST') {
         navigate(`/profile/${notification.relatedId}`);
         return;
       }
-
-      // [추가] 캘린더 초대 알림 클릭 시 해당 캘린더로 이동
       if (notification.type === 'CALENDAR_INVITE') {
         navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
         return;
       }
-
-      // [수정] 일정 추가/수정 알림 클릭 시 해당 일정 상세로 이동
       if (notification.type === 'SCHEDULE_ADDED' || notification.type === 'SCHEDULE_UPDATED') {
         try {
-          // [추가] 페이지 이동 전, 해당 일정이 DB에 존재하는지 확인합니다.
           const scheduleDoc = await getDoc(doc(db, 'schedules', notification.relatedId));
-          if (scheduleDoc.exists()) {
-            navigate(`/schedule/${notification.relatedId}`);
-          } else {
-            toast.error('삭제된 일정입니다.');
-          }
+          if (scheduleDoc.exists()) navigate(`/schedule/${notification.relatedId}`);
+          else toast.error('삭제된 일정입니다.');
         } catch (error) {
           toast.error('일정 정보를 불러오는 중 오류가 발생했습니다.');
         }
         return;
       }
-
-      // 약속 관련 알림일 경우에만 DB에서 상태를 확인합니다.
-      // [수정] 투표 완료 알림은 DB 조회 없이 바로 이동
       if (notification.type === 'MEETING_VOTING_COMPLETE_FOR_HOST') {
         navigate(`/meeting/report/${notification.relatedId}`);
         return;
@@ -166,7 +135,6 @@ const NotificationCenter = () => {
         navigate(`/meeting/participant-status/${notification.relatedId}`);
         return;
       }
-
       if (notification.type.startsWith('MEETING_')) {
         try {
           const meetingDoc = await getDoc(doc(db, 'meetings', notification.relatedId));
@@ -174,16 +142,13 @@ const NotificationCenter = () => {
             toast.error('관련된 약속을 찾을 수 없습니다.');
             return;
           }
-
           const meetingData = meetingDoc.data();
           const isHost = auth.currentUser?.uid === meetingData.hostId;
-
           switch (meetingData.status) {
             case 'PENDING':
               navigate(isHost ? `/meeting/status/${notification.relatedId}` : `/meeting/response/${notification.relatedId}`);
               break;
             case 'VOTING':
-              // [수정] 주최자도 투표를 해야 하므로, 모두 투표 화면으로 이동
               navigate(`/meeting/vote/${notification.relatedId}`);
               break;
             case 'CONFIRMED':
@@ -200,20 +165,15 @@ const NotificationCenter = () => {
   };
 
   const handleMarkSelectedAsRead = async () => {
+    // ... (기존 로직 동일) ...
     if (selectedIds.size === 0) return;
-
     const batch = writeBatch(db);
     selectedIds.forEach((id) => {
       const noti = notifications.find((n) => n.id === id);
-      if (noti && !noti.isRead) {
-        const ref = doc(db, 'notifications', id);
-        batch.update(ref, { isRead: true });
-      }
+      if (noti && !noti.isRead) batch.update(doc(db, 'notifications', id), { isRead: true });
     });
     await batch.commit();
     toast.success(`${selectedIds.size}개의 알림을 읽음 처리했습니다.`);
-
-    // 선택 모드 종료
     setIsSelectionMode(false);
     setSelectedIds(new Set());
   };
@@ -224,31 +184,24 @@ const NotificationCenter = () => {
   };
 
   const confirmDeleteAll = async () => {
+    // ... (기존 로직 동일) ...
     if (notifications.length === 0) return;
     const batch = writeBatch(db);
-    notifications.forEach((noti: Notification) => {
-      const ref = doc(db, 'notifications', noti.id);
-      batch.delete(ref);
-    });
+    notifications.forEach((noti) => batch.delete(doc(db, 'notifications', noti.id)));
     await batch.commit();
     toast.success('모든 알림을 삭제했습니다.');
     setIsDeleteAllModalOpen(false);
   };
 
   const handleDeleteSelected = async () => {
+    // ... (기존 로직 동일) ...
     if (selectedIds.size === 0) return;
-    const notificationsToDelete = notifications.filter((n: Notification) => selectedIds.has(n.id));
-
+    const notificationsToDelete = notifications.filter((n) => selectedIds.has(n.id));
     const batch = writeBatch(db);
-    selectedIds.forEach((id) => {
-      const ref = doc(db, 'notifications', id);
-      batch.delete(ref);
-    });
+    selectedIds.forEach((id) => batch.delete(doc(db, 'notifications', id)));
     await batch.commit();
-
     setIsSelectionMode(false);
     setSelectedIds(new Set());
-
     toast(
       (t: Toast) => (
         <div className="flex items-center justify-between w-full">
@@ -257,7 +210,7 @@ const NotificationCenter = () => {
             className="ml-4 px-2 py-1 rounded-md text-xs font-bold bg-white/20 hover:bg-white/30"
             onClick={async () => {
               const undoBatch = writeBatch(db);
-              notificationsToDelete.forEach((n: Notification) => {
+              notificationsToDelete.forEach((n) => {
                 const { id, ...data } = n;
                 undoBatch.set(doc(db, 'notifications', id), data);
               });
@@ -274,50 +227,20 @@ const NotificationCenter = () => {
   };
 
   const handleSelectAll = () => {
-    // [수정] 하나라도 선택되어 있으면 전체 해제, 아니면 전체 선택
+    // ... (기존 로직 동일) ...
     const anyInFilterSelected = filteredNotifications.some((n) => selectedIds.has(n.id));
-    const currentFilterIds = new Set(filteredNotifications.map((n: Notification) => n.id));
-
+    const currentFilterIds = new Set(filteredNotifications.map((n) => n.id));
     if (anyInFilterSelected) {
-      // Deselect all visible
-      setSelectedIds((prev: Set<string>) => {
+      setSelectedIds((prev) => {
         const newSet = new Set(prev);
-        currentFilterIds.forEach((id: string) => newSet.delete(id));
+        currentFilterIds.forEach((id) => newSet.delete(id));
         return newSet;
       });
     } else {
-      // Select all visible
-      setSelectedIds((prev: Set<string>) => new Set([...Array.from(prev), ...Array.from(currentFilterIds)]));
+      setSelectedIds((prev) => new Set([...Array.from(prev), ...Array.from(currentFilterIds)]));
     }
   };
 
-  const handleRefresh = () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    // onSnapshot이 실시간으로 데이터를 가져오므로, 여기서는 시각적 피드백만 제공합니다.
-    setTimeout(() => {
-      toast.success(<b>알림 목록이 최신입니다!</b>, {
-        id: 'refresh-toast',
-      });
-      setIsRefreshing(false);
-      // 애니메이션을 통해 목록을 원래 위치로 되돌립니다.
-      animate(y, 0, {
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
-      });
-    }, 1200);
-  };
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    const target = e.currentTarget as HTMLDivElement;
-    // 스크롤이 최상단에 있을 때만 드래그를 시작합니다.
-    if (target.scrollTop === 0) {
-      dragControls.start(e);
-    }
-  };
-
-  // [추가] 현재 필터에서 하나라도 선택되었는지 확인
   const anyInFilterSelected = useMemo(() => filteredNotifications.some((n) => selectedIds.has(n.id)), [filteredNotifications, selectedIds]);
 
   const startLongPress = () => {
@@ -334,7 +257,57 @@ const NotificationCenter = () => {
     }
   };
 
+  // --- [수정] Pull-to-Refresh 핸들러 ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (containerRef.current?.scrollTop === 0) {
+      touchStart.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // 스크롤이 최상단이 아니거나 새로고침 중이면 무시
+    if (containerRef.current && containerRef.current.scrollTop > 0) return;
+    if (isRefreshing) return;
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStart.current;
+
+    // 아래로 당길 때만 작동 (diff > 0)
+    if (diff > 0 && containerRef.current?.scrollTop === 0) {
+      // 당기는 느낌을 주기 위해 거리를 줄임 (0.4배)
+      y.set(diff * 0.4);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (isRefreshing) return;
+
+    // 임계값(80) 이상 당겼을 때 새로고침 실행
+    if (y.get() > 80) {
+      handleRefresh();
+    } else {
+      // 아니면 원래 위치로 복귀
+      animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // 로딩 위치로 고정
+    animate(y, 80, { type: 'spring', stiffness: 300, damping: 30 });
+
+    setTimeout(() => {
+      setIsRefreshing(false);
+      toast.success('알림이 업데이트되었습니다!', {
+        id: 'refresh-toast',
+      });
+      animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
+    }, 1500);
+  };
+  // -------------------------------------------------------------
+
   const getIcon = (type: string) => {
+    // ... (기존 로직 동일) ...
     switch (type) {
       case 'SCHEDULE_UPDATED':
         return <Edit2 size={20} className="text-orange-500" />;
@@ -363,8 +336,8 @@ const NotificationCenter = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* [수정] 상단바와 탭을 하나의 sticky 컨테이너로 묶어 틈이 생기는 문제 해결 */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+      {/* 상단 네비게이션 & 탭 */}
+      <div className="sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-transparent dark:border-gray-800">
         {isSelectionMode ? (
           <>
             <nav className="px-6 pt-6 flex items-center justify-between pb-4 animate-in fade-in duration-200">
@@ -383,25 +356,21 @@ const NotificationCenter = () => {
               <div className="flex items-center gap-2">
                 {selectedIds.size > 0 && (
                   <>
-                    <button
-                      onClick={handleMarkSelectedAsRead}
-                      className="p-2 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    >
+                    <button onClick={handleMarkSelectedAsRead} className="p-2 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-50 rounded-lg">
                       모두읽음
                     </button>
-                    <button onClick={handleDeleteSelected} className="p-2 text-red-500 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                    <button onClick={handleDeleteSelected} className="p-2 text-red-500 text-sm font-bold hover:bg-red-50 rounded-lg">
                       삭제
                     </button>
                   </>
                 )}
               </div>
             </nav>
-            {/* [이동] 전체 선택 버튼을 sticky 컨테이너 안으로 이동 */}
             <div className="px-6 pb-4 animate-in fade-in duration-200">
               <button onClick={handleSelectAll} disabled={filteredNotifications.length === 0} className="flex items-center gap-2 group disabled:opacity-50">
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                    anyInFilterSelected ? 'border-blue-600' : 'border-gray-300 dark:border-gray-600 group-hover:border-blue-400'
+                    anyInFilterSelected ? 'border-blue-600' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   {anyInFilterSelected && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
@@ -412,22 +381,17 @@ const NotificationCenter = () => {
           </>
         ) : (
           <>
-            <nav className="px-6 pt-6 pb-4 flex items-center justify-between  sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+            <nav className="px-6 pt-6 pb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-                  aria-label="뒤로 가기"
-                >
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <ChevronLeft size={28} />
                 </button>
                 <h1 className="text-2xl font-black text-gray-900 dark:text-white">알림 센터</h1>
               </div>
-              {/* [수정] '안 읽음' 필터 버튼을 우측 상단 텍스트 버튼으로 변경 */}
               <button
                 onClick={() => setActiveFilter(activeFilter === 'unread' ? 'all' : 'unread')}
                 className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                  activeFilter === 'unread' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  activeFilter === 'unread' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                 }`}
               >
                 읽지 않음
@@ -445,7 +409,7 @@ const NotificationCenter = () => {
                     key={tab.id}
                     onClick={() => setActiveFilter(tab.id)}
                     className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                      activeFilter === tab.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                      activeFilter === tab.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
                     }`}
                   >
                     {tab.label}
@@ -457,122 +421,129 @@ const NotificationCenter = () => {
         )}
       </div>
 
-      <div className="flex-1 relative overflow-hidden z-0">
-        <motion.div className="absolute top-0 left-0 right-0 flex justify-center items-center pt-4" style={{ y, opacity: iconOpacity, scale: iconScale }}>
-          <RefreshCw className={`w-6 h-6 text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </motion.div>
-
+      <div className="flex-1 relative overflow-hidden z-0 bg-white dark:bg-gray-950">
+        {/* 새로고침 스피너 (고정 위치) */}
         <motion.div
-          className="flex-1 px-6 pb-20 overflow-y-auto h-full"
-          drag="y"
-          dragControls={dragControls}
-          dragListener={false}
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={{ top: 0.2, bottom: 0 }}
-          onPointerDown={onPointerDown}
-          onDragEnd={() => {
-            // [수정] info.offset.y 대신 y.get()을 사용하여 더 안정적으로 값을 가져옵니다.
-            if (y.get() > 80 && !isRefreshing) {
-              handleRefresh();
-            } else {
-              animate(y, 0, { type: 'spring', stiffness: 300, damping: 30 });
-            }
-          }}
-          style={{ y }}
-          onClick={() => {
-            if (isSelectionMode) {
-              setIsSelectionMode(false);
-              setSelectedIds(new Set());
-            }
+          className="absolute top-4 left-0 right-0 flex justify-center items-center z-0 pointer-events-none"
+          style={{
+            opacity: iconOpacity,
+            scale: iconScale,
           }}
         >
-          {filteredNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400 dark:text-gray-600">
-              <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-in zoom-in-95 duration-500">
-                <Bell size={32} className="text-gray-300 dark:text-gray-600" />
-              </div>
-              <p className="text-[16px] font-black text-gray-900 dark:text-white mb-2">새로운 알림이 없습니다</p>
-              <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500 text-center leading-relaxed">
-                약속 초대나 변경 사항이 생기면
-                <br />
-                이곳에서 알려드릴게요!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <SafeAnimatePresence mode="popLayout">
-                {filteredNotifications.map((noti) => {
-                  const isSelected = selectedIds.has(noti.id);
-                  return (
-                    <motion.div
-                      key={noti.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
-                      className="relative rounded-[24px] overflow-hidden"
-                    >
-                      <motion.div
-                        onPointerDown={startLongPress}
-                        onPointerUp={cancelLongPress}
-                        onPointerLeave={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
-                        onDragStart={cancelLongPress}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleNotificationClick(noti);
-                        }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className={`relative p-5 ring-2 ring-inset transition-all cursor-pointer z-10 rounded-[24px]
-                                ${
-                                  isSelected
-                                    ? 'bg-white dark:bg-gray-900 border-blue-500 shadow-md shadow-blue-100 dark:shadow-none'
-                                    : noti.isRead
-                                    ? 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
-                                    : 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
-                                }
-                            `}
-                      >
-                        <div className="flex gap-4 items-center">
-                          {isSelectionMode && (
-                            <div
-                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
-                              }`}
-                            >
-                              {isSelected && <Check size={16} className="text-white" />}
-                            </div>
-                          )}
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 
-                                ${noti.isRead ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-sm'}
-                            `}
-                          >
-                            {getIcon(noti.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-[14px] leading-relaxed mb-1 ${
-                                noti.isRead ? 'text-gray-600 dark:text-gray-400 font-medium' : 'text-gray-900 dark:text-white font-bold'
-                              }`}
-                            >
-                              {noti.message}
-                            </p>
-                            <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">{dayjs(noti.createdAt).fromNow()}</p>
-                          </div>
-                          {!noti.isRead && !isSelectionMode && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
-                        </div>
-                      </motion.div>
-                    </motion.div>
-                  );
-                })}
-              </SafeAnimatePresence>
-            </div>
-          )}
+          <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-100 dark:border-gray-700">
+            <RefreshCw className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </div>
         </motion.div>
+
+        {/* [중요] 스크롤 컨테이너 
+          - flex-col을 추가하여 내부 요소를 수직으로 정렬합니다.
+          - 스페이서와 콘텐츠 영역으로 분리하여 클리핑 문제를 해결합니다.
+        */}
+        <div
+          ref={containerRef}
+          className="relative h-full overflow-y-auto overscroll-y-contain z-10 flex flex-col"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* 당겨서 새로고침을 위한 스페이서 */}
+          <motion.div style={{ height: y }} className="w-full shrink-0" />
+
+          {/* 실제 콘텐츠 영역 */}
+          <div
+            className="flex-1 flex flex-col bg-white dark:bg-gray-950"
+            onClick={() => {
+              if (isSelectionMode) {
+                setIsSelectionMode(false);
+                setSelectedIds(new Set());
+              }
+            }}
+          >
+            {filteredNotifications.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 text-gray-400 dark:text-gray-600">
+                <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-in zoom-in-95 duration-500">
+                  <Bell size={32} className="text-gray-300 dark:text-gray-600" />
+                </div>
+                <p className="text-[16px] font-black text-gray-900 dark:text-white mb-2">새로운 알림이 없습니다</p>
+                <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500 text-center leading-relaxed">
+                  약속 초대나 변경 사항이 생기면
+                  <br />
+                  이곳에서 알려드릴게요!
+                </p>
+              </div>
+            ) : (
+              <div className="px-6 pb-20 pt-2 space-y-3">
+                <SafeAnimatePresence mode="popLayout">
+                  {filteredNotifications.map((noti) => {
+                    const isSelected = selectedIds.has(noti.id);
+                    return (
+                      <motion.div
+                        key={noti.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
+                        className="relative rounded-[24px] overflow-hidden"
+                      >
+                        <motion.div
+                          onPointerDown={startLongPress}
+                          onPointerUp={cancelLongPress}
+                          onPointerLeave={cancelLongPress}
+                          onPointerCancel={cancelLongPress}
+                          onDragStart={cancelLongPress}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNotificationClick(noti);
+                          }}
+                          className={`relative p-5 ring-2 ring-inset transition-all cursor-pointer z-10 rounded-[24px]
+                            ${
+                              isSelected
+                                ? 'bg-white dark:bg-gray-900 border-blue-500 shadow-md shadow-blue-100 dark:shadow-none'
+                                : noti.isRead
+                                ? 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
+                                : 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
+                            }`}
+                        >
+                          <div className="flex gap-4 items-center">
+                            {isSelectionMode && (
+                              <div
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                  isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                                }`}
+                              >
+                                {isSelected && <Check size={16} className="text-white" />}
+                              </div>
+                            )}
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                                noti.isRead ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-800 shadow-sm'
+                              }`}
+                            >
+                              {getIcon(noti.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-[14px] leading-relaxed mb-1 ${
+                                  noti.isRead ? 'text-gray-600 dark:text-gray-400 font-medium' : 'text-gray-900 dark:text-white font-bold'
+                                }`}
+                              >
+                                {noti.message}
+                              </p>
+                              <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">{dayjs(noti.createdAt).fromNow()}</p>
+                            </div>
+                            {!noti.isRead && !isSelectionMode && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    );
+                  })}
+                </SafeAnimatePresence>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* [추가] 모든 알림 삭제 확인 모달 */}
       {isDeleteAllModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteAllModalOpen(false)} />
@@ -589,10 +560,7 @@ const NotificationCenter = () => {
               <button onClick={confirmDeleteAll} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
                 모두 삭제
               </button>
-              <button
-                onClick={() => setIsDeleteAllModalOpen(false)}
-                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
-              >
+              <button onClick={() => setIsDeleteAllModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600">
                 취소
               </button>
             </div>
@@ -600,9 +568,8 @@ const NotificationCenter = () => {
         </div>
       )}
 
-      {/* [수정] 모든 알림 지우기 버튼을 하단 고정 푸터로 변경 */}
       {!isSelectionMode && notifications.length > 0 && (
-        <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 text-center border-t border-gray-100 dark:border-gray-800/50">
+        <footer className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 text-center border-t border-gray-100 dark:border-gray-800/50">
           <button onClick={handleDeleteAll} className="text-xs font-bold text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">
             모든 알림 지우기
           </button>
