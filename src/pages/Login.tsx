@@ -133,6 +133,14 @@ const Login = () => {
     try {
       // 1. 네이티브 앱(Android/iOS)인 경우
       if (Capacitor.isNativePlatform()) {
+        // [추가] 다른 계정으로 로그인할 수 있도록, 네이티브 GoogleAuth에서 먼저 로그아웃을 시도합니다.
+        // 이렇게 하면 항상 계정 선택 화면이 나타납니다.
+        try {
+          await GoogleAuth.signOut();
+        } catch (e) {
+          // 로그아웃 실패는 무시하고 로그인 절차를 계속 진행합니다 (예: 아직 아무도 로그인하지 않은 경우).
+          console.info('GoogleAuth signOut failed, this is expected if not signed in.');
+        }
         // 네이티브 구글 로그인 팝업 실행
         const googleUser = await GoogleAuth.signIn();
 
@@ -146,8 +154,10 @@ const Login = () => {
           await handleUserRegistration(result.user);
         }
       }
-      // 2. 웹 브라우저 환경인 경우 (기존 방식 유지)
+      // 2. 웹 브라우저 환경인 경우
       else {
+        // [추가] 항상 계정을 선택할 수 있도록 prompt 옵션 추가
+        googleProvider.setCustomParameters({ prompt: 'select_account' });
         const result = await signInWithPopup(auth, googleProvider);
         if (result.user) {
           await handleUserRegistration(result.user);
@@ -179,6 +189,8 @@ const Login = () => {
             break;
           case 'auth/popup-blocked': // 웹 환경에서 팝업 차단 시
             toast('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.', { icon: 'ℹ️' });
+            // [추가] 리다이렉트 시에도 계정 선택 프롬프트 유지
+            googleProvider.setCustomParameters({ prompt: 'select_account' });
             await signInWithRedirect(auth, googleProvider);
             return;
           case 'auth/operation-not-allowed':
