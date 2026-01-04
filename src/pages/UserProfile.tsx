@@ -112,8 +112,10 @@ const UserProfile = () => {
         <div className="flex flex-col items-center">
           <h2 className="text-3xl font-black text-gray-900 dark:text-white">{userData.name}</h2>
           <p className="text-base font-medium text-gray-400 dark:text-gray-500 mt-2">{userData.email}</p>
-          <div className="mt-6 max-w-sm text-base font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700">
-            <p>{userData.statusMessage || '상태 메시지가 없습니다.'}</p>
+          <div className="mt-6 max-w-sm w-full bg-blue-50 dark:bg-blue-900/50 rounded-2xl px-5 py-4 border border-blue-100 dark:border-blue-500/20">
+            <p className={`text-base font-semibold ${userData.statusMessage ? 'text-blue-800 dark:text-blue-200' : 'text-blue-400 dark:text-blue-500'}`}>
+              {userData.statusMessage || '상태 메시지가 없습니다.'}
+            </p>
           </div>
         </div>
       </div>
