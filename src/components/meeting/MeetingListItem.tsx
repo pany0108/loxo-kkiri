@@ -18,11 +18,11 @@ interface MeetingListItemProps {
 const getStatusBadge = (status: string) => {
   switch (status) {
     case 'VOTING':
-      return { className: 'bg-amber-50 text-amber-600', text: '투표 진행중' };
+      return { className: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400', text: '투표 진행중' };
     case 'CONFIRMED':
-      return { className: 'bg-green-50 text-green-600', text: '약속 확정' };
+      return { className: 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400', text: '약속 확정' };
     default:
-      return { className: 'bg-blue-50 text-blue-600', text: '시간 조율중' };
+      return { className: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400', text: '시간 조율중' };
   }
 };
 
