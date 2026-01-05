@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, User, Loader2, UserPlus, Check } from 'lucide-react';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useFirestoreDoc } from 'hooks';
 

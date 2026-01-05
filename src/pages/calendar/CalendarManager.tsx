@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { Plus, Users, ChevronLeft, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
 import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal } from 'components';
 import { useFirestoreQuery } from 'hooks';

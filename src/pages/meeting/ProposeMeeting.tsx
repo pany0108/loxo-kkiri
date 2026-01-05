@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Sparkles, Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
 import { NewMeetingButton, MeetingListItem, EmptyMeetingList } from 'components';

@@ -10,7 +10,7 @@ import './CalendarMain.css';
 import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
 import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { setupPushNotifications } from 'utils';
 import { DeleteRecurringModal, Calendar, SimpleDeleteModal } from 'components';
 import toast from 'react-hot-toast';

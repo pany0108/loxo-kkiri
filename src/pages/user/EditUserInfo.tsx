@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 

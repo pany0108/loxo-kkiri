@@ -1,22 +1,25 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
-import { doc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { doc, collection, writeBatch } from 'firebase/firestore';
+import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
 
 interface MeetingData {
   id: string;
   title: string;
   description?: string;
+  hostId: string;
+  hostName: string;
   location?: string;
   participants: string[];
-  invitedFriends?: { uid: string; name: string }[];
+  invitedFriends?: { uid: string; name: string }[]; // [추가] 초대된 친구 정보
   dates: string[];
   timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
   votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
-  responses?: Record<string, any>;
+  responses?: Record<string, any>; // [추가] 응답 데이터
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
 }
 
@@ -29,12 +32,28 @@ interface StatusSlot {
   isAllVoted: boolean;
 }
 
-const MeetingParticipantStatus = () => {
+const MeetingHostStatus = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
 
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // [추가] PENDING 상태일 때 응답 현황 데이터
+  const responseStatus = useMemo(() => {
+    if (!meetingData || meetingData.status !== 'PENDING') return null;
+
+    const invited = meetingData.invitedFriends || [];
+    const responses = meetingData.responses || {};
+
+    const list = invited.map((friend) => ({
+      uid: friend.uid,
+      name: friend.name,
+      hasResponded: !!responses[friend.uid]?.responded,
+    }));
+
+    return { list, respondedCount: list.filter((i) => i.hasResponded).length, totalCount: list.length };
+  }, [meetingData]);
 
   // VOTING 상태일 때 투표 현황 데이터
   const statusData: StatusSlot[] = useMemo(() => {
@@ -66,6 +85,51 @@ const MeetingParticipantStatus = () => {
     return slots.sort((a, b) => b.counts.available - a.counts.available);
   }, [meetingData]);
 
+  // [추가] 재촉하기 기능
+  const handleUrge = async () => {
+    if (!meetingData || !auth.currentUser) return;
+
+    const votedUids = new Set(Object.keys(meetingData.votes?.[`${meetingData.dates[0]}_0`] || {}));
+    const unvotedParticipants = meetingData.participants.filter((p) => !votedUids.has(p) && p !== auth.currentUser?.uid);
+
+    if (unvotedParticipants.length === 0) {
+      toast('모든 친구들이 투표를 완료했습니다!', { icon: '👍' });
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+      unvotedParticipants.forEach((uid) => {
+        const notiRef = doc(collection(db, 'notifications'));
+        batch.set(notiRef, {
+          userId: uid,
+          type: 'MEETING_URGE',
+          message: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
+          relatedId: meetingId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      });
+      await batch.commit();
+      toast.success(`${unvotedParticipants.length}명에게 재촉 알림을 보냈습니다.`);
+    } catch (error) {
+      toast.error('알림 전송 중 오류가 발생했습니다.');
+    }
+  };
+
+  // [수정] 모든 참여자(주최자 포함)의 이름이 정확히 표시되도록 로직 개선 (조건부 렌더링 밖으로 이동)
+  const allParticipants = useMemo(() => {
+    if (!meetingData) return [];
+    const participantInfo = new Map<string, string>();
+    (meetingData.invitedFriends || []).forEach((friend) => {
+      participantInfo.set(friend.uid, friend.name);
+    });
+    if (meetingData.hostId && meetingData.hostName) {
+      participantInfo.set(meetingData.hostId, meetingData.hostName);
+    }
+    return meetingData.participants.map((uid) => ({ uid, name: participantInfo.get(uid) || '알 수 없음' })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [meetingData]);
+
   if (loading || !meetingData) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
@@ -74,27 +138,91 @@ const MeetingParticipantStatus = () => {
     );
   }
 
-  const totalMembers = meetingData.participants.length;
+  // --- [추가] PENDING 상태 뷰 (응답 현황) ---
+  if (meetingData.status === 'PENDING' && responseStatus) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+        {/* 상단 네비게이션 */}
+        <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
+            aria-label="뒤로 가기"
+          >
+            <ChevronLeft size={28} />
+          </button>
+        </nav>
+
+        <div className="flex-1 px-6 pt-4 pb-20 overflow-y-auto w-full">
+          <header className="mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+              <Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+            {meetingData.location && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+                <MapPin size={16} />
+                <span>{meetingData.location}</span>
+              </div>
+            )}
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+              친구들의 <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
+            </h2>
+          </header>
+
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-6 border border-gray-100 dark:border-gray-700/50">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-bold text-gray-900 dark:text-white">응답 현황</h4>
+              <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                {responseStatus.respondedCount} / {responseStatus.totalCount}명
+              </span>
+            </div>
+            <div className="space-y-3">
+              {responseStatus.list.map((friend) => (
+                <div key={friend.uid} className="flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600/50">
+                  <span className="font-bold text-gray-700 dark:text-gray-200">{friend.name}</span>
+                  {friend.hasResponded ? (
+                    <span className="text-[12px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg">응답 완료</span>
+                  ) : (
+                    <span className="text-[12px] font-bold text-gray-400 bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-lg">대기 중</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- VOTING 상태 뷰 (기존 로직) ---
+  // 투표 참여 현황 계산 (주최자 제외)
+  const totalMembers = meetingData.participants.length; // 본인 포함 전체
+  // 실제 투표 데이터에서 유니크한 투표자 수 확인 (슬롯 0번 기준 예시)
   const firstSlotVotes = meetingData.votes?.[`${meetingData.dates[0]}_0`] || {};
   const votedCount = Object.keys(firstSlotVotes).length;
 
   const votedUids = new Set(Object.keys(firstSlotVotes));
-  const allParticipants = meetingData.invitedFriends?.map((f) => ({ uid: f.uid, name: f.name })) || [];
-  // [수정] 현재 사용자가 이미 목록에 있는지 확인 후 추가
-  if (auth.currentUser && !allParticipants.some((p) => p.uid === auth.currentUser!.uid)) {
-    allParticipants.push({ uid: auth.currentUser.uid, name: auth.currentUser.displayName || '나' });
-  }
+
+  const unvotedCount = meetingData.participants.length - votedCount;
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
+      <nav className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button
           onClick={() => navigate(-1)}
           className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
           aria-label="뒤로 가기"
         >
           <ChevronLeft size={28} />
+        </button>
+        <button
+          onClick={handleUrge}
+          disabled={unvotedCount === 0}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-400 text-white rounded-full text-sm font-bold shadow-lg shadow-amber-100 dark:shadow-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+        >
+          <BellRing size={16} /> 재촉하기
         </button>
       </nav>
 
@@ -111,9 +239,7 @@ const MeetingParticipantStatus = () => {
             </div>
           )}
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            투표가 완료되었습니다.
-            <br />
-            <span className="text-blue-600 dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
+            현재 <span className="text-blue-600 dark:text-blue-400">투표 진행 중</span>입니다.
           </h2>
           <div className="mt-4 flex items-center gap-2 text-[13px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg w-fit">
             <Users size={16} />
@@ -212,4 +338,4 @@ const MeetingParticipantStatus = () => {
   );
 };
 
-export default MeetingParticipantStatus;
+export default MeetingHostStatus;

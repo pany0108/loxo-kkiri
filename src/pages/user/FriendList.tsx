@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, Check, Loader2, MoreVertical, X, Folder, FolderPlus } from 'lucide-react';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { ImagePreviewModal, AddFriendModal, ProfilePopup, FriendActionMenu, EditFriendNameModal, DeleteFriendModal, GroupManagerModal, MoveToGroupModal } from 'components';
 import { useFirestoreDoc } from 'hooks';

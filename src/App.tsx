@@ -61,6 +61,10 @@ function App() {
     '/propose/create',
     '/propose/detail',
     '/notifications',
+    '/chat/',
+    '/schedule/',
+    '/meeting/',
+    '/profile/',
   ];
 
   const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/', '/profile/'].some((path) => location.pathname.startsWith(path));

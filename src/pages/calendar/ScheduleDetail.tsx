@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { useCalendar } from 'contexts';
 
 interface LocationState {

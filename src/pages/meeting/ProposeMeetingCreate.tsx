@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { useFirestoreDoc, useFirestoreQuery } from 'hooks';
 import { onAuthStateChanged } from 'firebase/auth';

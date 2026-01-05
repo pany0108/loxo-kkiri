@@ -4,7 +4,7 @@ import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, L
 // [추가] Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { AddFriendModal } from 'components';
 
