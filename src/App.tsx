@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { NavigationBar } from '@hugotomazi/capacitor-navigation-bar';
 import { auth } from './firebase';
 import { Toaster } from 'react-hot-toast';
 import { BottomNav } from 'components';
@@ -46,6 +49,64 @@ function App() {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  // [추가] 다크/라이트 모드에 따른 시스템 UI(상태바, 네비게이션바) 색상 동기화
+  useEffect(() => {
+    const setSystemUI = async (isDark: boolean) => {
+      if (!Capacitor.isNativePlatform()) {
+        return;
+      }
+
+      try {
+        if (isDark) {
+          // ■ 다크모드 설정
+          const darkBgColor = '#030712'; // gray-950
+
+          // 1. 상태바 (상단)
+          // [수정] 배경이 어두우므로 Style.Dark를 써야 글자가 '흰색'이 됩니다.
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: darkBgColor });
+
+          // 2. 네비게이션바 (하단, 안드로이드)
+          if (Capacitor.getPlatform() === 'android') {
+            // 버튼을 밝게(흰색) 하려면 darkButtons: false
+            await NavigationBar.setColor({ color: darkBgColor, darkButtons: false });
+          }
+        } else {
+          // □ 라이트모드 설정
+          const lightBgColor = '#ffffff';
+
+          // 1. 상태바 (상단)
+          // [수정] 배경이 밝으므로 Style.Light를 써야 글자가 '검은색'이 됩니다.
+          await StatusBar.setStyle({ style: Style.Light });
+          await StatusBar.setBackgroundColor({ color: lightBgColor });
+
+          // 2. 네비게이션바 (하단, 안드로이드)
+          if (Capacitor.getPlatform() === 'android') {
+            // 버튼을 어둡게(검은색) 하려면 darkButtons: true
+            await NavigationBar.setColor({ color: lightBgColor, darkButtons: true });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to set system UI', error);
+      }
+    };
+
+    const observer = new MutationObserver(() => {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setSystemUI(isDarkMode);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    // 초기 실행
+    setSystemUI(document.documentElement.classList.contains('dark'));
+
+    return () => observer.disconnect();
   }, []);
 
   // 2. 네비게이션 바 숨김 처리 로직
