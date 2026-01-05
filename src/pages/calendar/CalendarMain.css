@@ -60,6 +60,11 @@
   font-size: 18px !important;
 }
 
+/* [추가] 다크모드 타이틀 색상 */
+.dark .fc-toolbar-title::before {
+  color: #ffffff !important; /* text-white */
+}
+
 /* [수정] 커스텀 버튼(myPrev, myNext)에 대한 스타일 적용 */
 .fc-myPrev-button,
 .fc-myNext-button {
