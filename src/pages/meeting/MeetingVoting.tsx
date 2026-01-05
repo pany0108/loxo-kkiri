@@ -80,30 +80,37 @@ const MeetingVoting = () => {
   useEffect(() => {
     if (!meetingData || !user) return;
 
-    const slots: VotingSlot[] = [];
-    meetingData.dates.sort().forEach((dateStr) => {
-      meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
-        const slotId = `${dateStr}_${index}`;
-        const votesForSlot = meetingData.votes?.[slotId] || {};
+    // 이전 상태를 기반으로 새로운 상태를 계산하여, 사용자의 로컬 입력을 보존합니다.
+    setVotingSlots((prevSlots) => {
+      const newSlots: VotingSlot[] = [];
+      const prevSlotsMap = new Map(prevSlots.map((s) => [s.id, s]));
 
-        // '가능' 투표자 이름 목록 생성
-        const availableVoterNames = Object.values(votesForSlot)
-          .filter((v: any) => v.vote === 'available')
-          .map((v: any) => v.name || '?');
+      meetingData.dates.sort().forEach((dateStr) => {
+        meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+          const slotId = `${dateStr}_${index}`;
+          const votesForSlot = meetingData.votes?.[slotId] || {};
 
-        const myVoteData = votesForSlot[user.uid];
+          // '가능' 투표자 이름 목록 생성
+          const availableVoterNames = Object.values(votesForSlot)
+            .filter((v: any) => v.vote === 'available')
+            .map((v: any) => v.name || '?');
 
-        slots.push({
-          id: slotId,
-          date: dateStr,
-          time: ts.isAllDay ? '종일' : `${ts.start} ~ ${ts.end}`,
-          registeredMembers: availableVoterNames,
-          myVote: (myVoteData?.vote as any) || '',
-          myMemo: myVoteData?.memo || '',
+          const myVoteData = votesForSlot[user.uid];
+          const existingSlot = prevSlotsMap.get(slotId);
+
+          newSlots.push({
+            id: slotId,
+            date: dateStr,
+            time: ts.isAllDay ? '종일' : `${ts.start} ~ ${ts.end}`,
+            registeredMembers: availableVoterNames,
+            // 사용자가 입력 중인 값을 보존하기 위해 이전 상태(prevSlots)의 값을 우선적으로 사용합니다.
+            myVote: existingSlot?.myVote ?? ((myVoteData?.vote as any) || ''),
+            myMemo: existingSlot?.myMemo ?? (myVoteData?.memo || ''),
+          });
         });
       });
+      return newSlots;
     });
-    setVotingSlots(slots);
   }, [meetingData, user]);
 
   /**
@@ -205,14 +212,14 @@ const MeetingVoting = () => {
 
   if (loading || !meetingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button
@@ -224,7 +231,7 @@ const MeetingVoting = () => {
         </button>
       </nav>
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -251,7 +258,7 @@ const MeetingVoting = () => {
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="flex gap-3">
           {isHost && (
             <button

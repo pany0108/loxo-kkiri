@@ -144,7 +144,7 @@ const SignupSocial = () => {
   // 필수 데이터가 로딩되지 않았을 때 로딩 화면 표시
   if (!uid) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
       </div>
     );
@@ -299,7 +299,7 @@ const SignupSocial = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90">

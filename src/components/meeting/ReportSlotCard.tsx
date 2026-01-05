@@ -35,7 +35,9 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
           <div className="flex items-center gap-2">
             <span className="text-[16px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
             {slot.isAllAvailable && (
-              <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm shadow-emerald-200">BEST CHOICE</span>
+              <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm shadow-emerald-200 dark:shadow-emerald-900/50">
+                BEST CHOICE
+              </span>
             )}
           </div>
           <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 font-bold">
@@ -171,7 +173,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
             className={`w-full py-4 rounded-[20px] font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 ${
               slot.isAllAvailable
                 ? 'bg-emerald-500 text-white shadow-emerald-200 dark:shadow-emerald-900/50 hover:bg-emerald-600'
-                : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-2 border-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shadow-none'
+                : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-2 bordmeeting/report/er-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shadow-none'
             }`}
           >
             {slot.isAllAvailable ? (

@@ -212,7 +212,7 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button

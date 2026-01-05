@@ -225,14 +225,14 @@ const MeetingResponse = () => {
 
   if (loading || !meetingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button
@@ -244,7 +244,7 @@ const MeetingResponse = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -330,7 +330,7 @@ const MeetingResponse = () => {
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
         <button
           onClick={handleSubmitResponse}
           className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"

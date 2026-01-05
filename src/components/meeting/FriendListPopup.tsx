@@ -34,7 +34,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-md h-[80vh] bg-white dark:bg-gray-800 rounded-[32px] p-6 shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-md h-[80vh] bg-white dark:bg-gray-800 rounded-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col">
         <div className="flex justify-between items-center mb-4 shrink-0">
           <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
             <Users size={20} />

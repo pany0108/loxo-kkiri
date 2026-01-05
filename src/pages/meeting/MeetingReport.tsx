@@ -198,7 +198,8 @@ const MeetingReport = () => {
       await batch.commit();
 
       toast.success('약속이 확정되어 캘린더에 추가되었습니다!');
-      navigate('/calendar');
+      // [수정] 약속 확정 후, 현재 리포트 페이지에 머물러 확정 상태를 보여주므로 별도 이동은 불필요합니다.
+      // navigate('/calendar');
     } catch (error) {
       console.error('Error confirming meeting:', error);
       toast.error('약속 확정 중 오류가 발생했습니다.');
@@ -263,14 +264,14 @@ const MeetingReport = () => {
 
   if (loading || !meetingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button
@@ -282,7 +283,7 @@ const MeetingReport = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-20 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <ReportHeader title={meetingData.title} location={meetingData.location} status={meetingData.status} confirmedSlot={meetingData.confirmedSlot} />
 

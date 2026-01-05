@@ -144,7 +144,7 @@ const MeetingHostStatus = () => {
 
   if (loading || !meetingData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
@@ -153,7 +153,7 @@ const MeetingHostStatus = () => {
   // --- [추가] PENDING 상태 뷰 (응답 현황) ---
   if (meetingData.status === 'PENDING' && responseStatus) {
     return (
-      <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+      <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
         {/* 상단 네비게이션 */}
         <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
           <button
@@ -219,7 +219,7 @@ const MeetingHostStatus = () => {
   const unvotedCount = meetingData.participants.length - votedCount;
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
       <nav className="px-6 pt-6 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
         <button
@@ -238,7 +238,7 @@ const MeetingHostStatus = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-20 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />

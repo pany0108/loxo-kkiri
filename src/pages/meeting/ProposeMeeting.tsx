@@ -123,14 +123,14 @@ const ProposeMeeting = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
