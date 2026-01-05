@@ -75,7 +75,7 @@ function App() {
           }
         } else {
           // □ 라이트모드 설정
-          const lightBgColor = '#ffffff';
+          const lightBgColor = '#f9fafb'; // bg-gray-50
 
           // 1. 상태바 (상단)
           // [수정] 배경이 밝으므로 Style.Light를 써야 글자가 '검은색'이 됩니다.
@@ -140,7 +140,7 @@ function App() {
 
   return (
     // [수정] 전체 컨테이너의 하단 패딩을 제거합니다. 하단 safe-area는 마지막 요소가 처리합니다.
-    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <Toaster
         position="top-center"
         containerStyle={{
