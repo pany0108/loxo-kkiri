@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Smartphone, ChevronLeft, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
+import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { auth, db } from '../../firebase';
+import { TopNav } from 'components';
 
 /**
  * 비밀번호 유효성 검사 헬퍼 함수
@@ -311,18 +312,9 @@ const Signup = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="회원가입" />
 
-      <div className="flex-1 px-8 pt-2 pb-8 overflow-y-auto max-w-md mx-auto w-full">
+      <div className="flex-1 px-8 pt-[calc(68px+env(safe-area-inset-top))] pb-8 overflow-y-auto max-w-md mx-auto w-full">
         {/* 헤더 섹션 */}
         <div className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">

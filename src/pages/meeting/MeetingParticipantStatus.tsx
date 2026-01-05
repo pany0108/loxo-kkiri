@@ -1,10 +1,11 @@
 import React, { useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ChevronLeft, CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import { doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
+import { TopNav } from 'components';
 
 interface MeetingData {
   id: string;
@@ -18,6 +19,7 @@ interface MeetingData {
   votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
   responses?: Record<string, any>;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
+  scheduleId?: string;
 }
 
 interface StatusSlot {
@@ -99,18 +101,9 @@ const MeetingParticipantStatus = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="투표 현황" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-20 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-20 overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />

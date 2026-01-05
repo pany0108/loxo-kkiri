@@ -17,6 +17,7 @@ interface Meeting {
   members: number;
   dday: string;
   hostId: string; // [추가] 주최자 ID
+  scheduleId?: string;
 }
 
 /**
@@ -67,6 +68,7 @@ const ProposeMeeting = () => {
       members: m.participants?.length || 0,
       dday: m.status === 'VOTING' ? '투표중' : m.status === 'CONFIRMED' ? '확정' : '진행중',
       hostId: m.hostId, // [추가]
+      scheduleId: m.scheduleId,
     }));
   }, [meetingsData]);
 

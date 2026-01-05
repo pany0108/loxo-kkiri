@@ -2,13 +2,11 @@ import React, { useState, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { ChevronLeft, Sparkles, Clock } from 'lucide-react';
+import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal } from 'components';
-
-dayjs.extend(isSameOrAfter);
+import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav } from 'components';
 
 /**
  * 초대된 친구 데이터 인터페이스
@@ -272,30 +270,20 @@ const ProposeMeetingDetail = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="세부 시간 설정" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            세부 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
-            설정해볼까요?
+            선택한 날짜의 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
+            설정해주세요.
           </h2>
         </header>
 
-        {/* 약속 요약 카드 */}
         <MeetingSummaryCard title={title} description={description} location={meetingLocation} invitedFriends={invitedFriends} />
 
         {/* [추가] 시간 설정 헤더 및 통일 버튼 */}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { TopNav } from 'components';
 
 const validatePasswordLocally = (password: string, email: string) => {
   if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
@@ -213,18 +214,9 @@ const ChangePassword = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="비밀번호 변경" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-8 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-8 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-5">

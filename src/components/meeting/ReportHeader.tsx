@@ -1,14 +1,16 @@
 import React from 'react';
-import { Sparkles, MapPin } from 'lucide-react';
+import { Sparkles, MapPin, CalendarCheck } from 'lucide-react';
 
 interface ReportHeaderProps {
   title: string;
   location?: string;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   confirmedSlot?: { date: string; time: string };
+  scheduleId?: string;
+  onNavigate?: (path: string) => void;
 }
 
-const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot }) => {
+const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot, scheduleId, onNavigate }) => {
   return (
     <header className="mb-8">
       <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -30,6 +32,17 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
             <p className="text-center text-lg font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.date}</p>
             <p className="text-center text-2xl font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.time}</p>
           </div>
+          {scheduleId && onNavigate && (
+            <div className="mt-4">
+              <button
+                onClick={() => onNavigate(`/schedule/${scheduleId}`)}
+                className="w-full h-[56px] bg-blue-600 text-white rounded-[20px] font-black text-[16px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <CalendarCheck size={20} />
+                약속 일정 보러가기
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <>

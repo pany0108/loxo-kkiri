@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { auth, db } from '../../firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { useFirestoreDoc, useFirestoreQuery } from 'hooks';
 import { onAuthStateChanged } from 'firebase/auth';
-import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup } from 'components';
+import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav } from 'components';
 
 dayjs.locale('ko');
 
@@ -210,18 +210,9 @@ const ProposeMeetingCreate = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="약속 제안하기" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

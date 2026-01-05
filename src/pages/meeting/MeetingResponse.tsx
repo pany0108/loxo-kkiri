@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { db, auth } from '../../firebase';
@@ -8,7 +8,7 @@ import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firesto
 import { useFirestoreDoc } from 'hooks';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
-import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide } from 'components';
+import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav } from 'components';
 
 dayjs.locale('ko');
 
@@ -34,6 +34,7 @@ interface MeetingData {
   dates: string[];
   timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
   responses?: Record<string, any>;
+  scheduleId?: string;
 }
 
 /**
@@ -45,12 +46,23 @@ interface MeetingData {
 const MeetingResponse = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
+  const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // --- 상태 관리 ---
   const [user, setUser] = useState<any>(null);
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [selectedHostSlots, setSelectedHostSlots] = useState<string[]>([]); // ID를 string으로 변경
   const [myNewSlots, setMyNewSlots] = useState<MyNewSlot[]>([]);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -233,18 +245,9 @@ const MeetingResponse = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="약속 응답하기" />
 
-      <div className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

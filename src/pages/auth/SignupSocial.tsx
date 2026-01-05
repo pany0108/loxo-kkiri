@@ -7,7 +7,8 @@ import { signOut } from 'firebase/auth';
 import dayjs from 'dayjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2, ChevronLeft } from 'lucide-react';
+import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
+import { TopNav } from 'components';
 
 /**
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
@@ -300,15 +301,9 @@ const SignupSocial = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90">
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="추가 정보 입력" onBack={handleBack} />
 
-      {/* [수정] 콘텐츠를 세로 중앙 정렬하도록 레이아웃 변경 */}
-      <div className="flex-1 flex flex-col justify-center px-8 pb-8 w-full max-w-md mx-auto">
+      <div className="flex-1 flex flex-col justify-center px-8 pt-[calc(60px+env(safe-area-inset-top))] pb-8 w-full max-w-md mx-auto">
         <div className="mb-12 text-left">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />

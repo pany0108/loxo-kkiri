@@ -1,8 +1,8 @@
 import { useState, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, Loader2 } from 'lucide-react';
-import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal } from 'components';
+import { Loader2, CalendarCheck } from 'lucide-react';
+import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal, TopNav } from 'components';
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
@@ -39,6 +39,7 @@ interface MeetingData {
   votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   confirmedSlot?: { date: string; time: string };
+  scheduleId?: string;
 }
 
 /**
@@ -158,17 +159,11 @@ const MeetingReport = () => {
         }
       }
 
-      // 1. 약속 상태를 'CONFIRMED'로 변경
-      await updateDoc(doc(db, 'meetings', meetingId), {
-        status: 'CONFIRMED',
-        confirmedSlot: selectedSlot,
-      });
-
-      // 2. 'schedules' 컬렉션에 새 일정 생성
+      // 1. 'schedules' 컬렉션에 새 일정 생성
       const [startTime, endTime] = selectedSlot.time.split(' ~ ');
       const isAllDay = selectedSlot.time === '종일';
 
-      await addDoc(collection(db, 'schedules'), {
+      const scheduleRef = await addDoc(collection(db, 'schedules'), {
         title: meetingData.title,
         content: meetingData.description || '',
         location: meetingData.location || '',
@@ -179,6 +174,13 @@ const MeetingReport = () => {
         attendees: meetingData.participants,
         createdAt: new Date().toISOString(),
         userId: auth.currentUser?.uid,
+      });
+
+      // 2. 약속 상태를 'CONFIRMED'로 변경하고, 생성된 scheduleId 저장
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        status: 'CONFIRMED',
+        confirmedSlot: selectedSlot,
+        scheduleId: scheduleRef.id,
       });
 
       // [추가] 약속 확정 알림 전송
@@ -272,20 +274,18 @@ const MeetingReport = () => {
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="투표 결과" />
 
-      <div className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <ReportHeader title={meetingData.title} location={meetingData.location} status={meetingData.status} confirmedSlot={meetingData.confirmedSlot} />
+        <ReportHeader
+          title={meetingData.title}
+          location={meetingData.location}
+          status={meetingData.status}
+          confirmedSlot={meetingData.confirmedSlot}
+          scheduleId={meetingData.scheduleId}
+          onNavigate={navigate}
+        />
 
         {/* 리포트 카드 리스트 */}
         <div className="space-y-6">
