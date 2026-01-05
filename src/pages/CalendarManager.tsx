@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Users, ChevronLeft, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
-import { collection, query, where, deleteDoc, doc, updateDoc, arrayRemove, writeBatch } from 'firebase/firestore';
+import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal } from 'components';
@@ -42,17 +42,16 @@ const CalendarManager = () => {
   }, [user]);
 
   const { data: calendarsData, loading: isLoading } = useFirestoreQuery<CalendarData>(calendarsQuery);
-  const calendars = calendarsData || [];
 
   // [추가] 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
   const sortedCalendars = useMemo(() => {
-    if (!calendars) return [];
+    const calendars = calendarsData || [];
     return [...calendars].sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1; // a가 기본 캘린더면 위로
       if (!a.isDefault && b.isDefault) return 1; // b가 기본 캘린더면 위로
       return 0; // 나머지는 순서 유지
     });
-  }, [calendars]);
+  }, [calendarsData]);
 
   const formatMembers = (members: string[]) => {
     // 실제로는 uid를 이름으로 변환하는 과정이 필요하지만 지금은 배열 길이로 표현

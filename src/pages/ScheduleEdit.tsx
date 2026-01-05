@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Trash2, Plus } from 'lucide-react';
-import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal } from 'components';
+import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus } from 'lucide-react';
+import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useCalendar } from 'contexts';
@@ -535,34 +535,20 @@ const ScheduleEdit = () => {
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
 
-      {/* [추가] 일반 일정 삭제 확인 모달 */}
-      {isSimpleDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSimpleDeleteModalOpen(false)} />
-          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={32} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">일정 삭제</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-              정말 이 일정을 삭제하시겠습니까?
-              <br />
-              삭제된 일정은 복구할 수 없습니다.
-            </p>
-            <div className="flex flex-col gap-2">
-              <button onClick={deleteEntireSchedule} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                삭제하기
-              </button>
-              <button
-                onClick={() => setIsSimpleDeleteModalOpen(false)}
-                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* [수정] 일반 일정 삭제 확인 모달 컴포넌트화 */}
+      <SimpleDeleteModal
+        isOpen={isSimpleDeleteModalOpen}
+        onClose={() => setIsSimpleDeleteModalOpen(false)}
+        onConfirm={deleteEntireSchedule}
+        title="일정 삭제"
+        message={
+          <>
+            정말 이 일정을 삭제하시겠습니까?
+            <br />
+            삭제된 일정은 복구할 수 없습니다.
+          </>
+        }
+      />
     </div>
   );
 };

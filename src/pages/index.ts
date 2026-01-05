@@ -43,7 +43,6 @@ export { default as MeetingResponse } from './MeetingResponse'; // 초대받은 
 export { default as MeetingVoting } from './MeetingVoting'; // 겹치는 시간대에 대한 2차 투표 (가능/아마도/불가능)
 export { default as MeetingReport } from './MeetingReport'; // 최종 결과 리포트 확인 및 시간 확정
 export { default as MeetingParticipantStatus } from './MeetingParticipantStatus'; // [추가] 참여자용 투표 현황판
-export { default as ConfirmMeetingDialog } from './ConfirmMeetingDialog';
 
 // =============================================================================
 // 커뮤니케이션 (Communication)

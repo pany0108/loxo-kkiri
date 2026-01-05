@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Clock, Users, ChevronRight, CalendarCheck, Sparkles, Loader2 } from 'lucide-react';
+import { Clock, Sparkles, Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
+import { NewMeetingButton, MeetingListItem, EmptyMeetingList } from 'components';
 
 /**
  * 약속 데이터 인터페이스
@@ -108,22 +109,6 @@ const ProposeMeeting = () => {
     }
   };
 
-  /**
-   * 약속 상태에 따른 배지 스타일과 텍스트를 반환합니다.
-   * @param {string} status - 약속 상태 ('VOTING' | 'CONFIRMED' | 'PENDING')
-   * @returns {{ className: string; text: string }} 스타일 클래스와 표시 텍스트
-   */
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'VOTING':
-        return { className: 'bg-amber-50 text-amber-600', text: '투표 진행중' };
-      case 'CONFIRMED':
-        return { className: 'bg-green-50 text-green-600', text: '약속 확정' };
-      default:
-        return { className: 'bg-blue-50 text-blue-600', text: '시간 조율중' };
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white dark:bg-gray-950">
@@ -148,69 +133,25 @@ const ProposeMeeting = () => {
         </header>
 
         {/* 새 약속 만들기 버튼 */}
-        <button
-          onClick={() => navigate('/propose/create')}
-          className="w-full h-[80px] bg-blue-600 rounded-[24px] flex items-center justify-between px-6 shadow-xl shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all group mb-8"
-        >
-          <div className="text-left">
-            <p className="text-blue-200 text-[11px] font-bold mb-1 tracking-wider uppercase">New Meeting</p>
-            <h3 className="text-white font-black text-[17px]">새로운 약속 제안하기</h3>
-          </div>
-          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white group-hover:bg-white group-hover:text-blue-600 transition-all">
-            <Plus size={24} strokeWidth={3} />
-          </div>
-        </button>
+        <NewMeetingButton />
 
         {/* 진행 중인 약속 리스트 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock size={18} className="text-blue-600" /> 진행 중인 약속
+              <Clock size={18} className="text-blue-600 dark:text-blue-400" /> 진행 중인 약속
             </h2>
             <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">{ongoingMeetings.length}개</span>
           </div>
 
           {ongoingMeetings.length > 0 ? (
             <div className="space-y-3">
-              {ongoingMeetings.map((meeting) => {
-                const badge = getStatusBadge(meeting.status);
-
-                return (
-                  <button
-                    key={meeting.id}
-                    onClick={() => handleMeetingClick(meeting)}
-                    className="w-full bg-white dark:bg-gray-800 p-5 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-blue-100 dark:hover:border-blue-500/20 hover:shadow-lg hover:shadow-blue-50/50 dark:hover:shadow-blue-900/30 group"
-                  >
-                    <div className="text-left space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black px-2 py-1 rounded-md ${badge.className}`}>{badge.text}</span>
-                        <span className="text-[11px] font-bold text-gray-300 dark:text-gray-600">| {meeting.dday}</span>
-                      </div>
-                      <h4 className="font-black text-gray-800 dark:text-gray-200 text-[16px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {meeting.title}
-                      </h4>
-                      <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
-                        <Users size={14} />
-                        <span className="text-[12px] font-bold">{meeting.members}명 참여중</span>
-                      </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-300 dark:text-gray-600 group-hover:bg-blue-50 dark:group-hover:bg-blue-500/10 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
-                      <ChevronRight size={18} />
-                    </div>
-                  </button>
-                );
-              })}
+              {ongoingMeetings.map((meeting) => (
+                <MeetingListItem key={meeting.id} meeting={meeting} onClick={handleMeetingClick} />
+              ))}
             </div>
           ) : (
-            <div className="py-12 text-center space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-[24px] border-2 border-dashed border-gray-100 dark:border-gray-700/50">
-              <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-600 mb-2 shadow-sm">
-                <CalendarCheck size={24} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-gray-500 dark:text-gray-400 font-bold text-[13px]">현재 진행 중인 약속이 없어요.</p>
-                <p className="text-gray-400 dark:text-gray-500 text-[11px]">새로운 약속을 만들어보세요!</p>
-              </div>
-            </div>
+            <EmptyMeetingList />
           )}
         </section>
       </div>

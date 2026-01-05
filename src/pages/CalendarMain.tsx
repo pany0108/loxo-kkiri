@@ -1,11 +1,9 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
+import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, EventMountArg } from '@fullcalendar/core';
+import { DateClickArg } from '@fullcalendar/interaction';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import './CalendarMain.css';
@@ -14,7 +12,7 @@ import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { setupPushNotifications } from 'utils';
-import { DeleteRecurringModal } from 'components';
+import { DeleteRecurringModal, Calendar, SimpleDeleteModal } from 'components';
 import toast from 'react-hot-toast';
 
 dayjs.extend(isSameOrBefore);
@@ -424,11 +422,11 @@ const CalendarMain = () => {
     if (listRef.current) listRef.current.scrollTop = 0;
     setTimeout(() => {
       const calendarApi = calendarRef.current?.getApi();
-      if (calendarApi) calendarApi.updateSize();
+      calendarApi?.updateSize();
     }, 100);
   };
 
-  const handleDateClick = (arg: { dateStr: string }) => {
+  const handleDateClick = (arg: DateClickArg) => {
     executeDateSelection(arg.dateStr);
   };
 
@@ -723,79 +721,25 @@ const CalendarMain = () => {
             paddingBottom: isListVisible ? '0' : '64px',
           }}
         >
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            locale="ko"
-            height="100%"
-            dayMaxEvents={false}
-            fixedWeekCount={true}
-            contentHeight="100%"
-            handleWindowResize={true}
-            selectable={currentView !== 'dayGridMonth'}
-            selectMirror={true}
+          <Calendar
+            currentView={currentView}
+            events={allDisplayedEvents}
+            selectedDate={selectedDate}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
-            eventClassNames="cursor-pointer"
-            eventContent={renderEventContent}
-            select={handleDateSelect}
-            unselectAuto={true}
-            dragScroll={true}
-            longPressDelay={200}
-            eventDragMinDistance={5}
-            headerToolbar={{
-              left: 'title',
-              center: '',
-              right: 'myToday,myPrev,myNext',
-            }}
-            customButtons={{
-              myPrev: {
-                icon: 'chevron-left',
-                click: goToPrev,
-              },
-              myToday: {
-                text: '오늘',
-                click: () => {
-                  calendarRef.current?.getApi().today();
-                },
-              },
-              myNext: {
-                icon: 'chevron-right',
-                click: goToNext,
-              },
-            }}
-            datesSet={handleDatesSet}
-            views={{
-              dayGridMonth: {
-                titleFormat: { year: 'numeric', month: 'short' },
-                dayHeaderFormat: { weekday: 'short' },
-                dayCellContent: (args) => args.date.getDate(),
-              },
-              timeGridWeek: {
-                dayHeaderContent: renderTimeGridHeader,
-              },
-              timeGridDay: {
-                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-                dayHeaderContent: renderTimeGridHeader,
-              },
-            }}
-            slotMinTime="00:00:00"
-            slotMaxTime="24:00:00"
-            slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
-            allDayText="종일"
-            displayEventTime={false}
-            dayCellClassNames={(arg: DayCellContentArg) => {
-              const dateStr = arg.date.toLocaleDateString('en-CA');
-              return dateStr === selectedDate ? 'selected-day' : '';
-            }}
-            events={allDisplayedEvents} // [수정] 공휴일 포함된 일정 목록 전달
+            handleDateSelect={handleDateSelect}
+            handleDatesSet={handleDatesSet}
+            renderEventContent={renderEventContent}
+            renderTimeGridHeader={renderTimeGridHeader}
+            goToPrev={goToPrev}
+            goToNext={goToNext}
             eventDidMount={(info: EventMountArg) => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
                 info.el.style.setProperty('--event-color', color);
               }
             }}
+            ref={calendarRef}
           />
         </div>
 
@@ -923,33 +867,19 @@ const CalendarMain = () => {
       {isDeleteModalOpen && eventToDelete && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
-      {isSimpleDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSimpleDeleteModalOpen(false)} />
-          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={32} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">일정 삭제</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-              정말 이 일정을 삭제하시겠습니까?
-              <br />
-              삭제된 일정은 복구할 수 없습니다.
-            </p>
-            <div className="flex flex-col gap-2">
-              <button onClick={deleteEntireSchedule} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                삭제하기
-              </button>
-              <button
-                onClick={() => setIsSimpleDeleteModalOpen(false)}
-                className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SimpleDeleteModal
+        isOpen={isSimpleDeleteModalOpen}
+        onClose={() => setIsSimpleDeleteModalOpen(false)}
+        onConfirm={deleteEntireSchedule}
+        title="일정 삭제"
+        message={
+          <>
+            정말 이 일정을 삭제하시겠습니까?
+            <br />
+            삭제된 일정은 복구할 수 없습니다.
+          </>
+        }
+      />
     </div>
   );
 };

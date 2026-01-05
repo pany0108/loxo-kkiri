@@ -392,7 +392,7 @@ const AddSchedule = () => {
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full font-mono"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full"
                     />
                   </div>
                 </div>
@@ -406,7 +406,7 @@ const AddSchedule = () => {
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full font-mono"
+                      className="bg-transparent text-[15px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right w-full"
                     />
                   </div>
                 </div>
@@ -466,7 +466,7 @@ const AddSchedule = () => {
               <button
                 type="button"
                 onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                className="w-full h-[56px] bg-gray-50 border-2 border-gray-100 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 cursor-not-allowed"
+                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 cursor-not-allowed"
               >
                 <Camera size={20} />
                 <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>
@@ -480,7 +480,7 @@ const AddSchedule = () => {
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   formData.title
-                    ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
+                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
             >

@@ -3,9 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
 // [추가] Firebase 관련 import
 import toast from 'react-hot-toast';
-import { collection, addDoc, doc, onSnapshot, query, where, getDocs, arrayUnion, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { AddFriendModal } from 'components';
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
 
@@ -42,8 +43,6 @@ const CreateCalendar = () => {
 
   // [추가] 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newFriendEmail, setNewFriendEmail] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -71,55 +70,6 @@ const CreateCalendar = () => {
 
   const toggleFriend = (friendUid: string) => {
     setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
-  };
-
-  // [추가] 친구 추가 로직 (FriendList.tsx에서 가져옴)
-  const handleAddFriend = async () => {
-    if (!newFriendEmail.trim() || !user) return;
-
-    if (newFriendEmail === user.email) {
-      toast.error('자기 자신은 친구로 추가할 수 없습니다.');
-      return;
-    }
-
-    setIsAdding(true);
-    try {
-      const q = query(collection(db, 'users'), where('email', '==', newFriendEmail.trim()));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        toast.error('존재하지 않는 이메일입니다.');
-        return;
-      }
-
-      const targetUserDoc = querySnapshot.docs[0];
-      const targetUserData = targetUserDoc.data();
-
-      if (friends.some((f) => f.uid === targetUserDoc.id)) {
-        toast('이미 친구 목록에 있습니다.', { icon: '⚠️' });
-        return;
-      }
-
-      const myRef = doc(db, 'users', user.uid);
-      await updateDoc(myRef, {
-        friendsList: arrayUnion({
-          uid: targetUserDoc.id,
-          name: targetUserData.name,
-          email: targetUserData.email,
-          statusMessage: targetUserData.statusMessage || '',
-          photoURL: targetUserData.photoURL || '',
-        }),
-      });
-
-      toast.success(`${targetUserData.name}님을 친구로 추가했습니다.`);
-      setNewFriendEmail('');
-      setIsAddModalOpen(false);
-    } catch (error) {
-      console.error('친구 추가 오류:', error);
-      toast.error('친구 추가 중 오류가 발생했습니다.');
-    } finally {
-      setIsAdding(false);
-    }
   };
 
   // [추가] 검색어에 따라 친구 목록 필터링
@@ -436,54 +386,7 @@ const CreateCalendar = () => {
         </button>
       </footer>
 
-      {/* [추가] 친구 추가 모달 */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)} />
-          <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">새 친구 찾기</h3>
-            <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 주소를 정확히 입력해주세요.</p>
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
-              <input
-                type="email"
-                value={newFriendEmail}
-                onChange={(e) => setNewFriendEmail(e.target.value)}
-                enterKeyHint="send"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddFriend();
-                  }
-                }}
-                placeholder="example@email.com"
-                className="w-full bg-transparent outline-none p-3 text-[15px] font-bold dark:text-white"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="flex-1 py-3.5 rounded-[20px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold text-[14px]"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleAddFriend}
-                disabled={isAdding || !newFriendEmail.includes('@')}
-                className="flex-1 py-3.5 rounded-[20px] bg-blue-600 text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300 dark:disabled:bg-blue-800"
-              >
-                {isAdding ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <>
-                    <Check size={16} strokeWidth={3} /> 추가하기
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} />
     </div>
   );
 };

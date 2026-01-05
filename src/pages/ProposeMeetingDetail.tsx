@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { Plus, X, ChevronLeft, Calendar as CalendarIcon, Sparkles, Users, MapPin, AlignLeft, Clock } from 'lucide-react';
+import { ChevronLeft, Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal } from 'components';
 
 dayjs.extend(isSameOrAfter);
 
@@ -283,37 +284,12 @@ const ProposeMeetingDetail = () => {
         </header>
 
         {/* 약속 요약 카드 */}
-        <section className="bg-gray-50 rounded-[28px] p-6 mb-8 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[10px] font-bold text-blue-500 bg-blue-100 px-2 py-1 rounded-md">SUMMARY</span>
-          </div>
-          <h3 className="text-[18px] font-black text-gray-900 mb-2">{title}</h3>
-
-          <div className="space-y-3 mb-4">
-            {description && (
-              <div className="flex items-start gap-2.5">
-                <AlignLeft size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                <p className="text-[14px] font-medium text-gray-600 leading-relaxed whitespace-pre-wrap">{description}</p>
-              </div>
-            )}
-            {meetingLocation && (
-              <div className="flex items-start gap-2.5">
-                <MapPin size={16} className="text-gray-400 mt-0.5 shrink-0" />
-                <p className="text-[14px] font-medium text-gray-600 leading-relaxed">{meetingLocation}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 pt-4 border-t border-gray-200/60">
-            <Users size={16} className="text-gray-400" />
-            <span className="text-[13px] font-bold text-gray-600">{invitedFriends.length > 0 ? invitedFriends.map((f) => f.name).join(', ') : '초대된 친구 없음'}</span>
-          </div>
-        </section>
+        <MeetingSummaryCard title={title} description={description} location={meetingLocation} invitedFriends={invitedFriends} />
 
         {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
         <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-800">
           <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Clock size={18} className="text-blue-600" />
+            <Clock size={18} className="text-blue-600 dark:text-blue-400" />
             시간대 설정
           </h3>
           <button
@@ -326,140 +302,22 @@ const ProposeMeetingDetail = () => {
 
         {/* 날짜별 시간 설정 리스트 */}
         <div className="space-y-10">
-          {selectedDates.sort().map((dateStr: string) => {
-            const isAllDay = timeSlots[dateStr]?.[0]?.isAllDay;
-
-            return (
-              <div key={dateStr} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center justify-between mb-4 px-1">
-                  <div className="flex items-center gap-2">
-                    <CalendarIcon size={18} className="text-blue-600" />
-                    <h3 className="text-[16px] font-black text-gray-900">{dayjs(dateStr).format('MM월 DD일 (ddd)')}</h3>
-                  </div>
-
-                  {/* 종일 옵션 토글 */}
-                  <div onClick={() => handleToggleDayAllDay(dateStr)} className="flex items-center gap-2 cursor-pointer group py-1">
-                    <span className={`text-[11px] font-bold transition-colors ${isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
-                    <div
-                      className={`
-                        relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0
-                        ${isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}
-                      `}
-                    >
-                      <div
-                        className={`
-                          absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200
-                          ${isAllDay ? 'translate-x-4' : 'translate-x-0'}
-                        `}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {isAllDay ? (
-                    // 종일 선택 시 표시되는 UI
-                    <div className="w-full h-[60px] bg-emerald-50 rounded-[20px] border border-emerald-100 flex items-center justify-center gap-2 animate-in fade-in zoom-in-95 duration-200">
-                      <Sparkles size={16} className="text-emerald-500" />
-                      <span className="text-[14px] font-bold text-emerald-600">이 날은 하루 종일 가능해요!</span>
-                    </div>
-                  ) : (
-                    // 시간대별 슬롯 리스트
-                    <>
-                      {timeSlots[dateStr]?.map((slot, index) => (
-                        <div
-                          key={index}
-                          className="relative flex items-center h-[60px] bg-white rounded-[20px] shadow-sm border border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 transition-all overflow-hidden"
-                        >
-                          <div className="flex-1 flex items-center justify-center gap-2 pr-10 pl-4">
-                            <input
-                              type="time"
-                              value={slot.start}
-                              onChange={(e) => handleTimeChange(dateStr, index, 'start', e.target.value)}
-                              className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 text-center w-full min-w-[70px] p-0"
-                            />
-                            <span className="text-gray-300 font-bold shrink-0">-</span>
-                            <input
-                              type="time"
-                              value={slot.end}
-                              onChange={(e) => handleTimeChange(dateStr, index, 'end', e.target.value)}
-                              className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 text-center w-full min-w-[70px] p-0"
-                            />
-                          </div>
-
-                          {/* 슬롯 삭제 버튼 (마지막 1개 남았을 때 삭제 불가 처리 로직 필요 시 적용) */}
-                          <button
-                            onClick={() => handleDeleteSlot(dateStr, index)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors z-10"
-                            aria-label="시간대 삭제"
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* 시간대 추가 버튼 */}
-                      <button
-                        onClick={() => handleAddSlot(dateStr)}
-                        className="w-full h-[52px] border border-dashed border-gray-300 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 font-bold text-[13px] hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all active:scale-[0.99]"
-                      >
-                        <Plus size={16} strokeWidth={2.5} />
-                        시간대 추가
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {selectedDates.sort().map((dateStr: string) => (
+            <DateSlotEditor
+              key={dateStr}
+              dateStr={dateStr}
+              slots={timeSlots[dateStr]}
+              onToggleAllDay={handleToggleDayAllDay}
+              onTimeChange={handleTimeChange}
+              onDeleteSlot={handleDeleteSlot}
+              onAddSlot={handleAddSlot}
+            />
+          ))}
         </div>
       </div>
 
       {/* [추가] 시간 통일 모달 */}
-      {isSyncModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsSyncModalOpen(false)} />
-          <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">시간 일괄 설정</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-6 font-medium leading-relaxed">
-              모든 날짜의 시간을
-              <br />
-              아래 시간으로 통일합니다.
-            </p>
-
-            {/* [수정] 시간 입력 UI를 세로로 변경하여 가독성 확보 */}
-            <div className="space-y-2 mb-6">
-              <div className="flex items-center justify-between h-[50px] bg-gray-50 dark:bg-gray-700/50 rounded-[16px] px-4 border border-gray-100 dark:border-gray-700">
-                <label className="text-[14px] font-bold text-gray-500 dark:text-gray-400">시작 시간</label>
-                <input
-                  type="time"
-                  value={syncTime.start}
-                  onChange={(e) => handleSyncTimeChange('start', e.target.value)}
-                  className="bg-transparent border-none outline-none w-auto text-[14px] font-bold text-gray-900 dark:text-white text-right"
-                />
-              </div>
-              <div className="flex items-center justify-between h-[50px] bg-gray-50 dark:bg-gray-700/50 rounded-[16px] px-4 border border-gray-100 dark:border-gray-700">
-                <label className="text-[14px] font-bold text-gray-500 dark:text-gray-400">종료 시간</label>
-                <input
-                  type="time"
-                  value={syncTime.end}
-                  onChange={(e) => handleSyncTimeChange('end', e.target.value)}
-                  className="bg-transparent border-none outline-none w-auto text-[14px] font-bold text-gray-900 dark:text-white text-right"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button onClick={applySyncedTime} className="w-full py-4 bg-blue-600 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                적용하기
-              </button>
-              <button onClick={() => setIsSyncModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
 
       {/* 하단 고정 제안 발송 버튼 */}
       <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
