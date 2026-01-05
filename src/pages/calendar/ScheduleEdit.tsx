@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -53,6 +53,18 @@ const ScheduleEdit = () => {
   // [수정] location.state에 any 대신 명시적인 타입을 지정하여 타입 안정성을 높입니다.
   const eventData = location.state as EventDataState | null;
   const { myCalendars } = useCalendar();
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // --- [추가] 상태 관리 ---
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -277,7 +289,7 @@ const ScheduleEdit = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <header className="mb-8">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

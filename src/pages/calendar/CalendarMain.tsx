@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useRef, useState, useEffect, useMemo, useLayoutEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import { Loader2 } from 'lucide-react';
 import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, EventMountArg } from '@fullcalendar/core';
@@ -65,6 +65,15 @@ const CalendarMain = () => {
   // [추가] 공휴일 데이터 상태
   const [holidays, setHolidays] = useState<CalendarEvent[]>([]);
   const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
+
+  useLayoutEffect(() => {
+    // 페이지 전환 시 브라우저의 스크롤 복원 기능과 관계없이 항상 화면 최상단에서 시작하도록 강제합니다.
+    window.scrollTo(0, 0);
+    // 바텀시트 스크롤 초기화
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // [수정] Context에서 데이터 가져오기 (useEffect보다 먼저 선언)
   const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();

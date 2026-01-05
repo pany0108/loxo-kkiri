@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Clock, Sparkles, Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -28,6 +28,18 @@ interface Meeting {
  */
 const ProposeMeeting = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   const [user, setUser] = useState<any>(null);
 
@@ -120,7 +132,7 @@ const ProposeMeeting = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
-      <div className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-6 pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

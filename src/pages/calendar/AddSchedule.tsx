@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -48,6 +48,17 @@ const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   const [user, setUser] = useState<any>(null);
 
@@ -286,7 +297,7 @@ const AddSchedule = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { ChevronLeft, Send, Plus, MoreVertical } from 'lucide-react';
 
@@ -32,9 +32,20 @@ interface Message {
 const ScheduleChat = () => {
   const navigate = useNavigate();
   // URL 파라미터에서 현재 일정 ID를 가져옵니다 (추후 API 연동 시 사용)
-  useParams();
+  const { id } = useParams();
+  const location = useLocation();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // 자동 스크롤을 위한 메시지 리스트 하단 참조 Ref
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -116,7 +127,7 @@ const ScheduleChat = () => {
       </header>
 
       {/* 메시지 리스트 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {
           // 시스템 메시지 (입장/퇴장, 일정 변경 등)
           if (msg.type === 'system') {

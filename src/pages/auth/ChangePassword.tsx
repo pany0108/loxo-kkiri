@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { auth, db } from '../../firebase';
@@ -33,6 +33,18 @@ const validatePasswordLocally = (password: string, email: string) => {
 const ChangePassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // --- 상태 관리 ---
 
@@ -212,7 +224,7 @@ const ChangePassword = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-8 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-8 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-5">

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
@@ -33,6 +33,18 @@ interface FriendGroup {
  */
 const ProposeMeetingCreate = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // --- 상태 관리 ---
 
@@ -183,7 +195,7 @@ const ProposeMeetingCreate = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

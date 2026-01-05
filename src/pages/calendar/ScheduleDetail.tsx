@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
@@ -59,6 +59,18 @@ const ScheduleDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const { myCalendars } = useCalendar();
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
   const initialState = location.state as LocationState | null;
@@ -318,7 +330,7 @@ const ScheduleDetail = () => {
         )}
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">

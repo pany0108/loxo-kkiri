@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
 // [추가] Firebase 관련 import
 import toast from 'react-hot-toast';
@@ -26,6 +26,18 @@ interface FriendGroup {
 const CreateCalendar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // 로그인 유저 상태
   const [user, setUser] = useState<any>(null);
@@ -224,7 +236,7 @@ const CreateCalendar = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />

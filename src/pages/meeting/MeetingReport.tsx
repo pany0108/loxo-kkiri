@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useMemo, useLayoutEffect, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal } from 'components';
@@ -49,6 +49,18 @@ interface MeetingData {
 const MeetingReport = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
+  const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   /**
    * 확정 확인 모달의 열림 상태

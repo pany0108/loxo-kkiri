@@ -1,11 +1,23 @@
-import * as React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useLayoutEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Image as ImageIcon, FileText } from 'lucide-react';
 import { ImagePreviewModal } from 'components';
 
 const SharedMediaList = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // [수정] location.state의 타입을 명확히 하여 타입 안정성 확보
   // location.state가 any 타입으로 취급되어 발생할 수 있는 빌드 오류를 방지합니다.
@@ -47,7 +59,7 @@ const SharedMediaList = () => {
         </div>
       </div>
       {/* 콘텐츠 영역 */}
-      <div className="flex-1 px-6 pt-6 pb-12 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-6 pb-12 overflow-y-auto">
         {activeTab === 'photo' ? (
           <>
             {media.length > 0 ? (

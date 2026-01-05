@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDoc, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
@@ -36,6 +36,7 @@ const SafeAnimatePresence = AnimatePresence as React.FC<React.PropsWithChildren<
 
 const NotificationCenter = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [user, setUser] = useState<any>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -54,6 +55,14 @@ const NotificationCenter = () => {
   const iconOpacity = useTransform(y, [0, 60], [0, 1]);
   const iconScale = useTransform(y, [0, 80], [0.5, 1.2]);
   // const iconRotate = useTransform(y, [0, 100], [0, 360]);
+
+  useLayoutEffect(() => {
+    // 페이지 전환 시 브라우저의 스크롤 복원 기능과 관계없이 항상 화면 최상단에서 시작하도록 강제합니다.
+    window.scrollTo(0, 0);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // ... (useEffect 및 Firestore 관련 로직은 기존과 동일) ...
   useEffect(() => {
