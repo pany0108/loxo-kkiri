@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDoc, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus } from 'lucide-react';
+import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast, { Toast } from 'react-hot-toast';
 import { motion, AnimatePresence, AnimatePresenceProps, useMotionValue, useTransform, animate } from 'framer-motion';
@@ -113,7 +113,7 @@ const NotificationCenter = () => {
         navigate(`/profile/${notification.relatedId}`);
         return;
       }
-      if (notification.type === 'CALENDAR_INVITE') {
+      if (notification.type === 'CALENDAR_INVITE' || notification.type === 'CALENDAR_LEAVE') {
         navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
         return;
       }
@@ -329,6 +329,8 @@ const NotificationCenter = () => {
         return <FileCheck size={20} className="text-gray-500" />;
       case 'FRIEND_REQUEST':
         return <UserPlus size={20} className="text-sky-500" />;
+      case 'CALENDAR_LEAVE':
+        return <UserX size={20} className="text-gray-500" />;
       default:
         return <Bell size={20} className="text-gray-500" />;
     }
