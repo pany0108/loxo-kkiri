@@ -1,7 +1,6 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';

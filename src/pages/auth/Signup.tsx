@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
@@ -36,8 +35,6 @@ const validatePasswordLocally = (password: string, userInfo: any) => {
  * * @returns {JSX.Element} 회원가입 화면
  */
 const Signup = () => {
-  const navigate = useNavigate();
-
   // --- Refs (포커스 이동용) ---
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);

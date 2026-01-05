@@ -1,5 +1,5 @@
-import React, { useMemo, useLayoutEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useMemo, useLayoutEffect, useRef } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import { doc } from 'firebase/firestore';
@@ -32,7 +32,6 @@ interface StatusSlot {
 }
 
 const MeetingParticipantStatus = () => {
-  const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
   const location = useLocation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);

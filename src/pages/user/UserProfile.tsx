@@ -1,12 +1,13 @@
 // src/pages/UserProfile.tsx
 
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, User, Loader2, UserPlus, Check } from 'lucide-react';
+import { User, Loader2, UserPlus, Check } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useFirestoreDoc } from 'hooks';
+import { TopNav } from 'components';
 
 interface UserProfileData {
   uid: string;
@@ -93,13 +94,11 @@ const UserProfile = () => {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
-      <nav className="sticky top-0 px-6 pt-6 pb-2 flex items-center justify-between bg-gray-50/80 dark:bg-gray-950/80 backdrop-blur-md z-10">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors active:scale-90" aria-label="뒤로 가기">
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
+      <TopNav title="프로필" />
 
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 pb-32 overflow-y-auto">
+      {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-[76px] min-h-0 pb-32 overflow-y-auto">
         <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
           {userData.photoURL ? (
             <img src={userData.photoURL} alt={userData.name} className="w-full h-full object-cover" />

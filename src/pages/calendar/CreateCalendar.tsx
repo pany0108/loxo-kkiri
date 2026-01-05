@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
+import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
 // [추가] Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
@@ -8,6 +8,7 @@ import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { AddFriendModal } from 'components';
 
+import { TopNav } from 'components';
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
 
 // [추가] 친구 데이터 타입 정의
@@ -226,17 +227,9 @@ const CreateCalendar = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="새 캘린더 만들기" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />

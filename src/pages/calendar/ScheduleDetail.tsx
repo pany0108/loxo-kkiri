@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, ChevronLeft } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
@@ -10,6 +10,7 @@ import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { TopNav } from 'components';
 
 interface LocationState {
   id?: string;
@@ -329,25 +330,25 @@ const ScheduleDetail = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <ChevronLeft size={28} />
-        </button>
-        {/* [추가] 일정을 생성한 사용자에게만 수정/삭제 버튼 표시 */}
-        {auth.currentUser?.uid === data.userId && (
-          <div className="flex gap-1">
-            <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              <Edit2 size={22} />
-            </button>
-            <button onClick={handleDeleteClick} className="p-2 -mr-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-500 transition-colors">
-              <Trash2 size={22} />
-            </button>
-          </div>
-        )}
-      </nav>
+      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
+      <TopNav
+        title="일정 상세"
+        onBack={handleBack}
+        rightContent={
+          auth.currentUser?.uid === data.userId && (
+            <div className="flex items-center gap-1">
+              <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Edit2 size={22} />
+              </button>
+              <button onClick={handleDeleteClick} className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-500 transition-colors">
+                <Trash2 size={22} />
+              </button>
+            </div>
+          )
+        }
+      />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">

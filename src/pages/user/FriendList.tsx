@@ -312,7 +312,7 @@ const FriendList = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {isSelectionMode ? (
         <div className="sticky top-0 bg-gray-50/95 dark:bg-gray-950/95 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 z-40">
           <div className="flex items-center justify-between">

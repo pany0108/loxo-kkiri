@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
+import { TopNav } from 'components';
 
 dayjs.extend(isSameOrAfter);
 
@@ -287,17 +288,9 @@ const AddSchedule = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="새 일정 등록" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />

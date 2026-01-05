@@ -369,7 +369,7 @@ const ChangePassword = () => {
           </div>
 
           {/* 제출 버튼 */}
-          <div className="pt-10">
+          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <button
               type="submit"
               disabled={
@@ -396,7 +396,7 @@ const ChangePassword = () => {
             >
               {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : isResetMode ? '비밀번호 재설정하기' : '비밀번호 변경하기'}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>

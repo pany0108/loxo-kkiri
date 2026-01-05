@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import dayjs from 'dayjs';
+import dayjs from 'dayjs'; // Keep dayjs import
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { ChevronLeft, MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
 
+import { TopNav } from 'components';
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
@@ -279,17 +280,17 @@ const ScheduleEdit = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 pb-2 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-          <ChevronLeft size={28} />
-        </button>
-        <button onClick={handleSave} className="p-2 -mr-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
-          <Check size={28} strokeWidth={3} />
-        </button>
-      </nav>
+      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
+      <TopNav
+        title="일정 수정"
+        rightContent={
+          <button onClick={handleSave} className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+            <Check size={28} strokeWidth={3} />
+          </button>
+        }
+      />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <header className="mb-8">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

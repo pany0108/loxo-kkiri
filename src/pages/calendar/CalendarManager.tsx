@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Plus, Users, ChevronLeft, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
 import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal } from 'components';
+import { TopNav } from 'components';
 import { useFirestoreQuery } from 'hooks';
 
 interface CalendarData {
@@ -163,17 +164,10 @@ const CalendarManager = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      <TopNav title="캘린더 관리" />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <CalendarIcon className="text-blue-600 dark:text-blue-400 w-6 h-6" />

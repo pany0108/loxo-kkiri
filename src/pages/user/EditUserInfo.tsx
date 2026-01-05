@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
+import { Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
+import { TopNav } from 'components';
 import { auth, db } from '../../firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
@@ -246,18 +247,11 @@ const EditUserInfo = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <nav className="px-6 pt-6 flex items-center sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
-          aria-label="뒤로 가기"
-        >
-          <ChevronLeft size={28} />
-        </button>
-      </nav>
+      {/* [수정] 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
+      <TopNav title="개인 정보 수정" />
 
-      <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
+      {/* [수정] TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
+      <div className="flex-1 px-6 pt-[76px] pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
         <header className="mb-10">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -432,7 +426,7 @@ const EditUserInfo = () => {
       </div>
 
       {/* 하단 고정 저장 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleSave}
           disabled={isSaving}

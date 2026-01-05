@@ -140,7 +140,7 @@ function App() {
 
   return (
     // [수정] 전체 컨테이너의 하단 패딩을 제거합니다. 하단 safe-area는 마지막 요소가 처리합니다.
-    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <Toaster
         position="top-center"
         containerStyle={{
