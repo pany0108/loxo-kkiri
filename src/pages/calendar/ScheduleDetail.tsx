@@ -3,9 +3,10 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { ChevronLeft, MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon } from 'lucide-react';
+import { auth } from '../../firebase'; // Import auth to check current user
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
 
 interface LocationState {
@@ -27,6 +28,25 @@ interface LocationState {
   fromView?: string; // [추가] 캘린더에서 어떤 뷰에서 왔는지 식별
 }
 
+// [추가] ScheduleDetail 컴포넌트의 data 상태 타입을 정의합니다.
+interface ScheduleDetailData {
+  title: string;
+  start: dayjs.Dayjs;
+  end: dayjs.Dayjs;
+  location: string;
+  content: string;
+  color: string;
+  calendarId: string;
+  notification: string;
+  allDay: boolean;
+  attendees: AttendeeProfile[];
+  recurrence?: RecurrenceSettings;
+  files: { name: string; type: string; url?: string }[];
+  userId?: string;
+  review: string;
+  reviewImages: string[];
+}
+
 // [추가] 참석자 프로필 타입 정의
 interface AttendeeProfile {
   uid: string;
@@ -43,7 +63,7 @@ const ScheduleDetail = () => {
   // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
   const initialState = location.state as LocationState | null;
 
-  const [data, setData] = useState({
+  const [data, setData] = useState<ScheduleDetailData>({
     title: initialState?.title || '로딩 중...',
     start: initialState?.start ? dayjs(initialState.start) : dayjs(),
     end: initialState?.end ? dayjs(initialState.end) : dayjs().add(1, 'hour'),
@@ -56,6 +76,7 @@ const ScheduleDetail = () => {
     attendees: [] as AttendeeProfile[],
     recurrence: initialState?.recurrence,
     files: initialState?.files || [],
+    userId: undefined, // [추가] userId 초기값 설정
     review: initialState?.review || '',
     reviewImages: initialState?.reviewImages || [],
   });
@@ -127,6 +148,7 @@ const ScheduleDetail = () => {
           allDay: dbData.isAllDay || false,
           attendees: attendeeProfiles,
           recurrence: dbData.recurrence,
+          userId: dbData.userId, // [추가] userId 할당
           files: dbData.files || [],
           review: dbData.review || '',
           reviewImages: dbData.reviewImages || [],
@@ -283,14 +305,17 @@ const ScheduleDetail = () => {
         <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ChevronLeft size={28} />
         </button>
-        <div className="flex gap-1">
-          <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            <Edit2 size={22} />
-          </button>
-          <button onClick={handleDeleteClick} className="p-2 -mr-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-500 transition-colors">
-            <Trash2 size={22} />
-          </button>
-        </div>
+        {/* [추가] 일정을 생성한 사용자에게만 수정/삭제 버튼 표시 */}
+        {auth.currentUser?.uid === data.userId && (
+          <div className="flex gap-1">
+            <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <Edit2 size={22} />
+            </button>
+            <button onClick={handleDeleteClick} className="p-2 -mr-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-500 transition-colors">
+              <Trash2 size={22} />
+            </button>
+          </div>
+        )}
       </nav>
 
       <div className="flex-1 px-6 pt-4 pb-12 overflow-y-auto w-full">
@@ -399,12 +424,14 @@ const ScheduleDetail = () => {
           {/* 공유 일정 채팅/미디어 */}
           {isShared && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-2">
                   <MessageCircle size={18} className="text-blue-600 dark:text-blue-400" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
-                  {data.attendees.map((attendee) => (
+                  {' '}
+                  {/* [수정] attendee 타입 명시 */}
+                  {data.attendees.map((attendee: AttendeeProfile) => (
                     <div
                       key={attendee.uid}
                       title={attendee.name}

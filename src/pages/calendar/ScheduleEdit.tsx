@@ -385,8 +385,8 @@ const ScheduleEdit = () => {
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
-                      onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right font-mono"
+                      onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
                     />
                   </div>
                 </div>
@@ -399,8 +399,8 @@ const ScheduleEdit = () => {
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
-                      onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-gray-200 outline-none text-right font-mono"
+                      onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
                     />
                   </div>
                 </div>
