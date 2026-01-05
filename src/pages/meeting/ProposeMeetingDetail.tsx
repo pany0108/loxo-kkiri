@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -48,6 +48,18 @@ interface TimeSlot {
 const ProposeMeetingDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
+   */
+  useLayoutEffect(() => {
+    // 페이지 전환 시 브라우저의 스크롤 복원 기능과 관계없이 항상 화면 최상단에서 시작하도록 강제합니다.
+    window.scrollTo(0, 0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   /**
    * 라우터 상태로부터 약속 기본 정보를 불러옵니다.
@@ -271,7 +283,7 @@ const ProposeMeetingDetail = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
