@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ChevronLeft, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal } from 'components';
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../firebase';

@@ -3,7 +3,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import { Toaster } from 'react-hot-toast';
-import BottomNav from './components/BottomNav';
+import { BottomNav } from 'components';
 import {
   Login,
   Signup,

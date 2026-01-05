@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2, Check } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, addDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db } from '../../firebase';
 
 interface Friend {
   uid: string;

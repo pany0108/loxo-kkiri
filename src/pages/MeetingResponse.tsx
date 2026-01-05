@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Plus, Sparkles, Clock, Calendar as CalendarIcon, MapPin, AlignLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { db, auth } from '../firebase';
