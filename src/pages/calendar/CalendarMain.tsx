@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
-import { Plus, ChevronDown, Check, X, Settings, User, Users, Bell, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, EventMountArg } from '@fullcalendar/core';
 import { DateClickArg } from '@fullcalendar/interaction';
 import dayjs from 'dayjs';
@@ -12,7 +12,7 @@ import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { setupPushNotifications } from 'utils';
-import { DeleteRecurringModal, Calendar, SimpleDeleteModal } from 'components';
+import { DeleteRecurringModal, Calendar, SimpleDeleteModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
 import toast from 'react-hot-toast';
 
 dayjs.extend(isSameOrBefore);
@@ -591,124 +591,37 @@ const CalendarMain = () => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative">
-      <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
-        <div className="flex items-center justify-between pb-2">
-          <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
-            <button onClick={() => setIsCalListOpen(!isCalListOpen)} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight truncate text-left">{activeCalendar?.name || '캘린더 선택'}</h1>
-              <ChevronDown size={20} className={`text-gray-400 transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
-            </button>
-            <p className="text-[12px] text-gray-400 font-bold mt-1 ml-0.5 truncate">
-              {activeCalendar ? (activeCalendar.members.length === 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
-            </p>
-
-            {isCalListOpen && (
-              <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                {myCalendars.map((cal: CalendarType) => (
-                  <button
-                    key={cal.id}
-                    onClick={() => {
-                      setActiveCalendar(cal);
-                      setIsCalListOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                      activeCalendar?.id === cal.id
-                        ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="text-[14px] font-bold ">{cal.name}</span>
-                      {cal.members.length > 1 && <span className="text-[10px] opacity-70 dark:opacity-50 mt-0.5">멤버: {cal.members.length}명</span>}
-                    </div>
-                    {activeCalendar?.id === cal.id && <Check size={16} />}
-                  </button>
-                ))}
-                <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
-                <button
-                  onClick={() => {
-                    setIsCalListOpen(false);
-                    navigate('/calendar-manager');
-                  }}
-                  className="w-full flex items-center gap-2 p-3.5 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-[18px] transition-colors"
-                >
-                  <Settings size={16} /> 캘린더 관리
-                </button>
-                <button
-                  onClick={() => navigate('/create-calendar')}
-                  className="w-full flex items-center gap-2 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
-                >
-                  <Plus size={16} /> 새 캘린더 만들기
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 sm:gap-3">
-            {/* [추가] 알림 아이콘 */}
-            <button onClick={() => navigate('/notifications')} className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full">
-              <Bell size={22} />
-              {hasUnread && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />}
-            </button>
-
-            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[14px]">
-              {[
-                { id: 'dayGridMonth', label: '월' },
-                { id: 'timeGridWeek', label: '주' },
-                { id: 'timeGridDay', label: '일' },
-              ].map((view) => (
-                <button
-                  key={view.id}
-                  onClick={() => handleViewChange(view.id)}
-                  className={`px-3 py-1.5 text-[12px] font-bold rounded-[10px] transition-all duration-200 ${
-                    currentView === view.id ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {view.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </header>
+      <CalendarHeader
+        activeCalendar={activeCalendar}
+        myCalendars={myCalendars}
+        isCalListOpen={isCalListOpen}
+        onCalListToggle={() => setIsCalListOpen(!isCalListOpen)}
+        onCalendarChange={(cal) => {
+          setActiveCalendar(cal);
+          setIsCalListOpen(false);
+        }}
+        onManageClick={() => {
+          setIsCalListOpen(false);
+          navigate('/calendar-manager');
+        }}
+        onCreateClick={() => navigate('/create-calendar')}
+        dropdownRef={dropdownRef}
+        hasUnreadNotifications={hasUnread}
+        onNotificationsClick={() => navigate('/notifications')}
+        currentView={currentView}
+        onViewChange={handleViewChange}
+      />
 
       <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         {/* [추가] 연/월 선택 팝업 */}
-        {isDatePickerOpen && (
-          <div
-            ref={datePickerRef}
-            className="absolute top-[72px] left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-center justify-between mb-4 px-2">
-              <button onClick={() => setPickerYear((y) => y - 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">{pickerYear}년</span>
-              <button onClick={() => setPickerYear((y) => y + 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {Array.from({ length: 12 }).map((_, i) => {
-                const calendarApi = calendarRef.current?.getApi();
-                const currentDate = calendarApi ? calendarApi.getDate() : new Date();
-                const isCurrentSelection = dayjs(currentDate).year() === pickerYear && dayjs(currentDate).month() === i;
-
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleMonthSelect(i)}
-                    className={`p-3 rounded-lg text-sm font-bold transition-colors ${
-                      isCurrentSelection ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-                    }`}
-                  >
-                    {i + 1}월
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        <DatePickerPopup
+          isOpen={isDatePickerOpen}
+          datePickerRef={datePickerRef}
+          pickerYear={pickerYear}
+          onYearChange={setPickerYear}
+          onMonthSelect={handleMonthSelect}
+          currentDate={calendarRef.current?.getApi().getDate() || new Date()}
+        />
         <div
           onTouchStart={onCalendarTouchStart}
           onTouchMove={onCalendarTouchMove}
@@ -744,124 +657,35 @@ const CalendarMain = () => {
         </div>
 
         {/* 바텀시트 */}
-        <div
-          ref={listRef}
+        <EventListSheet
+          isVisible={isListVisible && currentView === 'dayGridMonth'}
+          onClose={() => {
+            setIsListVisible(false);
+            setSelectedDate(null);
+          }}
+          selectedDate={selectedDate}
+          events={allDisplayedEvents}
+          onListItemClick={handleListItemClick}
+          isJiggleMode={isJiggleMode}
+          jigglingItemId={jigglingItemId}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onDeleteClick={handleDeleteClick}
+          listRef={listRef}
           onTouchStart={onSheetTouchStart}
           onTouchMove={onSheetTouchMove}
           onTouchEnd={onSheetTouchEnd}
-          className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-800 z-30 transition-transform duration-300 ease-sheet-ease border-t border-gray-100 dark:border-gray-700 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px] ${
-            isListVisible && currentView === 'dayGridMonth' ? 'translate-y-0' : 'translate-y-full'
-          }`}
-          style={{ height: '50%' }}
-        >
-          <div className="w-full flex justify-center pt-3 pb-1" onClick={() => setIsListVisible(false)}>
-            <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full" />
-          </div>
-
-          <div className="flex items-center justify-between px-6 pt-2 pb-4 bg-white dark:bg-gray-800">
-            <div className="flex items-center gap-2">
-              <h3 className="text-[16px] font-black text-gray-900 dark:text-white">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
-            </div>
-            <button
-              onClick={() => {
-                setIsListVisible(false);
-                setSelectedDate(null);
-              }}
-              className="p-2 -mr-2 text-gray-300 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div
-            className="px-6 pb-24 overflow-y-auto h-full"
-            onClick={() => {
-              if (isJiggleMode) {
-                exitJiggleMode();
-              }
-            }}
-          >
-            <div className="space-y-3">
-              {allDisplayedEvents
-                .filter((event: CalendarEvent) => {
-                  if (!selectedDate) return false;
-                  // [수정] 공휴일(calendarId === 'holidays')은 리스트에 표시하지 않음
-                  if (event.calendarId === 'holidays') return false;
-                  return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
-                })
-                .map((event: CalendarEvent, index: number) => {
-                  const originalId = event.originalId || event.id!;
-                  return (
-                    <div
-                      key={`${originalId}-${index}`}
-                      onPointerDown={() => handlePointerDown(event)}
-                      onPointerUp={handlePointerUp}
-                      onPointerLeave={handlePointerUp}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isJiggleMode) {
-                          exitJiggleMode();
-                          return;
-                        }
-                        handleListItemClick(event);
-                      }}
-                      className={`relative bg-white dark:bg-gray-800/50 p-5 rounded-[24px] border border-gray-100 dark:border-gray-700/50 shadow-sm active:scale-[0.98] transition-all cursor-pointer group hover:shadow-md overflow-hidden ${
-                        isJiggleMode ? 'jiggle-animation' : ''
-                      }`}
-                    >
-                      {isJiggleMode && jigglingItemId === event.id && (
-                        <button
-                          onClick={(e) => handleDeleteClick(event, e)}
-                          className="absolute bottom-4 right-4 w-9 h-9 bg-red-500 text-white rounded-full flex items-center justify-center z-20 shadow-lg animate-in zoom-in-95"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                      <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#3b82f6' }} />
-
-                      <div className="pl-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-300 rounded-[8px]">
-                            {event.allDay ? '종일' : `${dayjs(event.start).format('A h:mm')} - ${event.end ? dayjs(event.end).format('A h:mm') : ''}`}
-                          </span>
-
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                            {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
-                            <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
-                          </div>
-                        </div>
-
-                        <h4 className="text-[15px] font-black text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 transition-colors truncate">{event.title}</h4>
-
-                        {event.location && <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">{event.location}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              {allDisplayedEvents.filter((e: CalendarEvent) => dayjs(e.start).format('YYYY-MM-DD') === selectedDate && e.calendarId !== 'holidays').length === 0 && (
-                <div className="py-10 text-center text-gray-400 dark:text-gray-500 text-[13px] font-medium">일정이 없습니다.</div>
-              )}
-            </div>
-          </div>
-        </div>
+          exitJiggleMode={exitJiggleMode}
+        />
       </main>
 
-      <button
+      <AddScheduleFAB
         onClick={() => {
           const targetDate = selectedDate || new Date().toISOString().split('T')[0];
-          navigate('/add-schedule', {
-            state: {
-              start: targetDate,
-              end: targetDate,
-              allDay: true,
-              calendarId: activeCalendar?.id, // [수정] 활성 캘린더 ID 전달
-            },
-          });
+          navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
         }}
-        className="absolute right-6 bottom-6 w-[56px] h-[56px] bg-gray-900 dark:bg-blue-500 text-white rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.3)] flex items-center justify-center z-40 active:scale-90 transition-transform hover:bg-black"
-      >
-        <Plus size={24} strokeWidth={3} />
-      </button>
+      />
 
       {/* [추가] 삭제 관련 모달 */}
       {isDeleteModalOpen && eventToDelete && (
