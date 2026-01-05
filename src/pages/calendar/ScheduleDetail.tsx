@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
@@ -8,6 +8,8 @@ import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDele
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 interface LocationState {
   id?: string;
@@ -182,7 +184,7 @@ const ScheduleDetail = () => {
   const isPastEvent = dayjs().startOf('day').isAfter(data.end);
 
   // [추가] 뒤로가기 핸들러. 일정의 월로 캘린더를 이동시킵니다.
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (data.start) {
       // [수정] 뒤로 갈 때, 원래 있던 뷰(주/일) 정보도 함께 전달
       navigate('/calendar', {
@@ -194,7 +196,22 @@ const ScheduleDetail = () => {
     } else {
       navigate(-1); // Fallback
     }
-  };
+  }, [data.start, initialState?.fromView, navigate]);
+
+  // [추가] 안드로이드 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    const listenerPromise = CapacitorApp.addListener('backButton', () => {
+      handleBack();
+    });
+
+    return () => {
+      listenerPromise.then((listener: PluginListenerHandle) => listener.remove());
+    };
+  }, [handleBack]);
 
   const handleDeleteClick = async () => {
     // 1. 반복 일정이 아니면 바로 삭제 컨펌
