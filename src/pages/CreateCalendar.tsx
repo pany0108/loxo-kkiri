@@ -276,25 +276,25 @@ const CreateCalendar = () => {
 
       <div className="flex-1 px-6 pt-4 overflow-y-auto w-full">
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            새로운 <span className="text-blue-600">캘린더</span>를<br />
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            새로운 <span className="text-blue-600 dark:text-blue-400">캘린더</span>를<br />
             만들어볼까요?
           </h2>
         </header>
 
         <div className="space-y-8">
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 이름</label>
-            <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all shadow-sm">
-              <PenLine size={20} className="text-gray-300 mr-4" />
+            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">캘린더 이름</label>
+            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
+              <PenLine size={20} className="text-gray-300 dark:text-gray-600 mr-4" />
               <input
                 value={calName}
                 onChange={(e) => setCalName(e.target.value)}
                 placeholder="캘린더 이름을 입력해주세요"
-                className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 placeholder:text-gray-400/80"
+                className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-400/80 dark:placeholder:text-gray-500"
               />
             </div>
           </section>
@@ -321,12 +321,14 @@ const CreateCalendar = () => {
           <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <Users size={18} className="text-gray-400" />
-                <label className="text-[13px] font-black text-gray-400">공유할 친구 선택</label>
+                <Users size={18} className="text-gray-400 dark:text-gray-500" />
+                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">공유할 친구 선택</label>
               </div>
               <span
                 className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
-                  selectedFriendUids.length > 0 ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'
+                  selectedFriendUids.length > 0
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                 }`}
               >
                 {selectedFriendUids.length}명 선택됨
@@ -334,8 +336,8 @@ const CreateCalendar = () => {
             </div>
             {/* [추가] 친구 검색 입력란 */}
             <div className="relative">
-              <div className="flex items-center h-[52px] bg-gray-50 rounded-[20px] px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white">
-                <Search size={18} className="text-gray-400 mr-3 shrink-0" />
+              <div className="flex items-center h-[52px] bg-gray-50 dark:bg-gray-800/50 rounded-[20px] px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white dark:focus-within:bg-gray-800">
+                <Search size={18} className="text-gray-400 dark:text-gray-600 mr-3 shrink-0" />
                 <input
                   type="text"
                   value={friendSearchTerm}
@@ -349,7 +351,7 @@ const CreateCalendar = () => {
             {groupedAndFilteredFriends.length > 0 ? (
               groupedAndFilteredFriends.map((group) => (
                 <div key={group.id} className="mb-4">
-                  <h4 className="text-xs font-bold text-gray-400 mb-2 px-1">{group.name}</h4>
+                  <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 px-1">{group.name}</h4>
                   <div className="grid grid-cols-2 gap-3">
                     {group.friends.map((friend) => {
                       const isSelected = selectedFriendUids.includes(friend.uid);
@@ -361,20 +363,20 @@ const CreateCalendar = () => {
                             relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
                             ${
                               isSelected
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100'
-                                : 'bg-white border-gray-100 text-gray-600 hover:border-blue-100 hover:bg-gray-50'
+                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 dark:shadow-blue-900/50'
+                                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-transparent text-gray-600 dark:text-gray-300 hover:border-blue-100 dark:hover:border-blue-900/30 hover:bg-gray-50 dark:hover:bg-gray-700'
                             }
                           `}
                         >
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
+                              isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400'
                             }`}
                           >
                             {friend.name[0]}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>{friend.name}</span>
+                            <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{friend.name}</span>
                           </div>
                           {isSelected && (
                             <div className="absolute top-3 right-3 text-white">
@@ -389,16 +391,16 @@ const CreateCalendar = () => {
               ))
             ) : (
               <div className="py-10 text-center">
-                <p className="text-gray-400 text-sm font-bold">검색 결과가 없습니다.</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">검색 결과가 없습니다.</p>
               </div>
             )}
 
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="w-full p-4 rounded-[20px] border-2 border-dashed border-gray-200 text-gray-400 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 hover:border-blue-200 hover:text-blue-500 transition-all active:scale-[0.98]"
+              className="w-full p-4 rounded-[20px] border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-blue-200 dark:hover:border-blue-600/50 hover:text-blue-500 dark:hover:text-blue-400 transition-all active:scale-[0.98]"
             >
-              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
                 <UserPlus size={20} />
               </div>
               <span className="text-[13px] font-bold">새 친구 초대</span>
@@ -407,16 +409,20 @@ const CreateCalendar = () => {
         </div>
       </div>
 
-      <footer className="shrink-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="mb-3 text-center h-5">
-          {finalName && <p className="text-[13px] font-bold text-blue-600 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
+          {finalName && <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
         </div>
         <button
           disabled={isSubmitDisabled}
           onClick={handleSubmit}
           className={`
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${!isSubmitDisabled ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}
+            ${
+              !isSubmitDisabled
+                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+            }
           `}
         >
           {isSubmitting ? (
