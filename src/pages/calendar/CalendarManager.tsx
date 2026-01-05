@@ -184,14 +184,14 @@ const CalendarManager = () => {
               <div
                 key={cal.id}
                 onClick={() => handleSwitch(cal.id)}
-                className="group relative w-full bg-white dark:bg-gray-800 p-5 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-start justify-between active:scale-[0.98] transition-all hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-lg hover:shadow-blue-50/20 dark:hover:shadow-blue-900/30 cursor-pointer"
+                className="group relative w-full bg-white dark:bg-gray-800 p-5 pr-3 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-lg hover:shadow-blue-50/20 dark:hover:shadow-blue-900/30 cursor-pointer"
               >
                 <div className="flex gap-4">
                   <div className="w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: cal.color || '#3b82f6' }}>
                     <CalendarIcon size={20} />
                   </div>
 
-                  <div className="flex flex-col pt-0.5 min-w-0">
+                  <div className="flex flex-col justify-center pt-0.5 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-[16px] font-black text-gray-900 dark:text-white leading-none truncate">{cal.name}</h4>
                       {cal.isDefault && (
@@ -208,7 +208,7 @@ const CalendarManager = () => {
                     setCalendarToEdit(cal);
                     setIsEditModalOpen(true);
                   }}
-                  className="p-2 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
+                  className="p-4 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
                   title="수정"
                 >
                   <Settings size={18} />
@@ -218,7 +218,7 @@ const CalendarManager = () => {
 
             <button
               onClick={() => navigate('/create-calendar')}
-              className="w-full h-[80px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[24px] flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-gray-500 hover:border-blue-300 dark:hover:border-blue-500/50 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.98]"
+              className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[24px] flex flex-col items-center justify-center gap-2 text-gray-400 dark:text-gray-500 hover:border-blue-300 dark:hover:border-blue-500/50 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.98]"
             >
               <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center transition-colors">
                 <Plus size={18} />
