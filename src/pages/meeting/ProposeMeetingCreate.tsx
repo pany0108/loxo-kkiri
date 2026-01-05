@@ -51,7 +51,7 @@ const ProposeMeetingCreate = () => {
   // 약속 기본 정보
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
+  const [meetingLocation, setMeetingLocation] = useState('');
 
   // [수정] 친구 목록 DB 연동
   const [user, setUser] = useState<any>(null);
@@ -156,12 +156,38 @@ const ProposeMeetingCreate = () => {
     }
   };
 
+  interface GroupedFriends {
+    id: string;
+    name: string;
+    friends: Friend[];
+  }
+
   /**
    * 친구 초대 토글 핸들러
    * @param {Friend} friend - 선택한 친구 객체
    */
   const toggleFriend = (friend: Friend) => {
     setInvitedFriends((prev) => (prev.find((f) => f.id === friend.id) ? prev.filter((f) => f.id !== friend.id) : [...prev, friend]));
+  };
+
+  /**
+   * [추가] 그룹 단위 친구 초대 토글 핸들러
+   * @param {GroupedFriends} group - 선택한 그룹 객체
+   */
+  const toggleGroup = (group: GroupedFriends) => {
+    const groupFriendIds = new Set(group.friends.map((f) => f.id));
+    const invitedFriendIds = new Set(invitedFriends.map((f) => f.id));
+
+    const allInGroupAreInvited = group.friends.length > 0 && group.friends.every((f) => invitedFriendIds.has(f.id));
+
+    if (allInGroupAreInvited) {
+      // 그룹의 모든 친구가 이미 초대된 경우, 그룹 전체를 초대 해제합니다.
+      setInvitedFriends((prev) => prev.filter((f) => !groupFriendIds.has(f.id)));
+    } else {
+      // 그룹의 일부 또는 아무도 초대되지 않은 경우, 아직 초대되지 않은 친구들만 추가합니다.
+      const friendsToAdd = group.friends.filter((f) => !invitedFriendIds.has(f.id));
+      setInvitedFriends((prev) => [...prev, ...friendsToAdd]);
+    }
   };
 
   /**
@@ -173,7 +199,7 @@ const ProposeMeetingCreate = () => {
     const calendarName = `나와 ${invitedFriends.map((f) => f.name).join(', ')}의 약속`;
 
     navigate('/propose/detail', {
-      state: { title, description, location, invitedFriends, selectedDates, calendarName },
+      state: { title, description, location: meetingLocation, invitedFriends, selectedDates, calendarName },
     });
   };
 
@@ -211,12 +237,18 @@ const ProposeMeetingCreate = () => {
           <MeetingInfoForm
             title={title}
             description={description}
-            location={location}
+            location={meetingLocation}
             onTitleChange={setTitle}
             onDescriptionChange={setDescription}
-            onLocationChange={setLocation}
+            onLocationChange={setMeetingLocation}
           />
-          <FriendSelectorForMeeting groupedFriends={groupedFriends} invitedFriends={invitedFriends} onToggleFriend={toggleFriend} />
+          <FriendSelectorForMeeting
+            groupedFriends={groupedFriends}
+            invitedFriends={invitedFriends}
+            allFriends={friendsList}
+            onToggleFriend={toggleFriend}
+            onToggleGroup={toggleGroup}
+          />
           <ProposalCalendar
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}

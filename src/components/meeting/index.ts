@@ -19,3 +19,4 @@ export { default as SchedulePopup } from './SchedulePopup';
 export { default as ReportHeader } from './ReportHeader';
 export { default as ReportSlotCard } from './ReportSlotCard';
 export { default as ReportActions } from './ReportActions';
+export { default as FriendListPopup } from './FriendListPopup';
