@@ -271,14 +271,14 @@ const ProposeMeetingDetail = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-40 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            세부 <span className="text-blue-600">시간</span>을<br />
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            세부 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
             설정해볼까요?
           </h2>
         </header>
@@ -287,7 +287,7 @@ const ProposeMeetingDetail = () => {
         <MeetingSummaryCard title={title} description={description} location={meetingLocation} invitedFriends={invitedFriends} />
 
         {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
-        <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-700/50">
           <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
             <Clock size={18} className="text-blue-600 dark:text-blue-400" />
             시간대 설정
@@ -320,10 +320,10 @@ const ProposeMeetingDetail = () => {
       <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
 
       {/* 하단 고정 제안 발송 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleFinalConfirm}
-          className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           <span>약속 제안 발송하기</span>
           <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[12px] font-bold">{Object.values(timeSlots).flat().length}개 슬롯</span>

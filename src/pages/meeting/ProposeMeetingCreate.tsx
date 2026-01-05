@@ -183,14 +183,14 @@ const ProposeMeetingCreate = () => {
         </button>
       </nav>
 
-      <div className="flex-1 px-6 pt-4 pb-32 overflow-y-auto w-full">
+      <div className="flex-1 px-6 pt-4 overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
+            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3] tracking-tight">
-            어떤 <span className="text-blue-600">약속</span>을<br />
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+            어떤 <span className="text-blue-600 dark:text-blue-400">약속</span>을<br />
             만들어볼까요?
           </h2>
         </header>
@@ -230,13 +230,17 @@ const ProposeMeetingCreate = () => {
       )}
 
       {/* 하단 고정 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleNext}
           disabled={!isValid}
           className={`
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center
-            ${isValid ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}
+            ${
+              isValid
+                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+            }
           `}
         >
           {selectedDates.length > 0 ? `다음 단계로 (${selectedDates.length}일 선택)` : '날짜를 선택해주세요'}
