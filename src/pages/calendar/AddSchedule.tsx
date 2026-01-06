@@ -6,7 +6,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
 import { RecurrenceOptions, RecurrenceSettings } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
 import { TopNav } from 'components';

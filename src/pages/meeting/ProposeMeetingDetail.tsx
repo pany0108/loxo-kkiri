@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav } from 'components';
 
 /**

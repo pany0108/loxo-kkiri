@@ -5,7 +5,7 @@ import { Contacts } from '@capacitor-community/contacts'; // Only Contacts impor
 import { Capacitor } from '@capacitor/core';
 import toast from 'react-hot-toast';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 
 interface Friend {
   uid: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import toast from 'react-hot-toast';
 import { signOut } from 'firebase/auth';
 import dayjs from 'dayjs';

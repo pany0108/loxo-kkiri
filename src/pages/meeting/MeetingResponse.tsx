@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
 import { useFirestoreDoc } from 'hooks';
 import toast from 'react-hot-toast';

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal, TopNav } from 'components';
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { useFirestoreDoc } from 'hooks';
 import dayjs from 'dayjs';
 

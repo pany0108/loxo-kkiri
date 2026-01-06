@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import { doc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { useFirestoreDoc } from 'hooks';
 import { TopNav } from 'components';
 

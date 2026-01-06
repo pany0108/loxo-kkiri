@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, query, where, onSnapshot, doc, updateDoc, writeBatch, getDoc, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast, { Toast } from 'react-hot-toast';

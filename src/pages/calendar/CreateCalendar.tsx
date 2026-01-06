@@ -4,7 +4,7 @@ import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Searc
 // Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { db, auth } from 'firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AddFriendModal, AddFromContactsModal, FriendListPopup } from 'components';
 

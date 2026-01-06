@@ -2,7 +2,7 @@ import React, { useState, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
-import { auth, db } from '../../firebase';
+import { auth, db } from 'firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from 'contexts';
@@ -82,12 +82,6 @@ const MyProfile = () => {
     }
   };
 
-  // [주석 처리] Firebase Storage 유료 플랜 필요로 기능 개발 보류
-  // const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => { ... }
-  // const fileInputRef = useRef<HTMLInputElement>(null);
-  // const [isUploading, setIsUploading] = useState(false);
-  // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
   /**
    * 로그아웃 핸들러
    * Firebase 인증 세션을 종료하고 로그인 화면으로 이동합니다.
@@ -132,20 +126,11 @@ const MyProfile = () => {
         <section className="bg-white dark:bg-gray-800 p-6 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center gap-5 shadow-sm">
           <div className="relative shrink-0">
             <div className="w-[88px] h-[88px] bg-gray-100 rounded-[32px] flex items-center justify-center text-white shadow-lg border-4 border-white dark:border-gray-800 overflow-hidden">
-              {userData?.photoURL ? (
-                <img src={userData.photoURL} alt={userData.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  <User size={40} strokeWidth={2.5} />
-                </div>
-              )}
+              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <User size={40} strokeWidth={2.5} />
+              </div>
             </div>
-            <button
-              onClick={() => toast('프로필 사진 변경 기능은 준비중입니다.')}
-              className="absolute -bottom-1 -right-1 w-10 h-10 flex items-center justify-center bg-gray-900 dark:bg-gray-700 rounded-full text-white shadow-md border-2 border-white dark:border-gray-800 active:scale-90"
-            >
-              <Camera size={16} />
-            </button>
+            {/* 프로필 사진 변경 기능 (개발 예정) */}
           </div>
 
           <div className="flex-1 min-w-0">
