@@ -153,11 +153,11 @@ const EditUserInfo = () => {
   const handleSave = async () => {
     if (!auth.currentUser) return;
 
-    // [추가] 휴대폰 번호가 변경되었는데 인증되지 않았다면 저장 방지
-    if (formData.phone !== originalPhone && !isVerified) {
-      toast.error('변경하신 휴대폰 번호를 인증해주세요.');
-      return;
-    }
+    // [임시] 휴대폰 인증 비활성화
+    // if (formData.phone !== originalPhone && !isVerified) {
+    //   toast.error('변경하신 휴대폰 번호를 인증해주세요.');
+    //   return;
+    // }
 
     setIsSaving(true);
 
@@ -295,7 +295,24 @@ const EditUserInfo = () => {
           </section>
 
           {/* 휴대폰 번호 */}
+          {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
           <section className="space-y-3">
+            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">휴대폰 번호</label>
+            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+              <Smartphone size={20} className="text-gray-300 dark:text-gray-600 mr-4" />
+              <input
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                value={formData.phone}
+                placeholder="010-0000-0000"
+                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white"
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </section>
+          {/* <section className="space-y-3"> // 기존 인증 UI 주석
             <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
             <div className="flex gap-2">
               <div
@@ -374,7 +391,7 @@ const EditUserInfo = () => {
                 </button>
               </div>
             )}
-          </section>
+          </section> */}
 
           {/* 생년월일 */}
           <section className="space-y-3">
@@ -429,12 +446,12 @@ const EditUserInfo = () => {
       <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving} // [임시] 휴대폰 인증 비활성화
           className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
-            isSaving || (formData.phone !== originalPhone && !isVerified)
+            isSaving
               ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
               : 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-          }`}
+          }`} // [임시] 휴대폰 인증 비활성화: || (formData.phone !== originalPhone && !isVerified)
         >
           {isSaving ? (
             <Loader2 className="w-5 h-5 animate-spin" />

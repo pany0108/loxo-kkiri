@@ -41,8 +41,8 @@ const SignupSocial = () => {
   });
 
   const [formData, setFormData] = useState({ phone: '', birthDate: '', authCode: '' });
-  const [isAuthSent, setIsAuthSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+  const [isAuthSent, setIsAuthSent] = useState(false); // [임시] 휴대폰 인증 비활성화
+  const [isVerified, setIsVerified] = useState(true); // [임시] 휴대폰 인증 비활성화 (원래 false)
   const [isLoading, setIsLoading] = useState(false);
   const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
   const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
@@ -191,7 +191,7 @@ const SignupSocial = () => {
    * - 비밀번호 필드에서 한글 입력 방지 (IME 조합 차단)
    * - Enter 키 입력 시 다음 필드로 포커스 이동
    */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null>, isPasswordField: boolean = false) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null> | null, isPasswordField: boolean = false) => {
     if (isPasswordField) {
       if (e.nativeEvent.isComposing || e.key === 'Process') {
         e.preventDefault();
@@ -305,10 +305,10 @@ const SignupSocial = () => {
 
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
         <div className="mb-12 text-left">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 leading-[1.3]">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3]">
             반가워요,
             <span className="text-blue-600">
               {lastName}
@@ -323,8 +323,7 @@ const SignupSocial = () => {
             {/* 생년월일 입력 */}
             <div className="group">
               {/* [추가] 양력/음력 선택 토글 */}
-              <div className="flex items-center justify-between mb-2 px-1 h-6">
-                <label className="text-[13px] font-black text-gray-400">생년월일</label>
+              <div className="flex items-center justify-end mb-2 px-1 h-6">
                 <div className="flex items-center gap-2">
                   {isLunar && (
                     <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
@@ -332,30 +331,34 @@ const SignupSocial = () => {
                         type="checkbox"
                         checked={isLeapMonth}
                         onChange={(e) => setIsLeapMonth(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                        className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
                       />
-                      <span className="text-[11px] font-bold text-gray-500">윤달</span>
+                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">윤달</span>
                     </label>
                   )}
-                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                     <button
                       type="button"
                       onClick={() => setIsLunar(false)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        !isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                      }`}
                     >
                       양력
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsLunar(true)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                      }`}
                     >
                       음력
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input
                   ref={birthDateRef}
@@ -365,7 +368,7 @@ const SignupSocial = () => {
                   inputMode="numeric"
                   value={formData.birthDate}
                   placeholder="YYYY/MM/DD"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, phoneRef)}
                   required
@@ -375,7 +378,24 @@ const SignupSocial = () => {
             </div>
 
             {/* 휴대폰 인증 */}
-            <div className="space-y-3">
+            {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
+            <div className="group relative">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                <Smartphone size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+                <input
+                  ref={phoneRef}
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={formData.phone}
+                  placeholder="010-0000-0000"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            {/* <div className="space-y-3"> // 기존 인증 UI 주석
               <label className="block text-[13px] font-black text-gray-400 ml-1">휴대폰 인증</label>
               <div className="flex gap-2">
                 <div
@@ -415,7 +435,6 @@ const SignupSocial = () => {
                 </button>
               </div>
 
-              {/* 인증번호 입력 (발송 후 노출) */}
               {isAuthSent && !isVerified && (
                 <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
                   <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
@@ -442,7 +461,7 @@ const SignupSocial = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* [수정] 버튼을 form 내부로 이동 */}
@@ -450,8 +469,11 @@ const SignupSocial = () => {
             <button
               type="submit"
               disabled={isLoading || !isVerified}
-              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-              ${isVerified ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]' : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'}`}
+              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
+                isVerified
+                  ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                  : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
+              }`}
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '슈퍼 스케줄러 시작하기'}
             </button>

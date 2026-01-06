@@ -58,8 +58,8 @@ const Signup = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isAuthSent, setIsAuthSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+  const [isAuthSent, setIsAuthSent] = useState(false); // [임시] 휴대폰 인증 비활성화
+  const [isVerified, setIsVerified] = useState(true); // [임시] 휴대폰 인증 비활성화 (원래 false)
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
@@ -317,7 +317,7 @@ const Signup = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
-          <h2 className="text-[28px] font-black text-gray-900 leading-[1.2] tracking-tight">
+          <h2 className="text-[28px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             새로운 시작, <br />
             <span className="text-blue-600">회원가입을 시작할까요?</span>
           </h2>
@@ -328,8 +328,8 @@ const Signup = () => {
             {/* 이메일 입력 */}
             <div className="group relative">
               <div
-                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
-                  errors.email ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.email ? 'border-red-400 bg-white dark:bg-gray-900' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
                 <Mail size={20} className={`${errors.email ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
@@ -339,7 +339,7 @@ const Signup = () => {
                   type="email"
                   enterKeyHint="next"
                   placeholder="이메일 주소 (abc@example.com)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, passwordRef)}
                   required
@@ -356,8 +356,10 @@ const Signup = () => {
             {/* 비밀번호 입력 */}
             <div className="group relative">
               <div
-                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
-                  errors.password ? 'border-red-400 bg-white' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
+                  errors.password
+                    ? 'border-red-400 bg-white dark:bg-gray-900'
+                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
                 <Lock size={20} className={`${errors.password ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
@@ -367,7 +369,7 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   enterKeyHint="next"
                   placeholder="비밀번호 (10자 이상 조합)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                   value={formData.password}
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef, true)}
@@ -376,7 +378,11 @@ const Signup = () => {
                   autoCorrect="off"
                   spellCheck="false"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-300 hover:text-gray-500 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+                >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
@@ -391,12 +397,12 @@ const Signup = () => {
             {/* 비밀번호 확인 */}
             <div className="group relative">
               <div
-                className={`flex items-center h-[60px] bg-gray-50 border-2 rounded-[20px] px-5 transition-all ${
+                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
                   formData.confirmPassword && errors.confirmPassword
-                    ? 'border-red-400 bg-white'
+                    ? 'border-red-400 bg-white dark:bg-gray-900'
                     : formData.confirmPassword && !errors.confirmPassword
-                    ? 'border-emerald-400 bg-white'
-                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white'
+                    ? 'border-emerald-400 bg-white dark:bg-gray-900'
+                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
                 <ShieldCheck
@@ -415,7 +421,7 @@ const Signup = () => {
                   type="password"
                   enterKeyHint="next"
                   placeholder="비밀번호 다시 입력"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
                   required
@@ -428,13 +434,13 @@ const Signup = () => {
             {/* 이름 입력 (성/이름) */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1 group">
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     ref={lastNameRef}
                     name="lastName"
                     enterKeyHint="next"
                     placeholder="성"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                     onChange={handleChange}
                     onKeyDown={(e) => handleKeyDown(e, firstNameRef)}
                     required
@@ -442,13 +448,13 @@ const Signup = () => {
                 </div>
               </div>
               <div className="col-span-2 group">
-                <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     ref={firstNameRef}
                     name="firstName"
                     enterKeyHint="next"
                     placeholder="이름"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                     onChange={handleChange}
                     onKeyDown={(e) => handleKeyDown(e, birthDateRef)}
                     required
@@ -460,8 +466,7 @@ const Signup = () => {
             {/* 생년월일 입력 */}
             <div className="group">
               {/* [수정] 양력/음력/윤달 선택 UI */}
-              <div className="flex items-center justify-between mb-2 px-1 h-6">
-                <label className="text-[13px] font-bold text-gray-400">생년월일</label>
+              <div className="flex items-center justify-end mb-2 px-1 h-6">
                 <div className="flex items-center gap-2">
                   {isLunar && (
                     <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
@@ -469,30 +474,34 @@ const Signup = () => {
                         type="checkbox"
                         checked={isLeapMonth}
                         onChange={(e) => setIsLeapMonth(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                        className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
                       />
-                      <span className="text-[11px] font-bold text-gray-500">윤달</span>
+                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">윤달</span>
                     </label>
                   )}
-                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                     <button
                       type="button"
                       onClick={() => setIsLunar(false)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${!isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        !isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                      }`}
                     >
                       양력
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsLunar(true)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${isLunar ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
+                      }`}
                     >
                       음력
                     </button>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center h-[60px] bg-gray-50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-[20px] px-5 transition-all">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
                 <input
                   ref={birthDateRef}
@@ -502,7 +511,7 @@ const Signup = () => {
                   inputMode="numeric"
                   value={formData.birthDate}
                   placeholder="생년월일 (YYYY/MM/DD)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                   onChange={handleChange}
                   onKeyDown={(e) => handleKeyDown(e, phoneRef)}
                   required
@@ -512,11 +521,30 @@ const Signup = () => {
             </div>
 
             {/* 휴대폰 번호 및 인증 */}
-            <div className="space-y-3">
+            {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
+            <div className="group relative">
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800">
+                <Smartphone size={20} className="text-gray-300 group-focus-within:text-blue-600 mr-4" />
+                <input
+                  ref={phoneRef}
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={formData.phone}
+                  placeholder="휴대폰 번호"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            {/* <div className="space-y-3"> // 기존 인증 UI 주석
               <div className="flex gap-2">
                 <div
-                  className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
-                    isVerified ? 'bg-blue-50 border-blue-100' : 'focus-within:border-blue-500 focus-within:bg-white'
+                  className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
+                    isVerified
+                      ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-100 dark:border-blue-800'
+                      : 'focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
                   }`}
                 >
                   <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
@@ -528,7 +556,7 @@ const Signup = () => {
                     inputMode="numeric"
                     value={formData.phone}
                     placeholder="휴대폰 번호"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                     onChange={handleChange}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -546,7 +574,7 @@ const Signup = () => {
                   type="button"
                   onClick={handleSendAuth}
                   disabled={isVerified}
-                  className="flex-1 h-[60px] bg-gray-900 text-white rounded-[20px] text-[13px] font-black active:scale-[0.95] disabled:opacity-50"
+                  className="flex-1 h-[60px] bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-300 rounded-[20px] text-[13px] font-black active:scale-[0.95] disabled:opacity-50"
                 >
                   {isAuthSent ? '재발송' : '인증요청'}
                 </button>
@@ -554,7 +582,7 @@ const Signup = () => {
 
               {isAuthSent && !isVerified && (
                 <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                  <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white">
+                  <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
                     <input
                       ref={authCodeRef}
                       name="authCode"
@@ -563,7 +591,7 @@ const Signup = () => {
                       pattern="\d*"
                       value={formData.authCode}
                       placeholder="인증번호 4자리"
-                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 placeholder:text-gray-300"
+                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
                       onChange={handleChange}
                       maxLength={4}
                       onKeyDown={(e) => {
@@ -579,7 +607,7 @@ const Signup = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
 
           <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
@@ -589,8 +617,8 @@ const Signup = () => {
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
               ${
                 isVerified && !errors.email && !errors.password && !errors.confirmPassword
-                  ? 'bg-blue-600 text-white shadow-blue-100 active:scale-[0.98]'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                  : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
               }`}
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
