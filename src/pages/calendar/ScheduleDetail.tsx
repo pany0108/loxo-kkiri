@@ -348,7 +348,7 @@ const ScheduleDetail = () => {
         }
       />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">

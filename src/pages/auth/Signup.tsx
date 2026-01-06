@@ -308,13 +308,13 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       <TopNav title="회원가입" />
 
-      <div className="flex-1 px-8 pt-[calc(68px+env(safe-area-inset-top))] pb-8 overflow-y-auto max-w-md mx-auto w-full">
+      <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-xl mb-6">
+        <div className="mb-10">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 w-6 h-6" />
           </div>
           <h2 className="text-[28px] font-black text-gray-900 leading-[1.2] tracking-tight">
@@ -582,7 +582,7 @@ const Signup = () => {
             </div>
           </div>
 
-          <div className="pt-10">
+          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <button
               type="submit"
               disabled={isLoading || !isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
@@ -595,7 +595,7 @@ const Signup = () => {
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>

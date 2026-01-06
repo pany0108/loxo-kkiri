@@ -32,7 +32,7 @@ const SharedMediaList = () => {
       <TopNav title={`공유된 미디어 (${title})`} />
 
       {/* 탭 컨트롤 */}
-      <div className="px-6 pt-4">
+      <div className="px-6 pt-[calc(1rem+env(safe-area-inset-top))]">
         <div className="flex p-1 bg-gray-100 rounded-[16px]">
           <button
             onClick={() => setActiveTab('photo')}
@@ -51,7 +51,7 @@ const SharedMediaList = () => {
         </div>
       </div>
       {/* 콘텐츠 영역 */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto">
         {activeTab === 'photo' ? (
           <>
             {media.length > 0 ? (

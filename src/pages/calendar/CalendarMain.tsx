@@ -599,7 +599,7 @@ const CalendarMain = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative pt-[env(safe-area-inset-top)]">
       <CalendarHeader
         activeCalendar={activeCalendar}
         myCalendars={myCalendars}

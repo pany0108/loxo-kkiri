@@ -290,7 +290,7 @@ const ScheduleEdit = () => {
         }
       />
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-12 overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
         {/* 타이틀 및 상세 정보 */}
         <header className="mb-8">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">

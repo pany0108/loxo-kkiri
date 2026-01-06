@@ -167,7 +167,7 @@ const CalendarManager = () => {
       <TopNav title="캘린더 관리" />
 
       {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         <header className="mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <CalendarIcon className="text-blue-600 dark:text-blue-400 w-6 h-6" />

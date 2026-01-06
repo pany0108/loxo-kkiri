@@ -98,7 +98,7 @@ const UserProfile = () => {
       <TopNav title="프로필" />
 
       {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-[76px] min-h-0 pb-32 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-[calc(76px+env(safe-area-inset-top))] min-h-0 pb-32 overflow-y-auto">
         <div className="w-32 h-32 rounded-full mb-6 overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
           {userData.photoURL ? (
             <img src={userData.photoURL} alt={userData.name} className="w-full h-full object-cover" />

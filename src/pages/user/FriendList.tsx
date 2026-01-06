@@ -306,7 +306,7 @@ const FriendList = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
-        <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+        <Loader2 className="animate-spin text-blue-500 w-8 h-8" aria-label="로딩 중" />
       </div>
     );
   }
@@ -314,7 +314,7 @@ const FriendList = () => {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {isSelectionMode ? (
-        <div className="sticky top-0 bg-gray-50/95 dark:bg-gray-950/95 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800 z-40">
+        <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40">
           <div className="flex items-center justify-between">
             <button
               onClick={() => {
@@ -332,7 +332,7 @@ const FriendList = () => {
           </div>
         </div>
       ) : (
-        <div className="sticky top-0 bg-gray-50/95 dark:bg-gray-950/95 z-20 px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-black text-gray-900 dark:text-white">친구 목록</h3>
             <div className="flex items-center gap-2">
@@ -360,7 +360,13 @@ const FriendList = () => {
         </div>
       )}
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-4 pb-24 overflow-y-auto w-full min-h-0 overscroll-y-contain" onScroll={cancelLongPress}>
+      <div
+        ref={scrollContainerRef}
+        className={`flex-1 px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full min-h-0 overscroll-y-contain ${
+          isSelectionMode ? 'pt-[calc(81px+env(safe-area-inset-top))]' : 'pt-[calc(150px+env(safe-area-inset-top))]'
+        }`}
+        onScroll={cancelLongPress}
+      >
         <>
           {groupedFriends.length > 0 ? (
             groupedFriends.map((group) => (

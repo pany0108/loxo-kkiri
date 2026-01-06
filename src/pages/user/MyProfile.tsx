@@ -119,7 +119,7 @@ const MyProfile = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-6 space-y-8 overflow-y-auto pb-24">
+      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
         <header className="mb-2">
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             <span className="text-blue-600 dark:text-blue-400">{userData?.name || '사용자'}</span>님,

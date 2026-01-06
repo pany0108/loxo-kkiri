@@ -230,7 +230,7 @@ const CreateCalendar = () => {
       <TopNav title="새 캘린더 만들기" />
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
-        <header className="mb-8">
+        <header className="mb-8 pt-[calc(76px+env(safe-area-inset-top))]">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
             <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
           </div>

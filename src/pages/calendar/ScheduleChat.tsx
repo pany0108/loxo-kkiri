@@ -109,7 +109,7 @@ const ScheduleChat = () => {
     <div className="flex flex-col h-[100dvh] bg-[#F2F4F6] font-['Pretendard'] overflow-hidden">
       {/* 상단 헤더: 뒤로가기 및 일정 정보 */}
       <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-white/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-[env(safe-area-inset-top)]">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-gray-800 hover:bg-gray-100 rounded-full transition-colors" aria-label="뒤로 가기">
             <ChevronLeft size={26} />
           </button>

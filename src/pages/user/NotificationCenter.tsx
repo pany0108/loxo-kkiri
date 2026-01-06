@@ -349,7 +349,7 @@ const NotificationCenter = () => {
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 & 탭 */}
       <div className="sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-transparent dark:border-gray-800">
-        {isSelectionMode ? (
+        {isSelectionMode ? ( // Selection mode header
           <>
             <nav className="px-6 pt-6 flex items-center justify-between pb-4 animate-in fade-in duration-200">
               <button
@@ -391,6 +391,7 @@ const NotificationCenter = () => {
             </div>
           </>
         ) : (
+          // Normal mode header
           <>
             <nav className="px-6 pt-6 pb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -502,7 +503,7 @@ const NotificationCenter = () => {
                           onPointerLeave={cancelLongPress}
                           onPointerCancel={cancelLongPress}
                           onDragStart={cancelLongPress}
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             handleNotificationClick(noti);
                           }}
