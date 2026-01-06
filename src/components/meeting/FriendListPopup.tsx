@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Users, Check } from 'lucide-react';
+import { X, Users, Check, Folder } from 'lucide-react';
 
 interface Friend {
   id: string;
@@ -36,10 +36,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="relative w-full max-w-md h-[80vh] bg-white dark:bg-gray-800 rounded-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col">
         <div className="flex justify-between items-center mb-4 shrink-0">
-          <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Users size={20} />
-            친구 목록
-          </h3>
+          <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">친구 목록</h3>
           <button onClick={onClose} className="p-2 -mr-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-colors">
             <X size={24} />
           </button>
@@ -49,19 +46,19 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
           <div className="flex bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
             <button
               onClick={() => setViewMode('alphabetical')}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-lg transition-all ${
                 viewMode === 'alphabetical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              가나다순
+              <Users size={16} /> 전체
             </button>
             <button
               onClick={() => setViewMode('group')}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-lg transition-all ${
                 viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
-              그룹별
+              <Folder size={16} /> 그룹
             </button>
           </div>
         </div>

@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search } from 'lucide-react';
-// [추가] Firebase 관련 import
+import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search, Plus, X } from 'lucide-react';
+// Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { AddFriendModal, AddFromContactsModal } from 'components';
+import { AddFriendModal, AddFromContactsModal, FriendListPopup } from 'components';
 
 import { TopNav } from 'components';
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
@@ -17,6 +17,7 @@ interface Friend {
   name: string;
   email: string;
   group?: string;
+  photoURL?: string;
 }
 
 interface FriendGroup {
@@ -27,6 +28,7 @@ interface FriendGroup {
 const CreateCalendar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isFriendSelectionPopupOpen, setIsFriendSelectionPopupOpen] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +50,13 @@ const CreateCalendar = () => {
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
   // [수정] DB에서 불러온 친구 목록 상태
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]); // 모든 친구 목록
+  const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]); // 친구 그룹 목록
 
   // [추가] 친구 검색어 상태
   const [friendSearchTerm, setFriendSearchTerm] = useState('');
+  // [추가] 친구 검색 결과 상태
+  const [searchResults, setSearchResults] = useState<Friend[]>([]);
 
   // [추가] 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -87,12 +91,39 @@ const CreateCalendar = () => {
     setIsAddFromContactsModalOpen(true);
   };
 
+  // [추가] 친구 검색 결과 업데이트
+  useEffect(() => {
+    if (friendSearchTerm.trim() === '') {
+      setSearchResults([]);
+      return;
+    }
+    const lowerCaseSearchTerm = friendSearchTerm.toLowerCase();
+    const filtered = friends.filter(
+      (f) => f.name.toLowerCase().includes(lowerCaseSearchTerm) && !selectedFriendUids.includes(f.uid), // 이미 선택된 친구는 검색 결과에서 제외
+    );
+    setSearchResults(filtered);
+  }, [friendSearchTerm, friends, selectedFriendUids]);
+
   const toggleFriend = (friendUid: string) => {
     setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
   };
 
+  const onToggleGroup = (group: { friends: { uid: string }[] }) => {
+    const groupFriendUids = new Set(group.friends.map((f) => f.uid));
+    const selectedUidsSet = new Set(selectedFriendUids);
+
+    const areAllSelected = group.friends.every((f) => selectedUidsSet.has(f.uid));
+
+    if (areAllSelected) {
+      group.friends.forEach((f) => selectedUidsSet.delete(f.uid));
+    } else {
+      group.friends.forEach((f) => selectedUidsSet.add(f.uid));
+    }
+    setSelectedFriendUids(Array.from(selectedUidsSet));
+  };
+
   // [추가] 검색어에 따라 친구 목록 필터링
-  const groupedAndFilteredFriends = useMemo(() => {
+  const groupedFriends = useMemo(() => {
     const groupMap = new Map<string, { name: string; friends: Friend[] }>();
     friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
     groupMap.set('uncategorized', { name: '미분류', friends: [] });
@@ -119,6 +150,21 @@ const CreateCalendar = () => {
       })
       .filter((group) => group.friends.length > 0);
   }, [friends, friendGroups, friendSearchTerm]);
+
+  // [추가] 검색 입력란에서 친구 추가
+  const handleAddFriendByName = () => {
+    if (friendSearchTerm.trim() === '') return;
+
+    const friendToAdd = searchResults.find((f) => f.name.toLowerCase() === friendSearchTerm.toLowerCase());
+
+    if (friendToAdd) {
+      toggleFriend(friendToAdd.uid);
+      setFriendSearchTerm(''); // 추가 후 검색어 초기화
+      setSearchResults([]); // 검색 결과 초기화
+    } else {
+      toast.error('검색된 친구가 없습니다.');
+    }
+  };
 
   // [수정] 캘린더 이름 자동 생성 로직 변경
   const finalName = useMemo(() => {
@@ -285,87 +331,84 @@ const CreateCalendar = () => {
                 <Users size={18} className="text-gray-400 dark:text-gray-500" />
                 <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">공유할 친구 선택</label>
               </div>
-              <span
-                className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
-                  selectedFriendUids.length > 0
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
-                }`}
-              >
-                {selectedFriendUids.length}명 선택됨
+              <span className="text-[11px] font-bold px-2 py-1 rounded-lg transition-colors bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300">
+                {selectedFriendUids.length}명
               </span>
             </div>
-            {/* [추가] 친구 검색 입력란 */}
-            <div className="relative">
-              <div className="flex items-center h-[52px] bg-gray-50 dark:bg-gray-800/50 rounded-[20px] px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white dark:focus-within:bg-gray-800">
-                <Search size={18} className="text-gray-400 dark:text-gray-600 mr-3 shrink-0" />
-                <input
-                  type="text"
-                  value={friendSearchTerm}
-                  onChange={(e) => setFriendSearchTerm(e.target.value)}
-                  placeholder="친구 이름으로 검색"
-                  className="flex-1 bg-transparent outline-none text-gray-900 text-[15px] font-bold placeholder:text-gray-300"
-                />
-              </div>
-            </div>
 
-            {groupedAndFilteredFriends.length > 0 ? (
-              groupedAndFilteredFriends.map((group) => (
-                <div key={group.id} className="mb-4">
-                  <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2 px-1">{group.name}</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {group.friends.map((friend) => {
-                      const isSelected = selectedFriendUids.includes(friend.uid);
-                      return (
-                        <button
-                          key={friend.uid}
-                          onClick={() => toggleFriend(friend.uid)}
-                          className={`
-                            relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98]
-                            ${
-                              isSelected
-                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 dark:shadow-blue-900/50'
-                                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-transparent text-gray-600 dark:text-gray-300 hover:border-blue-100 dark:hover:border-blue-900/30 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }
-                          `}
-                        >
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-black transition-colors ${
-                              isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-gray-600 text-gray-400 dark:text-gray-400'
-                            }`}
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">
+              <div className="relative">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                      <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
+                      <input
+                        type="text"
+                        value={friendSearchTerm}
+                        onChange={(e) => setFriendSearchTerm(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddFriendByName()}
+                        placeholder="친구 이름 검색 후 추가"
+                        className="w-full bg-transparent outline-none text-gray-900 dark:text-white text-[14px] font-bold placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                      />
+                    </div>
+                    {friendSearchTerm && searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-100 dark:border-gray-600 z-10 max-h-48 overflow-y-auto">
+                        {searchResults.map((friend) => (
+                          <button
+                            key={friend.uid}
+                            onClick={() => {
+                              toggleFriend(friend.uid);
+                              setFriendSearchTerm('');
+                              setSearchResults([]);
+                            }}
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                           >
-                            {friend.name[0]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className={`text-[15px] font-bold block truncate ${isSelected ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{friend.name}</span>
-                          </div>
-                          {isSelected && (
-                            <div className="absolute top-3 right-3 text-white">
-                              <CheckCircle2 size={18} />
-                            </div>
-                          )}
+                            {friend.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddFriendByName}
+                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
+                  >
+                    <Plus size={20} strokeWidth={3} />
+                  </button>
+                </div>
+              </div>
+
+              {selectedFriendUids.length > 0 && (
+                <div className="px-1">
+                  <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2">선택된 친구 ({selectedFriendUids.length}명)</h5>
+                  <div className="flex flex-wrap gap-2">
+                    {friends
+                      .filter((f) => selectedFriendUids.includes(f.uid))
+                      .map((friend) => (
+                        <button
+                          key={`invited-${friend.uid}`}
+                          type="button"
+                          onClick={() => toggleFriend(friend.uid)}
+                          className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-600 text-white"
+                        >
+                          {friend.name}
+                          <X size={14} className="bg-white/20 rounded-full p-0.5" />
                         </button>
-                      );
-                    })}
+                      ))}
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-10 text-center">
-                <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">검색 결과가 없습니다.</p>
-              </div>
-            )}
+              )}
 
-            <button
-              type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="w-full p-4 rounded-[20px] border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 flex flex-col items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:border-blue-200 dark:hover:border-blue-600/50 hover:text-blue-500 dark:hover:text-blue-400 transition-all active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
-                <UserPlus size={20} />
-              </div>
-              <span className="text-[13px] font-bold">새 친구 초대</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsFriendSelectionPopupOpen(true)}
+                className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"
+              >
+                <UserPlus size={16} strokeWidth={2.5} />
+                친구 목록에서 선택하기
+              </button>
+            </div>
           </section>
         </div>
       </div>
@@ -399,6 +442,25 @@ const CreateCalendar = () => {
 
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} onOpenContacts={handleOpenContactsModal} />
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={user as any} existingFriends={friends} />
+      {/* [수정] ProposeMeetingCreate와 동일한 FriendListPopup 사용 */}
+      <FriendListPopup
+        isOpen={isFriendSelectionPopupOpen}
+        onClose={() => setIsFriendSelectionPopupOpen(false)}
+        groupedFriends={groupedFriends.map((g) => ({
+          ...g,
+          friends: g.friends.map((f) => ({ id: f.uid, name: f.name, group: f.group })),
+        }))}
+        invitedFriends={friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => ({ id: f.uid, name: f.name, group: f.group }))}
+        onToggleFriend={(friend) => toggleFriend(friend.id)}
+        onToggleGroup={(group) => {
+          // `onToggleGroup`은 `uid`를 포함한 전체 `Friend` 객체를 기대하므로,
+          // `id`만 있는 `group.friends`를 `uid`를 가진 친구 객체로 다시 매핑합니다.
+          const originalGroup = groupedFriends.find((g) => g.id === group.id);
+          if (originalGroup) {
+            onToggleGroup(originalGroup);
+          }
+        }}
+      />
     </div>
   );
 };
