@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { auth, db } from 'firebase';
+import { auth, db } from '../../firebase';
 import { TopNav } from 'components';
 
 /**

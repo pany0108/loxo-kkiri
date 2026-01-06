@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, Check, Loader2, MoreVertical, X, Folder, FolderPlus, Users } from 'lucide-react';
-import { auth, db, firebaseApp } from 'firebase'; // firebaseApp 추가
+import { auth, db, firebaseApp } from '../../firebase'; // firebaseApp 추가
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import {
   ImagePreviewModal,

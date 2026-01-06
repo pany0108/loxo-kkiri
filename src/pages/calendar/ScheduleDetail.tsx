@@ -3,10 +3,10 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, ChevronLeft } from 'lucide-react';
-import { auth } from 'firebase'; // Import auth to check current user
+import { auth } from '../../firebase'; // Import auth to check current user
 import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
-import { db } from 'firebase'; // Corrected import path for db
+import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';

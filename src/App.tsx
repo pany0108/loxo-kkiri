@@ -35,12 +35,16 @@ import {
   UserProfile,
 } from './pages';
 import { Loader2 } from 'lucide-react';
-import { CalendarProvider, ThemeProvider } from './contexts';
+import { CalendarProvider, ThemeProvider } from 'contexts';
+import { useFirestoreQuery, usePushNotification } from 'hooks'; // [수정] usePushNotification 훅 import
 
 function App() {
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // [추가] 푸시 알림 초기화 및 리스너 설정
+  usePushNotification(user);
 
   // 1. 사용자 로그인 상태 감시
   useEffect(() => {

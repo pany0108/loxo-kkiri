@@ -10,8 +10,7 @@ import './CalendarMain.css';
 import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
 import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { auth, db } from 'firebase';
-import { setupPushNotifications } from 'utils';
+import { auth, db } from '../../firebase';
 import { DeleteRecurringModal, Calendar, SimpleDeleteModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
 import toast from 'react-hot-toast';
 
@@ -120,13 +119,6 @@ const CalendarMain = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, myCalendars, setActiveCalendar, navigate]);
-
-  // [추가] 푸시 알림 설정
-  useEffect(() => {
-    if (auth.currentUser) {
-      setupPushNotifications(auth.currentUser.uid, navigate);
-    }
-  }, [navigate]);
 
   // [추가] 읽지 않은 알림 확인
   const notificationsQuery = useMemo(() => {

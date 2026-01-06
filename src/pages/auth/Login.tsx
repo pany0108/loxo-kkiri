@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
 import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth, db, googleProvider } from 'firebase';
+import { auth, db, googleProvider } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FolderPlus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from 'firebase';
+import { db } from '../../firebase';
 
 interface Friend {
   uid: string;
