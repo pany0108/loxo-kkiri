@@ -219,7 +219,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-full bg-white dark:bg-gray-950 font-['Pretendard']">
       <div className="flex flex-1 flex-col justify-center px-6 max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-10 text-left">
@@ -331,7 +331,7 @@ const Login = () => {
         </form>
       </div>
 
-      <footer className="pb-10 text-center">
+      <footer className="text-center">
         <p className="text-[11px] font-bold text-gray-200 dark:text-gray-700 tracking-[0.2em] uppercase">Powered by Super Scheduler</p>
       </footer>
     </div>
