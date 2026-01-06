@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Loader2, Check } from 'lucide-react';
+import { Loader2, Check, Users } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, addDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 
@@ -13,9 +13,10 @@ interface AddFriendModalProps {
   onClose: () => void;
   myInfo: any; // Contains current user's info like email, phone, name
   friends: Friend[]; // Current friends list to check for duplicates
+  onOpenContacts: () => void;
 }
 
-const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo, friends }) => {
+const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo, friends, onOpenContacts }) => {
   const [newFriendInput, setNewFriendInput] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [addFriendMethod, setAddFriendMethod] = useState<'email' | 'phone'>('email');
@@ -173,6 +174,14 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
             )}
           </button>
         </div>
+        <button
+          type="button"
+          onClick={onOpenContacts}
+          className="w-full flex items-center justify-center gap-2 mt-3 py-3.5 rounded-[20px] bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Users size={16} />
+          연락처에서 친구 추가
+        </button>
       </div>
     </div>
   );

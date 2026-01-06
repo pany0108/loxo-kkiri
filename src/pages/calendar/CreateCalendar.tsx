@@ -5,8 +5,8 @@ import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Searc
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { AddFriendModal } from 'components';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { AddFriendModal, AddFromContactsModal } from 'components';
 
 import { TopNav } from 'components';
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
@@ -41,7 +41,7 @@ const CreateCalendar = () => {
   }, [location.pathname]);
 
   // 로그인 유저 상태
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [calName, setCalName] = useState('');
   const [selectedFriendUids, setSelectedFriendUids] = useState<string[]>([]);
@@ -56,6 +56,7 @@ const CreateCalendar = () => {
 
   // [추가] 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -80,6 +81,11 @@ const CreateCalendar = () => {
 
     return () => unsubscribe();
   }, [user]);
+
+  const handleOpenContactsModal = () => {
+    setIsAddModalOpen(false);
+    setIsAddFromContactsModalOpen(true);
+  };
 
   const toggleFriend = (friendUid: string) => {
     setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
@@ -391,7 +397,8 @@ const CreateCalendar = () => {
         </button>
       </footer>
 
-      <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} />
+      <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} onOpenContacts={handleOpenContactsModal} />
+      <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={user as any} existingFriends={friends} />
     </div>
   );
 };

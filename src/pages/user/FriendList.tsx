@@ -121,6 +121,11 @@ const FriendList = () => {
     return () => clearTimeout(timer);
   }, [viewMode]);
 
+  const handleOpenContactsModal = () => {
+    setIsAddModalOpen(false); // Close the current modal
+    setIsAddFromContactsModalOpen(true); // Open the contacts modal
+  };
+
   // --- [추가] 다중 선택 로직 ---
   const handlePointerDown = (friendUid: string) => {
     if (isSelectionMode) return;
@@ -387,14 +392,6 @@ const FriendList = () => {
                 <UserPlus size={20} />
               </button>
             </div>
-            {/* [추가] 연락처에서 친구 추가 버튼 */}
-            <button
-              onClick={() => setIsAddFromContactsModalOpen(true)}
-              className="p-2.5 bg-blue-600 text-white dark:bg-blue-500 rounded-full shadow-lg active:scale-90 transition-transform"
-              aria-label="연락처에서 친구 추가"
-            >
-              <Users size={20} />
-            </button>
           </div>
           <div className="relative">
             <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
@@ -594,7 +591,7 @@ const FriendList = () => {
       {/* [수정] 친구 프로필 팝업 컴포넌트화 */}
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
-      <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} />
+      <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} onOpenContacts={handleOpenContactsModal} />
     </div>
   );
 };
