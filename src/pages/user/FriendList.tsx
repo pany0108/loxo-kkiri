@@ -305,6 +305,10 @@ const FriendList = () => {
           sortedFriends.unshift(newFriend);
         }
       }
+      // [수정] 친구가 없거나 검색 결과가 없을 때 빈 배열을 반환하여 "친구가 없음" UI가 표시되도록 함
+      if (sortedFriends.length === 0) {
+        return [];
+      }
       return [{ id: 'all', name: '모든 친구', friends: sortedFriends }];
     } else {
       // 그룹별 보기: 기존 그룹화 및 정렬 로직

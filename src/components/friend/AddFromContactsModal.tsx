@@ -126,9 +126,12 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     );
   }, [contacts, searchTerm]);
 
-  const formatPhoneNumber = (number: string | undefined) => {
-    if (!number) return '';
-    return number.replace(/[^0-9]/g, ''); // 숫자만 남김 (하이픈 등 제거)
+  const formatPhoneNumber = (value: string | undefined) => {
+    if (!value) return '';
+    const nums = value.replace(/[^\d]/g, '');
+    if (nums.length <= 3) return nums;
+    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
+    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
   };
 
   const handleAddFriend = async (contact: LocalContact) => {
@@ -228,23 +231,21 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            onTouchStart={onSheetTouchStart}
-            onTouchMove={onSheetTouchMove}
-            onTouchEnd={onSheetTouchEnd}
           >
             <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
               <X size={20} />
             </button>
-            <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4">연락처에서 친구 추가</h3>
-
+            <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
+              <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
+              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4">연락처에서 친구 추가</h3>
+            </div>
             {!permissionGranted && !isLoading && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400">
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400 px-6">
                 <UserPlus size={48} className="mb-4 opacity-30" />
                 <p className="font-bold">연락처 접근 권한이 필요합니다.</p>
                 <p className="text-sm">설정에서 권한을 허용해주세요.</p>
@@ -253,15 +254,17 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
 
             {permissionGranted && (
               <>
-                <div className="relative mb-4">
-                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                  <input
-                    type="text"
-                    placeholder="이름, 전화번호, 이메일로 검색"
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-full text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                <div className="mb-4 px-6">
+                  <div className="relative flex items-center">
+                    <Search size={18} className="absolute left-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="이름, 전화번호, 이메일로 검색"
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-full text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 {isLoading ? (
@@ -269,7 +272,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
                     <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-y-auto space-y-2">
+                  <div className="flex-1 overflow-y-auto space-y-2 px-6">
                     {filteredContacts.length > 0 ? (
                       filteredContacts.map((contact, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
