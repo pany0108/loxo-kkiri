@@ -2,9 +2,19 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, Check, Loader2, MoreVertical, X, Folder, FolderPlus, Users } from 'lucide-react';
-import { auth, db } from '../../firebase';
+import { auth, db, firebaseApp } from '../../firebase'; // firebaseApp 추가
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
-import { ImagePreviewModal, AddFriendModal, ProfilePopup, FriendActionMenu, EditFriendNameModal, DeleteFriendModal, GroupManagerModal, MoveToGroupModal } from 'components';
+import {
+  ImagePreviewModal,
+  AddFriendModal,
+  ProfilePopup,
+  FriendActionMenu,
+  EditFriendNameModal,
+  DeleteFriendModal,
+  GroupManagerModal,
+  MoveToGroupModal,
+  AddFromContactsModal,
+} from 'components';
 import { useFirestoreDoc } from 'hooks';
 
 /**
@@ -52,6 +62,7 @@ const FriendList = () => {
   const [newFriendId, setNewFriendId] = useState<string | null>(location.state?.newFriendId || null);
 
   // [수정] 친구 추가 모달 상태
+  const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false); // [추가] 연락처에서 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // [추가] 다중 선택 상태
@@ -96,14 +107,15 @@ const FriendList = () => {
   useEffect(() => {
     // 렌더링 직후 실행을 위해 setTimeout 사용
     const timer = setTimeout(() => {
+      // 렌더링 후 DOM이 업데이트될 시간을 줍니다.
       // 1. 브라우저 전체 스크롤 초기화
       window.scrollTo(0, 0);
 
       // 2. 내부 컨테이너 스크롤 초기화
       if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTo({ top: 0 }); // scrollTop = 0 대신 scrollTo 사용 권장
+        scrollContainerRef.current.scrollTop = 0; // 직접 scrollTop을 0으로 설정
       }
-    }, 10); // 0 대신 10ms 정도 여유를 주면 더 확실합니다.
+    }, 50); // 약간의 딜레이를 주어 확실하게 스크롤을 초기화합니다.
 
     setNewFriendId(null);
     return () => clearTimeout(timer);
@@ -375,6 +387,14 @@ const FriendList = () => {
                 <UserPlus size={20} />
               </button>
             </div>
+            {/* [추가] 연락처에서 친구 추가 버튼 */}
+            <button
+              onClick={() => setIsAddFromContactsModalOpen(true)}
+              className="p-2.5 bg-blue-600 text-white dark:bg-blue-500 rounded-full shadow-lg active:scale-90 transition-transform"
+              aria-label="연락처에서 친구 추가"
+            >
+              <Users size={20} />
+            </button>
           </div>
           <div className="relative">
             <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
@@ -413,9 +433,7 @@ const FriendList = () => {
       <div
         ref={scrollContainerRef}
         className={`flex-1 px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full min-h-0 overscroll-y-contain ${
-          isSelectionMode
-            ? 'pt-[calc(80px+env(safe-area-inset-top))]' // Selection mode header height
-            : 'pt-[calc(210px+env(safe-area-inset-top))]' // Normal mode header height
+          isSelectionMode ? 'pt-[calc(81px+env(safe-area-inset-top))]' : 'pt-[calc(213px+env(safe-area-inset-top))]'
         }`}
         onScroll={cancelLongPress}
       >
@@ -574,6 +592,7 @@ const FriendList = () => {
       {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}
 
       {/* [수정] 친구 프로필 팝업 컴포넌트화 */}
+      <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} />
     </div>
