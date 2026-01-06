@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
+import { sendPushNotificationToUser } from 'utils';
 import { RecurrenceOptions, RecurrenceSettings } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -256,14 +257,38 @@ const AddSchedule = () => {
       // [추가] 공유 캘린더에 일정이 추가되면 멤버들에게 알림 전송
       if (selectedCalendar && selectedCalendar.members.length > 1) {
         const batch = writeBatch(db);
-        const notificationsCollection = collection(db, 'notifications');
+        // const notificationsCollection = collection(db, 'notifications');
 
-        selectedCalendar.members.forEach((memberId) => {
-          // 일정을 생성한 본인에게는 알림을 보내지 않음
-          if (memberId === user.uid) return;
+        // selectedCalendar.members.forEach((memberId) => {
+        //   // 일정을 생성한 본인에게는 알림을 보내지 않음
+        //   if (memberId === user.uid) return;
 
-          const newNotiRef = doc(notificationsCollection);
-          batch.set(newNotiRef, {
+        //   const newNotiRef = doc(notificationsCollection);
+        //   batch.set(newNotiRef, {
+        //     userId: memberId,
+        //     type: 'SCHEDULE_ADDED',
+        //     message: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
+        //     relatedId: scheduleDocRef.id,
+        //     isRead: false,
+        //     createdAt: new Date().toISOString(),
+        //   });
+        //   // [추가] 푸시 알림 전송
+        //   await sendPushNotificationToUser({
+        //     userId: memberId,
+        //     title: '새로운 일정',
+        //     body: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
+        //     data: { type: 'SCHEDULE_ADDED', relatedId: scheduleDocRef.id, calendarId: selectedCalendar.id },
+        //   });
+        // });
+        // await batch.commit();
+
+        // [수정] forEach 대신 for...of 사용
+        for (const memberId of selectedCalendar.members) {
+          if (memberId === user.uid) continue; // return 대신 continue 사용
+
+          // 1. Firestore 알림 저장 (Batch)
+          const notiRef = doc(collection(db, 'notifications'));
+          batch.set(notiRef, {
             userId: memberId,
             type: 'SCHEDULE_ADDED',
             message: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
@@ -271,7 +296,17 @@ const AddSchedule = () => {
             isRead: false,
             createdAt: new Date().toISOString(),
           });
-        });
+
+          // 2. 푸시 알림 전송 (확실하게 기다림)
+          await sendPushNotificationToUser({
+            userId: memberId,
+            title: '새로운 일정',
+            body: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
+            data: { type: 'SCHEDULE_ADDED', relatedId: scheduleDocRef.id, calendarId: selectedCalendar.id },
+          });
+        }
+
+        // 루프가 다 끝난 뒤 배치 커밋
         await batch.commit();
       }
       toast.success('일정이 저장되었습니다! ☁️');

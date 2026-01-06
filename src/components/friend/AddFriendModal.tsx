@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Loader2, Check, Users } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, addDoc } from 'firebase/firestore';
+import { sendPushNotificationToUser } from 'utils';
 import { auth, db } from '../../firebase';
 
 interface Friend {
@@ -104,6 +105,12 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
         createdAt: new Date().toISOString(),
       });
 
+      // [추가] 푸시 알림 전송
+      await sendPushNotificationToUser({
+        userId: targetUserDoc.id,
+        body: `${myInfo?.name || myInfo?.displayName || '누군가'}님이 당신을 친구로 추가했습니다.`,
+        data: { type: 'FRIEND_REQUEST', relatedId: auth.currentUser.uid },
+      });
       toast.success(`${targetUserData.name}님을 친구로 추가했습니다.`);
       onClose();
     } catch (error) {

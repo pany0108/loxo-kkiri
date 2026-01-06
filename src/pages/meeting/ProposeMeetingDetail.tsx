@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { sendPushNotificationToUser } from 'utils';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav } from 'components';
@@ -247,18 +248,35 @@ const ProposeMeetingDetail = () => {
 
       // [추가] 초대된 친구들에게 알림 전송
       const batch = writeBatch(db);
-      invitedFriends.forEach((friend) => {
-        const notiRef = doc(collection(db, 'notifications'));
-        batch.set(notiRef, {
-          userId: friend.id,
-          type: 'MEETING_INVITE',
-          message: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
-          relatedId: meetingRef.id,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-      });
-      await batch.commit();
+      // [수정] 이중 루프 제거 및 비동기 처리(Promise.all) 적용
+      if (invitedFriends.length > 0) {
+        await Promise.all(
+          invitedFriends.map(async (friend) => {
+            const notiRef = doc(collection(db, 'notifications'));
+
+            // 1. Firestore 배치 담기 (동기)
+            batch.set(notiRef, {
+              userId: friend.id,
+              type: 'MEETING_INVITE',
+              message: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
+              relatedId: meetingRef.id,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+
+            // 2. 푸시 알림 전송 (비동기)
+            await sendPushNotificationToUser({
+              userId: friend.id,
+              title: '새로운 약속 제안',
+              body: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
+              data: { type: 'MEETING_INVITE', relatedId: meetingRef.id },
+            });
+          }),
+        );
+
+        // 모든 알림 준비가 끝난 후 배치 커밋
+        await batch.commit();
+      }
 
       navigate('/propose'); // 목록 페이지로 이동
     } catch (error) {

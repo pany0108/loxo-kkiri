@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import toast from 'react-hot-toast';
 import { User } from 'firebase/auth';
@@ -10,7 +10,7 @@ import { User } from 'firebase/auth';
  * 푸시 알림 권한 요청, 토큰 관리, 알림 수신 리스너를 설정하는 커스텀 훅입니다.
  * @param {User | null} user - 현재 로그인된 Firebase 사용자 객체
  */
-const usePushNotification = (user: User | null) => {
+export const usePushNotification = (user: User | null) => {
   useEffect(() => {
     // 네이티브 환경이 아니거나, 사용자가 로그인하지 않은 경우 실행하지 않음
     if (!Capacitor.isNativePlatform() || !user) {
@@ -81,5 +81,3 @@ const usePushNotification = (user: User | null) => {
     };
   }, [user]); // user 객체가 변경될 때(로그인/로그아웃) 이펙트를 다시 실행
 };
-
-export default usePushNotification;

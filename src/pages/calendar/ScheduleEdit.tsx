@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs'; // Keep dayjs import
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus } from 'lucide-react';
+import { sendPushNotificationToUser } from 'utils';
 import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -253,20 +254,35 @@ const ScheduleEdit = () => {
           const notificationsCollection = collection(db, 'notifications');
           const editorName = user?.displayName || '누군가';
 
-          attendees.forEach((memberId) => {
-            // 일정을 수정한 본인에게는 알림을 보내지 않음
-            if (memberId === user?.uid) return;
+          // [수정] forEach를 Promise.all + map으로 변경
+          await Promise.all(
+            attendees.map(async (memberId) => {
+              // 일정을 수정한 본인에게는 알림을 보내지 않음
+              if (memberId === user?.uid) return;
 
-            const newNotiRef = doc(notificationsCollection);
-            batch.set(newNotiRef, {
-              userId: memberId,
-              type: 'SCHEDULE_UPDATED',
-              message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
-              relatedId: docId,
-              isRead: false,
-              createdAt: new Date().toISOString(),
-            });
-          });
+              const newNotiRef = doc(notificationsCollection);
+
+              // 1. Firestore 배치 작업 (동기)
+              batch.set(newNotiRef, {
+                userId: memberId,
+                type: 'SCHEDULE_UPDATED',
+                message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
+                relatedId: docId,
+                isRead: false,
+                createdAt: new Date().toISOString(),
+              });
+
+              // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
+              await sendPushNotificationToUser({
+                userId: memberId,
+                title: '일정 수정됨',
+                body: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
+                data: { type: 'SCHEDULE_UPDATED', relatedId: docId, calendarId: selectedCalendar?.id },
+              });
+            }),
+          );
+
+          // 모든 알림 작업이 끝난 후 배치 커밋
           await batch.commit();
         }
         toast.success('수정되었습니다.');

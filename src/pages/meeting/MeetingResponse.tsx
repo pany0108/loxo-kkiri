@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { sendPushNotificationToUser } from 'utils';
 import { db, auth } from '../../firebase';
 import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
 import { useFirestoreDoc } from 'hooks';
@@ -210,17 +211,32 @@ const MeetingResponse = () => {
 
         // 투표 시작 알림 전송 (모든 참여자에게)
         const batch = writeBatch(db);
-        updatedMeetingData.participants.forEach((uid: string) => {
-          const notiRef = doc(collection(db, 'notifications'));
-          batch.set(notiRef, {
-            userId: uid,
-            type: 'MEETING_VOTING_STARTED',
-            message: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
-            relatedId: meetingId,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-        });
+        // [수정] forEach를 Promise.all과 map으로 변경하여 비동기 처리 보장
+        await Promise.all(
+          updatedMeetingData.participants.map(async (uid: string) => {
+            const notiRef = doc(collection(db, 'notifications'));
+
+            // 1. Firestore 배치 작업 (알림 데이터 준비)
+            batch.set(notiRef, {
+              userId: uid,
+              type: 'MEETING_VOTING_STARTED',
+              message: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
+              relatedId: meetingId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+
+            // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
+            await sendPushNotificationToUser({
+              userId: uid,
+              title: '투표 시작',
+              body: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
+              data: { type: 'MEETING_VOTING_STARTED', relatedId: meetingId },
+            });
+          }),
+        );
+
+        // 모든 알림 생성 및 푸시 전송 요청이 끝난 후 배치를 커밋합니다.
         await batch.commit();
 
         toast.success('모든 친구가 응답하여 투표가 시작됩니다!');
