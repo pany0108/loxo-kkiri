@@ -363,7 +363,7 @@ const FriendList = () => {
       <div
         ref={scrollContainerRef}
         className={`flex-1 px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full min-h-0 overscroll-y-contain ${
-          isSelectionMode ? 'pt-[calc(81px+env(safe-area-inset-top))]' : 'pt-[calc(150px+env(safe-area-inset-top))]'
+          isSelectionMode ? 'pt-[calc(100px+env(safe-area-inset-top))]' : 'pt-[calc(170px+env(safe-area-inset-top))]'
         }`}
         onScroll={cancelLongPress}
       >
@@ -382,7 +382,7 @@ const FriendList = () => {
                     {group.friends.map((friend) => (
                       <div
                         key={friend.uid}
-                        className={`group flex items-center justify-between p-4 pl-5 transition-colors cursor-pointer touch-pan-y ${
+                        className={`group flex items-center justify-between py-4 pl-5 pr-2 transition-colors cursor-pointer touch-pan-y ${
                           selectedFriendUids.has(friend.uid) ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                         }`}
                         onPointerDown={() => handlePointerDown(friend.uid)}
@@ -429,7 +429,7 @@ const FriendList = () => {
                               setSelectedFriend(friend);
                               setIsMenuOpen(true);
                             }}
-                            className="p-2 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
+                            className="p-4 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
                           >
                             <MoreVertical size={20} />
                           </button>
