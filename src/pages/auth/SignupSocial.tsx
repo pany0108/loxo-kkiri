@@ -111,16 +111,22 @@ const SignupSocial = () => {
   /**
    * 데이터 유실 방지 Effect
    * 필수 데이터(uid)가 없으면 로그인 페이지로 리다이렉트합니다.
-   * [수정] 또한, 이미 프로필이 완성된 유저가 이 페이지에 접근하면 캘린더로 리다이렉트합니다.
+   * [수정] 프로필 완성 여부(phone, birthDate)를 체크하여, 미완성 상태면 입력을 진행하게 합니다.
    */
   useEffect(() => {
     const checkUserStatus = async () => {
       if (uid) {
         const userRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userRef);
+
         if (userSnap.exists()) {
-          // 이미 프로필이 완성된 유저이므로 캘린더로 보냅니다.
-          navigate('/calendar', { replace: true });
+          const data = userSnap.data();
+          // [수정 핵심] 문서가 존재하더라도, 'phone'과 'birthDate'가 없으면 아직 가입 중인 상태로 판단합니다.
+          // 즉, 이미 모든 정보가 입력된 찐 유저만 캘린더로 보냅니다.
+          if (data.phone && data.birthDate) {
+            navigate('/calendar', { replace: true });
+          }
+          // 정보가 없으면? 아무것도 안 하고 이 페이지에 머물러서 입력을 받습니다.
         }
       } else {
         // 인증 정보가 없으므로 로그인 페이지로 보냅니다.

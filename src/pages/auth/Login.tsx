@@ -35,28 +35,26 @@ const Login = () => {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          // 1. 이미 존재하는 유저라면 -> 캘린더로 바로 이동
-          // (혹시 fcmTokens 필드가 없더라도 useFcmToken이 알아서 추가할 것임)
+        if (userSnap.exists() && userSnap.data()?.phone) {
           navigate('/calendar', { replace: true });
         } else {
           // 2. 신규 유저라면 -> Firestore에 기본 문서를 먼저 생성! (이게 핵심)
           // 이렇게 해야 useFcmToken이 토큰을 저장할 때 문서가 이미 존재하게 됨.
 
-          const basicUserData = {
-            uid: user.uid,
-            email: user.email || '',
-            // 이름은 일단 구글 이름으로 저장 (나중에 signup-social에서 수정 가능)
-            name: user.displayName || '이름 없음',
-            photoURL: user.photoURL || '',
-            provider: 'google',
-            createdAt: serverTimestamp(), // 가입 시간
-            fcmTokens: [], // 토큰 배열 초기화
-            // 필요한 경우 추가 필드 초기화 (예: settings 등)
-          };
-
-          // ★ DB에 먼저 저장합니다.
-          await setDoc(userRef, basicUserData);
+          if (!userSnap.exists()) {
+            const basicUserData = {
+              uid: user.uid,
+              email: user.email || '',
+              // 이름은 일단 구글 이름으로 저장 (나중에 signup-social에서 수정 가능)
+              name: user.displayName || '이름 없음',
+              photoURL: user.photoURL || '',
+              provider: 'google',
+              createdAt: serverTimestamp(), // 가입 시간
+              fcmTokens: [], // 토큰 배열 초기화
+              // 필요한 경우 추가 필드 초기화 (예: settings 등)
+            };
+            await setDoc(userRef, basicUserData);
+          }
 
           // 3. 추가 정보 입력을 위해 이동 (선택 사항)
           // 만약 여기서 바로 가입 완료 처리하고 싶다면 navigate('/calendar')로 바꿔도 됨.
