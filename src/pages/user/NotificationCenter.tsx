@@ -268,12 +268,14 @@ const NotificationCenter = () => {
 
   // --- [수정] Pull-to-Refresh 핸들러 ---
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (isSelectionMode) return; // [추가] 선택 모드에서는 당겨서 새로고침 비활성화
     if (containerRef.current?.scrollTop === 0) {
       touchStart.current = e.touches[0].clientY;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (isSelectionMode) return; // [추가] 선택 모드에서는 당겨서 새로고침 비활성화
     // 스크롤이 최상단이 아니거나 새로고침 중이면 무시
     if (containerRef.current && containerRef.current.scrollTop > 0) return;
     if (isRefreshing) return;
@@ -289,6 +291,7 @@ const NotificationCenter = () => {
   };
 
   const handleTouchEnd = () => {
+    if (isSelectionMode) return; // [추가] 선택 모드에서는 당겨서 새로고침 비활성화
     if (isRefreshing) return;
 
     // 임계값(80) 이상 당겼을 때 새로고침 실행
@@ -348,16 +351,16 @@ const NotificationCenter = () => {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션 & 탭 */}
-      <div className="sticky top-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-transparent dark:border-gray-800">
+      <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-transparent dark:border-gray-800">
         {isSelectionMode ? ( // Selection mode header
           <>
-            <nav className="px-6 pt-6 flex items-center justify-between pb-4 animate-in fade-in duration-200">
+            <nav className="relative flex items-center justify-center pb-4 animate-in fade-in duration-200">
               <button
                 onClick={() => {
                   setIsSelectionMode(false);
                   setSelectedIds(new Set());
                 }}
-                className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="absolute left-0 p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <X size={28} />
               </button>
@@ -377,7 +380,7 @@ const NotificationCenter = () => {
                 )}
               </div>
             </nav>
-            <div className="px-6 pb-4 animate-in fade-in duration-200">
+            <div className="pb-4 animate-in fade-in duration-200">
               <button onClick={handleSelectAll} disabled={filteredNotifications.length === 0} className="flex items-center gap-2 group disabled:opacity-50">
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -393,12 +396,12 @@ const NotificationCenter = () => {
         ) : (
           // Normal mode header
           <>
-            <nav className="px-6 pt-6 pb-4 flex items-center justify-between">
+            <nav className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
                 <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                   <ChevronLeft size={28} />
                 </button>
-                <h1 className="text-2xl font-black text-gray-900 dark:text-white">알림 센터</h1>
+                <h1 className="text-lg font-black text-gray-900 dark:text-white">알림 센터</h1>
               </div>
               <button
                 onClick={() => setActiveFilter(activeFilter === 'unread' ? 'all' : 'unread')}
@@ -414,7 +417,7 @@ const NotificationCenter = () => {
                 )}
               </button>
             </nav>
-            <div className="px-6 pb-4">
+            <div className="pb-4">
               <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px]">
                 {TABS.map((tab) => (
                   <button
@@ -436,14 +439,16 @@ const NotificationCenter = () => {
       <div className="flex-1 relative overflow-hidden z-0 bg-white dark:bg-gray-950">
         {/* 새로고침 스피너 (고정 위치) */}
         <motion.div
-          className="absolute top-4 left-0 right-0 flex justify-center items-center z-0 pointer-events-none"
+          className={`absolute top-44 left-0 right-0 flex justify-center items-center z-20 pointer-events-none ${
+            isSelectionMode ? 'pt-[env(safe-area-inset-top)]' : 'pt-[env(safe-area-inset-top)]'
+          }`}
           style={{
             opacity: iconOpacity,
             scale: iconScale,
           }}
         >
           <div className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-100 dark:border-gray-700">
-            <RefreshCw className={`w-4 h-4 text-blue-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-blue-600 dark:text-blue-400 ${isRefreshing ? 'animate-spin' : ''}`} />
           </div>
         </motion.div>
 
@@ -453,7 +458,9 @@ const NotificationCenter = () => {
         */}
         <div
           ref={containerRef}
-          className="relative h-full overflow-y-auto overscroll-y-contain z-10 flex flex-col"
+          className={`relative h-full pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-y-contain z-10 flex flex-col ${
+            isSelectionMode ? 'pt-[calc(105px+env(safe-area-inset-top))]' : 'pt-[calc(148px+env(safe-area-inset-top))]'
+          }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -463,7 +470,7 @@ const NotificationCenter = () => {
 
           {/* 실제 콘텐츠 영역 */}
           <div
-            className="flex-1 flex flex-col bg-white dark:bg-gray-950"
+            className="flex-1 flex flex-col bg-white dark:bg-gray-950 pt-4"
             onClick={() => {
               if (isSelectionMode) {
                 setIsSelectionMode(false);
