@@ -57,7 +57,12 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     if (!newFriendInput.trim() || !auth.currentUser) return;
 
     const searchField = addFriendMethod;
-    const searchValue = newFriendInput.trim();
+    let searchValue = newFriendInput.trim();
+
+    // [FIX] 휴대폰 번호로 검색 시, DB에 저장된 형식(하이픈 없음)과 일치시키기 위해 하이픈을 제거합니다.
+    if (searchField === 'phone') {
+      searchValue = searchValue.replace(/[^\d]/g, '');
+    }
 
     if ((searchField === 'email' && searchValue === auth.currentUser.email) || (searchField === 'phone' && searchValue === myInfo?.phone)) {
       toast.error('자기 자신은 친구로 추가할 수 없습니다.');
