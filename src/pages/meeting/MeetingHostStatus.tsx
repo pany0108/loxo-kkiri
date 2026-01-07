@@ -1,13 +1,13 @@
-import { useMemo, useLayoutEffect, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useMemo, useLayoutEffect, useRef, useState } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Trash2, Share2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { sendPushNotificationToUser } from 'utils';
-import { doc, collection, writeBatch } from 'firebase/firestore';
+import { doc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav } from 'components';
+import { TopNav, DeleteMeetingModal, ShareMeetingModal } from 'components';
 
 interface MeetingData {
   id: string;
@@ -38,7 +38,10 @@ interface StatusSlot {
 const MeetingHostStatus = () => {
   const { id: meetingId } = useParams<{ id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   /**
    * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
@@ -142,6 +145,22 @@ const MeetingHostStatus = () => {
     }
   };
 
+  // [추가] 약속 삭제 기능
+  const handleDeleteMeeting = async () => {
+    if (!meetingId || !meetingDocRef) return;
+
+    try {
+      await deleteDoc(meetingDocRef);
+      toast.success('약속이 성공적으로 삭제되었습니다.');
+      navigate('/propose', { replace: true });
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      toast.error('약속 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   // [수정] 모든 참여자(주최자 포함)의 이름이 정확히 표시되도록 로직 개선 (조건부 렌더링 밖으로 이동)
   const allParticipants = useMemo(() => {
     if (!meetingData) return [];
@@ -165,11 +184,26 @@ const MeetingHostStatus = () => {
 
   // --- [추가] PENDING 상태 뷰 (응답 현황) ---
   if (meetingData.status === 'PENDING' && responseStatus) {
+    const isHost = auth.currentUser?.uid === meetingData.hostId;
+    const canDelete = isHost && (!meetingData.responses || Object.keys(meetingData.responses).length === 0);
+
     return (
       <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-        <TopNav title="응답 현황" />
+        <TopNav
+          title="응답 현황"
+          extra={
+            isHost ? (
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-bold shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
+              >
+                <Share2 size={16} />
+              </button>
+            ) : undefined
+          }
+        />
 
-        <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-20 overflow-y-auto w-full">
+        <div ref={scrollContainerRef} className="flex-1 flex flex-col px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
           <header className="mb-8">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
               <Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />
@@ -206,7 +240,23 @@ const MeetingHostStatus = () => {
               ))}
             </div>
           </div>
+
+          {/* [추가] 약속 삭제 버튼 */}
+          {canDelete && (
+            <div className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3"
+              >
+                이 약속 삭제하기
+              </button>
+            </div>
+          )}
         </div>
+
+        <DeleteMeetingModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleDeleteMeeting} />
+        <ShareMeetingModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} meetingTitle={meetingData.title} meetingUrl={window.location.href} />
       </div>
     );
   }

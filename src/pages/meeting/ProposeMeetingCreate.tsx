@@ -15,9 +15,11 @@ dayjs.locale('ko');
  * 친구 데이터 인터페이스
  */
 interface Friend {
-  id: string;
+  uid: string;
+  id: string; // [추가] 하위 컴포넌트(FriendListPopup)와 타입 호환성을 위해 id 추가
   name: string;
   group?: string;
+  email: string; // [수정] 하위 컴포넌트(AddFromContactsModal)와 타입 호환성을 위해 string으로 변경
 }
 
 interface FriendGroup {
@@ -68,7 +70,14 @@ const ProposeMeetingCreate = () => {
 
   const friendsList: Friend[] = useMemo(() => {
     if (!userData?.friendsList) return [];
-    return userData.friendsList.map((f: any) => ({ id: f.uid, name: f.name, group: f.group }));
+    // [수정] 하위 컴포넌트들과의 타입 호환성을 위해 id, email 속성 추가/수정
+    return userData.friendsList.map((f: any) => ({
+      uid: f.uid,
+      id: f.uid,
+      name: f.name,
+      group: f.group,
+      email: f.email || '',
+    }));
   }, [userData]);
 
   const friendGroups: FriendGroup[] = useMemo(() => userData?.friendGroups || [], [userData]);
@@ -166,15 +175,23 @@ const ProposeMeetingCreate = () => {
    * 친구 초대 토글 핸들러
    * @param {Friend} friend - 선택한 친구 객체
    */
-  const toggleFriend = (friend: Friend) => {
-    setInvitedFriends((prev) => (prev.find((f) => f.id === friend.id) ? prev.filter((f) => f.id !== friend.id) : [...prev, friend]));
+  const toggleFriend = (friend: { id: string }) => {
+    setInvitedFriends((prev) => {
+      const isAlreadyInvited = prev.some((f) => f.id === friend.id);
+      if (isAlreadyInvited) {
+        return prev.filter((f) => f.id !== friend.id);
+      } else {
+        const friendToAdd = friendsList.find((f) => f.id === friend.id);
+        return friendToAdd ? [...prev, friendToAdd] : prev;
+      }
+    });
   };
 
   /**
    * [추가] 그룹 단위 친구 초대 토글 핸들러
    * @param {GroupedFriends} group - 선택한 그룹 객체
    */
-  const toggleGroup = (group: GroupedFriends) => {
+  const toggleGroup = (group: { friends: { id: string }[] }) => {
     const groupFriendIds = new Set(group.friends.map((f) => f.id));
     const invitedFriendIds = new Set(invitedFriends.map((f) => f.id));
 
@@ -185,7 +202,7 @@ const ProposeMeetingCreate = () => {
       setInvitedFriends((prev) => prev.filter((f) => !groupFriendIds.has(f.id)));
     } else {
       // 그룹의 일부 또는 아무도 초대되지 않은 경우, 아직 초대되지 않은 친구들만 추가합니다.
-      const friendsToAdd = group.friends.filter((f) => !invitedFriendIds.has(f.id));
+      const friendsToAdd = friendsList.filter((friend) => groupFriendIds.has(friend.id) && !invitedFriendIds.has(friend.id));
       setInvitedFriends((prev) => [...prev, ...friendsToAdd]);
     }
   };
@@ -239,6 +256,7 @@ const ProposeMeetingCreate = () => {
             allFriends={friendsList}
             onToggleFriend={toggleFriend}
             onToggleGroup={toggleGroup}
+            user={user}
           />
           <ProposalCalendar
             currentMonth={currentMonth}

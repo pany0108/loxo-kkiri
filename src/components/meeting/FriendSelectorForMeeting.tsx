@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Users, UserPlus, Search, X, Plus } from 'lucide-react';
-import { FriendListPopup } from 'components';
+import { FriendListPopup, AddFriendModal, AddFromContactsModal } from 'components';
 
 interface Friend {
-  id: string;
+  uid: string;
+  id: string; // [추가] 하위 컴포넌트(FriendListPopup)와 타입 호환성을 위해 id 추가
   name: string;
   group?: string;
+  email: string; // [수정] 하위 컴포넌트(AddFromContactsModal)와 타입 호환성을 위해 string으로 변경
 }
 
 interface GroupedFriends {
@@ -19,13 +21,16 @@ interface FriendSelectorForMeetingProps {
   groupedFriends: GroupedFriends[];
   invitedFriends: Friend[];
   allFriends: Friend[];
-  onToggleFriend: (friend: Friend) => void;
-  onToggleGroup: (group: GroupedFriends) => void;
+  onToggleFriend: (friend: { id: string }) => void;
+  onToggleGroup: (group: { friends: { id: string }[] }) => void;
+  user: any;
 }
 
-const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ groupedFriends, invitedFriends, allFriends, onToggleFriend, onToggleGroup }) => {
+const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ groupedFriends, invitedFriends, allFriends, onToggleFriend, onToggleGroup, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isAddFriendModalOpen, setIsAddFriendModalOpen] = useState(false);
+  const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
 
   const searchResults = useMemo(() => {
     if (!searchTerm) {
@@ -40,7 +45,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
     const friendToAdd = allFriends.find((f) => f.name.toLowerCase() === searchTerm.trim().toLowerCase());
 
     if (friendToAdd) {
-      if (invitedFriends.some((f) => f.id === friendToAdd.id)) {
+      if (invitedFriends.some((f) => f.uid === friendToAdd.uid)) {
         toast('이미 초대된 친구입니다.', { icon: '😅' });
       } else {
         onToggleFriend(friendToAdd);
@@ -49,6 +54,11 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
       toast.error('존재하지 않는 친구입니다.');
     }
     setSearchTerm('');
+  };
+
+  const handleOpenContactsModal = () => {
+    setIsAddFriendModalOpen(false);
+    setIsAddFromContactsModalOpen(true);
   };
 
   return (
@@ -78,7 +88,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-100 dark:border-gray-600 z-10 max-h-48 overflow-y-auto">
                     {searchResults.map((friend) => (
                       <button
-                        key={friend.id}
+                        key={friend.uid}
                         onClick={() => {
                           onToggleFriend(friend);
                           setSearchTerm('');
@@ -91,12 +101,12 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
                   </div>
                 )}
               </div>
-              {/* <button
-                onClick={handleAddFriendByName}
+              <button
+                onClick={() => setIsAddFriendModalOpen(true)}
                 className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
               >
                 <Plus size={20} strokeWidth={3} />
-              </button> */}
+              </button>
             </div>
           </div>
           {invitedFriends.length > 0 && (
@@ -105,7 +115,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
               <div className="flex flex-wrap gap-2">
                 {invitedFriends.map((friend) => (
                   <button
-                    key={`invited-${friend.id}`}
+                    key={`invited-${friend.uid}`}
                     onClick={() => onToggleFriend(friend)}
                     className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-600 text-white"
                   >
@@ -134,6 +144,8 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
         onToggleFriend={onToggleFriend}
         onToggleGroup={onToggleGroup}
       />
+      <AddFriendModal isOpen={isAddFriendModalOpen} onClose={() => setIsAddFriendModalOpen(false)} myInfo={user} friends={allFriends} onOpenContacts={handleOpenContactsModal} />
+      <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={user} existingFriends={allFriends} />
     </>
   );
 };

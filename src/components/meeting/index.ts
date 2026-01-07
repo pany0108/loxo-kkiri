@@ -20,3 +20,5 @@ export { default as ReportHeader } from './ReportHeader';
 export { default as ReportSlotCard } from './ReportSlotCard';
 export { default as ReportActions } from './ReportActions';
 export { default as FriendListPopup } from './FriendListPopup';
+export { default as DeleteMeetingModal } from './DeleteMeetingModal';
+export { default as ShareMeetingModal } from './ShareMeetingModal';

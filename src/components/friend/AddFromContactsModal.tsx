@@ -126,14 +126,6 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     );
   }, [contacts, searchTerm]);
 
-  const formatPhoneNumber = (value: string | undefined) => {
-    if (!value) return '';
-    const nums = value.replace(/[^\d]/g, '');
-    if (nums.length <= 3) return nums;
-    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
-    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
-  };
-
   const handleAddFriend = async (contact: LocalContact) => {
     // Changed type from Contact to LocalContact
     if (!myInfo || !auth.currentUser) {
@@ -142,7 +134,24 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     }
 
     const contactEmails = contact.emails?.map((e) => e.address?.toLowerCase()).filter(Boolean) || [];
-    const contactPhones = contact.phones?.map((p) => formatPhoneNumber(p.number)).filter(Boolean) || [];
+
+    // [수정] 전화번호를 하이픈이 있는 형식과 없는 형식 모두로 변환하여 검색 정확도를 높입니다.
+    const allPossiblePhoneFormats: string[] = [];
+    contact.phones?.forEach((phone) => {
+      if (!phone.number) return;
+      let digits = phone.number.replace(/[^\d]/g, '');
+      // 국제 번호(+82)를 국내 번호(0)로 변환
+      if (digits.startsWith('82')) {
+        digits = '0' + digits.substring(2);
+      }
+      // 010으로 시작하는 11자리 번호만 처리
+      if (digits.startsWith('010') && digits.length === 11) {
+        allPossiblePhoneFormats.push(digits); // "01012345678"
+        allPossiblePhoneFormats.push(`${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}`); // "010-1234-5678"
+      }
+    });
+    // [수정] ES5 호환성을 위해 스프레드 연산자 대신 Array.from 사용
+    const contactPhones = Array.from(new Set(allPossiblePhoneFormats));
 
     if (contactEmails.length === 0 && contactPhones.length === 0) {
       toast.error('친구의 이메일 또는 전화번호 정보가 없습니다.');
@@ -150,55 +159,55 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     }
 
     try {
-      let friendUserUid: string | null = null;
+      let friendDoc: any = null; // Firestore DocumentSnapshot
 
       // 1. 이메일로 사용자 찾기
       if (contactEmails.length > 0) {
         const q = query(collection(db, 'users'), where('email', 'in', contactEmails));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-          friendUserUid = querySnapshot.docs[0].id;
+          friendDoc = querySnapshot.docs[0];
         }
       }
 
       // 2. 전화번호로 사용자 찾기 (이메일로 못 찾았을 경우)
-      if (!friendUserUid && contactPhones.length > 0) {
-        const q = query(collection(db, 'users'), where('phone', 'in', contactPhones));
+      if (!friendDoc && contactPhones.length > 0) {
+        // Firestore 'in' 쿼리는 최대 30개의 값을 가질 수 있습니다. 쿼리 실패 방지를 위해 30개로 제한합니다.
+        const phoneQueryValues = contactPhones.slice(0, 30);
+        const q = query(collection(db, 'users'), where('phone', 'in', phoneQueryValues));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-          friendUserUid = querySnapshot.docs[0].id;
+          friendDoc = querySnapshot.docs[0];
         }
       }
 
-      if (friendUserUid) {
-        if (friendUserUid === auth.currentUser!.uid) {
-          // auth.currentUser is already null-checked
+      if (friendDoc) {
+        const friendData = friendDoc.data();
+        const friendUid = friendDoc.id;
+
+        if (friendUid === auth.currentUser!.uid) {
           toast('본인은 친구로 추가할 수 없습니다.');
           return;
         }
-        if (existingFriends.some((f) => f.uid === friendUserUid)) {
+        if (existingFriends.some((f) => f.uid === friendUid)) {
           toast('이미 친구입니다.');
           return;
         }
 
-        const friendDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', friendUserUid)));
-        if (!friendDoc.empty) {
-          const friendData = friendDoc.docs[0].data();
-          const newFriend: Friend = {
-            uid: friendData.uid,
-            name: friendData.name,
-            email: friendData.email,
-            statusMessage: friendData.statusMessage || '',
-            photoURL: friendData.photoURL || '',
-          };
+        const newFriend: Omit<Friend, 'group'> = {
+          uid: friendUid, // Use the document ID as the UID
+          name: friendData.name,
+          email: friendData.email,
+          statusMessage: friendData.statusMessage || '',
+          photoURL: friendData.photoURL || '',
+        };
 
-          const userRef = doc(db, 'users', auth.currentUser!.uid); // auth.currentUser is already null-checked
-          await updateDoc(userRef, {
-            friendsList: arrayUnion(newFriend),
-          });
-          toast.success(`${newFriend.name}님을 친구로 추가했습니다!`);
-          onClose();
-        }
+        const userRef = doc(db, 'users', auth.currentUser!.uid);
+        await updateDoc(userRef, {
+          friendsList: arrayUnion(newFriend),
+        });
+        toast.success(`${newFriend.name}님을 친구로 추가했습니다!`);
+        onClose();
       } else {
         toast.error('해당 연락처와 일치하는 사용자를 찾을 수 없습니다.');
       }
