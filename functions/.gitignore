@@ -1,0 +1,26 @@
+# Dependencies
+# 설치된 라이브러리 파일들은 용량이 크고, 각 환경에서 `npm install`로 설치해야 하므로 제외합니다.
+node_modules/
+
+# Build output (if using TypeScript)
+# TypeScript를 JavaScript로 컴파일한 결과물 폴더를 제외합니다.
+lib/
+dist/
+
+# Log files
+# 각종 로그 파일들을 제외합니다.
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+# API 키 등 민감한 정보가 담길 수 있는 환경변수 파일을 제외합니다.
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+# VSCode, WebStorm 등 에디터 설정 파일을 제외합니다.
+.vscode/
+.idea/

@@ -82,7 +82,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <div className="flex items-center gap-1 sm:gap-3">
           <button onClick={onNotificationsClick} className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-full">
             <Bell size={22} />
-            {hasUnreadNotifications && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />}
+            {hasUnreadNotifications && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950" />}
           </button>
 
           <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[14px]">
