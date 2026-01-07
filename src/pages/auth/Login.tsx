@@ -219,7 +219,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] bg-white dark:bg-gray-950 font-['Pretendard']">
       <div className="flex flex-1 flex-col justify-center px-6 max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-10 text-left">
