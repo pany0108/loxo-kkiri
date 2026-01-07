@@ -2,15 +2,17 @@ import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import { doc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import toast from 'react-hot-toast';
 import { User } from 'firebase/auth';
+import { NavigateFunction } from 'react-router-dom';
 
 /**
  * 푸시 알림 권한 요청, 토큰 관리, 알림 수신 리스너를 설정하는 커스텀 훅입니다.
  * @param {User | null} user - 현재 로그인된 Firebase 사용자 객체
+ * @param {NavigateFunction} navigate - react-router-dom의 navigate 함수
  */
-export const usePushNotification = (user: User | null) => {
+export const usePushNotification = (user: User | null, navigate: NavigateFunction) => {
   useEffect(() => {
     // 네이티브 환경이 아니거나, 사용자가 로그인하지 않은 경우 실행하지 않음
     if (!Capacitor.isNativePlatform() || !user) {
@@ -55,9 +57,85 @@ export const usePushNotification = (user: User | null) => {
         });
 
         // 3. 사용자가 알림을 탭했을 때 실행되는 리스너
-        const actionPerformedListener = await PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+        const actionPerformedListener = await PushNotifications.addListener('pushNotificationActionPerformed', async (action: ActionPerformed) => {
           console.log('알림 탭:', action);
-          // TODO: 알림 데이터(action.notification.data)를 기반으로 특정 페이지로 이동하는 로직 구현
+          toast('알림을 확인했습니다.', { icon: '👆' });
+
+          const { data } = action.notification;
+
+          // 데이터가 없으면 기본 페이지로 이동
+          if (!data?.type || !data?.relatedId) {
+            navigate('/calendar');
+            return;
+          }
+
+          const { type, relatedId } = data;
+
+          try {
+            switch (type) {
+              case 'FRIEND_REQUEST':
+                navigate(`/profile/${relatedId}`);
+                break;
+
+              case 'CALENDAR_INVITE':
+              case 'CALENDAR_LEAVE':
+                navigate('/calendar', { state: { targetCalendarId: relatedId } });
+                break;
+
+              case 'SCHEDULE_ADDED':
+              case 'SCHEDULE_UPDATED': {
+                const scheduleDoc = await getDoc(doc(db, 'schedules', relatedId));
+                if (scheduleDoc.exists()) {
+                  navigate(`/schedule/${relatedId}`);
+                } else {
+                  toast.error('삭제된 일정입니다.');
+                  navigate('/calendar');
+                }
+                break;
+              }
+
+              case 'MEETING_VOTING_COMPLETE_FOR_HOST':
+                navigate(`/meeting/report/${relatedId}`);
+                break;
+
+              case 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT':
+                navigate(`/meeting/participant-status/${relatedId}`);
+                break;
+
+              default:
+                if (type.startsWith('MEETING_')) {
+                  const meetingDoc = await getDoc(doc(db, 'meetings', relatedId));
+                  if (!meetingDoc.exists()) {
+                    toast.error('관련된 약속을 찾을 수 없습니다.');
+                    navigate('/propose');
+                    return;
+                  }
+                  const meetingData = meetingDoc.data();
+                  const isHost = auth.currentUser?.uid === meetingData.hostId;
+
+                  switch (meetingData.status) {
+                    case 'PENDING':
+                      navigate(isHost ? `/meeting/status/${relatedId}` : `/meeting/response/${relatedId}`);
+                      break;
+                    case 'VOTING':
+                      navigate(`/meeting/vote/${relatedId}`);
+                      break;
+                    case 'CONFIRMED':
+                      navigate(`/meeting/report/${relatedId}`);
+                      break;
+                    default:
+                      navigate('/propose');
+                  }
+                } else {
+                  // 처리되지 않은 다른 알림 타입은 알림 센터로
+                  navigate('/notifications');
+                }
+            }
+          } catch (error) {
+            console.error('알림 탭 처리 중 오류 발생:', error);
+            toast.error('페이지 이동 중 오류가 발생했습니다.');
+            navigate('/calendar'); // 오류 발생 시 기본 페이지로 이동
+          }
         });
 
         // 4. 현재 권한 상태를 확인하고, 이미 'granted' 상태이면 기기를 등록합니다.
@@ -87,5 +165,5 @@ export const usePushNotification = (user: User | null) => {
     return () => {
       cleanupPromise.then((cleanup) => cleanup && cleanup());
     };
-  }, [user]); // user 객체가 변경될 때(로그인/로그아웃) 이펙트를 다시 실행
+  }, [user, navigate]); // user 객체가 변경될 때(로그인/로그아웃) 이펙트를 다시 실행
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -44,11 +44,12 @@ function App() {
   // const { user } = useAuth(); <--- 삭제함
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // [기존 유지] 푸시 알림 리스너 (포그라운드 알림 처리)
-  usePushNotification(user);
+  usePushNotification(user, navigate);
 
   // [수정 3] 앱 실행/로그인 시 Firestore에 토큰 갱신 (새로 추가한 훅)
   useFcmToken(user?.uid || null);

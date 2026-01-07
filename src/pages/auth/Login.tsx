@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
 import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth, db, googleProvider } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
@@ -36,10 +36,32 @@ const Login = () => {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          // 기존 유저: 캘린더로 바로 이동
+          // 1. 이미 존재하는 유저라면 -> 캘린더로 바로 이동
+          // (혹시 fcmTokens 필드가 없더라도 useFcmToken이 알아서 추가할 것임)
           navigate('/calendar', { replace: true });
         } else {
-          // 신규 유저: 소셜 프로필 정보 준비
+          // 2. 신규 유저라면 -> Firestore에 기본 문서를 먼저 생성! (이게 핵심)
+          // 이렇게 해야 useFcmToken이 토큰을 저장할 때 문서가 이미 존재하게 됨.
+
+          const basicUserData = {
+            uid: user.uid,
+            email: user.email || '',
+            // 이름은 일단 구글 이름으로 저장 (나중에 signup-social에서 수정 가능)
+            name: user.displayName || '이름 없음',
+            photoURL: user.photoURL || '',
+            provider: 'google',
+            createdAt: serverTimestamp(), // 가입 시간
+            fcmTokens: [], // 토큰 배열 초기화
+            // 필요한 경우 추가 필드 초기화 (예: settings 등)
+          };
+
+          // ★ DB에 먼저 저장합니다.
+          await setDoc(userRef, basicUserData);
+
+          // 3. 추가 정보 입력을 위해 이동 (선택 사항)
+          // 만약 여기서 바로 가입 완료 처리하고 싶다면 navigate('/calendar')로 바꿔도 됨.
+          // 하지만 원래 의도대로 추가 정보(이름 수정 등)를 받고 싶다면 아래 유지.
+
           const signupData = {
             uid: user.uid,
             email: user.email || '',
@@ -47,19 +69,15 @@ const Login = () => {
             firstName: user.displayName?.slice(1) || '',
           };
 
-          // 모바일 리다이렉트 환경에서의 데이터 유실 방지를 위해 LocalStorage 백업
           localStorage.setItem('pendingSignup', JSON.stringify(signupData));
 
-          // 회원가입 페이지로 이동
           navigate('/signup-social', {
             replace: true,
             state: signupData,
           });
         }
       } catch (error: any) {
-        // 네트워크 또는 권한 오류 발생 시 처리
-        toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        // 에러를 다시 던져서 호출한 쪽에서 로딩 상태를 처리하도록 합니다.
+        toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
         throw error;
       }
     },
