@@ -1,9 +1,11 @@
-import React, { useState, useMemo, useLayoutEffect, useRef } from 'react';
+import React, { useState, useMemo, useLayoutEffect, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { auth, db } from '../../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from 'contexts';
 import { useFirestoreDoc } from 'hooks';
@@ -41,7 +43,8 @@ const MyProfile = () => {
     }
   }, [location.pathname]);
 
-  const [isPushEnabled, setIsPushEnabled] = useState(true);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [tempStatus, setTempStatus] = useState('');
@@ -49,6 +52,60 @@ const MyProfile = () => {
   const user = auth.currentUser;
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: userData, loading: isLoading } = useFirestoreDoc<UserProfile>(userDocRef);
+
+  // [추가] 푸시 알림 권한 상태를 확인하여 토글 초기 상태를 설정합니다.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      setIsCheckingPermission(false);
+      return;
+    }
+    const checkPermission = async () => {
+      try {
+        const permStatus = await PushNotifications.checkPermissions();
+        setIsPushEnabled(permStatus.receive === 'granted');
+      } catch (error) {
+        console.error('푸시 알림 권한 확인 오류:', error);
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    };
+    checkPermission();
+  }, []);
+
+  // [추가] 푸시 알림 토글 핸들러
+  const handleTogglePush = async () => {
+    if (isCheckingPermission || !Capacitor.isNativePlatform()) return;
+
+    if (isPushEnabled) {
+      // --- 알림 끄기 ---
+      const token = localStorage.getItem('fcm_token');
+      if (token && user) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, { fcmTokens: arrayRemove(token) });
+          localStorage.removeItem('fcm_token');
+          setIsPushEnabled(false);
+          toast.success('푸시 알림을 해제했습니다.');
+        } catch (error) {
+          toast.error('알림 해제 중 오류가 발생했습니다.');
+        }
+      }
+    } else {
+      // --- 알림 켜기 ---
+      try {
+        const permStatus = await PushNotifications.requestPermissions();
+        if (permStatus.receive === 'granted') {
+          await PushNotifications.register();
+          setIsPushEnabled(true);
+          toast.success('푸시 알림을 설정했습니다.');
+        } else {
+          toast.error('알림 권한이 거부되었습니다. 기기 설정에서 직접 권한을 허용해주세요.');
+        }
+      } catch (error) {
+        toast.error('알림 설정 중 오류가 발생했습니다.');
+      }
+    }
+  };
 
   /**
    * [수정] 상태 메시지 수정 모달을 엽니다.
@@ -172,8 +229,8 @@ const MyProfile = () => {
               iconBg="bg-purple-50 text-purple-500"
               label="푸시 알림"
               isToggle={true}
-              toggleValue={isPushEnabled}
-              onToggle={() => setIsPushEnabled(!isPushEnabled)}
+              toggleValue={isPushEnabled} // 실제 권한 상태를 반영
+              onToggle={handleTogglePush} // 권한 요청/토큰 제거 로직 실행
             />
             <MenuBtn icon={<LogOut size={20} />} iconBg="bg-red-50 text-red-500" label="로그아웃" onClick={handleLogout} color="text-red-500" hideArrow />
           </div>

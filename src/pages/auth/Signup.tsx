@@ -253,6 +253,7 @@ const Signup = () => {
         isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
         birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
         createdAt: new Date().toISOString(),
+        fcmTokens: [], // [추가] 푸시 알림 토큰 필드를 빈 배열로 초기화합니다.
       });
 
       // [수정] 회원가입 시 기본 캘린더 자동 생성

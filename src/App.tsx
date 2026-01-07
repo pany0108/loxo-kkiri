@@ -36,15 +36,22 @@ import {
 } from './pages';
 import { Loader2 } from 'lucide-react';
 import { CalendarProvider, ThemeProvider } from 'contexts';
-import { useFirestoreQuery, usePushNotification } from 'hooks'; // [수정] usePushNotification 훅 import
+// [수정 1] useFcmToken 추가
+import { useFirestoreQuery, usePushNotification, useFcmToken } from 'hooks';
 
 function App() {
+  // [수정 2] useAuth() 라인 삭제 (아래 useState와 충돌됨)
+  // const { user } = useAuth(); <--- 삭제함
+
   const location = useLocation();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // [추가] 푸시 알림 초기화 및 리스너 설정
+  // [기존 유지] 푸시 알림 리스너 (포그라운드 알림 처리)
   usePushNotification(user);
+
+  // [수정 3] 앱 실행/로그인 시 Firestore에 토큰 갱신 (새로 추가한 훅)
+  useFcmToken(user?.uid || null);
 
   // 1. 사용자 로그인 상태 감시
   useEffect(() => {
@@ -55,7 +62,7 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // [추가] 다크/라이트 모드에 따른 시스템 UI(상태바, 네비게이션바) 색상 동기화
+  // [추가] 다크/라이트 모드 UI 동기화
   useEffect(() => {
     const setSystemUI = async (isDark: boolean) => {
       if (!Capacitor.isNativePlatform()) {
@@ -64,31 +71,19 @@ function App() {
 
       try {
         if (isDark) {
-          // ■ 다크모드 설정
-          const darkBgColor = '#030712'; // gray-950
-
-          // 1. 상태바 (상단)
-          // [수정] 배경이 어두우므로 Style.Dark를 써야 글자가 '흰색'이 됩니다.
+          const darkBgColor = '#030712';
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: darkBgColor });
 
-          // 2. 네비게이션바 (하단, 안드로이드)
           if (Capacitor.getPlatform() === 'android') {
-            // 버튼을 밝게(흰색) 하려면 darkButtons: false
             await NavigationBar.setColor({ color: darkBgColor, darkButtons: false });
           }
         } else {
-          // □ 라이트모드 설정
-          const lightBgColor = '#f9fafb'; // bg-gray-50
-
-          // 1. 상태바 (상단)
-          // [수정] 배경이 밝으므로 Style.Light를 써야 글자가 '검은색'이 됩니다.
+          const lightBgColor = '#f9fafb';
           await StatusBar.setStyle({ style: Style.Light });
           await StatusBar.setBackgroundColor({ color: lightBgColor });
 
-          // 2. 네비게이션바 (하단, 안드로이드)
           if (Capacitor.getPlatform() === 'android') {
-            // 버튼을 어둡게(검은색) 하려면 darkButtons: true
             await NavigationBar.setColor({ color: lightBgColor, darkButtons: true });
           }
         }
@@ -107,7 +102,6 @@ function App() {
       attributeFilter: ['class'],
     });
 
-    // 초기 실행
     setSystemUI(document.documentElement.classList.contains('dark'));
 
     return () => observer.disconnect();
@@ -143,7 +137,6 @@ function App() {
   }
 
   return (
-    // [수정] 전체 컨테이너의 하단 패딩을 제거합니다. 하단 safe-area는 마지막 요소가 처리합니다.
     <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <Toaster
         position="top-center"
@@ -163,7 +156,6 @@ function App() {
         <CalendarProvider>
           <div className="flex-1 min-h-0">
             <div className="h-full pb-[calc(4rem+env(safe-area-inset-bottom))]">
-              {/* Add padding for fixed BottomNav */}
               <Routes>
                 {/* --- 01. 계정 및 인증 --- */}
                 <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
@@ -188,7 +180,7 @@ function App() {
                 <Route path="/propose/detail" element={user ? <ProposeMeetingDetail /> : <Navigate to="/" />} />
                 <Route path="/meeting/response/:id" element={user ? <MeetingResponse /> : <Navigate to="/" />} />
                 <Route path="/meeting/vote/:id" element={user ? <MeetingVoting /> : <Navigate to="/" />} />
-                <Route path="/meeting/status/:id" element={user ? <MeetingHostStatus /> : <Navigate to="/" />} /> {/* [추가] 라우트 */}
+                <Route path="/meeting/status/:id" element={user ? <MeetingHostStatus /> : <Navigate to="/" />} />
                 <Route path="/meeting/participant-status/:id" element={user ? <MeetingParticipantStatus /> : <Navigate to="/" />} />
                 <Route path="/meeting/report/:id" element={user ? <MeetingReport /> : <Navigate to="/" />} />
                 {/* --- 05. 커뮤니케이션 --- */}

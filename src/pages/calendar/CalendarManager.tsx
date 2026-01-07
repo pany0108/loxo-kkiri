@@ -124,32 +124,8 @@ const CalendarManager = () => {
 
         // 2. 남은 멤버들에게 알림 전송
         const remainingMembers = calendarToDelete.members.filter((memberId) => memberId !== user.uid);
-        // const notificationsCollection = collection(db, 'notifications');
-        // remainingMembers.forEach((memberId) => {
-        //   const newNotiRef = doc(notificationsCollection);
-        //   batch.set(newNotiRef, {
-        //     userId: memberId,
-        //     type: 'CALENDAR_LEAVE', // 새로운 알림 타입
-        //     message: `${user.displayName || '누군가'}님이 '${calendarToDelete.name}' 캘린더에서 나갔습니다.`,
-        //     relatedId: calendarToDelete.id,
-        //     isRead: false,
-        //     createdAt: new Date().toISOString(),
-        //   });
-        //   // [추가] 푸시 알림 전송
-        //   await sendPushNotificationToUser({
-        //     userId: memberId,
-        //     title: '캘린더에서 나감',
-        //     body: `${user.displayName || '누군가'}님이 '${calendarToDelete.name}' 캘린더에서 나갔습니다.`,
-        //     data: { type: 'CALENDAR_LEAVE', relatedId: calendarToDelete.id },
-        //   });
-        // });
-
-        // await batch.commit();
-
-        // [수정] forEach 대신 for...of 사용
+        // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
         for (const memberId of remainingMembers) {
-          if (memberId === user.uid) continue; // return 대신 continue 사용
-
           // 1. Firestore 알림 저장 (Batch)
           const notiRef = doc(collection(db, 'notifications'));
           batch.set(notiRef, {
@@ -169,7 +145,6 @@ const CalendarManager = () => {
             data: { type: 'CALENDAR_LEAVE', relatedId: calendarToDelete.id },
           });
         }
-
         // 루프가 다 끝난 뒤 배치 커밋
         await batch.commit();
 

@@ -227,10 +227,10 @@ const CreateCalendar = () => {
 
       // [추가] 공유된 친구들에게 알림 보내기
       if (selectedFriendUids.length > 0 && user?.displayName) {
-        // [수정] map의 콜백 함수 앞에 'async' 키워드 추가
-        const notificationPromises = selectedFriendUids.map(async (friendUid) => {
-          // 1. Firestore 알림 저장 (순서 보장을 위해 여기도 await을 붙이는 것을 권장합니다)
-          await addDoc(collection(db, 'notifications'), {
+        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
+        for (const friendUid of selectedFriendUids) {
+          // 1. Firestore 알림 저장
+          addDoc(collection(db, 'notifications'), {
             userId: friendUid,
             type: 'CALENDAR_INVITE',
             message: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
@@ -242,17 +242,14 @@ const CreateCalendar = () => {
             createdAt: new Date().toISOString(),
           });
 
-          // 2. 푸시 알림 전송 (await 사용 가능해짐)
+          // 2. 푸시 알림 전송
           await sendPushNotificationToUser({
             userId: friendUid,
             title: '캘린더 초대',
             body: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
             data: { type: 'CALENDAR_INVITE', relatedId: docRef.id, calendarName: finalName },
           });
-        });
-
-        // 모든 비동기 작업(알림 저장 + 푸시 전송)이 끝날 때까지 대기
-        await Promise.all(notificationPromises);
+        }
       }
 
       toast.success(`'${finalName}' 캘린더가 생성되었습니다!`);

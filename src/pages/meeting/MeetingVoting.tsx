@@ -3,9 +3,9 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sparkles, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { sendPushNotificationToUser } from 'utils';
+import { sendPushNotificationToUser } from 'utils'; // addDoc is missing
 import { db, auth } from '../../firebase';
-import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, writeBatch, collection, addDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { useFirestoreDoc } from 'hooks';
@@ -173,44 +173,48 @@ const MeetingVoting = () => {
       if (votedCount >= totalParticipants) {
         // 3. 모두 투표 완료 시, 주최자와 참여자에게 각각 다른 알림 전송
         const batch = writeBatch(db);
-        // [수정] forEach를 Promise.all과 map으로 변경하여 비동기 처리 보장
-        await Promise.all(
-          updatedMeetingData.participants.map(async (uid: string) => {
-            const notiRef = doc(collection(db, 'notifications'));
-            const isHostNotification = uid === updatedMeetingData.hostId;
+        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
+        for (const uid of updatedMeetingData.participants) {
+          const notiRef = doc(collection(db, 'notifications'));
+          const isHostNotification = uid === updatedMeetingData.hostId;
 
-            if (isHostNotification) {
-              // 주최자에게 알림 (배치 작업 - 동기)
-              batch.set(notiRef, {
-                userId: uid,
-                type: 'MEETING_VOTING_COMPLETE_FOR_HOST',
-                message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
-                relatedId: meetingId,
-                isRead: false,
-                createdAt: new Date().toISOString(),
-              });
-              // 주최자에게도 푸시를 보내고 싶다면 여기에 await sendPushNotificationToUser 추가 가능
-            } else {
-              // 참여자에게 알림 (배치 작업 - 동기)
-              batch.set(notiRef, {
-                userId: uid,
-                type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT',
-                message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
-                relatedId: meetingId,
-                isRead: false,
-                createdAt: new Date().toISOString(),
-              });
+          if (isHostNotification) {
+            // 주최자에게 알림 (배치 작업 - 동기)
+            batch.set(notiRef, {
+              userId: uid,
+              type: 'MEETING_VOTING_COMPLETE_FOR_HOST',
+              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
+              relatedId: meetingId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
+            // [추가] 주최자에게 푸시 알림 전송
+            await sendPushNotificationToUser({
+              userId: uid,
+              title: '투표 완료',
+              body: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
+              data: { type: 'MEETING_VOTING_COMPLETE_FOR_HOST', relatedId: meetingId },
+            });
+          } else {
+            // 참여자에게 알림 (배치 작업 - 동기)
+            batch.set(notiRef, {
+              userId: uid,
+              type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT',
+              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
+              relatedId: meetingId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
 
-              // [추가] 참여자에게 푸시 알림 전송 (비동기 - await 사용 가능)
-              await sendPushNotificationToUser({
-                userId: uid,
-                title: '투표 완료',
-                body: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
-                data: { type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT', relatedId: meetingId },
-              });
-            }
-          }),
-        );
+            // [추가] 참여자에게 푸시 알림 전송
+            await sendPushNotificationToUser({
+              userId: uid,
+              title: '투표 완료',
+              body: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
+              data: { type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT', relatedId: meetingId },
+            });
+          }
+        }
 
         // 모든 알림 준비 및 전송이 완료된 후 DB에 일괄 저장
         await batch.commit();
@@ -219,8 +223,26 @@ const MeetingVoting = () => {
         navigate('/propose');
         return;
       }
-
       toast.success('투표가 완료되었습니다!');
+      // [추가] 주최자에게 투표가 제출되었음을 알립니다.
+      if (meetingData.hostId !== user.uid) {
+        // Firestore에 알림 저장
+        await addDoc(collection(db, 'notifications'), {
+          userId: meetingData.hostId,
+          type: 'MEETING_VOTE',
+          message: `${user.displayName}님이 '${meetingData.title}' 약속 투표에 참여했습니다.`,
+          relatedId: meetingId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+        // 푸시 알림 전송
+        await sendPushNotificationToUser({
+          userId: meetingData.hostId,
+          title: '새로운 약속 투표',
+          body: `${user.displayName}님이 '${meetingData.title}' 약속에 투표했습니다.`,
+          data: { type: 'MEETING_VOTE', relatedId: meetingId },
+        });
+      }
       navigate('/propose');
     } catch (error) {
       console.error('Error submitting vote:', error);

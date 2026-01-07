@@ -113,30 +113,28 @@ const MeetingHostStatus = () => {
 
     try {
       const batch = writeBatch(db);
-      // [수정] forEach를 Promise.all과 map으로 변경하여 비동기 처리
-      await Promise.all(
-        unvotedParticipants.map(async (uid) => {
-          const notiRef = doc(collection(db, 'notifications'));
+      // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
+      for (const uid of unvotedParticipants) {
+        const notiRef = doc(collection(db, 'notifications'));
 
-          // 1. Firestore 배치 작업 (동기적으로 실행됨)
-          batch.set(notiRef, {
-            userId: uid,
-            type: 'MEETING_URGE',
-            message: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
-            relatedId: meetingId,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
+        // 1. Firestore 배치 작업 (동기적으로 실행됨)
+        batch.set(notiRef, {
+          userId: uid,
+          type: 'MEETING_URGE',
+          message: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
+          relatedId: meetingId,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
 
-          // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
-          await sendPushNotificationToUser({
-            userId: uid,
-            title: '투표 재촉',
-            body: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
-            data: { type: 'MEETING_URGE', relatedId: meetingId },
-          });
-        }),
-      );
+        // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
+        await sendPushNotificationToUser({
+          userId: uid,
+          title: '투표 재촉',
+          body: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
+          data: { type: 'MEETING_URGE', relatedId: meetingId },
+        });
+      }
       await batch.commit();
       toast.success(`${unvotedParticipants.length}명에게 재촉 알림을 보냈습니다.`);
     } catch (error) {

@@ -186,30 +186,9 @@ const MeetingReport = () => {
 
       // [추가] 약속 확정 알림 전송
       const batch = writeBatch(db);
-      // meetingData.participants.forEach((uid) => {
-      //   if (uid === auth.currentUser?.uid) return; // 본인 제외
-      //   const notiRef = doc(collection(db, 'notifications'));
-      //   batch.set(notiRef, {
-      //     userId: uid,
-      //     type: 'MEETING_CONFIRMED',
-      //     message: `'${meetingData.title}' 약속이 확정되었습니다.`,
-      //     relatedId: meetingId,
-      //     isRead: false,
-      //     createdAt: new Date().toISOString(),
-      //   });
-      //   // [추가] 푸시 알림 전송
-      //   await sendPushNotificationToUser({
-      //     userId: uid,
-      //     title: '약속 확정',
-      //     body: `'${meetingData.title}' 약속이 확정되었습니다.`,
-      //     data: { type: 'MEETING_CONFIRMED', relatedId: meetingId, scheduleId: scheduleRef.id },
-      //   });
-      // });
-      // await batch.commit();
-
-      // [수정] forEach 대신 for...of 사용
+      // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
       for (const uid of meetingData.participants) {
-        if (uid === auth.currentUser?.uid) continue; // return 대신 continue 사용
+        if (uid === auth.currentUser?.uid) continue;
 
         // 1. Firestore 알림 저장 (Batch)
         const notiRef = doc(collection(db, 'notifications'));
@@ -273,33 +252,9 @@ const MeetingReport = () => {
       const meetingRef = doc(db, 'meetings', meetingId);
       batch.delete(meetingRef);
 
-      // 2. 참여자들에게 취소 알림 전송 (주최자 제외)
-      // meetingData.participants.forEach((uid) => {
-      //   if (uid === auth.currentUser?.uid) return;
-
-      //   const notiRef = doc(collection(db, 'notifications'));
-      //   batch.set(notiRef, {
-      //     userId: uid,
-      //     type: 'MEETING_CANCELED',
-      //     message: `'${meetingData.title}' 약속이 주최자에 의해 취소되었습니다.`,
-      //     relatedId: meetingId,
-      //     isRead: false,
-      //     createdAt: new Date().toISOString(),
-      //   });
-      //   // [추가] 푸시 알림 전송
-      //   await sendPushNotificationToUser({
-      //     userId: uid,
-      //     title: '약속 취소',
-      //     body: `'${meetingData.title}' 약속이 주최자에 의해 취소되었습니다.`,
-      //     data: { type: 'MEETING_CANCELED', relatedId: meetingId },
-      //   });
-      // });
-
-      // await batch.commit();
-
-      // [수정] forEach 대신 for...of 사용
+      // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
       for (const uid of meetingData.participants) {
-        if (uid === auth.currentUser?.uid) continue; // return 대신 continue 사용
+        if (uid === auth.currentUser?.uid) continue;
 
         // 1. Firestore 알림 저장 (Batch)
         const notiRef = doc(collection(db, 'notifications'));

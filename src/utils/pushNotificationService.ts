@@ -21,7 +21,7 @@ interface PushNotificationData {
  *
  * @param {PushNotificationData} notification - 알림 데이터 (수신자 ID, 제목, 본문, 추가 데이터)
  */
-export const sendPushNotificationToUser = async (notification: PushNotificationData) => {
+export const sendPushNotificationToUser_SIMULATED = async (notification: PushNotificationData) => {
   console.log(`[PushNotificationService] Attempting to send push notification to user: ${notification.userId}`);
   console.log(`  Title: ${notification.title || 'Super Scheduler'}`);
   console.log(`  Body: ${notification.body}`);

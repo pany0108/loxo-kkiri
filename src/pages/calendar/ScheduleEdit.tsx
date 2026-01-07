@@ -254,33 +254,31 @@ const ScheduleEdit = () => {
           const notificationsCollection = collection(db, 'notifications');
           const editorName = user?.displayName || '누군가';
 
-          // [수정] forEach를 Promise.all + map으로 변경
-          await Promise.all(
-            attendees.map(async (memberId) => {
-              // 일정을 수정한 본인에게는 알림을 보내지 않음
-              if (memberId === user?.uid) return;
+          // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
+          for (const memberId of attendees) {
+            // 일정을 수정한 본인에게는 알림을 보내지 않음
+            if (memberId === user?.uid) continue;
 
-              const newNotiRef = doc(notificationsCollection);
+            const newNotiRef = doc(notificationsCollection);
 
-              // 1. Firestore 배치 작업 (동기)
-              batch.set(newNotiRef, {
-                userId: memberId,
-                type: 'SCHEDULE_UPDATED',
-                message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
-                relatedId: docId,
-                isRead: false,
-                createdAt: new Date().toISOString(),
-              });
+            // 1. Firestore 배치 작업 (동기)
+            batch.set(newNotiRef, {
+              userId: memberId,
+              type: 'SCHEDULE_UPDATED',
+              message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
+              relatedId: docId,
+              isRead: false,
+              createdAt: new Date().toISOString(),
+            });
 
-              // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
-              await sendPushNotificationToUser({
-                userId: memberId,
-                title: '일정 수정됨',
-                body: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
-                data: { type: 'SCHEDULE_UPDATED', relatedId: docId, calendarId: selectedCalendar?.id },
-              });
-            }),
-          );
+            // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
+            await sendPushNotificationToUser({
+              userId: memberId,
+              title: '일정 수정됨',
+              body: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
+              data: { type: 'SCHEDULE_UPDATED', relatedId: docId, calendarId: selectedCalendar?.id },
+            });
+          }
 
           // 모든 알림 작업이 끝난 후 배치 커밋
           await batch.commit();

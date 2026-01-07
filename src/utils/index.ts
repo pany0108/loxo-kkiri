@@ -1,2 +1,2 @@
 export * from './validation';
-export * from './pushNotificationService';
+export * from './sendPushNotification';

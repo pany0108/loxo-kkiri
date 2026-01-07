@@ -14,10 +14,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app); // DB 연동용
-const storage = getStorage(app); // 파일 업로드용
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(app); // 로그인용
+const db = getFirestore(app);
+const storage = getStorage(app);
+const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { app, auth, db, storage, firebaseApp, googleProvider };
+export { app, auth, db, storage, googleProvider };

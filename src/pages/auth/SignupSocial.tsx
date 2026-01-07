@@ -255,6 +255,7 @@ const SignupSocial = () => {
         isLeapMonth: isLunar && isLeapMonth, // [추가]
         birthDateType: isLunar ? 'lunar' : 'solar', // [추가]
         createdAt: new Date().toISOString(),
+        fcmTokens: [], // [추가] 푸시 알림 토큰 필드를 빈 배열로 초기화합니다.
       });
 
       // [수정] 소셜 로그인 시 기본 캘린더 자동 생성

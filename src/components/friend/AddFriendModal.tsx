@@ -108,6 +108,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
       // [추가] 푸시 알림 전송
       await sendPushNotificationToUser({
         userId: targetUserDoc.id,
+        title: '새로운 친구 요청', // [FIX] 누락된 title 속성 추가
         body: `${myInfo?.name || myInfo?.displayName || '누군가'}님이 당신을 친구로 추가했습니다.`,
         data: { type: 'FRIEND_REQUEST', relatedId: auth.currentUser.uid },
       });
