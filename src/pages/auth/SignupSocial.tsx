@@ -243,13 +243,14 @@ const SignupSocial = () => {
 
     setIsLoading(true);
     try {
+      // [FIX] 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
       await setDoc(doc(db, 'users', uid), {
         uid,
         email,
         name: `${lastName}${firstName}`,
         lastName,
         firstName,
-        phone: formData.phone,
+        phone: formData.phone.replace(/[^\d]/g, ''),
         birthDate: formData.birthDate,
         isLeapMonth: isLunar && isLeapMonth, // [추가]
         birthDateType: isLunar ? 'lunar' : 'solar', // [추가]

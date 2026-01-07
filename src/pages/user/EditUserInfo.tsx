@@ -54,7 +54,7 @@ const EditUserInfo = () => {
               birthDate: data.birthDate || '',
             });
             // 초기 로드 시 기존 번호는 인증된 것으로 간주
-            setOriginalPhone(data.phone || '');
+            setOriginalPhone(data.phone?.replace(/[^\d]/g, '') || '');
             setIsVerified(!!data.phone); // 전화번호가 있으면 인증된 것으로 시작
             setIsAuthSent(false); // 인증번호 발송 상태 초기화
             setIsPhoneEditing(false); // 수정 모드 초기화
@@ -109,7 +109,7 @@ const EditUserInfo = () => {
 
     if (name === 'phone') {
       // 휴대폰 번호가 변경되면 인증 상태 초기화
-      if (finalValue !== originalPhone) {
+      if (finalValue.replace(/[^\d]/g, '') !== originalPhone) {
         setIsVerified(false);
         setIsAuthSent(false);
       } else {
@@ -165,12 +165,12 @@ const EditUserInfo = () => {
       const userRef = doc(db, 'users', auth.currentUser.uid);
       const fullName = `${formData.lastName}${formData.firstName}`;
 
-      // Firestore 데이터 업데이트
+      // [FIX] 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
       await updateDoc(userRef, {
         lastName: formData.lastName,
         firstName: formData.firstName,
         name: fullName, // 검색 및 표시 편의를 위한 전체 이름 필드
-        phone: formData.phone,
+        phone: formData.phone.replace(/[^\d]/g, ''),
         birthDate: formData.birthDate,
         isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
         birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
