@@ -247,7 +247,7 @@ const CreateCalendar = () => {
             userId: friendUid,
             title: '캘린더 초대',
             body: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
-            data: { type: 'CALENDAR_INVITE', relatedId: docRef.id, calendarName: finalName },
+            data: { type: 'CALENDAR_INVITE', relatedId: docRef.id, calendarName: finalName, url: `/calendar?id=${docRef.id}` },
           });
         }
       }
@@ -380,7 +380,7 @@ const CreateCalendar = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={handleAddFriendByName}
+                    onClick={() => setIsAddModalOpen(true)}
                     className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
                   >
                     <Plus size={20} strokeWidth={3} />
