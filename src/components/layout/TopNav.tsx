@@ -4,14 +4,13 @@ import { ChevronLeft } from 'lucide-react';
 
 interface TopNavProps {
   title?: string;
-  extra?: React.ReactNode;
   onBack?: () => void;
-  rightContent?: React.ReactNode; // Renamed from 'extra'
+  extra?: React.ReactNode; // For right-aligned content
   children?: React.ReactNode; // For custom title/content area
   className?: string; // Optional prop to override default styles
 }
 
-const TopNav: React.FC<TopNavProps> = ({ title, onBack, rightContent, children, className }) => {
+const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, className }) => {
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
 
@@ -34,7 +33,7 @@ const TopNav: React.FC<TopNavProps> = ({ title, onBack, rightContent, children, 
       ) : (
         title && <h1 className="flex-1 text-[17px] font-black text-gray-900 dark:text-white truncate">{title}</h1>
       )}
-      {rightContent && <div className="flex items-center gap-1">{rightContent}</div>}
+      {extra && <div className="flex items-center gap-1">{extra}</div>}
     </nav>
   );
 };

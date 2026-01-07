@@ -297,7 +297,7 @@ const ScheduleEdit = () => {
       {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
       <TopNav
         title="일정 수정"
-        rightContent={
+        extra={
           <button onClick={handleSave} className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
             <Check size={28} strokeWidth={3} />
           </button>
