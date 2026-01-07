@@ -91,12 +91,12 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
                   </div>
                 )}
               </div>
-              <button
+              {/* <button
                 onClick={handleAddFriendByName}
                 className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
               >
                 <Plus size={20} strokeWidth={3} />
-              </button>
+              </button> */}
             </div>
           </div>
           {invitedFriends.length > 0 && (
