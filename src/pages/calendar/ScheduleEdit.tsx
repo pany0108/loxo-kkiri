@@ -228,7 +228,7 @@ const ScheduleEdit = () => {
         isAllDay: nextIsAllDay,
         // [수정] 종일 옵션을 켜면 시간을 00:00 ~ 23:59로 설정하고, 끄면 기본 시간으로 되돌립니다.
         start: nextIsAllDay ? dayjs(prev.start).startOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
-        end: nextIsAllDay ? dayjs(prev.end).endOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.end).format('YYYY-MM-DDT10:00'),
+        end: nextIsAllDay ? dayjs(prev.start).endOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT10:00'),
       };
     });
   };

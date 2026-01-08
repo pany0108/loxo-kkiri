@@ -104,17 +104,17 @@ const AddSchedule = () => {
 
   // Let's initialize state based on where we came from.
   const [formData, setFormData] = useState<FormDataState>(() => {
-    // Case 1: Came back from CreateCalendar
+    // Case 1: '새 캘린더 만들기'에서 돌아온 경우
     if (receivedData?.from === '/create-calendar' && receivedData.scheduleData) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { recurrence, ...restOfScheduleData } = receivedData.scheduleData;
       return {
         ...restOfScheduleData,
-        calendarId: receivedData.newlyCreatedCalendarId || '', // Set the new calendar ID
+        calendarId: receivedData.newlyCreatedCalendarId || '',
       };
     }
-    // Case 2: Came from CalendarMain or direct access
-    return {
+    // Case 2: 캘린더에서 직접 진입한 경우
+    const initialData = {
       title: '',
       calendarId: receivedData?.calendarId || '',
       isAllDay: receivedData?.allDay ?? false,
@@ -125,6 +125,13 @@ const AddSchedule = () => {
       color: '#3b82f6',
       notification: 'none',
     };
+    // [수정] '종일'이 기본으로 넘어온 경우, 시간 지정(9시-10시)으로 변경합니다.
+    if (initialData.isAllDay) {
+      initialData.isAllDay = false;
+      initialData.start = dayjs(initialData.start).format('YYYY-MM-DDT09:00');
+      initialData.end = dayjs(initialData.start).add(1, 'hour').format('YYYY-MM-DDT10:00');
+    }
+    return initialData;
   });
 
   // [추가] 캘린더 목록이 로드되면, 전달받은 캘린더 ID나 기본 캘린더를 기준으로 초기값 설정

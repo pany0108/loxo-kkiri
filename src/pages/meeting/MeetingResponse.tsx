@@ -124,7 +124,7 @@ const MeetingResponse = () => {
     if (myNewSlots.find((s) => s.date === dateStr)) {
       setMyNewSlots((prev) => prev.filter((s) => s.date !== dateStr));
     } else {
-      setMyNewSlots((prev) => [...prev, { date: dateStr, startTime: '12:00', endTime: '14:00', isAllDay: true }]);
+      setMyNewSlots((prev) => [...prev, { date: dateStr, startTime: '12:00', endTime: '14:00', isAllDay: false }]);
     }
   };
 
