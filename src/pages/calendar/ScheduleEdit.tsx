@@ -246,6 +246,16 @@ const ScheduleEdit = () => {
           color: selectedCalendar?.color || '#3b82f6',
           recurrence,
         };
+
+        // [수정] 반복 일정 수정 시, 시리즈의 시작 시간은 변경하지 않습니다.
+        // 사용자가 UI에서 특정 발생(occurrence)의 날짜를 보고 있더라도,
+        // 시리즈 전체의 시작점을 바꾸려는 의도가 아니므로 'start' 필드를 업데이트에서 제외합니다.
+        // 'end' 필드 또한 반복 규칙에 의해 결정되므로 직접 업데이트하지 않습니다.
+        if (eventData?.recurrence && eventData.recurrence.frequency !== 'none') {
+          delete scheduleUpdateData.start;
+          delete scheduleUpdateData.end;
+        }
+
         await updateDoc(doc(db, 'schedules', docId!), scheduleUpdateData);
 
         // [추가] 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
