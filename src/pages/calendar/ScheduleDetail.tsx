@@ -2,15 +2,14 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, ChevronLeft } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
-import { RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
+import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { TopNav } from 'components';
 
 interface LocationState {
   id?: string;
@@ -62,18 +61,6 @@ const ScheduleDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const { myCalendars } = useCalendar();
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
   const initialState = location.state as LocationState | null;
@@ -292,6 +279,65 @@ const ScheduleDetail = () => {
     navigate(`/schedule/edit/${id}`, { state: safeData });
   };
 
+  /**
+   * [추가] 일정 복사 핸들러
+   * 현재 일정 정보를 바탕으로 새 일정 생성 페이지로 이동합니다.
+   * 날짜는 오늘로, 시간과 기간은 원본 일정과 동일하게 설정합니다.
+   */
+  const handleCopy = () => {
+    if (!data) return;
+
+    const today = dayjs();
+    const originalStart = dayjs(data.start);
+    const originalEnd = dayjs(data.end);
+
+    // 원본의 시간(시, 분)을 가져와 오늘 날짜에 적용
+    const newStart = today.hour(originalStart.hour()).minute(originalStart.minute()).second(0);
+
+    // 원본 일정의 기간(duration)을 계산
+    const duration = originalEnd.diff(originalStart);
+    // 오늘 날짜의 시작 시간에 기간을 더해 종료 시간 계산
+    const newEnd = newStart.add(duration);
+
+    // 새 일정 생성 페이지로 전달할 데이터
+    const { attendees, review, reviewImages, userId, ...copiedData } = data;
+
+    const finalCopiedData = {
+      ...copiedData,
+      start: newStart.toISOString(), // 오늘 날짜 + 원본 시간
+      end: newEnd.toISOString(),
+      location: '', // [수정] 장소는 복사하지 않음
+      content: '', // [수정] 메모는 복사하지 않음
+      // 복사된 일정은 반복이 아니도록 초기화
+      recurrence: undefined,
+    };
+
+    toast.success('일정이 복사되었습니다. 날짜를 확인하고 저장하세요.');
+    navigate('/add-schedule', { state: finalCopiedData });
+  };
+
+  const renderFooter = () => (
+    <footer className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="w-full text-center text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-3 flex items-center justify-center gap-2"
+      >
+        <Copy size={14} /> 이 일정 복사하기
+      </button>
+      {/* [추가] 일정 소유자만 삭제 버튼이 보이도록 수정 */}
+      {auth.currentUser?.uid === data.userId && (
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3"
+        >
+          이 일정 삭제하기
+        </button>
+      )}
+    </footer>
+  );
+
   // const handleViewAllMedia = () => {
   //   navigate(`/schedule/${id}/media`, {
   //     state: {
@@ -329,26 +375,20 @@ const ScheduleDetail = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
-      <TopNav
+    <>
+      <PageLayout
         title="일정 상세"
         onBack={handleBack}
-        extra={
+        extraNav={
           auth.currentUser?.uid === data.userId && (
             <div className="flex items-center gap-1">
               <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <Edit2 size={22} />
               </button>
-              <button onClick={handleDeleteClick} className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-500 transition-colors">
-                <Trash2 size={22} />
-              </button>
             </div>
           )
         }
-      />
-
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
+      >
         {/* 타이틀 및 상세 정보 */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
@@ -559,7 +599,10 @@ const ScheduleDetail = () => {
             </div>
           )}
         </div>
-      </div>
+
+        {/* [수정] 복사 및 삭제 버튼을 스크롤 가능한 콘텐츠 영역 하단으로 이동 */}
+        {renderFooter()}
+      </PageLayout>
 
       {/* [추가] 반복 일정 삭제 모달 */}
       {isDeleteModalOpen && (
@@ -583,7 +626,7 @@ const ScheduleDetail = () => {
       {previewState.isOpen && (
         <ImagePreviewModal images={previewState.images} initialIndex={previewState.index} onClose={() => setPreviewState((prev) => ({ ...prev, isOpen: false }))} />
       )}
-    </div>
+    </>
   );
 };
 

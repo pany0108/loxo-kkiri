@@ -1,17 +1,15 @@
-import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs'; // Keep dayjs import
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { MapPin, AlignLeft, Clock, Camera, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus, Camera } from 'lucide-react';
 import { sendPushNotificationToUser } from 'utils';
-import { RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal, PageHeader } from 'components';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal, PageHeader } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
-
-import { TopNav } from 'components';
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
@@ -55,18 +53,6 @@ const ScheduleEdit = () => {
   // [수정] location.state에 any 대신 명시적인 타입을 지정하여 타입 안정성을 높입니다.
   const eventData = location.state as EventDataState | null;
   const { myCalendars } = useCalendar();
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   // --- [추가] 상태 관리 ---
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -303,255 +289,256 @@ const ScheduleEdit = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
-      <TopNav
+    <>
+      <PageLayout
         title="일정 수정"
-        extra={
+        onBack={() => navigate(-1)}
+        extraNav={
           <button onClick={handleSave} className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
             <Check size={28} strokeWidth={3} />
           </button>
         }
-      />
+      >
+        <>
+          <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+              일정을 <span className="text-blue-600 dark:text-blue-400">수정</span>해볼까요?
+            </h2>
+          </PageHeader>
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
-        <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            일정을 <span className="text-blue-600 dark:text-blue-400">수정</span>해볼까요?
-          </h2>
-        </PageHeader>
-
-        <form className="space-y-6">
-          <section className="space-y-4">
-            <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="무엇을 하나요?"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                />
-              </div>
-            </div>
-
-            {/* [추가] 캘린더 선택 드롭다운 */}
-            <div className="group relative" ref={dropdownRef}>
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
-              <button
-                type="button"
-                onClick={() => setIsCalListOpen(!isCalListOpen)}
-                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
-                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
-                </div>
-                <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isCalListOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                  {myCalendars.map((cal) => (
-                    <button
-                      key={cal.id}
-                      type="button"
-                      onClick={() => handleCalendarSelect(cal)}
-                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                        selectedCalendar?.id === cal.id
-                          ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
-                        <span className="text-[14px] font-bold">{cal.name}</span>
-                      </div>
-                      {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
-                    </button>
-                  ))}
-                  <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate('/create-calendar', {
-                        state: {
-                          from: `/schedule/edit/${getDocId()}`, // 돌아올 경로 지정
-                          scheduleData: { ...formData, recurrence, id: getDocId() }, // 현재 폼 데이터 전달
-                        },
-                      })
-                    }
-                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
-                  >
-                    <Plus size={16} /> 새 캘린더 만들기
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
-                <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                    종일
-                  </span>
-                  <div
-                    className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
-                  >
-                    <div
-                      className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
-                        formData.isAllDay ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </div>
+          <form className="space-y-6">
+            <section className="space-y-4">
+              <div className="group relative">
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                  <input
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="무엇을 하나요?"
+                    className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                  />
                 </div>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
-                <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">시작</span>
-                    <input
-                      type={formData.isAllDay ? 'date' : 'datetime-local'}
-                      name="start"
-                      value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
-                      onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
-                    />
-                  </div>
-                </div>
-                <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
-                <div className="flex items-center h-[56px] px-4 gap-4">
-                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">종료</span>
-                    <input
-                      type={formData.isAllDay ? 'date' : 'datetime-local'}
-                      name="end"
-                      value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
-                      onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* [추가] 약속 잡기로 생성된 일정(recurrence 필드가 없음)은 반복 설정 옵션을 숨깁니다. */}
-            {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
-
-            <div className="space-y-3">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
-
-              <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
-                <MapPin size={18} className="text-gray-300 dark:text-gray-600" />
-                <input
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                  placeholder="장소"
-                />
-              </div>
-
-              <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
-                <Bell size={18} className="text-gray-300 dark:text-gray-600" />
-                <select
-                  name="notification"
-                  value={formData.notification}
-                  onChange={handleChange}
-                  className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 appearance-none z-10"
-                >
-                  {NOTIFICATION_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
-                <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-1" />
-                <textarea
-                  name="content"
-                  value={formData.content}
-                  onChange={handleChange}
-                  rows={3}
-                  className="bg-transparent outline-none w-full text-[14px] font-medium text-gray-800 dark:text-gray-200 resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
-                  placeholder="메모"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between px-1 mb-2 ">
-                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">첨부파일</label>
+              {/* [추가] 캘린더 선택 드롭다운 */}
+              <div className="group relative" ref={dropdownRef}>
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
                 <button
                   type="button"
-                  onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                  className="text-[11px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                  onClick={() => setIsCalListOpen(!isCalListOpen)}
+                  className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
                 >
-                  + 추가
-                </button>
-              </div>
-              <div className="space-y-2">
-                {attachments.map((file, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
-                  >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-blue-500" />}
-                      <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
-                    </div>
-                    <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-gray-300 hover:text-red-500">
-                      <X size={16} />
-                    </button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
+                    <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                </button>
 
-            {!isShared && isPastEvent && (
-              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <BookOpen size={20} className="text-emerald-500" />
-                  <h3 className="text-[16px] font-black text-gray-900 dark:text-white">후기 작성</h3>
-                </div>
-                <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
-                  <textarea
-                    placeholder="후기를 작성해주세요."
-                    className="w-full text-[14px] font-medium text-gray-700 dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
-                    value={formData.review}
-                    onChange={(e) => setFormData({ ...formData, review: e.target.value })}
-                  />
-                  {formData.reviewImages && formData.reviewImages.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                      {formData.reviewImages.map((src: string, i: number) => (
-                        <div key={i} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700 relative">
-                          <img src={src} alt="review" className="w-full h-full object-cover" />
+                {isCalListOpen && (
+                  <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                    {myCalendars.map((cal) => (
+                      <button
+                        key={cal.id}
+                        type="button"
+                        onClick={() => handleCalendarSelect(cal)}
+                        className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
+                          selectedCalendar?.id === cal.id
+                            ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
+                          <span className="text-[14px] font-bold">{cal.name}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex justify-end border-t border-emerald-50 dark:border-emerald-900/50 pt-3">
+                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                      </button>
+                    ))}
+                    <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
                     <button
                       type="button"
-                      onClick={() => toast('후기 사진 추가 기능은 준비중입니다.')}
-                      className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 rounded-xl text-[12px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                      onClick={() =>
+                        navigate('/create-calendar', {
+                          state: {
+                            from: `/schedule/edit/${getDocId()}`, // 돌아올 경로 지정
+                            scheduleData: { ...formData, recurrence, id: getDocId() }, // 현재 폼 데이터 전달
+                          },
+                        })
+                      }
+                      className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
                     >
-                      <Camera size={14} /> 사진 추가
+                      <Plus size={16} /> 새 캘린더 만들기
                     </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
+                  <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
+                    <span
+                      className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
+                    >
+                      종일
+                    </span>
+                    <div
+                      className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                    >
+                      <div
+                        className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
+                          formData.isAllDay ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
+                  <div className="flex items-center h-[56px] px-4 gap-4">
+                    <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                    <div className="flex-1 flex items-center justify-between">
+                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">시작</span>
+                      <input
+                        type={formData.isAllDay ? 'date' : 'datetime-local'}
+                        name="start"
+                        value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
+                        onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
+                  <div className="flex items-center h-[56px] px-4 gap-4">
+                    <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                    <div className="flex-1 flex items-center justify-between">
+                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">종료</span>
+                      <input
+                        type={formData.isAllDay ? 'date' : 'datetime-local'}
+                        name="end"
+                        value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
+                        onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-          </section>
-          {/* [추가] 삭제 버튼 */}
-          <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
+
+              {/* [추가] 약속 잡기로 생성된 일정(recurrence 필드가 없음)은 반복 설정 옵션을 숨깁니다. */}
+              {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
+
+              <div className="space-y-3">
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
+
+                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
+                  <MapPin size={18} className="text-gray-300 dark:text-gray-600" />
+                  <input
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                    placeholder="장소"
+                  />
+                </div>
+
+                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                  <Bell size={18} className="text-gray-300 dark:text-gray-600" />
+                  <select
+                    name="notification"
+                    value={formData.notification}
+                    onChange={handleChange}
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 appearance-none z-10"
+                  >
+                    {NOTIFICATION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
+                  <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-1" />
+                  <textarea
+                    name="content"
+                    value={formData.content}
+                    onChange={handleChange}
+                    rows={3}
+                    className="bg-transparent outline-none w-full text-[14px] font-medium text-gray-800 dark:text-gray-200 resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
+                    placeholder="메모"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between px-1 mb-2 ">
+                  <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">첨부파일</label>
+                  <button
+                    type="button"
+                    onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                  >
+                    + 추가
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {attachments.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                    >
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-blue-500" />}
+                        <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
+                      </div>
+                      <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-gray-300 hover:text-red-500">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {!isShared && isPastEvent && (
+                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={20} className="text-emerald-500" />
+                    <h3 className="text-[16px] font-black text-gray-900 dark:text-white">후기 작성</h3>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
+                    <textarea
+                      placeholder="후기를 작성해주세요."
+                      className="w-full text-[14px] font-medium text-gray-700 dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
+                      value={formData.review}
+                      onChange={(e) => setFormData({ ...formData, review: e.target.value })}
+                    />
+                    {formData.reviewImages && formData.reviewImages.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                        {formData.reviewImages.map((src: string, i: number) => (
+                          <div key={i} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700 relative">
+                            <img src={src} alt="review" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex justify-end border-t border-emerald-50 dark:border-emerald-900/50 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => toast('후기 사진 추가 기능은 준비중입니다.')}
+                        className="flex items-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 rounded-xl text-[12px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+                      >
+                        <Camera size={14} /> 사진 추가
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </form>
+          <footer className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
             <button
               type="button"
               onClick={handleDeleteClick}
@@ -559,9 +546,9 @@ const ScheduleEdit = () => {
             >
               이 일정 삭제하기
             </button>
-          </div>
-        </form>
-      </div>
+          </footer>
+        </>
+      </PageLayout>
 
       {/* [추가] 반복 일정 삭제 모달 */}
       {isDeleteModalOpen && (
@@ -582,7 +569,7 @@ const ScheduleEdit = () => {
           </>
         }
       />
-    </div>
+    </>
   );
 };
 
