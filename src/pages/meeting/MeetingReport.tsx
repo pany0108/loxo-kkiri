@@ -135,28 +135,27 @@ const MeetingReport = () => {
 
     try {
       // [수정] 약속이 등록될 캘린더를 결정하는 로직
-      let targetCalendarId = '';
-      const participants = meetingData.participants;
+      let targetCalendar: { id: string; color?: string } | null = null;
+      const participants = [...meetingData.participants].sort(); // [수정] 멤버 배열을 정렬하여 쿼리
       const calendarsRef = collection(db, 'calendars');
 
       // 1. 약속 참여자들과 정확히 일치하는 공유 캘린더를 찾습니다.
-      const q = query(calendarsRef, where('members', 'array-contains', auth.currentUser.uid));
+      // Firestore에서 배열 필드에 대한 '==' 쿼리는 요소의 순서까지 정확히 일치해야 합니다.
+      // CreateCalendar에서 멤버를 항상 정렬해서 저장하므로, 여기서도 정렬 후 쿼리합니다.
+      const q = query(calendarsRef, where('members', '==', participants));
       const querySnapshot = await getDocs(q);
 
-      const sharedCalendar = querySnapshot.docs.find((doc) => {
-        const calMembers = doc.data().members;
-        // 멤버 수와 멤버 목록이 모두 일치하는지 확인
-        return calMembers.length === participants.length && participants.every((p) => calMembers.includes(p));
-      });
-
-      if (sharedCalendar) {
-        targetCalendarId = sharedCalendar.id;
+      if (!querySnapshot.empty) {
+        // 2. 일치하는 공유 캘린더가 있으면 해당 캘린더 정보를 사용합니다.
+        const calDoc = querySnapshot.docs[0];
+        targetCalendar = { id: calDoc.id, color: calDoc.data().color };
       } else {
-        // 2. 일치하는 공유 캘린더가 없으면, 내 기본 캘린더를 찾습니다.
+        // 3. 일치하는 공유 캘린더가 없으면, 내 기본 캘린더를 찾습니다.
         const defaultCalQ = query(calendarsRef, where('ownerId', '==', auth.currentUser.uid), where('isDefault', '==', true));
         const defaultCalSnapshot = await getDocs(defaultCalQ);
         if (!defaultCalSnapshot.empty) {
-          targetCalendarId = defaultCalSnapshot.docs[0].id;
+          const calDoc = defaultCalSnapshot.docs[0];
+          targetCalendar = { id: calDoc.id, color: calDoc.data().color };
         }
       }
 
@@ -168,7 +167,8 @@ const MeetingReport = () => {
         title: meetingData.title,
         content: meetingData.description || '',
         location: meetingData.location || '',
-        calendarId: targetCalendarId, // [수정] 찾은 캘린더 ID로 설정
+        calendarId: targetCalendar?.id || '', // [수정] 찾은 캘린더 ID로 설정
+        color: targetCalendar?.color || '#3b82f6', // [추가] 찾은 캘린더의 색상으로 설정, 없으면 기본색
         isAllDay,
         start: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${startTime}`).toISOString(),
         end: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${endTime}`).toISOString(),
