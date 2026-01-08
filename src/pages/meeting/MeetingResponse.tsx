@@ -9,7 +9,7 @@ import { doc, updateDoc, getDoc, writeBatch, collection, addDoc } from 'firebase
 import { useFirestoreDoc } from 'hooks';
 import toast from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
-import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav } from 'components';
+import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader } from 'components';
 
 dayjs.locale('ko');
 
@@ -285,16 +285,13 @@ const MeetingResponse = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <header className="mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
+        <PageHeader className="mb-6" icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             {meetingData.hostName}님의 제안에
             <br />
             <span className="text-blue-600 dark:text-blue-400">응답해주세요</span>
           </h2>
-        </header>
+        </PageHeader>
 
         {/* 약속 상세 정보 카드 */}
         <MeetingInfoCard title={meetingData.title} description={meetingData.description} location={meetingData.location} />

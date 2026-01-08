@@ -16,26 +16,7 @@ import {
   AddFromContactsModal,
 } from 'components';
 import { useFirestoreDoc } from 'hooks';
-
-/**
- * 친구 데이터 인터페이스
- */
-interface Friend {
-  uid: string;
-  name: string;
-  email: string;
-  statusMessage?: string;
-  photoURL?: string;
-  group?: string; // 그룹 ID
-}
-
-/**
- * [추가] 친구 그룹 데이터 인터페이스
- */
-interface FriendGroup {
-  id: string;
-  name: string;
-}
+import { Friend, FriendGroup } from 'types';
 
 /**
  * 친구 목록 관리 컴포넌트입니다.

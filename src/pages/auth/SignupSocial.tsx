@@ -8,7 +8,8 @@ import dayjs from 'dayjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
-import { TopNav } from 'components';
+import { TopNav, PageHeader } from 'components';
+import { formatPhone, formatBirth } from 'utils';
 
 /**
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
@@ -160,26 +161,6 @@ const SignupSocial = () => {
   // --- 헬퍼 함수 ---
 
   /**
-   * 휴대폰 번호 포맷팅 (010-0000-0000)
-   */
-  const formatPhone = (value: string) => {
-    const nums = value.replace(/[^\d]/g, '');
-    if (nums.length <= 3) return nums;
-    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
-    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
-  };
-
-  /**
-   * 생년월일 포맷팅 (YYYY/MM/DD)
-   */
-  const formatBirth = (value: string) => {
-    const nums = value.replace(/[^\d]/g, '');
-    if (nums.length <= 4) return nums;
-    if (nums.length <= 6) return `${nums.slice(0, 4)}/${nums.slice(4)}`;
-    return `${nums.slice(0, 4)}/${nums.slice(4, 6)}/${nums.slice(6, 8)}`;
-  };
-
-  /**
    * 입력 필드 변경 핸들러
    */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,10 +293,7 @@ const SignupSocial = () => {
       <TopNav title="추가 정보 입력" onBack={handleBack} />
 
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
-        <div className="mb-12 text-left">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
-          </div>
+        <PageHeader className="mb-12" icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3]">
             반가워요,
             <span className="text-blue-600">
@@ -324,7 +302,7 @@ const SignupSocial = () => {
             </span>
             <br />딱 두 가지만 더 알려주세요.
           </h2>
-        </div>
+        </PageHeader>
 
         <form onSubmit={handleComplete} className="space-y-8">
           <div className="space-y-8">

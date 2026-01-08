@@ -5,7 +5,8 @@ import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { auth, db } from '../../firebase';
-import { TopNav } from 'components';
+import { TopNav, PageHeader } from 'components';
+import { formatPhone, formatBirth } from 'utils';
 
 /**
  * 비밀번호 유효성 검사 헬퍼 함수
@@ -131,26 +132,6 @@ const Signup = () => {
       setErrors((prev) => ({ ...prev, confirmPassword: '' }));
     }
   }, [formData.password, formData.confirmPassword]);
-
-  /**
-   * 휴대폰 번호 자동 포맷팅 (010-0000-0000)
-   */
-  const formatPhone = (value: string) => {
-    const nums = value.replace(/[^\d]/g, '');
-    if (nums.length <= 3) return nums;
-    if (nums.length <= 7) return `${nums.slice(0, 3)}-${nums.slice(3)}`;
-    return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
-  };
-
-  /**
-   * 생년월일 자동 포맷팅 (YYYY/MM/DD)
-   */
-  const formatBirth = (value: string) => {
-    const nums = value.replace(/[^\d]/g, '');
-    if (nums.length <= 4) return nums;
-    if (nums.length <= 6) return `${nums.slice(0, 4)}/${nums.slice(4)}`;
-    return `${nums.slice(0, 4)}/${nums.slice(4, 6)}/${nums.slice(6, 8)}`;
-  };
 
   /**
    * 입력 필드 변경 핸들러
@@ -315,15 +296,12 @@ const Signup = () => {
 
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <div className="mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
-          </div>
+        <PageHeader className="mb-10" icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-[28px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             새로운 시작, <br />
             <span className="text-blue-600">회원가입을 시작할까요?</span>
           </h2>
-        </div>
+        </PageHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">

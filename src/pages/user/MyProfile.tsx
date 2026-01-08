@@ -9,17 +9,8 @@ import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from 'contexts';
 import { useFirestoreDoc } from 'hooks';
-
-/**
- * 사용자 프로필 데이터 인터페이스
- */
-interface UserProfile {
-  name: string;
-  email: string;
-  statusMessage?: string;
-  photoURL?: string;
-  [key: string]: any;
-}
+import { PageHeader } from 'components';
+import { UserProfile } from 'types';
 
 /**
  * 마이페이지(내 프로필) 컴포넌트입니다.
@@ -171,13 +162,13 @@ const MyProfile = () => {
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
-        <header className="mb-2">
+        <PageHeader className="mb-2">
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             <span className="text-blue-600 dark:text-blue-400">{userData?.name || '사용자'}</span>님,
             <br />
             안녕하세요!
           </h2>
-        </header>
+        </PageHeader>
 
         {/* 프로필 카드 섹션 */}
         <section className="bg-white dark:bg-gray-800 p-6 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center gap-5 shadow-sm">

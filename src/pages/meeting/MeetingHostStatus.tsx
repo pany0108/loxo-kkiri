@@ -7,24 +7,8 @@ import { sendPushNotificationToUser } from 'utils';
 import { doc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav, DeleteMeetingModal, ShareMeetingModal } from 'components';
-
-interface MeetingData {
-  id: string;
-  title: string;
-  description?: string;
-  hostId: string;
-  hostName: string;
-  location?: string;
-  participants: string[];
-  invitedFriends?: { uid: string; name: string }[]; // [추가] 초대된 친구 정보
-  dates: string[];
-  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
-  votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
-  responses?: Record<string, any>; // [추가] 응답 데이터
-  status: 'PENDING' | 'VOTING' | 'CONFIRMED';
-  scheduleId?: string;
-}
+import { TopNav, DeleteMeetingModal, ShareMeetingModal, PageHeader } from 'components';
+import { MeetingData } from 'types';
 
 interface StatusSlot {
   id: string;
@@ -204,21 +188,20 @@ const MeetingHostStatus = () => {
         />
 
         <div ref={scrollContainerRef} className="flex-1 flex flex-col px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
-          <header className="mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-              <Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
-            {meetingData.location && (
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
-                <MapPin size={16} />
-                <span>{meetingData.location}</span>
-              </div>
-            )}
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-              친구들의 <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
-            </h2>
-          </header>
+          <PageHeader icon={<Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+            <>
+              <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+              {meetingData.location && (
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+                  <MapPin size={16} />
+                  <span>{meetingData.location}</span>
+                </div>
+              )}
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+                친구들의 <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
+              </h2>
+            </>
+          </PageHeader>
 
           <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-6 border border-gray-100 dark:border-gray-700/50">
             <div className="flex justify-between items-center mb-4">
@@ -287,20 +270,22 @@ const MeetingHostStatus = () => {
         }
       />
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
-          {meetingData.location && (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
-              <MapPin size={16} />
-              <span>{meetingData.location}</span>
-            </div>
-          )}
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            현재 <span className="text-blue-600 dark:text-blue-400">투표 진행 중</span>입니다.
-          </h2>
+        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+          <>
+            <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+            {meetingData.location && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+                <MapPin size={16} />
+                <span>{meetingData.location}</span>
+              </div>
+            )}
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+              현재 <span className="text-blue-600 dark:text-blue-400">투표 진행 중</span>입니다.
+            </h2>
+          </>
+        </PageHeader>
+
+        <div className="mb-8">
           <div className="mt-4 flex items-center gap-2 text-[13px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg w-fit">
             <Users size={16} />
             <span>
@@ -323,7 +308,7 @@ const MeetingHostStatus = () => {
               </div>
             ))}
           </div>
-        </header>
+        </div>
 
         <div className="space-y-4">
           {statusData.map((slot) => (

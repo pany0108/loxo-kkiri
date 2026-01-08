@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, Loader2 } from 'lucide-react';
 import { sendPushNotificationToUser } from 'utils';
-import { RecurrenceOptions, RecurrenceSettings } from 'components';
-import { collection, addDoc, query, where, writeBatch, doc } from 'firebase/firestore';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, PageHeader } from 'components';
+import { collection, addDoc, query, where, writeBatch, doc, DocumentReference } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
@@ -50,22 +50,12 @@ const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   const [user, setUser] = useState<any>(null);
 
   // [추가] 캘린더 목록 및 드롭다운 상태
   const [isCalListOpen, setIsCalListOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -244,6 +234,7 @@ const AddSchedule = () => {
       return;
     }
 
+    setIsSubmitting(true);
     const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
 
     try {
@@ -257,30 +248,6 @@ const AddSchedule = () => {
       // [추가] 공유 캘린더에 일정이 추가되면 멤버들에게 알림 전송
       if (selectedCalendar && selectedCalendar.members.length > 1) {
         const batch = writeBatch(db);
-        // const notificationsCollection = collection(db, 'notifications');
-
-        // selectedCalendar.members.forEach((memberId) => {
-        //   // 일정을 생성한 본인에게는 알림을 보내지 않음
-        //   if (memberId === user.uid) return;
-
-        //   const newNotiRef = doc(notificationsCollection);
-        //   batch.set(newNotiRef, {
-        //     userId: memberId,
-        //     type: 'SCHEDULE_ADDED',
-        //     message: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
-        //     relatedId: scheduleDocRef.id,
-        //     isRead: false,
-        //     createdAt: new Date().toISOString(),
-        //   });
-        //   // [추가] 푸시 알림 전송
-        //   await sendPushNotificationToUser({
-        //     userId: memberId,
-        //     title: '새로운 일정',
-        //     body: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
-        //     data: { type: 'SCHEDULE_ADDED', relatedId: scheduleDocRef.id, calendarId: selectedCalendar.id },
-        //   });
-        // });
-        // await batch.commit();
 
         // [수정] forEach 대신 for...of 사용
         for (const memberId of selectedCalendar.members) {
@@ -314,29 +281,45 @@ const AddSchedule = () => {
     } catch (error) {
       console.error('Error adding document: ', error);
       toast.error('저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // [추가] 화면에 표시할 선택된 캘린더 정보
   const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
 
-  return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <TopNav title="새 일정 등록" />
+  const renderFooter = () => (
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <button
+        type="submit"
+        form="add-schedule-form" // [추가] form 속성으로 외부 form과 연결
+        disabled={!formData.title || isSubmitting}
+        className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
+                ${
+                  formData.title && !isSubmitting
+                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+                }`}
+      >
+        {isSubmitting ? <Loader2 className="animate-spin" /> : <span>일정 등록하기</span>}
+      </button>
+    </footer>
+  );
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
-          </div>
+  return (
+    // [수정] PageLayout으로 전체 구조 변경
+    <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
+      <>
+        <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             새로운 <span className="text-blue-600">일정</span>을<br />
             등록해볼까요?
           </h2>
-        </header>
+        </PageHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* [수정] form에 id 추가 */}
+        <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
@@ -512,23 +495,9 @@ const AddSchedule = () => {
               </button>
             </div>
           </section>
-
-          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <button
-              type="submit"
-              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-                ${
-                  formData.title
-                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
-                }`}
-            >
-              <span>일정 등록하기</span>
-            </button>
-          </footer>
         </form>
-      </div>
-    </div>
+      </>
+    </PageLayout>
   );
 };
 

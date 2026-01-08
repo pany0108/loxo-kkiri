@@ -1,15 +1,14 @@
-import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search, Plus, X } from 'lucide-react';
 // Firebase 관련 import
 import toast from 'react-hot-toast';
 import { sendPushNotificationToUser } from 'utils';
-import { collection, addDoc, doc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { AddFriendModal, AddFromContactsModal, FriendListPopup } from 'components';
+import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader } from 'components';
 
-import { TopNav } from 'components';
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
 
 // [추가] 친구 데이터 타입 정의
@@ -30,19 +29,6 @@ const CreateCalendar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isFriendSelectionPopupOpen, setIsFriendSelectionPopupOpen] = useState(false);
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
-
   // 로그인 유저 상태
   const [user, setUser] = useState<User | null>(null);
 
@@ -227,22 +213,24 @@ const CreateCalendar = () => {
 
       // [추가] 공유된 친구들에게 알림 보내기
       if (selectedFriendUids.length > 0 && user?.displayName) {
+        const batch = writeBatch(db);
         // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
         for (const friendUid of selectedFriendUids) {
           // 1. Firestore 알림 저장
-          addDoc(collection(db, 'notifications'), {
+          const notiRef = doc(collection(db, 'notifications'));
+          batch.set(notiRef, {
             userId: friendUid,
             type: 'CALENDAR_INVITE',
             message: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
             fromUserId: user.uid,
             fromUserName: user.displayName,
             relatedId: docRef.id,
-            calendarName: finalName,
             isRead: false,
             createdAt: new Date().toISOString(),
           });
 
           // 2. 푸시 알림 전송
+          // 푸시 알림은 개별적으로 보내야 하므로 await을 사용합니다.
           await sendPushNotificationToUser({
             userId: friendUid,
             title: '캘린더 초대',
@@ -250,6 +238,8 @@ const CreateCalendar = () => {
             data: { type: 'CALENDAR_INVITE', relatedId: docRef.id, calendarName: finalName, url: `/calendar?id=${docRef.id}` },
           });
         }
+        // 모든 알림 준비가 끝난 후 배치 커밋
+        await batch.commit();
       }
 
       toast.success(`'${finalName}' 캘린더가 생성되었습니다!`);
@@ -285,21 +275,37 @@ const CreateCalendar = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <TopNav title="새 캘린더 만들기" />
+  const renderFooter = () => (
+    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="mb-3 text-center h-5">
+        {finalName && <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
+      </div>
+      <button
+        disabled={isSubmitDisabled}
+        onClick={handleSubmit}
+        className={`
+            w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
+            ${
+              !isSubmitDisabled
+                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+            }
+          `}
+      >
+        {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <span>캘린더 생성하기</span>}
+      </button>
+    </footer>
+  );
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[76px] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
-        <header className="mb-8 pt-[calc(76px+env(safe-area-inset-top))]">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
+  return (
+    <>
+      <PageLayout title="새 캘린더 만들기" footer={renderFooter()} onBack={() => navigate(-1)}>
+        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             새로운 <span className="text-blue-600 dark:text-blue-400">캘린더</span>를<br />
             만들어볼까요?
           </h2>
-        </header>
+        </PageHeader>
 
         <div className="space-y-8">
           <section className="space-y-3">
@@ -420,34 +426,7 @@ const CreateCalendar = () => {
             </div>
           </section>
         </div>
-      </div>
-
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-        <div className="mb-3 text-center h-5">
-          {finalName && <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
-        </div>
-        <button
-          disabled={isSubmitDisabled}
-          onClick={handleSubmit}
-          className={`
-            w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${
-              !isSubmitDisabled
-                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
-            }
-          `}
-        >
-          {isSubmitting ? (
-            <Loader2 size={20} className="animate-spin" />
-          ) : (
-            <>
-              <span>캘린더 생성하기</span>
-              <Check size={20} strokeWidth={3} />
-            </>
-          )}
-        </button>
-      </footer>
+      </PageLayout>
 
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} onOpenContacts={handleOpenContactsModal} />
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={user as any} existingFriends={friends} />
@@ -470,7 +449,7 @@ const CreateCalendar = () => {
           }
         }}
       />
-    </div>
+    </>
   );
 };
 

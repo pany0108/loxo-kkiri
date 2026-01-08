@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav } from 'components';
+import { TopNav, PageHeader } from 'components';
 
 interface MeetingData {
   id: string;
@@ -103,22 +103,23 @@ const MeetingParticipantStatus = () => {
       <TopNav title="투표 현황" />
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-20 overflow-y-auto w-full">
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
-          {meetingData.location && (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
-              <MapPin size={16} />
-              <span>{meetingData.location}</span>
-            </div>
-          )}
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            투표가 완료되었습니다.
-            <br />
-            <span className="text-blue-600 dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
-          </h2>
+        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+          <>
+            <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+            {meetingData.location && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+                <MapPin size={16} />
+                <span>{meetingData.location}</span>
+              </div>
+            )}
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+              투표가 완료되었습니다.
+              <br />
+              <span className="text-blue-600 dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
+            </h2>
+          </>
+        </PageHeader>
+        <div className="mb-8">
           <div className="mt-4 flex items-center gap-2 text-[13px] font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg w-fit">
             <Users size={16} />
             <span>
@@ -141,7 +142,7 @@ const MeetingParticipantStatus = () => {
               </div>
             ))}
           </div>
-        </header>
+        </div>
 
         <div className="space-y-4">
           {statusData.map((slot) => (

@@ -9,7 +9,7 @@ import { doc, updateDoc, getDoc, writeBatch, collection, addDoc } from 'firebase
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { useFirestoreDoc } from 'hooks';
-import { VotingSlotItem, TopNav } from 'components';
+import { VotingSlotItem, TopNav, PageHeader } from 'components';
 
 dayjs.locale('ko');
 
@@ -264,21 +264,20 @@ const MeetingVoting = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
-          </div>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight mb-2">{meetingData.title}</h2>
-          {meetingData.location && (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
-              <MapPin size={16} />
-              <span>{meetingData.location}</span>
-            </div>
-          )}
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
-            나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
-          </p>
-        </header>
+        <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+          <>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight mb-2">{meetingData.title}</h2>
+            {meetingData.location && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+                <MapPin size={16} />
+                <span>{meetingData.location}</span>
+              </div>
+            )}
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+            </p>
+          </>
+        </PageHeader>
 
         {/* 투표 슬롯 리스트 */}
         <div className="space-y-6">

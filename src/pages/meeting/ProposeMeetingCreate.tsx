@@ -7,7 +7,7 @@ import { auth, db } from '../../firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { useFirestoreDoc, useFirestoreQuery } from 'hooks';
 import { onAuthStateChanged } from 'firebase/auth';
-import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav } from 'components';
+import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader } from 'components';
 
 dayjs.locale('ko');
 
@@ -231,15 +231,12 @@ const ProposeMeetingCreate = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
+        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             어떤 <span className="text-blue-600 dark:text-blue-400">약속</span>을<br />
             만들어볼까요?
           </h2>
-        </header>
+        </PageHeader>
 
         <div className="space-y-8">
           <MeetingInfoForm

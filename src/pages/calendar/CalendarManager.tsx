@@ -6,19 +6,11 @@ import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 }
 import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { EditCalendarModal } from 'components';
+import { EditCalendarModal, PageHeader } from 'components';
 import { TopNav } from 'components';
 import { useFirestoreQuery } from 'hooks';
 import { sendPushNotificationToUser } from 'utils';
-
-interface CalendarData {
-  id: string;
-  name: string;
-  members: string[];
-  isDefault: boolean;
-  color: string;
-  ownerId?: string; // 소유자 확인용
-}
+import { CalendarType } from 'types';
 
 const CalendarManager = () => {
   const navigate = useNavigate();
@@ -39,8 +31,8 @@ const CalendarManager = () => {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [calendarToEdit, setCalendarToEdit] = useState<CalendarData | null>(null);
-  const [calendarToDelete, setCalendarToDelete] = useState<CalendarData | null>(null);
+  const [calendarToEdit, setCalendarToEdit] = useState<CalendarType | null>(null);
+  const [calendarToDelete, setCalendarToDelete] = useState<CalendarType | null>(null);
 
   // 1. 유저 인증 상태 확인
   useEffect(() => {
@@ -56,7 +48,7 @@ const CalendarManager = () => {
     return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
   }, [user]);
 
-  const { data: calendarsData, loading: isLoading } = useFirestoreQuery<CalendarData>(calendarsQuery);
+  const { data: calendarsData, loading: isLoading } = useFirestoreQuery<CalendarType>(calendarsQuery);
 
   // [추가] 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
   const sortedCalendars = useMemo(() => {
@@ -75,7 +67,7 @@ const CalendarManager = () => {
   };
 
   // 삭제 모달 열기
-  const openDeleteModal = (calendar: CalendarData, e?: React.MouseEvent) => {
+  const openDeleteModal = (calendar: CalendarType, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCalendarToDelete(calendar);
     // [수정] 캘린더 소유자인지 확인하여 삭제/나가기 모달을 분기합니다.
@@ -179,15 +171,12 @@ const CalendarManager = () => {
 
       {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
-        <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <CalendarIcon className="text-blue-600 dark:text-blue-400 w-6 h-6" />
-          </div>
+        <PageHeader icon={<CalendarIcon className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             나의 <span className="text-blue-600 dark:text-blue-400">캘린더</span>를 <br />
             관리해보세요
           </h2>
-        </header>
+        </PageHeader>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">

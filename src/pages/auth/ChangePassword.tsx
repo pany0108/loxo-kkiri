@@ -6,7 +6,7 @@ import { auth, db } from '../../firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { collection, query, where, getDocs } from 'firebase/firestore'; // getDocs는 이제 사용되지 않지만 다른 곳을 위해 남겨둡니다.
-import { TopNav } from 'components';
+import { TopNav, PageHeader } from 'components';
 
 const validatePasswordLocally = (password: string, email: string) => {
   if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
@@ -275,10 +275,7 @@ const ChangePassword = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-8 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <header className="mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-5">
-            <Lock className="text-blue-600 w-6 h-6" />
-          </div>
+        <PageHeader className="mb-10" icon={<Lock className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             {isResetMode ? (
               <>
@@ -295,7 +292,7 @@ const ChangePassword = () => {
           <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm font-medium">
             {isResetMode ? '가입 시 입력한 이름과 휴대폰 번호를 입력해주세요.' : '현재 사용 중인 비밀번호 확인이 필요합니다.'}
           </p>
-        </header>
+        </PageHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">

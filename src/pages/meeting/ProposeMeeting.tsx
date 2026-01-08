@@ -5,7 +5,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
-import { NewMeetingButton, MeetingListItem, EmptyMeetingList } from 'components';
+import { NewMeetingButton, MeetingListItem, EmptyMeetingList, PageHeader } from 'components';
 
 /**
  * 약속 데이터 인터페이스
@@ -136,15 +136,12 @@ const ProposeMeeting = () => {
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
         {/* 헤더 섹션 */}
-        <header className="mb-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-            <Sparkles className="text-blue-600 w-6 h-6" />
-          </div>
+        <PageHeader className="mb-2" icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             소중한 사람들과의 <br />
             <span className="text-blue-600 dark:text-blue-400">약속을 잡아보세요</span>
           </h2>
-        </header>
+        </PageHeader>
 
         {/* 새 약속 만들기 버튼 */}
         <NewMeetingButton />
