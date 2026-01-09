@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Sparkles, Loader2, Check, CalendarDays } from 'lucide-react';
+import { Lock, User, Loader2, Check, CalendarDays } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';

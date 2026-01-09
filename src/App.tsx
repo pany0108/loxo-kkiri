@@ -1,6 +1,4 @@
-import React from 'react';
-import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { BottomNav } from 'components';
 import {
@@ -40,7 +38,6 @@ import { usePushNotification, useFcmToken, useAuth, useNotificationNavigation, u
 const AppContent = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const handleNavigation = useNotificationNavigation();
 
   // 사용자 상태에 의존하는 훅들

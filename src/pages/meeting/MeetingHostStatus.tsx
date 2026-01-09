@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Trash2, Share2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Share2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { auth } from '../../firebase';
 import { TopNav, ConfirmModal, ShareMeetingModal, PageHeader, PageFooter } from 'components';

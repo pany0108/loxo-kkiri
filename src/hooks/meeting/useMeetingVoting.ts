@@ -60,7 +60,7 @@ export const useMeetingVoting = () => {
       const prevSlotsMap = new Map(prevSlots.map((s) => [s.id, s]));
 
       meetingData.dates.sort().forEach((dateStr) => {
-        meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+        meetingData.timeSlots[dateStr]?.forEach((ts) => {
           const slotId = `${dateStr}_`;
           const votesForSlot = meetingData.votes?.[slotId] || {};
 

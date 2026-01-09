@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { auth } from '../firebase';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import lunisolar from 'lunisolar';

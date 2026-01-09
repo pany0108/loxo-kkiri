@@ -1,7 +1,6 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, History, CalendarPlus } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, ChevronDown, Plus, Check, History, CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
 import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
 import { useAddSchedule } from 'hooks';

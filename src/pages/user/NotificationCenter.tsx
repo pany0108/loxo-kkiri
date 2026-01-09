@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallba
 import { useNavigate, useLocation } from 'react-router-dom';
 import { doc, updateDoc, writeBatch, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
+import { Bell, Check, Trash2, Calendar, Info, CheckCircle2, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence, AnimatePresenceProps, useTransform } from 'framer-motion';
@@ -57,7 +57,7 @@ const NotificationCenter = () => {
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-  }, [location.pathname]);
+  }, [containerRef, location.pathname]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser: any) => {

@@ -2,14 +2,11 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
-import { auth, db } from '../../firebase';
-import { doc, collection, query, where, addDoc, writeBatch } from 'firebase/firestore';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import 'dayjs/locale/ko';
 import toast from 'react-hot-toast';
 import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader, PageFooter } from 'components';
 import { useProposeMeetingCreate } from 'hooks';
-import { notifyMeetingInvite } from 'services';
 import LoadingButton from '../../components/ui/LoadingButton';
 
 dayjs.extend(isSameOrBefore);

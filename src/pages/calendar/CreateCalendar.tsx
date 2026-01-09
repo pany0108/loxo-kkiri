@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search, Plus, X } from 'lucide-react';
+import { Users, Check, Sparkles, UserPlus, PenLine, Loader2, Search, Plus, X } from 'lucide-react';
 // Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
@@ -96,7 +96,6 @@ const CreateCalendar = () => {
   };
 
   const onToggleGroup = (group: { friends: { uid: string }[] }) => {
-    const groupFriendUids = new Set(group.friends.map((f) => f.uid));
     const selectedUidsSet = new Set(selectedFriendUids);
 
     const areAllSelected = group.friends.every((f) => selectedUidsSet.has(f.uid));

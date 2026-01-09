@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader, PageFooter } from 'components';
 import { notifyMeetingInvite } from 'services';

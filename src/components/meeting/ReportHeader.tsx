@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, MapPin, CalendarCheck } from 'lucide-react';
+import { Sparkles, MapPin, CalendarCheck, Calendar } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface ReportHeaderProps {
@@ -27,7 +27,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
   return (
     <header className="mb-8">
       <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
-        <Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />
+        <CalendarCheck className="text-blue-600 dark:text-blue-400 w-6 h-6" />
       </div>
       <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
       {location && (
@@ -43,7 +43,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
           </h2>
           <div className="mt-4 bg-blue-50 dark:bg-blue-900/50 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
             <p className="text-center text-lg font-black text-blue-600 dark:text-blue-300">{confirmedDateDisplay}</p>
-            <p className="text-center text-2xl font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.time}</p>
+            <p className="text-center text-2xl font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.date.includes(':') ? '' : confirmedSlot?.time}</p>
           </div>
           {scheduleId && onNavigate && (
             <div className="mt-4">
@@ -51,7 +51,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
                 onClick={() => onNavigate(`/schedule/${scheduleId}`)}
                 className="w-full h-[56px] bg-blue-600 text-white rounded-[20px] font-black text-[16px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                <CalendarCheck size={20} />
+                <Calendar size={20} />
                 약속 일정 보러가기
               </button>
             </div>

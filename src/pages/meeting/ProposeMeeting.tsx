@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Clock, Sparkles, Loader2 } from 'lucide-react';
+import { Clock, Loader2, CalendarCheck2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -139,7 +139,7 @@ const ProposeMeeting = () => {
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-2" icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+        <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             소중한 사람들과의 <br />
             <span className="text-blue-600 dark:text-blue-400">약속을 잡아보세요</span>
