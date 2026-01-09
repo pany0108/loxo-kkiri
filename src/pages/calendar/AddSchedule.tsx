@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, History } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, History, CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
 import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
 import { useAddSchedule } from 'hooks';
@@ -47,7 +47,7 @@ const AddSchedule = () => {
     // [수정] PageLayout으로 전체 구조 변경
     <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
-        <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+        <PageHeader icon={<CalendarPlus className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             새로운 <span className="text-blue-600">일정</span>을<br />
             등록해볼까요?

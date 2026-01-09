@@ -265,6 +265,10 @@
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
+.fc-event-selected::after,
+.fc-event:focus::after {
+  display: none;
+}
 
 /* ==========================================================
    [6] 압축 모드 (Compact Mode) - 6주 고정 레이아웃 스타일

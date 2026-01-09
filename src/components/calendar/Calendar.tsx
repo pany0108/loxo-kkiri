@@ -46,7 +46,7 @@ const Calendar = forwardRef<FullCalendar, CalendarProps>(
         select={handleDateSelect}
         unselectAuto={true}
         dragScroll={true}
-        longPressDelay={200}
+        longPressDelay={500}
         eventDragMinDistance={5}
         headerToolbar={{
           left: 'title',

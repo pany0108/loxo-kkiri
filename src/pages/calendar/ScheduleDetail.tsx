@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Calendar, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
 import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
@@ -173,8 +173,8 @@ const ScheduleDetail = () => {
   // [추가] 뒤로가기 핸들러. 일정의 월로 캘린더를 이동시킵니다.
   const handleBack = useCallback(() => {
     if (data.start) {
-      // [수정] 뒤로 갈 때, 원래 있던 뷰(주/일) 정보도 함께 전달
       navigate('/calendar', {
+        //[수정] 뒤로 갈 때, 원래 있던 뷰(주/일) 정보도 함께 전달
         state: {
           targetDate: data.start.toISOString(),
           targetView: initialState?.fromView,
@@ -329,9 +329,9 @@ const ScheduleDetail = () => {
         <button
           type="button"
           onClick={handleDeleteClick}
-          className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3"
+          className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3 flex items-center justify-center gap-2"
         >
-          이 일정 삭제하기
+          <Trash2 size={14} /> 이 일정 삭제하기
         </button>
       )}
     </footer>
@@ -392,7 +392,7 @@ const ScheduleDetail = () => {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-              <Sparkles className="text-blue-600 w-6 h-6" />
+              <Calendar className="text-blue-600 w-6 h-6" />
             </div>
 
             {data.recurrence && data.recurrence.frequency !== 'none' && (

@@ -276,6 +276,7 @@ const CalendarMain = () => {
         <AddScheduleFAB
           onClick={() => {
             const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+            //[수정] 현재 뷰를 state에 담아서 넘겨준다.
             navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
           }}
         />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
+import { Lock, User, Sparkles, Loader2, Check, CalendarDays } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
@@ -173,7 +173,7 @@ const Login = () => {
         {/* 상단 브랜딩 영역 */}
         <div className="mb-10 text-left">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/50 ring-4 ring-blue-50 dark:ring-blue-500/10">
-            <Sparkles className="text-white w-7 h-7 fill-white/20" />
+            <CalendarDays className="text-white w-7 h-7 fill-white/20" />
           </div>
           <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             일정 관리의 <br />

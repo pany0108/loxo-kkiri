@@ -539,9 +539,9 @@ const ScheduleEdit = () => {
             <button
               type="button"
               onClick={handleDeleteClick}
-              className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3"
+              className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3 flex items-center justify-center gap-2"
             >
-              이 일정 삭제하기
+              <Trash2 size={14} /> 이 일정 삭제하기
             </button>
           </footer>
         </>

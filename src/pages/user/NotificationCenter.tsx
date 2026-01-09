@@ -260,9 +260,7 @@ const NotificationCenter = () => {
       <div className="flex-1 relative overflow-hidden z-0 bg-white dark:bg-gray-950">
         {/* 새로고침 스피너 (고정 위치) */}
         <motion.div
-          className={`absolute top-44 left-0 right-0 flex justify-center items-center z-20 pointer-events-none ${
-            isSelectionMode ? 'pt-[env(safe-area-inset-top)]' : 'pt-[env(safe-area-inset-top)]'
-          }`}
+          className="absolute top-44 left-0 right-0 flex justify-center items-center z-20 pointer-events-none pt-[env(safe-area-inset-top)]"
           style={{
             opacity: iconOpacity,
             scale: iconScale,
@@ -289,7 +287,7 @@ const NotificationCenter = () => {
 
           {/* 실제 콘텐츠 영역 */}
           <div
-            className="flex-1 flex flex-col bg-white dark:bg-gray-950 pt-4"
+            className="flex-1 flex flex-col bg-white dark:bg-gray-950 "
             onClick={() => {
               if (isSelectionMode) {
                 setIsSelectionMode(false);
@@ -310,7 +308,7 @@ const NotificationCenter = () => {
                 </p>
               </div>
             ) : (
-              <div className="px-6 pb-20 pt-2 space-y-3">
+              <div className="px-6 pb-20 space-y-3">
                 <SafeAnimatePresence mode="popLayout">
                   {filteredNotifications.map((noti) => {
                     const isSelected = selectedIds.has(noti.id);
