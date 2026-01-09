@@ -156,7 +156,6 @@ const ScheduleDetail = () => {
           reviewImages: dbData.reviewImages || [],
         });
       } else {
-        toast.error('삭제된 일정입니다.');
         navigate('/calendar');
       }
     });
