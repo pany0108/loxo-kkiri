@@ -111,6 +111,9 @@ export const useProposeMeetingCreate = () => {
   // [추가] 투표 아이템 관리 (단일 날짜 또는 범위 문자열 "YYYY-MM-DD:YYYY-MM-DD")
   const [votingItems, setVotingItems] = useState<string[]>(initialState?.selectedDates || []);
 
+  // [추가] 제출 중 상태
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // 내 일정 불러오기
   const schedulesQuery = useMemo(() => {
     if (!user) return null;
@@ -200,6 +203,7 @@ export const useProposeMeetingCreate = () => {
 
     if (hasRanges) {
       if (!user) return;
+      setIsSubmitting(true);
       try {
         // 범위 아이템을 기반으로 timeSlots 생성 (모두 종일 일정)
         const timeSlots: Record<string, any[]> = {};
@@ -240,6 +244,8 @@ export const useProposeMeetingCreate = () => {
       } catch (error) {
         console.error('Error creating meeting:', error);
         toast.error('약속 생성 중 오류가 발생했습니다.');
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       navigate('/propose/detail', {
@@ -265,6 +271,7 @@ export const useProposeMeetingCreate = () => {
       schedulePopup,
       isValid,
       votingItems,
+      isSubmitting,
     },
     handlers: {
       setTitle,

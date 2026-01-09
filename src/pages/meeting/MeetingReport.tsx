@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -38,10 +38,12 @@ const MeetingReport = () => {
     setIsRetryModalOpen,
   } = handlers;
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // [추가] 연속 일정(범위) 처리를 포함한 약속 확정 핸들러
   const handleFinalConfirm = async () => {
     if (!selectedSlot || !meetingData || !auth.currentUser) return;
-    setIsConfirmOpen(false);
+    setIsSubmitting(true);
 
     try {
       const batch = writeBatch(db);
@@ -115,9 +117,12 @@ const MeetingReport = () => {
 
       await batch.commit();
       toast.success('약속이 확정되어 캘린더에 추가되었습니다!');
+      setIsConfirmOpen(false);
     } catch (error) {
       console.error('Error confirming meeting:', error);
       toast.error('약속 확정 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -156,7 +161,7 @@ const MeetingReport = () => {
         {meetingData.status !== 'CONFIRMED' && <ReportActions onRetry={handleRequestRetry} onCancel={handleCancel} />}
 
         {/* 확정 확인 다이얼로그 */}
-        <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} />
+        <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} isLoading={isSubmitting} />
 
         {/* [추가] 일정 재요청 확인 모달 */}
         <ConfirmModal

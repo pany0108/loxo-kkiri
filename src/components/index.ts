@@ -4,3 +4,4 @@ export * from './friend';
 export * from './layout';
 export * from './meeting';
 export * from './notification';
+export * from './ui';

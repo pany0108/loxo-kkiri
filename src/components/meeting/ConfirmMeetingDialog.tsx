@@ -1,6 +1,7 @@
 import React from 'react';
 import { CalendarCheck, X } from 'lucide-react';
 import dayjs from 'dayjs';
+import { LoadingButton } from 'components';
 
 /**
  * 약속 확정 확인 다이얼로그의 Props 인터페이스
@@ -14,6 +15,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   slotData: { date: string; time: string } | null;
+  isLoading?: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ interface ConfirmDialogProps {
  * @param {ConfirmDialogProps} props - 컴포넌트 속성
  * @returns {JSX.Element | null} 모달 컴포넌트
  */
-const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmDialogProps) => {
+const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading }: ConfirmDialogProps) => {
   // 모달이 닫혀있거나 데이터가 없는 경우 렌더링하지 않음
   if (!isOpen || !slotData) return null;
 
@@ -80,12 +82,13 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmD
             >
               취소
             </button>
-            <button
+            <LoadingButton
               onClick={onConfirm}
+              isLoading={isLoading}
               className="flex-1 h-[52px] rounded-[20px] bg-blue-600 text-white font-black text-[14px] shadow-lg shadow-blue-200 dark:shadow-blue-900/50 active:scale-95 transition-all"
             >
               확정하기
-            </button>
+            </LoadingButton>
           </div>
         </div>
       </div>

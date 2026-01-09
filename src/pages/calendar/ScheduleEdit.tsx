@@ -10,6 +10,7 @@ import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
 import { notifyScheduleUpdated } from 'services';
+import LoadingButton from '../../components/ui/LoadingButton';
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
@@ -60,6 +61,7 @@ const ScheduleEdit = () => {
   const [user, setUser] = useState<any>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -220,7 +222,9 @@ const ScheduleEdit = () => {
   };
 
   const handleSave = async () => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       const docId = getDocId();
       if (docId) {
         // [수정] 저장 시점에 선택된 캘린더의 멤버를 참석자로 설정합니다.
@@ -272,6 +276,8 @@ const ScheduleEdit = () => {
     } catch (error) {
       console.error('수정 실패:', error);
       toast.error('수정 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -281,9 +287,13 @@ const ScheduleEdit = () => {
         title="일정 수정"
         onBack={() => navigate(-1)}
         extraNav={
-          <button onClick={handleSave} className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+          <LoadingButton
+            onClick={handleSave}
+            isLoading={isSubmitting}
+            className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+          >
             <Check size={28} strokeWidth={3} />
-          </button>
+          </LoadingButton>
         }
       >
         <>

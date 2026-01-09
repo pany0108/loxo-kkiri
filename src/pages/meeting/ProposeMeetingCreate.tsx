@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader, PageFooter } from 'components';
 import { useProposeMeetingCreate } from 'hooks';
 import { notifyMeetingInvite } from 'services';
+import LoadingButton from '../../components/ui/LoadingButton';
 
 dayjs.extend(isSameOrBefore);
 dayjs.locale('ko');
@@ -43,6 +44,7 @@ const ProposeMeetingCreate = () => {
     schedulePopup,
     isValid,
     votingItems,
+    isSubmitting,
   } = state;
   const {
     setTitle,
@@ -216,9 +218,10 @@ const ProposeMeetingCreate = () => {
 
       {/* 하단 고정 버튼 */}
       <PageFooter>
-        <button
+        <LoadingButton
           onClick={handleNext}
           disabled={!isValid}
+          isLoading={isSubmitting}
           className={`
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center
             ${
@@ -229,7 +232,7 @@ const ProposeMeetingCreate = () => {
           `}
         >
           {selectedDates.length > 0 ? `다음 단계로 (${selectedDates.length}일 선택)` : '날짜를 선택해주세요'}
-        </button>
+        </LoadingButton>
       </PageFooter>
     </div>
   );

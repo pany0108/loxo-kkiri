@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, Loader2, History } from 'lucide-react';
+import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, History } from 'lucide-react';
 import dayjs from 'dayjs';
 import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
 import { useAddSchedule } from 'hooks';
+import LoadingButton from '../../components/ui/LoadingButton';
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
@@ -25,10 +26,11 @@ const AddSchedule = () => {
 
   const renderFooter = () => (
     <PageFooter>
-      <button
+      <LoadingButton
         type="submit"
         form="add-schedule-form" // [추가] form 속성으로 외부 form과 연결
-        disabled={!formData.title || isSubmitting}
+        disabled={!formData.title}
+        isLoading={isSubmitting}
         className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   formData.title && !isSubmitting
@@ -36,8 +38,8 @@ const AddSchedule = () => {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
       >
-        {isSubmitting ? <Loader2 className="animate-spin" /> : <span>일정 등록하기</span>}
-      </button>
+        <span>일정 등록하기</span>
+      </LoadingButton>
     </PageFooter>
   );
 
