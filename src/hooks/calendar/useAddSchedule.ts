@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { collection, addDoc, query, where, writeBatch, doc, orderBy } from 'firebase/firestore';
+import { collection, addDoc, query, where, writeBatch, orderBy } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from '../common/useFirestore'; // useFirestore.ts에서 export 된다고 가정
@@ -147,7 +147,7 @@ export const useAddSchedule = () => {
     if (initialCalendar) {
       setFormData((prev) => ({ ...prev, calendarId: initialCalendar!.id, color: initialCalendar!.color || '#3b82f6' }));
     }
-  }, [myCalendars, receivedData?.newlyCreatedCalendarId]);
+  }, [formData.calendarId, myCalendars, receivedData.calendarId, receivedData.newlyCreatedCalendarId]);
 
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(() => {
     if (receivedData?.from === '/create-calendar' && receivedData.scheduleData) {

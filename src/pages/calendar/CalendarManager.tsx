@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
-import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
+import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal, PageHeader, ConfirmModal } from 'components';
@@ -83,9 +83,25 @@ const CalendarManager = () => {
     if (!calendarToDelete) return;
 
     try {
-      await deleteDoc(doc(db, 'calendars', calendarToDelete.id));
-      // TODO: 해당 캘린더에 속한 일정(schedules)들도 삭제하는 로직 필요 (Batch 작업 등)
-      toast.success('캘린더가 삭제되었습니다.');
+      const batch = writeBatch(db);
+
+      // 1. 캘린더에 속한 일정들 조회
+      const schedulesQuery = query(collection(db, 'schedules'), where('calendarId', '==', calendarToDelete.id));
+      const schedulesSnapshot = await getDocs(schedulesQuery);
+
+      // 2. 일정들 삭제 (Batch)
+      schedulesSnapshot.forEach((scheduleDoc) => {
+        batch.delete(scheduleDoc.ref);
+      });
+
+      // 3. 캘린더 문서 삭제 (Batch)
+      const calendarRef = doc(db, 'calendars', calendarToDelete.id);
+      batch.delete(calendarRef);
+
+      // 4. 커밋
+      await batch.commit();
+
+      toast.success('캘린더와 포함된 일정이 모두 삭제되었습니다.');
     } catch (error) {
       console.error('Delete failed:', error);
       toast.error('삭제 중 오류가 발생했습니다.');
