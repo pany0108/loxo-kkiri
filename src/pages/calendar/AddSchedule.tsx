@@ -4,12 +4,12 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, Loader2, History } from 'lucide-react';
-import { sendPushNotificationToUser } from 'utils';
 import { PageLayout, RecurrenceOptions, RecurrenceSettings, PageHeader } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc, orderBy } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
+import { notifyScheduleAdded } from 'services';
 
 dayjs.extend(isSameOrAfter);
 
@@ -358,27 +358,16 @@ const AddSchedule = () => {
       if (selectedCalendar && selectedCalendar.members.length > 1) {
         const batch = writeBatch(db);
 
-        // [수정] forEach 대신 for...of 사용
         for (const memberId of selectedCalendar.members) {
           if (memberId === user.uid) continue; // return 대신 continue 사용
 
-          // 1. Firestore 알림 저장 (Batch)
-          const notiRef = doc(collection(db, 'notifications'));
-          batch.set(notiRef, {
-            userId: memberId,
-            type: 'SCHEDULE_ADDED',
-            message: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
-            relatedId: scheduleDocRef.id,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-
-          // 2. 푸시 알림 전송 (확실하게 기다림)
-          await sendPushNotificationToUser({
-            userId: memberId,
-            title: '새로운 일정',
-            body: `'${selectedCalendar.name}' 캘린더에 '${formData.title}' 일정이 추가되었습니다.`,
-            data: { type: 'SCHEDULE_ADDED', relatedId: scheduleDocRef.id, calendarId: selectedCalendar.id },
+          await notifyScheduleAdded(batch, {
+            memberId,
+            editorName: user.displayName,
+            calendarName: selectedCalendar.name,
+            scheduleTitle: formData.title,
+            scheduleId: scheduleDocRef.id,
+            calendarId: selectedCalendar.id,
           });
         }
 

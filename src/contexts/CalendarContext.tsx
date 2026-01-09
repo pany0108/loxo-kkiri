@@ -1,11 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { collection, query, where } from 'firebase/firestore';
-import { db, auth } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import lunisolar from 'lunisolar';
-import { useFirestoreQuery } from 'hooks';
+import { useFirestoreQuery, useAuth } from 'hooks';
+import { getCalendarsForUserQuery, getSchedulesForUserQuery } from 'services';
 
 dayjs.extend(isSameOrBefore);
 
@@ -180,28 +179,22 @@ const expandRecurringEvents = (events: any[]) => {
 };
 
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [activeCalendar, setActiveCalendar] = useState<CalendarType | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
-        setActiveCalendar(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   const calendarsQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
+    return getCalendarsForUserQuery(user.uid);
   }, [user]);
 
   const { data: myCalendarsData } = useFirestoreQuery<CalendarType>(calendarsQuery);
   const myCalendars = useMemo(() => myCalendarsData || [], [myCalendarsData]);
 
   useEffect(() => {
+    if (!user) {
+      setActiveCalendar(null);
+      return;
+    }
     if (myCalendars && myCalendars.length > 0) {
       setActiveCalendar((prev) => {
         if (prev && myCalendars.find((c) => c.id === prev.id)) return prev;
@@ -210,11 +203,11 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
     } else if (myCalendars) {
       setActiveCalendar(null);
     }
-  }, [myCalendars]);
+  }, [myCalendars, user]);
 
   const eventsQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
+    return getSchedulesForUserQuery(user.uid);
   }, [user]);
 
   const { data: rawEvents } = useFirestoreQuery<any>(eventsQuery);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock, Calendar } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface VotingSlot {
@@ -15,9 +15,10 @@ interface VotingSlotItemProps {
   slot: VotingSlot;
   onVote: (slotId: string, status: 'available' | 'maybe' | 'unavailable') => void;
   onMemoChange: (slotId: string, text: string) => void;
+  conflictInfo?: { isConflict: boolean; title: string; time?: string };
 }
 
-const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoChange }) => {
+const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoChange, conflictInfo }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-2 border-gray-50 dark:border-gray-700/50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* 일정 정보 및 등록 멤버 표시 */}
@@ -30,6 +31,20 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
             <Clock size={14} />
             <span className="text-[13px]">{slot.time}</span>
           </div>
+          {conflictInfo && (
+            <div
+              className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold animate-in fade-in slide-in-from-top-1 border ${
+                conflictInfo.isConflict
+                  ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
+                  : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
+              }`}
+            >
+              {conflictInfo.isConflict ? <AlertCircle size={14} /> : <Calendar size={14} />}
+              <span className="truncate max-w-[180px]">
+                {conflictInfo.title} ({conflictInfo.time})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 등록 멤버 아바타 */}
@@ -56,6 +71,8 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
             ${
               slot.myVote === 'available'
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50'
+                : conflictInfo?.isConflict
+                ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-700/50 text-gray-300 dark:text-gray-600 opacity-50 hover:opacity-100 hover:border-emerald-200 hover:text-emerald-500'
                 : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-emerald-200 dark:hover:border-emerald-500/50 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/10'
             }`}
         >

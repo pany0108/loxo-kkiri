@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
-import { TopNav, PageHeader } from 'components';
+import { TopNav, PageHeader, FormInput } from 'components';
 import { auth, db } from '../../firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
+import { updateUserBirthdaySchedule } from 'services';
 
 /**
  * 사용자 개인 정보를 수정하는 페이지 컴포넌트입니다.
@@ -181,51 +182,12 @@ const EditUserInfo = () => {
         displayName: fullName,
       });
 
-      // [추가] 생일 일정 업데이트 로직
-      const birthdayScheduleQuery = query(collection(db, 'schedules'), where('userId', '==', auth.currentUser.uid), where('title', '==', '내 생일'));
-      const birthdayScheduleSnapshot = await getDocs(birthdayScheduleQuery);
-
-      if (formData.birthDate) {
-        const birthDate = dayjs(formData.birthDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
-        const birthdayData = {
-          title: '내 생일',
-          isAllDay: true,
-          start: birthDate,
-          isLeapMonth: isLunar && isLeapMonth,
-          isLunar: isLunar,
-          color: '#ec4899',
-          attendees: [auth.currentUser.uid],
-          userId: auth.currentUser.uid,
-          recurrence: {
-            frequency: 'yearly',
-            interval: 1,
-          },
-        };
-
-        if (birthdayScheduleSnapshot.empty) {
-          // 기존 생일 일정이 없으면 새로 생성
-          const defaultCalendarQuery = query(collection(db, 'calendars'), where('ownerId', '==', auth.currentUser.uid), where('isDefault', '==', true));
-          const defaultCalendarSnapshot = await getDocs(defaultCalendarQuery);
-          if (!defaultCalendarSnapshot.empty) {
-            const calendarId = defaultCalendarSnapshot.docs[0].id;
-            await addDoc(collection(db, 'schedules'), { ...birthdayData, calendarId, createdAt: new Date().toISOString() });
-          }
-        } else {
-          // 기존 생일 일정이 있으면 업데이트
-          const batch = writeBatch(db);
-          birthdayScheduleSnapshot.forEach((doc) => {
-            batch.update(doc.ref, birthdayData);
-          });
-          await batch.commit();
-        }
-      } else {
-        // 생년월일 필드가 비워졌으면 기존 생일 일정 삭제
-        if (!birthdayScheduleSnapshot.empty) {
-          const batch = writeBatch(db);
-          birthdayScheduleSnapshot.forEach((doc) => batch.delete(doc.ref));
-          await batch.commit();
-        }
-      }
+      // [수정] 생일 일정 업데이트 로직을 서비스로 분리
+      await updateUserBirthdaySchedule(auth.currentUser, {
+        birthDate: formData.birthDate,
+        isLunar,
+        isLeapMonth,
+      });
 
       toast.success('개인 정보가 안전하게 변경되었습니다. ✨');
       navigate(-1);
@@ -266,48 +228,27 @@ const EditUserInfo = () => {
             <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">이름</label>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1">
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <input
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="성"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                  />
-                </div>
+                <FormInput name="lastName" value={formData.lastName} onChange={handleChange} placeholder="성" />
               </div>
               <div className="col-span-2">
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <input
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="이름"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                  />
-                </div>
+                <FormInput name="firstName" value={formData.firstName} onChange={handleChange} placeholder="이름" />
               </div>
             </div>
           </section>
 
           {/* 휴대폰 번호 */}
           {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
-          <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">휴대폰 번호</label>
-            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-              <Smartphone size={20} className="text-gray-300 dark:text-gray-600 mr-4" />
-              <input
-                name="phone"
-                type="tel"
-                inputMode="numeric"
-                value={formData.phone}
-                placeholder="010-0000-0000"
-                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white"
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </section>
+          <FormInput
+            label="휴대폰 번호"
+            icon={<Smartphone size={20} />}
+            name="phone"
+            type="tel"
+            inputMode="numeric"
+            value={formData.phone}
+            placeholder="010-0000-0000"
+            onChange={handleChange}
+            required
+          />
           {/* <section className="space-y-3"> // 기존 인증 UI 주석
             <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
             <div className="flex gap-2">

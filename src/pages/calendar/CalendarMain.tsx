@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, EventMountArg } from '@fullcalendar/core';
 import { DateClickArg } from '@fullcalendar/interaction';
 import dayjs from 'dayjs';
@@ -11,7 +11,7 @@ import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
 import { useFirestoreQuery } from 'hooks';
 import { collection, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
-import { DeleteRecurringModal, Calendar, SimpleDeleteModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
+import { DeleteRecurringModal, Calendar, ConfirmModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
 import toast from 'react-hot-toast';
 
 dayjs.extend(isSameOrBefore);
@@ -692,10 +692,12 @@ const CalendarMain = () => {
       {isDeleteModalOpen && eventToDelete && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
-      <SimpleDeleteModal
+      <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}
         onConfirm={deleteEntireSchedule}
+        icon={<Trash2 size={32} />}
+        iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
         title="일정 삭제"
         message={
           <>
@@ -704,6 +706,8 @@ const CalendarMain = () => {
             삭제된 일정은 복구할 수 없습니다.
           </>
         }
+        confirmText="삭제하기"
+        confirmButtonClassName="bg-red-500"
       />
     </div>
   );

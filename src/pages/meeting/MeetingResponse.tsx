@@ -1,45 +1,19 @@
-import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../firebase';
 import 'dayjs/locale/ko';
-import { sendPushNotificationToUser } from 'utils'; // addDoc is missing
-import { db, auth } from '../../firebase';
-import { doc, updateDoc, getDoc, writeBatch, collection, addDoc } from 'firebase/firestore';
-import { useFirestoreDoc } from 'hooks';
+import { useFirestoreDoc, useAuth, useScrollToTop, useMeetingResponseForm } from 'hooks';
+import { useCalendar } from 'contexts';
 import toast from 'react-hot-toast';
-import { onAuthStateChanged } from 'firebase/auth';
 import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader } from 'components';
+import { submitMeetingResponse, Meeting as MeetingData } from 'services';
 
+dayjs.extend(isSameOrBefore);
 dayjs.locale('ko');
-
-/**
- * 사용자가 새로 제안하는 시간 슬롯 인터페이스
- */
-interface MyNewSlot {
-  date: string;
-  startTime: string;
-  endTime: string;
-  isAllDay: boolean;
-}
-
-/**
- * Firestore 약속 데이터 인터페이스
- */
-interface MeetingData {
-  id: string;
-  title: string;
-  description?: string;
-  location?: string;
-  hostId: string;
-  hostName?: string;
-  participants: string[];
-  dates: string[];
-  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
-  responses?: Record<string, any>;
-  scheduleId?: string;
-  status: 'PENDING' | 'VOTING' | 'CONFIRMED' | 'CANCELED';
-}
 
 /**
  * 초대받은 약속에 대해 응답하는 페이지 컴포넌트입니다.
@@ -50,33 +24,36 @@ interface MeetingData {
 const MeetingResponse = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
-  const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useScrollToTop();
 
   // --- 상태 관리 ---
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(dayjs());
-  const [selectedHostSlots, setSelectedHostSlots] = useState<string[]>([]); // ID를 string으로 변경
-  const [myNewSlots, setMyNewSlots] = useState<MyNewSlot[]>([]);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
+  const { events } = useCalendar();
 
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // 내 기존 일정 데이터 (충돌 확인용)
+  const myExistingSchedules = useMemo(() => {
+    const dates = new Set<string>();
+    events.forEach((event) => {
+      const start = dayjs(event.start);
+      // 종료일이 없으면 시작일과 동일하게 처리
+      const end = event.end ? dayjs(event.end) : start;
+
+      // 종료 시간이 00:00이면 해당 날짜는 포함하지 않음 (예: 1/1 00:00 ~ 1/2 00:00 -> 1/1만 포함)
+      const isMidnight = end.hour() === 0 && end.minute() === 0;
+      const effectiveEnd = event.end && isMidnight ? end.subtract(1, 'day') : end;
+
+      let curr = start.clone();
+      while (curr.isSameOrBefore(effectiveEnd, 'day')) {
+        dates.add(curr.format('YYYY-MM-DD'));
+        curr = curr.add(1, 'day');
+      }
+    });
+    return Array.from(dates);
+  }, [events]);
 
   // 주최자 제안 슬롯 데이터 변환
   const hostSlots = useMemo(() => {
@@ -94,184 +71,36 @@ const MeetingResponse = () => {
     return slots;
   }, [meetingData]);
 
-  // 내 기존 일정 데이터 (충돌 확인용)
-  // TODO: 실제 내 일정 쿼리 연동 필요
-  const myExistingSchedules: string[] = [];
-
-  /**
-   * 주최자가 제안한 슬롯의 선택 상태를 토글합니다.
-   * @param {string} slotId - 슬롯 고유 ID
-   */
-  const toggleHostSlot = (slotId: string) => {
-    setSelectedHostSlots((prev) => (prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId]));
-  };
-
-  /**
-   * 달력 날짜 클릭 시 새로운 역제안 시간을 추가하거나 제거합니다.
-   * - 주최자가 이미 제안한 날짜는 선택할 수 없습니다.
-   * - 이미 선택된 날짜는 목록에서 제거합니다.
-   * - 새로운 날짜는 기본값(12:00~14:00, 종일)으로 추가됩니다.
-   * @param {string} dateStr - 선택한 날짜 문자열 (YYYY-MM-DD)
-   */
-  const toggleMyNewSlot = (dateStr: string) => {
-    const isHostDate = hostSlots.some((s) => s.date === dateStr);
-
-    // 주최자 제안 날짜는 상단 카드에서 선택하도록 유도 (UI상 클릭 방지 처리)
-    if (isHostDate) {
-      return;
-    }
-
-    if (myNewSlots.find((s) => s.date === dateStr)) {
-      setMyNewSlots((prev) => prev.filter((s) => s.date !== dateStr));
-    } else {
-      setMyNewSlots((prev) => [...prev, { date: dateStr, startTime: '12:00', endTime: '14:00', isAllDay: false }]);
-    }
-  };
-
-  /**
-   * 역제안 슬롯의 시간(시작/종료)을 업데이트합니다.
-   * 시간을 직접 수정하면 '종일' 옵션은 자동으로 해제됩니다.
-   */
-  const updateSlotTime = (dateStr: string, field: 'startTime' | 'endTime', value: string) => {
-    setMyNewSlots((prev) => prev.map((s) => (s.date === dateStr ? { ...s, [field]: value, isAllDay: false } : s)));
-  };
-
-  /**
-   * 역제안 슬롯의 '종일' 여부를 토글합니다.
-   */
-  const toggleAllDay = (dateStr: string) => {
-    setMyNewSlots((prev) => prev.map((s) => (s.date === dateStr ? { ...s, isAllDay: !s.isAllDay } : s)));
-  };
+  // [Refactor] 응답 폼 로직 훅 사용
+  const { selectedHostSlots, myNewSlots, toggleHostSlot, toggleMyNewSlot, updateSlotTime, toggleAllDay } = useMeetingResponseForm(hostSlots);
 
   /**
    * 최종 응답 제출 핸들러
    * 선택한 주최자 제안 슬롯과 새로 추가한 역제안 슬롯을 서버로 전송합니다.
    */
   const handleSubmitResponse = async () => {
-    if (!meetingDocRef || !user || !meetingData) return;
+    if (!meetingId || !user || !meetingData) return;
 
     try {
-      // 1. 내 응답을 먼저 업데이트
-      await updateDoc(meetingDocRef, {
-        [`responses.${user.uid}`]: {
-          responded: true,
-          name: user.displayName,
-          selectedSlots: selectedHostSlots,
-          newSlots: myNewSlots,
-        },
+      const result = await submitMeetingResponse(meetingId, user, {
+        selectedHostSlots,
+        myNewSlots,
       });
 
-      // 2. 업데이트된 문서를 다시 읽어와서 모든 참여자가 응답했는지 확인
-      const updatedDocSnap = await getDoc(meetingDocRef);
-      if (!updatedDocSnap.exists()) return;
-
-      const updatedMeetingData = updatedDocSnap.data();
-      const totalInvited = updatedMeetingData.participants.length - 1;
-      const respondedCount = Object.keys(updatedMeetingData.responses || {}).length;
-
-      // 모든 응답이 완료되었고, 아직 PENDING 상태일 때만 실행
-      if (respondedCount >= totalInvited && updatedMeetingData.status === 'PENDING') {
-        // [수정] 모든 응답자의 제안을 취합하여 새로운 투표 슬롯 생성
-        const allProposedSlots: { date: string; start: string; end: string; isAllDay: boolean }[] = [];
-        const uniqueSlotChecker = new Set<string>();
-
-        // 1. 주최자의 원래 제안 추가
-        Object.entries(updatedMeetingData.timeSlots).forEach(([date, slots]) => {
-          (slots as any[]).forEach((slot) => {
-            const slotString = `${date}_${slot.start}_${slot.end}_${slot.isAllDay}`;
-            if (!uniqueSlotChecker.has(slotString)) {
-              allProposedSlots.push({ date, ...slot });
-              uniqueSlotChecker.add(slotString);
-            }
-          });
-        });
-
-        // 2. 모든 참여자의 역제안 추가
-        Object.values(updatedMeetingData.responses).forEach((response: any) => {
-          if (response.newSlots && Array.isArray(response.newSlots)) {
-            response.newSlots.forEach((newSlot: MyNewSlot) => {
-              const slotData = { date: newSlot.date, start: newSlot.startTime, end: newSlot.endTime, isAllDay: newSlot.isAllDay };
-              const slotString = `${slotData.date}_${slotData.start}_${slotData.end}_${slotData.isAllDay}`;
-              if (!uniqueSlotChecker.has(slotString)) {
-                allProposedSlots.push(slotData);
-                uniqueSlotChecker.add(slotString);
-              }
-            });
-          }
-        });
-
-        // 3. 취합된 슬롯으로 dates와 timeSlots 재구성
-        const newTimeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]> = {};
-        const newDates = new Set<string>();
-        allProposedSlots.forEach((slot) => {
-          newDates.add(slot.date);
-          if (!newTimeSlots[slot.date]) newTimeSlots[slot.date] = [];
-          newTimeSlots[slot.date].push({ start: slot.start, end: slot.end, isAllDay: slot.isAllDay });
-        });
-
-        // 4. 약속 상태를 VOTING으로 변경하고, 취합된 시간 정보로 업데이트
-        await updateDoc(meetingDocRef, { status: 'VOTING', dates: Array.from(newDates).sort(), timeSlots: newTimeSlots });
-
-        // 투표 시작 알림 전송 (모든 참여자에게)
-        const batch = writeBatch(db);
-        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
-        for (const uid of updatedMeetingData.participants) {
-          const notiRef = doc(collection(db, 'notifications'));
-
-          // 1. Firestore 배치 작업 (알림 데이터 준비)
-          batch.set(notiRef, {
-            userId: uid,
-            type: 'MEETING_VOTING_STARTED',
-            message: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
-            relatedId: meetingId,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-
-          // 2. 푸시 알림 전송
-          await sendPushNotificationToUser({
-            userId: uid,
-            title: '투표 시작',
-            body: `'${updatedMeetingData.title}' 약속의 시간이 조율되었습니다. 최종 투표를 진행해주세요.`,
-            data: { type: 'MEETING_VOTING_STARTED', relatedId: meetingId },
-          });
-        }
-
-        // 모든 알림 생성 및 푸시 전송 요청이 끝난 후 배치를 커밋합니다.
-        await batch.commit();
-
+      if (result.escalatedToVoting) {
         toast.success('모든 친구가 응답하여 투표가 시작됩니다!');
       } else {
         toast.success('응답이 제출되었습니다.');
-        // [추가] 주최자에게 응답이 제출되었음을 알립니다.
-        if (meetingData.hostId !== user.uid) {
-          // Firestore에 알림 저장
-          await addDoc(collection(db, 'notifications'), {
-            userId: meetingData.hostId,
-            type: 'MEETING_RESPONSE',
-            message: `${user.displayName}님이 '${meetingData.title}' 약속 제안에 응답했습니다.`,
-            relatedId: meetingId,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-          // 푸시 알림 전송
-          await sendPushNotificationToUser({
-            userId: meetingData.hostId,
-            title: '새로운 약속 응답',
-            body: `${user.displayName}님이 '${meetingData.title}' 약속에 응답했습니다.`,
-            data: { type: 'MEETING_RESPONSE', relatedId: meetingId },
-          });
-        }
       }
 
       navigate('/propose');
     } catch (error) {
       console.error('Error submitting response:', error);
-      toast.error('응답 제출 중 오류가 발생했습니다.');
+      toast.error((error as Error).message || '응답 제출 중 오류가 발생했습니다.');
     }
   };
 
-  if (loading || !meetingData) {
+  if (authLoading || loading || !meetingData) {
     return (
       <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" />

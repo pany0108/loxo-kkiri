@@ -1,34 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import dayjs from 'dayjs';
-import { auth, db } from '../../firebase';
-import { TopNav, PageHeader } from 'components';
-import { formatPhone, formatBirth } from 'utils';
-
-/**
- * 비밀번호 유효성 검사 헬퍼 함수
- * - 길이(10자 이상), 문자 조합(영문/숫자/특수문자 중 2개 이상), 아이디 포함 여부를 검사합니다.
- * @param {string} password - 검사할 비밀번호
- * @param {any} userInfo - 사용자 정보 객체 (이메일 비교용)
- * @returns {string | true} 유효하면 true, 아니면 에러 메시지 문자열 반환
- */
-const validatePasswordLocally = (password: string, userInfo: any) => {
-  if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
-
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-  const combinations = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
-  if (combinations < 2) return '영문, 숫자, 특수문자 중 2종류 이상을 조합해주세요.';
-
-  if (userInfo.email && password.includes(userInfo.email.split('@')[0])) return '비밀번호에 이메일 아이디를 포함할 수 없습니다.';
-
-  return true;
-};
+import { TopNav, PageHeader, FormInput, BirthDateInput } from 'components';
+import { handleEnterToNext } from 'utils';
+import { useSignupForm } from 'hooks/useSignupForm';
 
 /**
  * 회원가입 페이지 컴포넌트입니다.
@@ -36,243 +11,21 @@ const validatePasswordLocally = (password: string, userInfo: any) => {
  * * @returns {JSX.Element} 회원가입 화면
  */
 const Signup = () => {
-  // --- Refs (포커스 이동용) ---
-  const emailRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const confirmPasswordRef = useRef<HTMLInputElement>(null);
-  const lastNameRef = useRef<HTMLInputElement>(null);
-  const firstNameRef = useRef<HTMLInputElement>(null);
-  const birthDateRef = useRef<HTMLInputElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const authCodeRef = useRef<HTMLInputElement>(null); // [추가] 인증번호 입력 필드 Ref
+  const { state, dispatch, errors, refs, handleChange, handleSubmit: handleFormSubmit } = useSignupForm();
 
-  // --- State ---
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    lastName: '',
-    firstName: '',
-    phone: '',
-    birthDate: '',
-    authCode: '',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isAuthSent, setIsAuthSent] = useState(false); // [임시] 휴대폰 인증 비활성화
-  const [isVerified, setIsVerified] = useState(true); // [임시] 휴대폰 인증 비활성화 (원래 false)
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
-  const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
-
-  // [추가] 양력/음력 상태에 따른 윤달 상태 동기화
-  // 양력일 경우, 윤달은 존재하지 않으므로 isLeapMonth 상태를 false로 강제합니다.
-  useEffect(() => {
-    if (!isLunar) {
-      setIsLeapMonth(false);
-    }
-  }, [isLunar]);
-
-  // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
-  useEffect(() => {
-    if (isAuthSent && !isVerified) {
-      // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
-      setTimeout(() => {
-        authCodeRef.current?.focus();
-      }, 100); // 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
-    }
-  }, [isAuthSent, isVerified]);
-
-  /**
-   * 비밀번호 실시간 유효성 검사 Effect
-   */
-  useEffect(() => {
-    if (!formData.password) {
-      setErrors((prev) => ({ ...prev, password: '' }));
-      return;
-    }
-
-    const validationResult = validatePasswordLocally(formData.password, formData);
-
-    if (validationResult !== true) {
-      setErrors((prev) => ({ ...prev, password: validationResult as string }));
-    } else {
-      setErrors((prev) => ({ ...prev, password: '' }));
-    }
-  }, [formData.password, formData.email, formData]);
-
-  /**
-   * 이메일 형식 실시간 검사 Effect
-   */
-  useEffect(() => {
-    if (!formData.email) {
-      setErrors((prev) => ({ ...prev, email: '' }));
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setErrors((prev) => ({ ...prev, email: '올바른 이메일 형식이 아닙니다.' }));
-    } else {
-      setErrors((prev) => ({ ...prev, email: '' }));
-    }
-  }, [formData.email]);
-
-  /**
-   * 비밀번호 일치 여부 실시간 검사 Effect
-   */
-  useEffect(() => {
-    if (!formData.confirmPassword) {
-      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setErrors((prev) => ({ ...prev, confirmPassword: '비밀번호가 일치하지 않습니다.' }));
-    } else {
-      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
-    }
-  }, [formData.password, formData.confirmPassword]);
-
-  /**
-   * 입력 필드 변경 핸들러
-   * - 포맷팅이 필요한 필드(휴대폰, 생년월일)는 변환 후 저장
-   * - 비밀번호 필드는 특수문자 외 불필요한 문자 필터링 가능 (현재는 전체 허용 후 정규식 검사)
-   */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    if (name === 'password' || name === 'confirmPassword') {
-      formattedValue = value.replace(/[^a-zA-Z0-9!@#$%^&*(),.?":{}|<>]/g, '');
-    }
-    if (name === 'phone') formattedValue = formatPhone(value);
-    if (name === 'birthDate') formattedValue = formatBirth(value);
-
-    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
-  };
-
-  /**
-   * 키보드 이벤트 핸들러
-   * - 비밀번호 필드에서 한글 입력 방지 (IME 조합 차단)
-   * - Enter 키 입력 시 다음 필드로 포커스 이동
-   */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null>, isPasswordField: boolean = false) => {
-    if (isPasswordField) {
-      if (e.nativeEvent.isComposing || e.key === 'Process') {
-        e.preventDefault();
-        return;
-      }
-    }
-
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (nextRef && nextRef.current) {
-        nextRef.current.focus();
-      }
-    }
-  };
-
-  /**
-   * 휴대폰 인증번호 발송 시뮬레이션
-   */
-  const handleSendAuth = () => {
-    if (!formData.phone || formData.phone.length < 13) {
-      toast.error('올바른 휴대폰 번호를 입력해주세요.');
-      return;
-    }
-    setIsAuthSent(true);
-    toast.success('인증번호가 발송되었습니다.');
-  };
-
-  /**
-   * 인증번호 확인 시뮬레이션 (고정값: 1234)
-   */
-  const handleVerify = () => {
-    if (formData.authCode === '1234') {
-      setIsVerified(true);
-    } else {
-      toast.error('인증번호가 일치하지 않습니다.');
-    }
-  };
+  const { formData, isLoading, isLeapMonth, isLunar } = state;
+  const { emailRef, passwordRef, confirmPasswordRef, lastNameRef, firstNameRef, birthDateRef, phoneRef } = refs;
 
   /**
    * 회원가입 제출 핸들러
-   * 1. 본인인증 확인
-   * 2. Firebase Authentication 유저 생성
-   * 3. 프로필(displayName) 업데이트
-   * 4. Firestore 'users' 컬렉션에 상세 정보 저장
+   * - 커스텀 훅의 handleSubmit을 호출하고, 결과에 따라 UI 피드백(토스트, 포커스)을 처리합니다.
    */
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isVerified) {
-      toast.error('본인인증을 완료해주세요.');
-      return;
-    }
-    setIsLoading(true);
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
-
-      const fullName = `${formData.lastName}${formData.firstName}`;
-
-      // Auth 프로필 업데이트
-      await updateProfile(user, {
-        displayName: fullName,
-      });
-
-      // Firestore DB 저장
-      // [FIX] 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        email: formData.email,
-        name: fullName,
-        lastName: formData.lastName,
-        firstName: formData.firstName,
-        phone: formData.phone.replace(/[^\d]/g, ''),
-        birthDate: formData.birthDate,
-        isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
-        birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
-        createdAt: new Date().toISOString(),
-        fcmTokens: [], // [추가] 푸시 알림 토큰 필드를 빈 배열로 초기화합니다.
-      });
-
-      // [수정] 회원가입 시 기본 캘린더 자동 생성
-      const calendarDocRef = await addDoc(collection(db, 'calendars'), {
-        name: '내 캘린더',
-        ownerId: user.uid,
-        members: [user.uid],
-        isDefault: true,
-        color: '#3b82f6', // 기본 파란색
-        createdAt: new Date().toISOString(),
-      });
-
-      // [추가] 생일 캘린더 자동 생성
-      if (formData.birthDate) {
-        const birthDate = dayjs(formData.birthDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
-        await addDoc(collection(db, 'schedules'), {
-          title: '내 생일', // [수정] 타이틀 변경
-          calendarId: calendarDocRef.id,
-          isAllDay: true,
-          start: birthDate,
-          isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
-          isLunar: isLunar, // [추가] 음력 여부 저장
-          color: '#ec4899', // Pink color for birthdays
-          attendees: [user.uid],
-          userId: user.uid,
-          recurrence: {
-            frequency: 'yearly',
-            interval: 1,
-          },
-          createdAt: new Date().toISOString(),
-        });
-      }
-
-      toast.success(`${fullName}님, 가입을 축하합니다!`);
-      // navigate('/calendar');
-      // The user is now authenticated. The top-level router in App.tsx will
-      // detect the authenticated state and automatically navigate to the main page.
-    } catch (error: any) {
+    const result = await handleFormSubmit(e);
+    if (result?.success) {
+      toast.success(`${result.fullName}님, 가입을 축하합니다!`);
+    } else if (result?.error) {
+      const error = result.error;
       console.error('Signup Error:', error);
       if (error.code === 'auth/email-already-in-use') {
         toast.error('이미 가입된 이메일입니다. 다른 이메일을 사용해주세요.');
@@ -285,8 +38,6 @@ const Signup = () => {
       } else {
         toast.error('가입 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -305,298 +56,104 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
-            {/* 이메일 입력 */}
-            <div className="group relative">
-              <div
-                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
-                  errors.email ? 'border-red-400 bg-white dark:bg-gray-900' : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                }`}
-              >
-                <Mail size={20} className={`${errors.email ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
-                <input
-                  ref={emailRef}
-                  name="email"
-                  type="email"
-                  enterKeyHint="next"
-                  placeholder="이메일 주소 (abc@example.com)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                  onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, passwordRef)}
-                  required
-                />
-              </div>
-              {errors.email && (
-                <div className="flex items-center gap-1 ml-4 mt-1">
-                  <AlertCircle size={12} className="text-red-500" />
-                  <p className="text-[11px] text-red-500 font-bold">{errors.email}</p>
-                </div>
-              )}
-            </div>
+            <FormInput
+              inputRef={emailRef}
+              icon={<Mail size={20} />}
+              name="email"
+              type="email"
+              enterKeyHint="next"
+              placeholder="이메일 주소 (abc@example.com)"
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnterToNext(e, passwordRef)}
+              error={errors.email}
+              required
+            />
 
-            {/* 비밀번호 입력 */}
-            <div className="group relative">
-              <div
-                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
-                  errors.password
-                    ? 'border-red-400 bg-white dark:bg-gray-900'
-                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                }`}
-              >
-                <Lock size={20} className={`${errors.password ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
-                <input
-                  ref={passwordRef}
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  enterKeyHint="next"
-                  placeholder="비밀번호 (10자 이상 조합)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, confirmPasswordRef, true)}
-                  required
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck="false"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <div className="flex items-center gap-1 ml-4 mt-1">
-                  <AlertCircle size={12} className="text-red-500" />
-                  <p className="text-[11px] text-red-500 font-bold">{errors.password}</p>
-                </div>
-              )}
-            </div>
+            <FormInput
+              inputRef={passwordRef}
+              icon={<Lock size={20} />}
+              name="password"
+              type="password"
+              enterKeyHint="next"
+              placeholder="비밀번호 (10자 이상 조합)"
+              value={formData.password}
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnterToNext(e, confirmPasswordRef)}
+              error={errors.password}
+              required
+            />
 
-            {/* 비밀번호 확인 */}
-            <div className="group relative">
-              <div
-                className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
-                  formData.confirmPassword && errors.confirmPassword
-                    ? 'border-red-400 bg-white dark:bg-gray-900'
-                    : formData.confirmPassword && !errors.confirmPassword
-                    ? 'border-emerald-400 bg-white dark:bg-gray-900'
-                    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                }`}
-              >
-                <ShieldCheck
-                  size={20}
-                  className={`${
-                    formData.confirmPassword && errors.confirmPassword
-                      ? 'text-red-400'
-                      : formData.confirmPassword && !errors.confirmPassword
-                      ? 'text-emerald-500'
-                      : 'text-gray-300 group-focus-within:text-blue-600'
-                  } mr-4`}
-                />
-                <input
-                  ref={confirmPasswordRef}
-                  name="confirmPassword"
-                  type="password"
-                  enterKeyHint="next"
-                  placeholder="비밀번호 다시 입력"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                  onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, lastNameRef)}
-                  required
-                />
-                {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
-              </div>
-              {formData.confirmPassword && errors.confirmPassword && <p className="text-[11px] text-red-500 ml-4 mt-1 font-bold">{errors.confirmPassword}</p>}
-            </div>
+            <FormInput
+              inputRef={confirmPasswordRef}
+              icon={<ShieldCheck size={20} />}
+              name="confirmPassword"
+              type="password"
+              enterKeyHint="next"
+              placeholder="비밀번호 다시 입력"
+              onChange={handleChange}
+              onKeyDown={(e) => handleEnterToNext(e, lastNameRef)}
+              error={errors.confirmPassword}
+              success={!!formData.confirmPassword && !errors.confirmPassword}
+              rightContent={formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
+              required
+            />
 
-            {/* 이름 입력 (성/이름) */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1 group">
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <input
-                    ref={lastNameRef}
-                    name="lastName"
-                    enterKeyHint="next"
-                    placeholder="성"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                    onChange={handleChange}
-                    onKeyDown={(e) => handleKeyDown(e, firstNameRef)}
-                    required
-                  />
-                </div>
+                <FormInput
+                  inputRef={lastNameRef}
+                  name="lastName"
+                  enterKeyHint="next"
+                  placeholder="성"
+                  onChange={handleChange}
+                  onKeyDown={(e) => handleEnterToNext(e, firstNameRef)}
+                  required
+                />
               </div>
               <div className="col-span-2 group">
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <input
-                    ref={firstNameRef}
-                    name="firstName"
-                    enterKeyHint="next"
-                    placeholder="이름"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                    onChange={handleChange}
-                    onKeyDown={(e) => handleKeyDown(e, birthDateRef)}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 생년월일 입력 */}
-            <div className="group">
-              {/* [수정] 양력/음력/윤달 선택 UI */}
-              <div className="flex items-center justify-end mb-2 px-1 h-6">
-                <div className="flex items-center gap-2">
-                  {isLunar && (
-                    <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
-                      <input
-                        type="checkbox"
-                        checked={isLeapMonth}
-                        onChange={(e) => setIsLeapMonth(e.target.checked)}
-                        className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
-                      />
-                      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">윤달</span>
-                    </label>
-                  )}
-                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setIsLunar(false)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        !isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
-                      }`}
-                    >
-                      양력
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsLunar(true)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        isLunar ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-gray-200 shadow-sm' : 'text-gray-400 dark:text-gray-500'
-                      }`}
-                    >
-                      음력
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <Calendar size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                <input
-                  ref={birthDateRef}
-                  name="birthDate"
-                  type="tel"
+                <FormInput
+                  inputRef={firstNameRef}
+                  name="firstName"
                   enterKeyHint="next"
-                  inputMode="numeric"
-                  value={formData.birthDate}
-                  placeholder="생년월일 (YYYY/MM/DD)"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
+                  placeholder="이름"
                   onChange={handleChange}
-                  onKeyDown={(e) => handleKeyDown(e, phoneRef)}
-                  required
-                  maxLength={10}
-                />
-              </div>
-            </div>
-
-            {/* 휴대폰 번호 및 인증 */}
-            {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
-            <div className="group relative">
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800">
-                <Smartphone size={20} className="text-gray-300 group-focus-within:text-blue-600 mr-4" />
-                <input
-                  ref={phoneRef}
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  value={formData.phone}
-                  placeholder="휴대폰 번호"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                  onChange={handleChange}
+                  onKeyDown={(e) => handleEnterToNext(e, birthDateRef)}
                   required
                 />
               </div>
             </div>
-            {/* <div className="space-y-3"> // 기존 인증 UI 주석
-              <div className="flex gap-2">
-                <div
-                  className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
-                    isVerified
-                      ? 'bg-blue-50 dark:bg-blue-900/50 border-blue-100 dark:border-blue-800'
-                      : 'focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                  }`}
-                >
-                  <Smartphone size={20} className={isVerified ? 'text-blue-500 mr-4' : 'text-gray-300 mr-4'} />
-                  <input
-                    ref={phoneRef}
-                    name="phone"
-                    type="tel"
-                    enterKeyHint="next"
-                    inputMode="numeric"
-                    value={formData.phone}
-                    placeholder="휴대폰 번호"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                    onChange={handleChange}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault(); // 폼 전체 제출 방지
-                        if (isVerified) return; // 이미 인증되었으면 실행 안함
-                        handleSendAuth();
-                      }
-                    }}
-                    required
-                    readOnly={isVerified}
-                  />
-                  {isVerified && <CheckCircle2 size={20} className="text-blue-500 ml-2" />}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSendAuth}
-                  disabled={isVerified}
-                  className="flex-1 h-[60px] bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-300 rounded-[20px] text-[13px] font-black active:scale-[0.95] disabled:opacity-50"
-                >
-                  {isAuthSent ? '재발송' : '인증요청'}
-                </button>
-              </div>
 
-              {isAuthSent && !isVerified && (
-                <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                  <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-blue-500 rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
-                    <input
-                      ref={authCodeRef}
-                      name="authCode"
-                      type="tel"
-                      inputMode="numeric"
-                      pattern="\d*"
-                      value={formData.authCode}
-                      placeholder="인증번호 4자리"
-                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500"
-                      onChange={handleChange}
-                      maxLength={4}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleVerify();
-                        }
-                      }}
-                    />
-                  </div>
-                  <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-blue-600 text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
-                    확인
-                  </button>
-                </div>
-              )}
-            </div> */}
+            <BirthDateInput
+              inputRef={birthDateRef}
+              value={formData.birthDate}
+              isLunar={isLunar}
+              isLeapMonth={isLeapMonth}
+              onValueChange={(value) => dispatch({ type: 'SET_FIELD', field: 'birthDate', value })}
+              onTypeChange={(payload) => dispatch({ type: 'SET_BIRTH_TYPE', payload })}
+              onKeyDown={(e) => handleEnterToNext(e, phoneRef)}
+              required
+            />
+
+            <FormInput
+              inputRef={phoneRef}
+              icon={<Smartphone size={20} />}
+              name="phone"
+              type="tel"
+              inputMode="numeric"
+              value={formData.phone}
+              placeholder="휴대폰 번호"
+              onChange={handleChange}
+              required
+            />
           </div>
 
           <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <button
               type="submit"
-              disabled={isLoading || !isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
+              disabled={isLoading || !state.isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
               ${
-                isVerified && !errors.email && !errors.password && !errors.confirmPassword
+                state.isVerified && !errors.email && !errors.password && !errors.confirmPassword
                   ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
               }`}

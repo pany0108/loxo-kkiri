@@ -1,30 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import React, { useLayoutEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Mail, User, Smartphone } from 'lucide-react';
-import { auth, db } from '../../firebase';
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendPasswordResetEmail } from 'firebase/auth';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { collection, query, where, getDocs } from 'firebase/firestore'; // getDocs는 이제 사용되지 않지만 다른 곳을 위해 남겨둡니다.
-import { TopNav, PageHeader } from 'components';
-
-const validatePasswordLocally = (password: string, email: string) => {
-  if (password.length < 10) return '비밀번호는 10자 이상이어야 합니다.';
-
-  const hasLetter = /[a-zA-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-  const combinations = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
-  if (combinations < 2) return '영문, 숫자, 특수문자 중 2종류 이상을 조합해주세요.';
-
-  const emailId = (email || '').split('@')[0];
-  if (emailId && password.includes(emailId)) {
-    return '비밀번호에 아이디를 포함할 수 없습니다.';
-  }
-
-  return true;
-};
+import { TopNav, PageHeader, FormInput } from 'components';
+import { useChangePasswordForm } from 'hooks';
 
 /**
  * 비밀번호 변경 및 재설정 페이지 컴포넌트입니다.
@@ -33,9 +11,7 @@ const validatePasswordLocally = (password: string, email: string) => {
  * 2. 변경 모드 (Change Mode): 로그인 후, 현재 비밀번호 확인 과정을 거쳐 변경합니다.
  */
 const ChangePassword = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -48,226 +24,10 @@ const ChangePassword = () => {
     }
   }, [location.pathname]);
 
-  // --- 상태 관리 ---
-
-  /**
-   * 페이지 동작 모드 상태
-   * - true: 비밀번호 재설정 (로그인 화면에서 진입)
-   * - false: 비밀번호 변경 (마이페이지/설정에서 진입)
-   */
-  const [isResetMode, setIsResetMode] = useState(false);
-
-  // [추가] 비밀번호 재설정 단계 상태 (1: 정보 입력, 2: 이메일 확인)
-  const [resetStep, setResetStep] = useState(1);
-  const [findInfo, setFindInfo] = useState({ name: '', phone: '' });
-  const [foundEmail, setFoundEmail] = useState<{ full: string; masked: string } | null>(null);
-  const [confirmedEmail, setConfirmedEmail] = useState('');
-
-  /**
-   * 입력 폼 데이터 상태
-   */
-  const [formData, setFormData] = useState({
-    currentPassword: '', // 변경 모드용 현재 비밀번호
-    newPassword: '',
-    confirmPassword: '',
-  });
-
-  /**
-   * 비밀번호 가시성 토글 상태
-   */
-  const [showPassword, setShowPassword] = useState(false);
-
-  /**
-   * [추가] 폼 제출 로딩 상태
-   */
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  /**
-   * [추가] 유효성 검사 에러 상태
-   */
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  /**
-   * 진입 경로에 따라 모드를 결정합니다.
-   * location.state.from === 'login'일 경우 재설정 모드로 전환합니다.
-   */
-  useEffect(() => {
-    if (location.state?.from === 'login') {
-      setIsResetMode(true);
-    }
-  }, [location]);
-
-  /**
-   * [추가] 새 비밀번호 실시간 유효성 검사
-   */
-  useEffect(() => {
-    if (isResetMode) return; // 재설정 모드에서는 이 검사를 건너뜁니다.
-
-    if (!formData.newPassword) {
-      setErrors((prev) => ({ ...prev, newPassword: '' }));
-      return;
-    }
-    const emailForValidation = auth.currentUser?.email || '';
-    const validationResult = validatePasswordLocally(formData.newPassword, emailForValidation);
-
-    if (validationResult !== true) {
-      setErrors((prev) => ({ ...prev, newPassword: validationResult as string }));
-    } else {
-      setErrors((prev) => ({ ...prev, newPassword: '' }));
-    }
-  }, [formData.newPassword, isResetMode]);
-
-  useEffect(() => {
-    if (formData.confirmPassword && formData.newPassword !== formData.confirmPassword) {
-      setErrors((prev) => ({ ...prev, confirmPassword: '비밀번호가 일치하지 않습니다.' }));
-    } else {
-      setErrors((prev) => ({ ...prev, confirmPassword: '' }));
-    }
-  }, [formData.newPassword, formData.confirmPassword]);
-  // --- 핸들러 ---
-
-  /**
-   * 입력 필드 값 변경 핸들러
-   */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // [추가] 비밀번호 찾기 폼 입력 핸들러
-  const handleFindInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-    if (name === 'phone') {
-      const nums = value.replace(/[^\d]/g, '');
-      if (nums.length <= 3) formattedValue = nums;
-      else if (nums.length <= 7) formattedValue = `${nums.slice(0, 3)}-${nums.slice(3)}`;
-      else formattedValue = `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
-    }
-    setFindInfo((prev) => ({ ...prev, [name]: formattedValue }));
-  };
-
-  // [추가] 이메일 찾기 핸들러
-  const handleFindEmail = async () => {
-    if (!findInfo.name || !findInfo.phone) {
-      toast.error('이름과 휴대폰 번호를 모두 입력해주세요.');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      // [FIX] Firestore 직접 쿼리 대신 보안을 위해 Cloud Function을 호출합니다.
-      // [FIX] 함수가 배포된 'asia-northeast3' (서울) 리전을 명시적으로 지정합니다.
-      // 이렇게 하지 않으면 기본 리전인 'us-central1'로 요청하여 함수를 찾지 못하는 오류가 발생합니다.
-      const functions = getFunctions(undefined, 'asia-northeast3');
-      const findUserByInfo = httpsCallable(functions, 'findUserByInfo');
-      const result = await findUserByInfo({ name: findInfo.name, phone: findInfo.phone });
-
-      const data = result.data as { found: boolean; full?: string; masked?: string };
-
-      if (data.found && data.full && data.masked) {
-        setFoundEmail({
-          full: data.full,
-          masked: data.masked,
-        });
-        setResetStep(2);
-        toast.success('가입된 이메일을 확인했습니다.');
-      } else {
-        toast.error('일치하는 사용자 정보가 없습니다.');
-      }
-    } catch (error) {
-      toast.error('사용자 정보를 찾는 중 오류가 발생했습니다.');
-      console.error('이메일 찾기 오류:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // [추가] 비밀번호 재설정 이메일 발송 핸들러
-  const handleSendResetEmail = async () => {
-    if (!foundEmail) return;
-
-    if (confirmedEmail.trim().toLowerCase() !== foundEmail.full.toLowerCase()) {
-      toast.error('이메일 주소가 일치하지 않습니다.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await sendPasswordResetEmail(auth, foundEmail.full);
-      toast.success('비밀번호 재설정 이메일을 발송했습니다. 메일함을 확인해주세요.');
-      setTimeout(() => navigate('/'), 2000);
-    } catch (error) {
-      toast.error('요청 처리 중 오류가 발생했습니다.');
-      console.error('비밀번호 재설정 오류:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  /**
-   * 폼 제출 및 비밀번호 변경 처리 핸들러
-   * 유효성 검사를 통과하면 서버에 변경 요청을 보냅니다.
-   */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // [수정] 이 핸들러는 이제 '비밀번호 변경' 모드에서만 사용됩니다.
-    if (isResetMode) return;
-
-    const { currentPassword, newPassword } = formData;
-
-    if (errors.newPassword || errors.confirmPassword) {
-      toast.error('입력 값을 다시 확인해주세요.');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    // --- 비밀번호 변경 로직 ---
-    const user = auth.currentUser;
-    if (!user || !user.email) {
-      toast.error('로그인 정보가 유효하지 않습니다.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // [보안 강화] 이메일/비밀번호로 가입한 사용자인지 확인
-    const isPasswordProvider = user.providerData.some((provider) => provider.providerId === 'password');
-    if (!isPasswordProvider) {
-      toast.error('소셜 로그인 사용자는 앱 내에서 비밀번호를 변경할 수 없습니다.');
-      setIsSubmitting(false);
-      navigate('/profile');
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      toast.error('기존 비밀번호와 다른 비밀번호를 사용해주세요.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      // 1. 사용자 재인증 (현재 비밀번호 확인)
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-
-      // 2. 비밀번호 업데이트
-      await updatePassword(user, newPassword);
-
-      toast.success('비밀번호가 성공적으로 변경되었습니다.');
-      navigate('/profile');
-    } catch (error: any) {
-      if (error.code === 'auth/wrong-password') {
-        toast.error('현재 비밀번호가 일치하지 않습니다.');
-      } else if (error.code === 'auth/too-many-requests') {
-        toast.error('너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.');
-      } else {
-        toast.error('비밀번호 변경 중 오류가 발생했습니다.');
-      }
-      console.error('비밀번호 변경 오류:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { state, dispatch, handlers } = useChangePasswordForm();
+  const { mode, resetStep, isSubmitting, showPassword, findInfo, foundEmail, confirmedEmail, formData, errors } = state;
+  const { handleChange, handleFindInfoChange, handleFindEmail, handleSendResetEmail, handleSubmit } = handlers;
+  const isResetMode = mode === 'reset';
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
@@ -300,36 +60,26 @@ const ChangePassword = () => {
             {isResetMode ? (
               resetStep === 1 ? (
                 <>
-                  <div className="group relative">
-                    <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">이름</label>
-                    <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                      <User size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                      <input
-                        type="text"
-                        name="name"
-                        value={findInfo.name}
-                        onChange={handleFindInfoChange}
-                        placeholder="가입하신 이름"
-                        className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="group relative">
-                    <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">휴대폰 번호</label>
-                    <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                      <Smartphone size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={findInfo.phone}
-                        onChange={handleFindInfoChange}
-                        placeholder="가입하신 휴대폰 번호"
-                        className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                        required
-                      />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="이름"
+                    icon={<User size={20} />}
+                    type="text"
+                    name="name"
+                    value={findInfo.name}
+                    onChange={handleFindInfoChange}
+                    placeholder="가입하신 이름"
+                    required
+                  />
+                  <FormInput
+                    label="휴대폰 번호"
+                    icon={<Smartphone size={20} />}
+                    type="tel"
+                    name="phone"
+                    value={findInfo.phone}
+                    onChange={handleFindInfoChange}
+                    placeholder="가입하신 휴대폰 번호"
+                    required
+                  />
                 </>
               ) : (
                 foundEmail && (
@@ -338,48 +88,40 @@ const ChangePassword = () => {
                       <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">가입하신 이메일은 아래와 같습니다.</p>
                       <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-1">{foundEmail.masked}</p>
                     </div>
-                    <div className="group relative">
-                      <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">이메일 주소 확인</label>
-                      <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                        <Mail size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                        <input
-                          type="email"
-                          name="confirmedEmail"
-                          value={confirmedEmail}
-                          onChange={(e) => setConfirmedEmail(e.target.value)}
-                          placeholder="위 이메일 주소를 정확히 입력"
-                          className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                          required
-                        />
-                      </div>
-                    </div>
+                    <FormInput
+                      label="이메일 주소 확인"
+                      icon={<Mail size={20} />}
+                      type="email"
+                      name="confirmedEmail"
+                      value={confirmedEmail}
+                      onChange={(e) => dispatch({ type: 'SET_CONFIRMED_EMAIL', payload: e.target.value })}
+                      placeholder="위 이메일 주소를 정확히 입력"
+                      required
+                    />
                   </div>
                 )
               )
             ) : (
-              <div className="group relative">
-                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">현재 비밀번호</label>
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <Lock size={20} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="currentPassword"
-                    value={formData.currentPassword}
-                    onChange={handleChange}
-                    placeholder="현재 사용 중인 비밀번호"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                    required={!isResetMode}
-                  />
+              <FormInput
+                label="현재 비밀번호"
+                icon={<Lock size={20} />}
+                type={showPassword ? 'text' : 'password'}
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                placeholder="현재 사용 중인 비밀번호"
+                required={!isResetMode}
+                rightContent={
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => dispatch({ type: 'TOGGLE_SHOW_PASSWORD' })}
                     className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 ml-2"
                     aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
-                </div>
-              </div>
+                }
+              />
             )}
 
             {!isResetMode && (
@@ -389,75 +131,31 @@ const ChangePassword = () => {
                 </div>
 
                 {/* 2. 새 비밀번호 입력 */}
-                <div className="group relative">
-                  <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">새 비밀번호</label>
-                  <div
-                    className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
-                      errors.newPassword
-                        ? 'border-red-400 bg-white dark:bg-gray-800'
-                        : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                    }`}
-                  >
-                    <ShieldCheck size={20} className={`${errors.newPassword ? 'text-red-400' : 'text-gray-300 group-focus-within:text-blue-600'} mr-4`} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="newPassword"
-                      value={formData.newPassword}
-                      onChange={handleChange}
-                      placeholder="새 비밀번호 (10자 이상 조합)"
-                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                      required
-                    />
-                  </div>
-                  {errors.newPassword && (
-                    <div className="flex items-center gap-1 ml-4 mt-1.5">
-                      <AlertCircle size={12} className="text-red-500" />
-                      <p className="text-[11px] text-red-500 font-bold">{errors.newPassword}</p>
-                    </div>
-                  )}
-                </div>
+                <FormInput
+                  label="새 비밀번호"
+                  icon={<ShieldCheck size={20} />}
+                  type={showPassword ? 'text' : 'password'}
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  placeholder="새 비밀번호 (10자 이상 조합)"
+                  error={errors.newPassword}
+                  required
+                />
 
                 {/* 3. 새 비밀번호 확인 */}
-                <div className="group relative">
-                  <div
-                    className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 rounded-[20px] px-5 transition-all ${
-                      formData.confirmPassword && errors.confirmPassword
-                        ? 'border-red-400 bg-white dark:bg-gray-800'
-                        : formData.confirmPassword && !errors.confirmPassword
-                        ? 'border-emerald-400 bg-white dark:bg-gray-800'
-                        : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800'
-                    }`}
-                  >
-                    <ShieldCheck
-                      size={20}
-                      className={`${
-                        formData.confirmPassword && errors.confirmPassword
-                          ? 'text-red-400'
-                          : formData.confirmPassword && !errors.confirmPassword
-                          ? 'text-emerald-500'
-                          : 'text-gray-300 group-focus-within:text-blue-600'
-                      } mr-4`}
-                    />
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="새 비밀번호 다시 입력"
-                      className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                      required
-                    />
-                    {formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
-                  </div>
-
-                  {/* 불일치 시 에러 메시지 표시 */}
-                  {formData.confirmPassword && errors.confirmPassword && (
-                    <div className="flex items-center gap-1 ml-4 mt-1.5">
-                      <AlertCircle size={12} className="text-red-500" />
-                      <p className="text-[11px] text-red-500 font-bold">{errors.confirmPassword}</p>
-                    </div>
-                  )}
-                </div>
+                <FormInput
+                  icon={<ShieldCheck size={20} />}
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="새 비밀번호 다시 입력"
+                  error={errors.confirmPassword}
+                  success={!!formData.confirmPassword && !errors.confirmPassword}
+                  rightContent={formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
+                  required
+                />
               </>
             )}
           </div>

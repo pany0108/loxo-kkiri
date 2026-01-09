@@ -6,11 +6,11 @@ import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 }
 import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { EditCalendarModal, PageHeader } from 'components';
+import { EditCalendarModal, PageHeader, ConfirmModal } from 'components';
 import { TopNav } from 'components';
 import { useFirestoreQuery } from 'hooks';
-import { sendPushNotificationToUser } from 'utils';
 import { CalendarType } from 'types';
+import { notifyCalendarLeave } from 'services';
 
 const CalendarManager = () => {
   const navigate = useNavigate();
@@ -116,25 +116,12 @@ const CalendarManager = () => {
 
         // 2. 남은 멤버들에게 알림 전송
         const remainingMembers = calendarToDelete.members.filter((memberId) => memberId !== user.uid);
-        // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
         for (const memberId of remainingMembers) {
-          // 1. Firestore 알림 저장 (Batch)
-          const notiRef = doc(collection(db, 'notifications'));
-          batch.set(notiRef, {
-            userId: memberId,
-            type: 'CALENDAR_LEAVE', // 새로운 알림 타입
-            message: `${user.displayName || '누군가'}님이 '${calendarToDelete.name}' 캘린더에서 나갔습니다.`,
-            relatedId: calendarToDelete.id,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-
-          // 2. 푸시 알림 전송 (확실하게 기다림)
-          await sendPushNotificationToUser({
-            userId: memberId,
-            title: '캘린더에서 나감',
-            body: `${user.displayName || '누군가'}님이 '${calendarToDelete.name}' 캘린더에서 나갔습니다.`,
-            data: { type: 'CALENDAR_LEAVE', relatedId: calendarToDelete.id },
+          await notifyCalendarLeave(batch, {
+            memberId,
+            leaverName: user.displayName || '누군가',
+            calendarName: calendarToDelete.name,
+            calendarId: calendarToDelete.id,
           });
         }
         // 루프가 다 끝난 뒤 배치 커밋
@@ -237,59 +224,45 @@ const CalendarManager = () => {
       </div>
 
       {/* 삭제 확인 모달 */}
-      {isDeleteModalOpen && calendarToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsDeleteModalOpen(false)} />
-          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle size={32} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">캘린더 삭제</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-              정말 <span className="text-gray-900 dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더를
-              <br />
-              삭제하시겠습니까?
+      {calendarToDelete && (
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          icon={<AlertCircle size={32} />}
+          iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
+          title="캘린더 삭제"
+          message={
+            <>
+              정말 <span className="text-gray-900 dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더를 삭제하시겠습니까?
               <br />
               <span className="text-red-500 dark:text-red-400 font-bold">포함된 모든 일정이 사라집니다.</span>
-            </p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleDeleteConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                삭제하기
-              </button>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          confirmText="삭제하기"
+          confirmButtonClassName="bg-red-500"
+        />
       )}
 
       {/* [추가] 캘린더 나가기 확인 모달 */}
-      {isLeaveModalOpen && calendarToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsLeaveModalOpen(false)} />
-          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle size={32} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">캘린더 나가기</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-              정말 <span className="text-gray-900 dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더에서
-              <br />
-              나가시겠습니까?
+      {calendarToDelete && (
+        <ConfirmModal
+          isOpen={isLeaveModalOpen}
+          onClose={() => setIsLeaveModalOpen(false)}
+          onConfirm={handleLeaveConfirm}
+          icon={<AlertCircle size={32} />}
+          iconContainerClassName="bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400"
+          title="캘린더 나가기"
+          message={
+            <>
+              정말 <span className="text-gray-900 dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더에서 나가시겠습니까?
               <br />
               <span className="text-yellow-500 dark:text-yellow-400 font-bold">더 이상 이 캘린더의 일정을 볼 수 없습니다.</span>
-            </p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleLeaveConfirm} className="w-full py-4 bg-yellow-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                나가기
-              </button>
-              <button onClick={() => setIsLeaveModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          confirmText="나가기"
+          confirmButtonClassName="bg-yellow-500"
+        />
       )}
 
       {/* 캘린더 수정 모달 */}

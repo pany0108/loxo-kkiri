@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs'; // Keep dayjs import
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { MapPin, AlignLeft, Clock, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus, Camera } from 'lucide-react';
-import { sendPushNotificationToUser } from 'utils';
-import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, SimpleDeleteModal, PageHeader } from 'components';
+import { MapPin, AlignLeft, Clock, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus, Camera, Trash2 } from 'lucide-react';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
+import { notifyScheduleUpdated } from 'services';
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
@@ -247,32 +247,19 @@ const ScheduleEdit = () => {
         // [추가] 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
         if (attendees.length > 1) {
           const batch = writeBatch(db);
-          const notificationsCollection = collection(db, 'notifications');
           const editorName = user?.displayName || '누군가';
 
-          // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
           for (const memberId of attendees) {
             // 일정을 수정한 본인에게는 알림을 보내지 않음
             if (memberId === user?.uid) continue;
 
-            const newNotiRef = doc(notificationsCollection);
-
-            // 1. Firestore 배치 작업 (동기)
-            batch.set(newNotiRef, {
-              userId: memberId,
-              type: 'SCHEDULE_UPDATED',
-              message: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
-              relatedId: docId,
-              isRead: false,
-              createdAt: new Date().toISOString(),
-            });
-
-            // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
-            await sendPushNotificationToUser({
-              userId: memberId,
-              title: '일정 수정됨',
-              body: `${editorName}님이 '${selectedCalendar?.name || '공유'}' 캘린더의 '${formData.title}' 일정을 수정했습니다.`,
-              data: { type: 'SCHEDULE_UPDATED', relatedId: docId, calendarId: selectedCalendar?.id },
+            await notifyScheduleUpdated(batch, {
+              memberId,
+              editorName,
+              calendarName: selectedCalendar?.name || '공유',
+              scheduleTitle: formData.title,
+              scheduleId: docId,
+              calendarId: selectedCalendar?.id || '',
             });
           }
 
@@ -556,10 +543,12 @@ const ScheduleEdit = () => {
       )}
 
       {/* [수정] 일반 일정 삭제 확인 모달 컴포넌트화 */}
-      <SimpleDeleteModal
+      <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}
         onConfirm={deleteEntireSchedule}
+        icon={<Trash2 size={32} />}
+        iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
         title="일정 삭제"
         message={
           <>
@@ -568,6 +557,8 @@ const ScheduleEdit = () => {
             삭제된 일정은 복구할 수 없습니다.
           </>
         }
+        confirmText="삭제하기"
+        confirmButtonClassName="bg-red-500"
       />
     </>
   );

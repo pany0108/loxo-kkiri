@@ -3,12 +3,12 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Trash2, Share2 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { sendPushNotificationToUser } from 'utils';
 import { doc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav, DeleteMeetingModal, ShareMeetingModal, PageHeader } from 'components';
+import { TopNav, ConfirmModal, ShareMeetingModal, PageHeader } from 'components';
 import { MeetingData } from 'types';
+import { notifyMeetingUrge } from 'services';
 
 interface StatusSlot {
   id: string;
@@ -100,26 +100,12 @@ const MeetingHostStatus = () => {
 
     try {
       const batch = writeBatch(db);
-      // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
       for (const uid of unvotedParticipants) {
-        const notiRef = doc(collection(db, 'notifications'));
-
-        // 1. Firestore 배치 작업 (동기적으로 실행됨)
-        batch.set(notiRef, {
-          userId: uid,
-          type: 'MEETING_URGE',
-          message: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
-          relatedId: meetingId,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-
-        // 2. 푸시 알림 전송 (비동기 - await 사용 가능)
-        await sendPushNotificationToUser({
-          userId: uid,
-          title: '투표 재촉',
-          body: `${auth.currentUser?.displayName}님이 '${meetingData.title}' 약속 투표를 기다리고 있어요.`,
-          data: { type: 'MEETING_URGE', relatedId: meetingId },
+        await notifyMeetingUrge(batch, {
+          participantId: uid,
+          urgerName: auth.currentUser?.displayName || '주최자',
+          meetingTitle: meetingData.title,
+          meetingId: meetingId!,
         });
       }
       await batch.commit();
@@ -238,7 +224,22 @@ const MeetingHostStatus = () => {
           )}
         </div>
 
-        <DeleteMeetingModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleDeleteMeeting} />
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteMeeting}
+          icon={<AlertCircle size={32} />}
+          iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
+          title="약속 삭제"
+          message={
+            <>
+              아직 아무도 응답하지 않았습니다. <br /> 이 약속을 정말 삭제하시겠습니까? <br />
+              <span className="text-red-500 dark:text-red-400 font-bold">삭제 후에는 복구할 수 없습니다.</span>
+            </>
+          }
+          confirmText="삭제하기"
+          confirmButtonClassName="bg-red-500"
+        />
         <ShareMeetingModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} meetingTitle={meetingData.title} meetingUrl={window.location.href} />
       </div>
     );

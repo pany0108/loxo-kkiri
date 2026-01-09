@@ -1,6 +1,7 @@
-import React, { useLayoutEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TopNav } from 'components';
+import { useScrollToTop } from 'hooks';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -11,19 +12,8 @@ interface PageLayoutProps {
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({ children, title, onBack, extraNav, footer }) => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
   const navigate = useNavigate();
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
+  const scrollContainerRef = useScrollToTop();
 
   const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-8';
   const finalOnBack = onBack === null ? undefined : onBack ?? (() => navigate(-1));

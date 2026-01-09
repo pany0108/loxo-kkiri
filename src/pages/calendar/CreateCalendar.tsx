@@ -3,11 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Users, Check, Sparkles, UserPlus, PenLine, CheckCircle2, Loader2, Search, Plus, X } from 'lucide-react';
 // Firebase 관련 import
 import toast from 'react-hot-toast';
-import { sendPushNotificationToUser } from 'utils';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader } from 'components';
+import { notifyCalendarInvite } from 'services';
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
 
@@ -214,28 +214,13 @@ const CreateCalendar = () => {
       // [추가] 공유된 친구들에게 알림 보내기
       if (selectedFriendUids.length > 0 && user?.displayName) {
         const batch = writeBatch(db);
-        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
         for (const friendUid of selectedFriendUids) {
-          // 1. Firestore 알림 저장
-          const notiRef = doc(collection(db, 'notifications'));
-          batch.set(notiRef, {
-            userId: friendUid,
-            type: 'CALENDAR_INVITE',
-            message: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
-            fromUserId: user.uid,
-            fromUserName: user.displayName,
-            relatedId: docRef.id,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-
-          // 2. 푸시 알림 전송
-          // 푸시 알림은 개별적으로 보내야 하므로 await을 사용합니다.
-          await sendPushNotificationToUser({
-            userId: friendUid,
-            title: '캘린더 초대',
-            body: `${user.displayName}님께서 '${finalName}' 캘린더에 당신을 초대했습니다.`,
-            data: { type: 'CALENDAR_INVITE', relatedId: docRef.id, calendarName: finalName, url: `/calendar?id=${docRef.id}` },
+          await notifyCalendarInvite(batch, {
+            friendUid,
+            inviterId: user.uid,
+            inviterName: user.displayName,
+            calendarId: docRef.id,
+            calendarName: finalName,
           });
         }
         // 모든 알림 준비가 끝난 후 배치 커밋

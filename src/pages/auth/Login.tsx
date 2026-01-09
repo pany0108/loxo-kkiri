@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Sparkles, Loader2, Check } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth, db, googleProvider } from '../../firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
+import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { signInWithEmail, signInWithGoogle, checkUserRegistration } from 'services/authService';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
@@ -23,65 +23,6 @@ const Login = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
-  /**
-   * 인증된 사용자의 Firestore 등록 여부를 확인하고 페이지를 라우팅합니다.
-   * - 기존 유저: 메인 캘린더(/calendar)로 이동
-   * - 신규 유저: 추가 정보 입력 페이지(/signup-social)로 이동
-   * * @param {any} user - Firebase Auth User 객체
-   */
-  const handleUserRegistration = useCallback(
-    async (user: any) => {
-      try {
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists() && userSnap.data()?.phone) {
-          navigate('/calendar', { replace: true });
-        } else {
-          // 2. 신규 유저라면 -> Firestore에 기본 문서를 먼저 생성! (이게 핵심)
-          // 이렇게 해야 useFcmToken이 토큰을 저장할 때 문서가 이미 존재하게 됨.
-
-          if (!userSnap.exists()) {
-            const basicUserData = {
-              uid: user.uid,
-              email: user.email || '',
-              // 이름은 일단 구글 이름으로 저장 (나중에 signup-social에서 수정 가능)
-              name: user.displayName || '이름 없음',
-              photoURL: user.photoURL || '',
-              provider: 'google',
-              createdAt: serverTimestamp(), // 가입 시간
-              fcmTokens: [], // 토큰 배열 초기화
-              // 필요한 경우 추가 필드 초기화 (예: settings 등)
-            };
-            await setDoc(userRef, basicUserData);
-          }
-
-          // 3. 추가 정보 입력을 위해 이동 (선택 사항)
-          // 만약 여기서 바로 가입 완료 처리하고 싶다면 navigate('/calendar')로 바꿔도 됨.
-          // 하지만 원래 의도대로 추가 정보(이름 수정 등)를 받고 싶다면 아래 유지.
-
-          const signupData = {
-            uid: user.uid,
-            email: user.email || '',
-            lastName: user.displayName?.charAt(0) || '',
-            firstName: user.displayName?.slice(1) || '',
-          };
-
-          localStorage.setItem('pendingSignup', JSON.stringify(signupData));
-
-          navigate('/signup-social', {
-            replace: true,
-            state: signupData,
-          });
-        }
-      } catch (error: any) {
-        toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
-        throw error;
-      }
-    },
-    [navigate],
-  );
-
   // 앱 실행 시 GoogleAuth 초기화 (한 번만 실행)
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -93,25 +34,39 @@ const Login = () => {
    * 컴포넌트 마운트 시 인증 상태 및 리다이렉트 결과를 확인합니다.
    */
   useEffect(() => {
+    const handleRedirectResult = async (user: FirebaseUser) => {
+      const registrationStatus = await checkUserRegistration(user);
+      if (registrationStatus.isNewUser) {
+        localStorage.setItem('pendingSignup', JSON.stringify(registrationStatus.state));
+        navigate('/signup-social', {
+          replace: true,
+          state: registrationStatus.state,
+        });
+      }
+      // 기존 유저는 onAuthStateChanged가 /calendar로 리디렉션합니다.
+    };
+
     // 1. 소셜 로그인 리다이렉트 결과 처리 (모바일 환경 대응)
     getRedirectResult(auth)
-      .then(async (result) => {
+      .then(async (result: UserCredential | null) => {
         if (result?.user) {
           sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 리다이렉트 후 캘린더 플래시 방지
           try {
-            await handleUserRegistration(result.user);
+            await handleRedirectResult(result.user);
           } catch (e) {
-            setIsPageLoading(false); // handleUserRegistration에서 에러 발생 시 로딩 종료
+            console.error('Redirect registration check failed', e);
+            toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
+            setIsPageLoading(false);
           }
         } else {
           setIsPageLoading(false);
         }
       })
-      .catch((error) => {
+      .catch((error: any) => {
         toast.error(`로그인 정보를 가져오는 중 오류가 발생했습니다. (${error.code || error.message})`);
         setIsPageLoading(false);
       });
-  }, [handleUserRegistration]);
+  }, [navigate]);
 
   /**
    * 저장된 이메일 정보를 불러옵니다.
@@ -131,14 +86,13 @@ const Login = () => {
     e.preventDefault();
     setIsEmailLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-
+      await signInWithEmail({ email, password });
       if (rememberMe) localStorage.setItem('savedEmail', email);
       else localStorage.removeItem('savedEmail');
-
       // onAuthStateChanged에서 라우팅 처리하므로 별도 navigate 불필요
     } catch (error: any) {
       toast.error('이메일 또는 비밀번호를 다시 확인해주세요.');
+    } finally {
       setIsEmailLoading(false);
     }
   };
@@ -153,41 +107,19 @@ const Login = () => {
     sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 캘린더 플래시 방지를 위한 플래그 설정
 
     try {
-      // 1. 네이티브 앱(Android/iOS)인 경우
-      if (Capacitor.isNativePlatform()) {
-        // [추가] 다른 계정으로 로그인할 수 있도록, 네이티브 GoogleAuth에서 먼저 로그아웃을 시도합니다.
-        // 이렇게 하면 항상 계정 선택 화면이 나타납니다.
-        try {
-          await GoogleAuth.signOut();
-        } catch (e) {
-          // 로그아웃 실패는 무시하고 로그인 절차를 계속 진행합니다 (예: 아직 아무도 로그인하지 않은 경우).
-          console.info('GoogleAuth signOut failed, this is expected if not signed in.');
-        }
-        // 네이티브 구글 로그인 팝업 실행
-        const googleUser = await GoogleAuth.signIn();
+      const user = await signInWithGoogle();
+      const registrationStatus = await checkUserRegistration(user);
 
-        // 받아온 ID 토큰으로 Firebase 자격 증명 생성
-        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
-
-        // Firebase 로그인 처리
-        const result = await signInWithCredential(auth, credential);
-
-        if (result.user) {
-          await handleUserRegistration(result.user);
-        }
+      if (registrationStatus.isNewUser) {
+        localStorage.setItem('pendingSignup', JSON.stringify(registrationStatus.state));
+        navigate('/signup-social', {
+          replace: true,
+          state: registrationStatus.state,
+        });
       }
-      // 2. 웹 브라우저 환경인 경우
-      else {
-        // [추가] 항상 계정을 선택할 수 있도록 prompt 옵션 추가
-        googleProvider.setCustomParameters({ prompt: 'select_account' });
-        const result = await signInWithPopup(auth, googleProvider);
-        if (result.user) {
-          await handleUserRegistration(result.user);
-        }
-      }
+      // 기존 유저는 onAuthStateChanged가 /calendar로 리디렉션합니다.
     } catch (error: any) {
       console.error('Google Login Error:', error);
-      setIsGoogleLoading(false);
       sessionStorage.removeItem('isAuthChecking'); // [추가] 에러 발생 시 플래그 제거
 
       // 팝업 닫힘이나 취소는 에러로 처리하지 않음
@@ -231,6 +163,7 @@ const Login = () => {
         }
       }
       toast.error(errorMessage);
+      setIsGoogleLoading(false);
     }
   };
 

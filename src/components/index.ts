@@ -3,3 +3,4 @@ export * from './common';
 export * from './friend';
 export * from './layout';
 export * from './meeting';
+export * from './notification';

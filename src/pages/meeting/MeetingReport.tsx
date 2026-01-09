@@ -1,13 +1,12 @@
 import { useState, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { sendPushNotificationToUser } from 'utils';
-import { Loader2 } from 'lucide-react';
-import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, CancelMeetingModal, TopNav } from 'components';
-import { doc, updateDoc, addDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { doc } from 'firebase/firestore';
+import { db } from '../../firebase';
+import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, ConfirmModal, TopNav } from 'components';
 import { useFirestoreDoc } from 'hooks';
-import dayjs from 'dayjs';
+import { confirmMeeting, cancelMeeting, Meeting as MeetingData } from 'services';
 
 /**
  * 리포트 슬롯 데이터 인터페이스
@@ -23,24 +22,6 @@ interface ReportSlot {
   };
   memos: { user: string; text: string }[];
   isAllAvailable: boolean;
-}
-
-/**
- * Firestore에서 가져온 미팅 데이터 인터페이스
- */
-interface MeetingData {
-  id: string;
-  title: string;
-  description?: string;
-  location?: string;
-  hostId: string;
-  participants: string[];
-  dates: string[];
-  timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
-  votes?: Record<string, Record<string, { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string }>>;
-  status: 'PENDING' | 'VOTING' | 'CONFIRMED';
-  confirmedSlot?: { date: string; time: string };
-  scheduleId?: string;
 }
 
 /**
@@ -88,16 +69,18 @@ const MeetingReport = () => {
     const slots: ReportSlot[] = [];
     const totalParticipants = meetingData.participants.length;
 
-    meetingData.dates.sort().forEach((dateStr) => {
-      meetingData.timeSlots[dateStr]?.forEach((ts, index) => {
+    meetingData.dates.sort().forEach((dateStr: string) => {
+      meetingData.timeSlots[dateStr]?.forEach((ts: { start: string; end: string; isAllDay: boolean }, index: number) => {
         const slotId = `${dateStr}_${index}`;
         const votesForSlot = meetingData.votes?.[slotId] || {};
         const voteValues = Object.values(votesForSlot);
 
-        const available = voteValues.filter((v) => v.vote === 'available').map((v) => v.name);
-        const maybe = voteValues.filter((v) => v.vote === 'maybe').map((v) => v.name);
-        const unavailable = voteValues.filter((v) => v.vote === 'unavailable').map((v) => v.name);
-        const memos = voteValues.filter((v) => v.memo).map((v) => ({ user: v.name, text: v.memo }));
+        type VoteValue = { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string };
+
+        const available = voteValues.filter((v: any) => v.vote === 'available').map((v: any) => v.name);
+        const maybe = voteValues.filter((v: any) => v.vote === 'maybe').map((v: any) => v.name);
+        const unavailable = voteValues.filter((v: any) => v.vote === 'unavailable').map((v: any) => v.name);
+        const memos = voteValues.filter((v: any) => v.memo).map((v: any) => ({ user: v.name, text: v.memo }));
 
         slots.push({
           id: slotId,
@@ -129,96 +112,18 @@ const MeetingReport = () => {
    * 모달에서 확정 버튼 클릭 시 실행되며, API 호출 후 캘린더 화면으로 이동합니다.
    */
   const handleFinalConfirm = async () => {
-    if (!selectedSlot || !meetingData || !meetingId || !auth.currentUser) return;
+    if (!selectedSlot || !meetingId) return;
 
     setIsConfirmOpen(false);
 
     try {
-      // [수정] 약속이 등록될 캘린더를 결정하는 로직
-      let targetCalendar: { id: string; color?: string } | null = null;
-      const participants = [...meetingData.participants].sort(); // [수정] 멤버 배열을 정렬하여 쿼리
-      const calendarsRef = collection(db, 'calendars');
-
-      // 1. 약속 참여자들과 정확히 일치하는 공유 캘린더를 찾습니다.
-      // Firestore에서 배열 필드에 대한 '==' 쿼리는 요소의 순서까지 정확히 일치해야 합니다.
-      // CreateCalendar에서 멤버를 항상 정렬해서 저장하므로, 여기서도 정렬 후 쿼리합니다.
-      const q = query(calendarsRef, where('members', '==', participants));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        // 2. 일치하는 공유 캘린더가 있으면 해당 캘린더 정보를 사용합니다.
-        const calDoc = querySnapshot.docs[0];
-        targetCalendar = { id: calDoc.id, color: calDoc.data().color };
-      } else {
-        // 3. 일치하는 공유 캘린더가 없으면, 내 기본 캘린더를 찾습니다.
-        const defaultCalQ = query(calendarsRef, where('ownerId', '==', auth.currentUser.uid), where('isDefault', '==', true));
-        const defaultCalSnapshot = await getDocs(defaultCalQ);
-        if (!defaultCalSnapshot.empty) {
-          const calDoc = defaultCalSnapshot.docs[0];
-          targetCalendar = { id: calDoc.id, color: calDoc.data().color };
-        }
-      }
-
-      // 1. 'schedules' 컬렉션에 새 일정 생성
-      const [startTime, endTime] = selectedSlot.time.split(' ~ ');
-      const isAllDay = selectedSlot.time === '종일';
-
-      const scheduleRef = await addDoc(collection(db, 'schedules'), {
-        title: meetingData.title,
-        content: meetingData.description || '',
-        location: meetingData.location || '',
-        calendarId: targetCalendar?.id || '', // [수정] 찾은 캘린더 ID로 설정
-        color: targetCalendar?.color || '#3b82f6', // [추가] 찾은 캘린더의 색상으로 설정, 없으면 기본색
-        isAllDay,
-        start: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${startTime}`).toISOString(),
-        end: isAllDay ? dayjs(selectedSlot.date).format('YYYY-MM-DD') : dayjs(`${selectedSlot.date}T${endTime}`).toISOString(),
-        attendees: meetingData.participants,
-        createdAt: new Date().toISOString(),
-        userId: auth.currentUser?.uid,
-      });
-
-      // 2. 약속 상태를 'CONFIRMED'로 변경하고, 생성된 scheduleId 저장
-      await updateDoc(doc(db, 'meetings', meetingId), {
-        status: 'CONFIRMED',
-        confirmedSlot: selectedSlot,
-        scheduleId: scheduleRef.id,
-      });
-
-      // [추가] 약속 확정 알림 전송
-      const batch = writeBatch(db);
-      // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
-      for (const uid of meetingData.participants) {
-        if (uid === auth.currentUser?.uid) continue;
-
-        // 1. Firestore 알림 저장 (Batch)
-        const notiRef = doc(collection(db, 'notifications'));
-        batch.set(notiRef, {
-          userId: uid,
-          type: 'MEETING_CONFIRMED',
-          message: `'${meetingData.title}' 약속이 확정되었습니다.`,
-          relatedId: meetingId,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-
-        // 2. 푸시 알림 전송 (확실하게 기다림)
-        await sendPushNotificationToUser({
-          userId: uid,
-          title: '약속 확정',
-          body: `'${meetingData.title}' 약속이 확정되었습니다.`,
-          data: { type: 'MEETING_CONFIRMED', relatedId: meetingId, scheduleId: scheduleRef.id },
-        });
-      }
-
-      // 루프가 다 끝난 뒤 배치 커밋
-      await batch.commit();
-
+      await confirmMeeting(meetingId, selectedSlot);
       toast.success('약속이 확정되어 캘린더에 추가되었습니다!');
       // [수정] 약속 확정 후, 현재 리포트 페이지에 머물러 확정 상태를 보여주므로 별도 이동은 불필요합니다.
       // navigate('/calendar');
     } catch (error) {
       console.error('Error confirming meeting:', error);
-      toast.error('약속 확정 중 오류가 발생했습니다.');
+      toast.error((error as Error).message || '약속 확정 중 오류가 발생했습니다.');
     }
   };
 
@@ -244,47 +149,15 @@ const MeetingReport = () => {
    * 모달에서 취소 버튼 클릭 시 실행됩니다.
    */
   const handleCancelConfirm = async () => {
-    if (!meetingId || !meetingData || !auth.currentUser) return;
+    if (!meetingId || !meetingData) return;
     try {
-      const batch = writeBatch(db);
-
-      // 1. 약속 문서 삭제
-      const meetingRef = doc(db, 'meetings', meetingId);
-      batch.delete(meetingRef);
-
-      // [FIX] forEach는 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
-      for (const uid of meetingData.participants) {
-        if (uid === auth.currentUser?.uid) continue;
-
-        // 1. Firestore 알림 저장 (Batch)
-        const notiRef = doc(collection(db, 'notifications'));
-        batch.set(notiRef, {
-          userId: uid,
-          type: 'MEETING_CANCELED',
-          message: `'${meetingData.title}' 약속이 주최자에 의해 취소되었습니다.`,
-          relatedId: meetingId,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-
-        // 2. 푸시 알림 전송 (확실하게 기다림)
-        await sendPushNotificationToUser({
-          userId: uid,
-          title: '약속 취소',
-          body: `'${meetingData.title}' 약속이 주최자에 의해 취소되었습니다.`,
-          data: { type: 'MEETING_CANCELED', relatedId: meetingId },
-        });
-      }
-
-      // 루프가 다 끝난 뒤 배치 커밋
-      await batch.commit();
-
+      await cancelMeeting(meetingId, meetingData.title, meetingData.participants);
       setIsCancelModalOpen(false);
       toast.success('약속이 취소되었습니다.');
       navigate('/propose');
     } catch (error) {
       console.error('Error canceling meeting:', error);
-      toast.error('약속 취소 중 오류가 발생했습니다.');
+      toast.error((error as Error).message || '약속 취소 중 오류가 발생했습니다.');
     }
   };
 
@@ -325,7 +198,24 @@ const MeetingReport = () => {
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} />
 
         {/* [추가] 약속 취소 확인 모달 */}
-        <CancelMeetingModal isOpen={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} onConfirm={handleCancelConfirm} />
+        <ConfirmModal
+          isOpen={isCancelModalOpen}
+          onClose={() => setIsCancelModalOpen(false)}
+          onConfirm={handleCancelConfirm}
+          icon={<AlertCircle size={32} />}
+          iconContainerClassName="bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400"
+          title="약속 취소"
+          message={
+            <>
+              정말 이 약속을 취소하시겠습니까?
+              <br />
+              모든 멤버에게 취소 알림이 전송됩니다.
+            </>
+          }
+          confirmText="네, 취소할게요"
+          cancelText="아니요"
+          confirmButtonClassName="bg-red-500"
+        />
       </div>
     </div>
   );

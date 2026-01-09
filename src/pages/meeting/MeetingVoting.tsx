@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Sparkles, Loader2, MapPin } from 'lucide-react';
+import { Sparkles, Loader2, MapPin, AlertCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { sendPushNotificationToUser } from 'utils'; // addDoc is missing
 import { db, auth } from '../../firebase';
-import { doc, updateDoc, getDoc, writeBatch, collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { useFirestoreDoc } from 'hooks';
-import { VotingSlotItem, TopNav, PageHeader } from 'components';
+import { VotingSlotItem, TopNav, PageHeader, ConfirmModal } from 'components';
+import { notifyMeetingVote, notifyVotingCompleteForHost, notifyVotingCompleteForParticipant } from 'services';
+import { useCalendar } from 'contexts';
 
 dayjs.locale('ko');
 
@@ -64,6 +65,8 @@ const MeetingVoting = () => {
   // --- 상태 관리 ---
   const [user, setUser] = useState<any>(null);
   const [votingSlots, setVotingSlots] = useState<VotingSlot[]>([]);
+  const { events } = useCalendar();
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -134,19 +137,54 @@ const MeetingVoting = () => {
   };
 
   /**
+   * 해당 슬롯 시간대에 겹치는 내 일정이 있는지 확인합니다.
+   */
+  const getConflictInfo = (dateStr: string, timeStr: string) => {
+    const slotIsAllDay = timeStr === '종일';
+    let slotStart: dayjs.Dayjs;
+    let slotEnd: dayjs.Dayjs;
+
+    if (slotIsAllDay) {
+      slotStart = dayjs(dateStr).startOf('day');
+      slotEnd = dayjs(dateStr).endOf('day');
+    } else {
+      const [start, end] = timeStr.split(' ~ ');
+      slotStart = dayjs(`${dateStr}T${start}`);
+      slotEnd = dayjs(`${dateStr}T${end}`);
+    }
+
+    const conflict = events.find((event) => {
+      const eventStart = dayjs(event.start);
+      // 종료 시간이 없으면 시작 시간 + 1시간으로 가정 (또는 종일이면 하루)
+      const eventEnd = event.end ? dayjs(event.end) : event.allDay ? eventStart.add(1, 'day') : eventStart.add(1, 'hour');
+
+      return slotStart.isBefore(eventEnd) && slotEnd.isAfter(eventStart);
+    });
+
+    if (conflict) {
+      const conflictTime = conflict.allDay ? '종일' : `${dayjs(conflict.start).format('HH:mm')}~${conflict.end ? dayjs(conflict.end).format('HH:mm') : ''}`;
+      return { isConflict: true, title: conflict.title, time: conflictTime };
+    }
+
+    // [추가] 시간이 겹치지 않더라도 해당 날짜에 일정이 있는지 확인
+    const sameDayEvent = events.find((event) => dayjs(event.start).format('YYYY-MM-DD') === dateStr);
+    if (sameDayEvent) {
+      const eventTime = sameDayEvent.allDay ? '종일' : `${dayjs(sameDayEvent.start).format('HH:mm')}~${sameDayEvent.end ? dayjs(sameDayEvent.end).format('HH:mm') : ''}`;
+      return { isConflict: false, title: sameDayEvent.title, time: eventTime };
+    }
+
+    return undefined;
+  };
+
+  /**
    * 모든 슬롯에 대해 투표가 완료되었는지 확인합니다.
    */
   const isAllVoted = votingSlots.every((slot) => slot.myVote !== '');
 
   /**
-   * 투표 제출 핸들러
-   * 모든 항목에 응답했는지 검증 후 서버로 데이터를 전송합니다.
+   * 투표 제출 로직 (실제 서버 전송)
    */
-  const handleSubmit = async () => {
-    if (!isAllVoted) {
-      toast.error('모든 일정에 대해 가능 여부를 선택해주세요.');
-      return;
-    }
+  const submitVote = async () => {
     if (!meetingDocRef || !user || !user.displayName || !meetingData) return;
 
     try {
@@ -173,45 +211,20 @@ const MeetingVoting = () => {
       if (votedCount >= totalParticipants) {
         // 3. 모두 투표 완료 시, 주최자와 참여자에게 각각 다른 알림 전송
         const batch = writeBatch(db);
-        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다. for...of 루프를 사용해야 합니다.
         for (const uid of updatedMeetingData.participants) {
-          const notiRef = doc(collection(db, 'notifications'));
           const isHostNotification = uid === updatedMeetingData.hostId;
 
           if (isHostNotification) {
-            // 주최자에게 알림 (배치 작업 - 동기)
-            batch.set(notiRef, {
-              userId: uid,
-              type: 'MEETING_VOTING_COMPLETE_FOR_HOST',
-              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
-              relatedId: meetingId,
-              isRead: false,
-              createdAt: new Date().toISOString(),
-            });
-            // [추가] 주최자에게 푸시 알림 전송
-            await sendPushNotificationToUser({
-              userId: uid,
-              title: '투표 완료',
-              body: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 최종 시간을 확정해주세요.`,
-              data: { type: 'MEETING_VOTING_COMPLETE_FOR_HOST', relatedId: meetingId },
+            await notifyVotingCompleteForHost(batch, {
+              hostId: uid,
+              meetingTitle: updatedMeetingData.title,
+              meetingId: meetingId!,
             });
           } else {
-            // 참여자에게 알림 (배치 작업 - 동기)
-            batch.set(notiRef, {
-              userId: uid,
-              type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT',
-              message: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
-              relatedId: meetingId,
-              isRead: false,
-              createdAt: new Date().toISOString(),
-            });
-
-            // [추가] 참여자에게 푸시 알림 전송
-            await sendPushNotificationToUser({
-              userId: uid,
-              title: '투표 완료',
-              body: `'${updatedMeetingData.title}' 약속의 투표가 완료되었습니다. 주최자가 약속을 확정하기를 기다리고 있습니다.`,
-              data: { type: 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT', relatedId: meetingId },
+            await notifyVotingCompleteForParticipant(batch, {
+              participantId: uid,
+              meetingTitle: updatedMeetingData.title,
+              meetingId: meetingId!,
             });
           }
         }
@@ -226,21 +239,11 @@ const MeetingVoting = () => {
       toast.success('투표가 완료되었습니다!');
       // [추가] 주최자에게 투표가 제출되었음을 알립니다.
       if (meetingData.hostId !== user.uid) {
-        // Firestore에 알림 저장
-        await addDoc(collection(db, 'notifications'), {
-          userId: meetingData.hostId,
-          type: 'MEETING_VOTE',
-          message: `${user.displayName}님이 '${meetingData.title}' 약속 투표에 참여했습니다.`,
-          relatedId: meetingId,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        });
-        // 푸시 알림 전송
-        await sendPushNotificationToUser({
-          userId: meetingData.hostId,
-          title: '새로운 약속 투표',
-          body: `${user.displayName}님이 '${meetingData.title}' 약속에 투표했습니다.`,
-          data: { type: 'MEETING_VOTE', relatedId: meetingId },
+        await notifyMeetingVote({
+          hostId: meetingData.hostId,
+          voterName: user.displayName,
+          meetingTitle: meetingData.title,
+          meetingId: meetingId!,
         });
       }
       navigate('/propose');
@@ -248,6 +251,33 @@ const MeetingVoting = () => {
       console.error('Error submitting vote:', error);
       toast.error('투표 제출 중 오류가 발생했습니다.');
     }
+  };
+
+  /**
+   * 투표 제출 핸들러
+   * 모든 항목에 응답했는지 검증 후 서버로 데이터를 전송합니다.
+   */
+  const handleSubmit = async () => {
+    if (!isAllVoted) {
+      toast.error('모든 일정에 대해 가능 여부를 선택해주세요.');
+      return;
+    }
+
+    // [추가] 일정 충돌 확인
+    const hasConflict = votingSlots.some((slot) => {
+      if (slot.myVote === 'available') {
+        const conflict = getConflictInfo(slot.date, slot.time);
+        return conflict && conflict.isConflict === true;
+      }
+      return false;
+    });
+
+    if (hasConflict) {
+      setIsConflictModalOpen(true);
+      return;
+    }
+
+    await submitVote();
   };
 
   if (loading || !meetingData) {
@@ -282,7 +312,7 @@ const MeetingVoting = () => {
         {/* 투표 슬롯 리스트 */}
         <div className="space-y-6">
           {votingSlots.map((slot) => (
-            <VotingSlotItem key={slot.id} slot={slot} onVote={handleVote} onMemoChange={handleMemoChange} />
+            <VotingSlotItem key={slot.id} slot={slot} onVote={handleVote} onMemoChange={handleMemoChange} conflictInfo={getConflictInfo(slot.date, slot.time)} />
           ))}
         </div>
       </div>
@@ -312,6 +342,28 @@ const MeetingVoting = () => {
           </button>
         </div>
       </footer>
+
+      {/* [추가] 일정 충돌 경고 모달 */}
+      <ConfirmModal
+        isOpen={isConflictModalOpen}
+        onClose={() => setIsConflictModalOpen(false)}
+        onConfirm={() => {
+          setIsConflictModalOpen(false);
+          submitVote();
+        }}
+        icon={<AlertCircle size={32} />}
+        iconContainerClassName="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+        title="일정 겹침 확인"
+        message={
+          <>
+            선택한 시간 중 <span className="text-amber-500 font-bold">내 일정과 겹치는 시간</span>이 있습니다.
+            <br />
+            그래도 투표를 제출하시겠습니까?
+          </>
+        }
+        confirmText="제출하기"
+        confirmButtonClassName="bg-blue-600"
+      />
     </div>
   );
 };

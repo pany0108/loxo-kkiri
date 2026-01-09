@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Sparkles, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
-import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, SimpleDeleteModal } from 'components';
+import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
@@ -609,10 +609,12 @@ const ScheduleDetail = () => {
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
 
-      <SimpleDeleteModal
+      <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}
         onConfirm={deleteEntireSchedule}
+        icon={<Trash2 size={32} />}
+        iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
         title="일정 삭제"
         message={
           <>
@@ -621,6 +623,8 @@ const ScheduleDetail = () => {
             삭제된 일정은 복구할 수 없습니다.
           </>
         }
+        confirmText="삭제하기"
+        confirmButtonClassName="bg-red-500"
       />
 
       {previewState.isOpen && (

@@ -3,10 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendPushNotificationToUser } from 'utils';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader } from 'components';
+import { notifyMeetingInvite } from 'services';
 
 /**
  * 초대된 친구 데이터 인터페이스
@@ -249,28 +249,12 @@ const ProposeMeetingDetail = () => {
       // [추가] 초대된 친구들에게 알림 전송
       const batch = writeBatch(db);
       if (invitedFriends.length > 0) {
-        // [FIX] forEach/map은 내부의 await을 기다려주지 않습니다.
-        // for...of 루프를 사용하여 각 친구에게 알림을 순차적으로 보내고,
-        // 개별 알림 실패가 다른 알림 전송에 영향을 주지 않도록 합니다.
         for (const friend of invitedFriends) {
-          const notiRef = doc(collection(db, 'notifications'));
-
-          // 1. Firestore 알림 저장 (Batch)
-          batch.set(notiRef, {
-            userId: friend.id,
-            type: 'MEETING_INVITE',
-            message: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
-            relatedId: meetingRef.id,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-          });
-
-          // 2. 푸시 알림 전송
-          await sendPushNotificationToUser({
-            userId: friend.id,
-            title: '새로운 약속 제안',
-            body: `${auth.currentUser?.displayName || '알 수 없음'}님이 '${title}' 약속에 초대했습니다.`,
-            data: { type: 'MEETING_INVITE', relatedId: meetingRef.id },
+          await notifyMeetingInvite(batch, {
+            friendId: friend.id,
+            inviterName: auth.currentUser?.displayName || '알 수 없음',
+            meetingTitle: title,
+            meetingId: meetingRef.id,
           });
         }
 

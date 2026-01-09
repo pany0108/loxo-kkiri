@@ -1,0 +1,79 @@
+import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import toast from 'react-hot-toast';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  message: string;
+  relatedId?: string;
+  isRead: boolean;
+  createdAt: string;
+  fromUserId?: string;
+  fromUserName?: string;
+}
+
+export const useNotificationNavigation = () => {
+  const navigate = useNavigate();
+
+  const handleNavigation = async (notification: Notification) => {
+    if (!notification.relatedId) return;
+
+    if (notification.type === 'FRIEND_REQUEST') {
+      navigate(`/profile/${notification.relatedId}`);
+      return;
+    }
+    if (notification.type === 'CALENDAR_INVITE' || notification.type === 'CALENDAR_LEAVE') {
+      navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
+      return;
+    }
+    if (notification.type === 'SCHEDULE_ADDED' || notification.type === 'SCHEDULE_UPDATED') {
+      try {
+        const scheduleDoc = await getDoc(doc(db, 'schedules', notification.relatedId));
+        if (scheduleDoc.exists()) navigate(`/schedule/${notification.relatedId}`);
+        else toast.error('삭제된 일정입니다.');
+      } catch (error) {
+        toast.error('일정 정보를 불러오는 중 오류가 발생했습니다.');
+      }
+      return;
+    }
+    if (notification.type === 'MEETING_VOTING_COMPLETE_FOR_HOST') {
+      navigate(`/meeting/report/${notification.relatedId}`);
+      return;
+    }
+    if (notification.type === 'MEETING_VOTING_COMPLETE_FOR_PARTICIPANT') {
+      navigate(`/meeting/participant-status/${notification.relatedId}`);
+      return;
+    }
+    if (notification.type.startsWith('MEETING_')) {
+      try {
+        const meetingDoc = await getDoc(doc(db, 'meetings', notification.relatedId));
+        if (!meetingDoc.exists()) {
+          toast.error('관련된 약속을 찾을 수 없습니다.');
+          return;
+        }
+        const meetingData = meetingDoc.data();
+        const isHost = auth.currentUser?.uid === meetingData.hostId;
+        switch (meetingData.status) {
+          case 'PENDING':
+            navigate(isHost ? `/meeting/status/${notification.relatedId}` : `/meeting/response/${notification.relatedId}`);
+            break;
+          case 'VOTING':
+            navigate(`/meeting/vote/${notification.relatedId}`);
+            break;
+          case 'CONFIRMED':
+            navigate(`/meeting/report/${notification.relatedId}`);
+            break;
+          default:
+            navigate('/propose');
+        }
+      } catch (error) {
+        toast.error('페이지 이동 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  return handleNavigation;
+};

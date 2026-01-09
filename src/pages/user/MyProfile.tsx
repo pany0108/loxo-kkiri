@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useLayoutEffect, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
@@ -8,8 +8,8 @@ import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from 'contexts';
-import { useFirestoreDoc } from 'hooks';
-import { PageHeader } from 'components';
+import { useFirestoreDoc, useScrollToTop } from 'hooks';
+import { PageHeader, ConfirmModal } from 'components';
 import { UserProfile } from 'types';
 
 /**
@@ -21,18 +21,7 @@ import { UserProfile } from 'types';
 const MyProfile = () => {
   const navigate = useNavigate();
   const { themeMode, toggleThemeMode } = useTheme();
-  const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
+  const scrollContainerRef = useScrollToTop();
 
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
@@ -230,24 +219,17 @@ const MyProfile = () => {
 
       {/* 로그아웃 확인 모달 */}
       {isLogoutModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-5 ">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsLogoutModalOpen(false)} />
-          <div className="relative w-full max-w-[340px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogOut size={32} />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">로그아웃</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">정말 로그아웃 하시겠습니까?</p>
-            <div className="flex flex-col gap-2">
-              <button onClick={handleLogoutConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
-                로그아웃
-              </button>
-              <button onClick={() => setIsLogoutModalOpen(false)} className="w-full py-4 text-gray-400 font-bold hover:text-gray-600">
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={handleLogoutConfirm}
+          icon={<LogOut size={32} />}
+          iconContainerClassName="bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400"
+          title="로그아웃"
+          message="정말 로그아웃 하시겠습니까?"
+          confirmText="로그아웃"
+          confirmButtonClassName="bg-red-500"
+        />
       )}
 
       {isStatusModalOpen && (
