@@ -185,7 +185,10 @@ const ProposeMeetingCreate = () => {
                 setIsRangeMode(!isRangeMode);
                 setRangeStart(null);
                 setIsRangeRemoving(false);
+                setSelectedDates([]); // [추가] 모드 변경 시 선택 초기화
+                setVotingItems([]); // [추가] 모드 변경 시 아이템 초기화
               }}
+              votingItems={votingItems} // [추가] 범위 정보 전달
             />
             <div className="flex justify-end gap-3 px-1">
               <div className="flex items-center gap-1.5">
