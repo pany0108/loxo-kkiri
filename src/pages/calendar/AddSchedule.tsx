@@ -163,30 +163,30 @@ const AddSchedule = () => {
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
-                <div className="flex items-center h-[56px] px-4 gap-4">
+                <div className="flex items-center h-[56px] px-4 gap-3">
                   <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between">
+                  <div className="flex-1 flex items-center justify-between gap-3">
                     <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
                     />
                   </div>
                 </div>
                 <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
-                <div className="flex items-center h-[56px] px-4 gap-4">
+                <div className="flex items-center h-[56px] px-4 gap-3">
                   <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between">
+                  <div className="flex-1 flex items-center justify-between gap-3">
                     <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
                     <input
                       type={formData.isAllDay ? 'date' : 'datetime-local'}
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
                     />
                   </div>
                 </div>

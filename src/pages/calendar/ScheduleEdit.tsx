@@ -386,28 +386,28 @@ const ScheduleEdit = () => {
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
                   <div className="flex items-center h-[56px] px-4 gap-4">
                     <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                    <div className="flex-1 flex items-center justify-between">
-                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">시작</span>
+                    <div className="flex-1 flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
                       <input
                         type={formData.isAllDay ? 'date' : 'datetime-local'}
                         name="start"
                         value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                         onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
                   </div>
                   <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
                   <div className="flex items-center h-[56px] px-4 gap-4">
                     <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                    <div className="flex-1 flex items-center justify-between">
-                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500">종료</span>
+                    <div className="flex-1 flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
                       <input
                         type={formData.isAllDay ? 'date' : 'datetime-local'}
                         name="end"
                         value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                         onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono"
+                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
                   </div>

@@ -15,7 +15,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, onBack, extraN
   const navigate = useNavigate();
   const scrollContainerRef = useScrollToTop();
 
-  const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-8';
+  const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[env(safe-area-inset-bottom)]';
   const finalOnBack = onBack === null ? undefined : onBack ?? (() => navigate(-1));
 
   return (
