@@ -1,7 +1,7 @@
 import { useReducer, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { formatPhone } from 'utils';
-import { useFormValidation } from 'hooks/useFormValidation';
+import { useFormValidation } from 'hooks/common/useFormValidation';
 import { signUpUser } from 'services/authService';
 import type { SignUpData } from 'services/authService';
 

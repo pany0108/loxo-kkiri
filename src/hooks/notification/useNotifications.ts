@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { Notification } from './useNotificationNavigation';
 
 export const useNotifications = (user: any) => {

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from '../../firebase';
 import toast from 'react-hot-toast';
 
 export interface Notification {

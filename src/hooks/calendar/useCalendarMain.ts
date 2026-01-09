@@ -6,7 +6,7 @@ import { DateClickArg } from '@fullcalendar/interaction';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
 import { getWeekOfMonth } from 'utils';
 

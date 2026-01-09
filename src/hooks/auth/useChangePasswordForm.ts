@@ -1,7 +1,7 @@
 import { useReducer, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { validatePassword } from 'utils';
 import { changePassword, findUserByInfo, sendPasswordReset } from 'services/authService';
 

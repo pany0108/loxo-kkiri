@@ -3,7 +3,7 @@ import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle
 import toast from 'react-hot-toast';
 import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
 import { handleEnterToNext } from 'utils';
-import { useSignupForm } from 'hooks/useSignupForm';
+import { useSignupForm } from 'hooks/auth/useSignupForm';
 
 /**
  * 회원가입 페이지 컴포넌트입니다.

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import { doc, arrayUnion, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import toast from 'react-hot-toast';
 import { User } from 'firebase/auth';
 import { Notification } from './useNotificationNavigation';
