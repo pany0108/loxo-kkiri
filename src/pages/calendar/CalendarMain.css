@@ -243,7 +243,7 @@
 }
 
 .fc-daygrid-day-number {
-  font-size: 10px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   color: #4b5563;
   width: 28px;
@@ -397,11 +397,6 @@
   border-radius: 4px !important;
   padding: 2px 4px !important;
   font-size: 10px !important;
-}
-
-.fc-event-title {
-  font-weight: 700 !important;
-  font-size: 8px !important;
 }
 
 .fc-event-time {

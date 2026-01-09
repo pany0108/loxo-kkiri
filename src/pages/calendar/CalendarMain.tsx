@@ -122,18 +122,18 @@ const CalendarMain = () => {
 
     // [추가] 공휴일 스타일링
     if (isHoliday) {
-      return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
+      return <div className="fc-event-title fc-sticky px-1 text-[10px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
     }
 
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
-        return <div className="fc-event-title fc-sticky px-1 text-[11px] font-bold">{eventInfo.event.title}</div>;
+        return <div className="fc-event-title fc-sticky px-1 text-[10px] font-bold">{eventInfo.event.title}</div>;
       }
       return (
         <div className="flex items-center h-full w-full overflow-hidden pl-0.5">
           <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
           <div className="text-[10px] font-medium text-gray-400 mr-1 whitespace-nowrap">{eventInfo.timeText}</div>
-          <div className="text-[11px] font-bold text-gray-700 truncate">{eventInfo.event.title}</div>
+          <div className="text-[10px] font-bold text-gray-700 truncate">{eventInfo.event.title}</div>
         </div>
       );
     }
