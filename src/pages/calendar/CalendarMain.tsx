@@ -272,12 +272,14 @@ const CalendarMain = () => {
         />
       </main>
 
-      <AddScheduleFAB
-        onClick={() => {
-          const targetDate = selectedDate || new Date().toISOString().split('T')[0];
-          navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
-        }}
-      />
+      {isListVisible && currentView === 'dayGridMonth' && (
+        <AddScheduleFAB
+          onClick={() => {
+            const targetDate = selectedDate || new Date().toISOString().split('T')[0];
+            navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
+          }}
+        />
+      )}
 
       {/* [추가] 삭제 관련 모달 */}
       {isDeleteModalOpen && (
