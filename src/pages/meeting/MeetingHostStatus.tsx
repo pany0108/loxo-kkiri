@@ -1,4 +1,4 @@
-import { useMemo, useLayoutEffect, useRef, useState } from 'react';
+import { useMemo, useLayoutEffect, useRef, useState, useCallback, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Trash2, Share2 } from 'lucide-react';
@@ -9,6 +9,8 @@ import { useFirestoreDoc } from 'hooks';
 import { TopNav, ConfirmModal, ShareMeetingModal, PageHeader } from 'components';
 import { MeetingData } from 'types';
 import { notifyMeetingUrge } from 'services';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 
 interface StatusSlot {
   id: string;
@@ -36,6 +38,31 @@ const MeetingHostStatus = () => {
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [location.pathname]);
+
+  // [추가] 뒤로가기 핸들러 (재요청으로 진입했을 경우 목록으로 이동)
+  const handleBack = useCallback(() => {
+    if (location.state?.fromRetry) {
+      navigate('/propose', { replace: true });
+    } else {
+      navigate(-1);
+    }
+  }, [location.state, navigate]);
+
+  // [추가] 안드로이드 시스템 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let backButtonListener: PluginListenerHandle;
+    const setupListener = async () => {
+      backButtonListener = await CapacitorApp.addListener('backButton', () => {
+        handleBack();
+      });
+    };
+    setupListener();
+    return () => {
+      if (backButtonListener) backButtonListener.remove();
+    };
+  }, [handleBack]);
 
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
@@ -161,6 +188,7 @@ const MeetingHostStatus = () => {
       <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
         <TopNav
           title="응답 현황"
+          onBack={handleBack}
           extra={
             isHost ? (
               <button
@@ -176,7 +204,12 @@ const MeetingHostStatus = () => {
         <div ref={scrollContainerRef} className="flex-1 flex flex-col px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
           <PageHeader icon={<Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
             <>
-              <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+              <div className="flex items-center gap-2 mb-2">
+                {(meetingData as any).isRetry && (
+                  <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md">재요청</span>
+                )}
+                <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">{meetingData.title}</h3>
+              </div>
               {meetingData.location && (
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
                   <MapPin size={16} />
@@ -260,6 +293,7 @@ const MeetingHostStatus = () => {
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       <TopNav
         title="투표 현황"
+        onBack={handleBack}
         extra={
           <button
             onClick={handleUrge}

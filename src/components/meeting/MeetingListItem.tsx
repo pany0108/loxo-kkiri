@@ -6,8 +6,9 @@ interface Meeting {
   title: string;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   members: number;
-  dday: string;
   hostId: string;
+  isRetry?: boolean;
+  isVotingCompleted?: boolean;
 }
 
 interface MeetingListItemProps {
@@ -15,7 +16,10 @@ interface MeetingListItemProps {
   onClick: (meeting: Meeting) => void;
 }
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, isVotingCompleted?: boolean) => {
+  if (status === 'VOTING' && isVotingCompleted) {
+    return { className: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400', text: '확정 대기중' };
+  }
   switch (status) {
     case 'VOTING':
       return { className: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400', text: '투표 진행중' };
@@ -27,7 +31,7 @@ const getStatusBadge = (status: string) => {
 };
 
 const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) => {
-  const badge = getStatusBadge(meeting.status);
+  const badge = getStatusBadge(meeting.status, meeting.isVotingCompleted);
 
   return (
     <button
@@ -36,8 +40,8 @@ const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) =
     >
       <div className="text-left space-y-2">
         <div className="flex items-center gap-2">
+          {meeting.isRetry && <span className="text-[10px] font-black px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">재요청</span>}
           <span className={`text-[10px] font-black px-2 py-1 rounded-md ${badge.className}`}>{badge.text}</span>
-          <span className="text-[11px] font-bold text-gray-300 dark:text-gray-600">| {meeting.dday}</span>
         </div>
         <h4 className="font-black text-gray-800 dark:text-gray-200 text-[16px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{meeting.title}</h4>
         <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">

@@ -1,9 +1,9 @@
 import { useState, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { doc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { doc, writeBatch, collection } from 'firebase/firestore';
+import { db, auth } from '../../firebase';
 import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, ConfirmModal, TopNav } from 'components';
 import { useFirestoreDoc } from 'hooks';
 import { confirmMeeting, cancelMeeting, Meeting as MeetingData } from 'services';
@@ -56,6 +56,11 @@ const MeetingReport = () => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
   /**
+   * [추가] 일정 재요청 확인 모달의 열림 상태
+   */
+  const [isRetryModalOpen, setIsRetryModalOpen] = useState(false);
+
+  /**
    * 사용자가 확정하려고 선택한 시간대 데이터
    */
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
@@ -74,8 +79,6 @@ const MeetingReport = () => {
         const slotId = `${dateStr}_${index}`;
         const votesForSlot = meetingData.votes?.[slotId] || {};
         const voteValues = Object.values(votesForSlot);
-
-        type VoteValue = { vote: 'available' | 'maybe' | 'unavailable'; memo: string; name: string };
 
         const available = voteValues.filter((v: any) => v.vote === 'available').map((v: any) => v.name);
         const maybe = voteValues.filter((v: any) => v.vote === 'maybe').map((v: any) => v.name);
@@ -132,8 +135,45 @@ const MeetingReport = () => {
    * 멤버들에게 다시 투표를 요청하는 로직을 수행합니다.
    */
   const handleRequestRetry = () => {
-    // TODO: 재요청 알림 전송 로직 구현
-    toast('재요청 기능은 준비 중입니다.', { icon: '🚧' });
+    setIsRetryModalOpen(true);
+  };
+
+  const handleRetryConfirm = async () => {
+    if (!meetingId || !meetingData || !auth.currentUser) return;
+
+    try {
+      const batch = writeBatch(db);
+
+      // [추가] 재요청 시 상태를 'PENDING'(조율 중)으로 변경
+      const meetingRef = doc(db, 'meetings', meetingId);
+      batch.update(meetingRef, { status: 'PENDING', isRetry: true, votes: {}, responses: {} });
+
+      for (const uid of meetingData.participants) {
+        if (uid === auth.currentUser.uid) continue;
+
+        const notiRef = doc(collection(db, 'notifications'));
+        batch.set(notiRef, {
+          userId: uid,
+          type: 'MEETING_RETRY',
+          message: `'${meetingData.title}' 약속의 재요청이 필요합니다. 탭하여 다시 진행해주세요.`,
+          relatedId: meetingId,
+          fromUserId: auth.currentUser.uid,
+          fromUserName: auth.currentUser.displayName || '주최자',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      await batch.commit();
+      setIsRetryModalOpen(false);
+      toast.success('멤버들에게 재요청 알림을 보냈습니다.');
+
+      // [수정] 주최자는 일정 조율 중(Host Status) 화면으로 이동
+      navigate(`/meeting/status/${meetingId}`, { replace: true, state: { fromRetry: true } });
+    } catch (error) {
+      console.error('Error requesting retry:', error);
+      toast.error('재요청 중 오류가 발생했습니다.');
+    }
   };
 
   /**
@@ -196,6 +236,25 @@ const MeetingReport = () => {
 
         {/* 확정 확인 다이얼로그 */}
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} />
+
+        {/* [추가] 일정 재요청 확인 모달 */}
+        <ConfirmModal
+          isOpen={isRetryModalOpen}
+          onClose={() => setIsRetryModalOpen(false)}
+          onConfirm={handleRetryConfirm}
+          icon={<RefreshCw size={32} />}
+          iconContainerClassName="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+          title="일정 재요청"
+          message={
+            <>
+              멤버들에게 일정 재요청 알림을 보낼까요?
+              <br />
+              투표 현황은 유지됩니다.
+            </>
+          }
+          confirmText="재요청하기"
+          confirmButtonClassName="bg-blue-600"
+        />
 
         {/* [추가] 약속 취소 확인 모달 */}
         <ConfirmModal

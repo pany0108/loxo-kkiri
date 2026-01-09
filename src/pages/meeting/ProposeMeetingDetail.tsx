@@ -26,6 +26,7 @@ interface LocationState {
   invitedFriends: InvitedFriend[];
   selectedDates: string[];
   calendarName: string;
+  isRetry?: boolean; // [추가] 재요청 여부
 }
 
 /**
@@ -69,6 +70,7 @@ const ProposeMeetingDetail = () => {
     location: meetingLocation,
     invitedFriends,
     selectedDates,
+    isRetry,
   } = (location.state as LocationState) || {
     title: '새 약속',
     description: '',
@@ -76,6 +78,7 @@ const ProposeMeetingDetail = () => {
     selectedDates: [dayjs().format('YYYY-MM-DD')],
     invitedFriends: [] as InvitedFriend[],
     calendarName: '',
+    isRetry: false,
   };
 
   /**
@@ -276,6 +279,11 @@ const ProposeMeetingDetail = () => {
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+          {isRetry && (
+            <div className="inline-block bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md mb-2">
+              재요청된 약속
+            </div>
+          )}
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             선택한 날짜의 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
             설정해주세요.

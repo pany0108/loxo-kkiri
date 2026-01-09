@@ -20,6 +20,7 @@ interface MeetingData {
   responses?: Record<string, any>;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   scheduleId?: string;
+  isRetry?: boolean;
 }
 
 interface StatusSlot {
@@ -105,7 +106,12 @@ const MeetingParticipantStatus = () => {
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-20 overflow-y-auto w-full">
         <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <>
-            <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400 mb-2">{meetingData.title}</h3>
+            <div className="flex items-center gap-2 mb-2">
+              {meetingData.isRetry && (
+                <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md">재요청</span>
+              )}
+              <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">{meetingData.title}</h3>
+            </div>
             {meetingData.location && (
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
                 <MapPin size={16} />

@@ -49,11 +49,19 @@ const ProposeMeetingCreate = () => {
   }, [location.pathname]);
 
   // --- 상태 관리 ---
+  // [추가] 이전 페이지(재요청 등)에서 전달된 초기 데이터 확인
+  const initialState = location.state as {
+    title?: string;
+    description?: string;
+    location?: string;
+    invitedFriends?: { id: string; name: string }[];
+    selectedDates?: string[];
+  } | null;
 
   // 약속 기본 정보
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [meetingLocation, setMeetingLocation] = useState('');
+  const [title, setTitle] = useState(initialState?.title || '');
+  const [description, setDescription] = useState(initialState?.description || '');
+  const [meetingLocation, setMeetingLocation] = useState(initialState?.location || '');
 
   // [수정] 친구 목록 DB 연동
   const [user, setUser] = useState<any>(null);
@@ -108,11 +116,24 @@ const ProposeMeetingCreate = () => {
       });
   }, [friendsList, friendGroups]);
 
-  const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
+  // [수정] 초기 초대 친구 설정 (재요청 시 데이터 복원)
+  const [invitedFriends, setInvitedFriends] = useState<Friend[]>(() => {
+    if (initialState?.invitedFriends) {
+      return initialState.invitedFriends.map((f) => ({
+        uid: f.id,
+        id: f.id,
+        name: f.name,
+        email: '', // 기본값
+        group: undefined,
+      }));
+    }
+    return [];
+  });
 
   // 캘린더 및 날짜 선택 상태
-  const [currentMonth, setCurrentMonth] = useState(dayjs());
-  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  // [수정] 초기 날짜 설정 (재요청 시 데이터 복원)
+  const [selectedDates, setSelectedDates] = useState<string[]>(initialState?.selectedDates || []);
+  const [currentMonth, setCurrentMonth] = useState(initialState?.selectedDates && initialState.selectedDates.length > 0 ? dayjs(initialState.selectedDates[0]) : dayjs());
 
   // [추가] 내 일정 불러오기
   const schedulesQuery = useMemo(() => {

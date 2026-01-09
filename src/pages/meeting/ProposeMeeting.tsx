@@ -15,9 +15,10 @@ interface Meeting {
   title: string;
   status: 'PENDING' | 'VOTING' | 'CONFIRMED';
   members: number;
-  dday: string;
   hostId: string; // [추가] 주최자 ID
   scheduleId?: string;
+  isRetry?: boolean; // [추가] 재요청 여부
+  isVotingCompleted?: boolean; // [추가] 투표 완료 여부
 }
 
 /**
@@ -61,15 +62,31 @@ const ProposeMeeting = () => {
 
   const ongoingMeetings: Meeting[] = useMemo(() => {
     if (!meetingsData) return [];
-    return meetingsData.map((m: any) => ({
-      id: m.id,
-      title: m.title,
-      status: m.status,
-      members: m.participants?.length || 0,
-      dday: m.status === 'VOTING' ? '투표중' : m.status === 'CONFIRMED' ? '확정' : '진행중',
-      hostId: m.hostId, // [추가]
-      scheduleId: m.scheduleId,
-    }));
+    return meetingsData.map((m: any) => {
+      // [추가] 투표 완료 여부 계산
+      let isVotingCompleted = false;
+      if (m.status === 'VOTING' && m.dates && m.dates.length > 0) {
+        const firstDate = m.dates[0];
+        const representativeSlotId = `${firstDate}_0`;
+        const votes = m.votes?.[representativeSlotId] || {};
+        const votedCount = Object.keys(votes).length;
+        const totalParticipants = m.participants?.length || 0;
+        if (totalParticipants > 0 && votedCount >= totalParticipants) {
+          isVotingCompleted = true;
+        }
+      }
+
+      return {
+        id: m.id,
+        title: m.title,
+        status: m.status,
+        members: m.participants?.length || 0,
+        hostId: m.hostId,
+        scheduleId: m.scheduleId,
+        isRetry: m.isRetry,
+        isVotingCompleted, // [추가]
+      };
+    });
   }, [meetingsData]);
 
   /**
@@ -80,9 +97,6 @@ const ProposeMeeting = () => {
    * @param {Meeting} meeting - 선택된 약속 객체
    */
   const handleMeetingClick = (meeting: Meeting) => {
-    if (!meetingsData) return;
-    const fullMeetingData = meetingsData.find((m: any) => m.id === meeting.id);
-
     switch (meeting.status) {
       case 'PENDING':
         // [수정] PENDING 상태에서도 주최자는 현황판으로 이동
@@ -93,27 +107,14 @@ const ProposeMeeting = () => {
         }
         break;
       case 'VOTING':
-        // [수정] 투표 완료 여부에 따라 분기
-        if (fullMeetingData) {
-          const totalParticipants = fullMeetingData.participants?.length ?? 0;
-          const firstDate = fullMeetingData.dates?.[0];
-          // 투표 수를 확인하기 위한 대표 슬롯 ID 생성 로직을 더 명확하게 개선
-          const representativeSlotId = firstDate && fullMeetingData.timeSlots?.[firstDate]?.[0] ? `${firstDate}_0` : null;
-
-          if (representativeSlotId) {
-            const votes = fullMeetingData.votes?.[representativeSlotId] || {};
-            const votedCount = Object.keys(votes).length;
-            const isVotingComplete = totalParticipants > 0 && votedCount >= totalParticipants;
-
-            if (isVotingComplete) {
-              // 투표 완료: 주최자는 확정 페이지로, 참여자는 현황판으로
-              navigate(user && user.uid === meeting.hostId ? `/meeting/report/${meeting.id}` : `/meeting/participant-status/${meeting.id}`);
-              return;
-            }
-          }
+        // [수정] 투표 완료 여부에 따라 분기 (미리 계산된 값 사용)
+        if (meeting.isVotingCompleted) {
+          // 투표 완료: 주최자는 확정 페이지로, 참여자는 현황판으로
+          navigate(user && user.uid === meeting.hostId ? `/meeting/report/${meeting.id}` : `/meeting/participant-status/${meeting.id}`);
+        } else {
+          // 투표 미완료: 모두 투표 페이지로
+          navigate(`/meeting/vote/${meeting.id}`);
         }
-        // 투표 미완료: 모두 투표 페이지로
-        navigate(`/meeting/vote/${meeting.id}`);
         break;
       case 'CONFIRMED':
         navigate(`/meeting/report/${meeting.id}`);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { ChevronLeft, Bell, Check, Trash2, Calendar, Info, CheckCircle2, X, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -96,6 +96,34 @@ const NotificationCenter = () => {
       } catch (e) {
         console.error(e);
       }
+    }
+
+    // [추가] 재요청 알림 클릭 시 처리
+    if (notification.type === 'MEETING_RETRY' && notification.relatedId) {
+      try {
+        const meetingDoc = await getDoc(doc(db, 'meetings', notification.relatedId));
+        if (meetingDoc.exists()) {
+          const data = meetingDoc.data();
+          navigate('/propose/detail', {
+            state: {
+              title: data.title,
+              description: data.description,
+              location: data.location,
+              invitedFriends: (data.invitedFriends || []).map((f: any) => ({ id: f.uid, name: f.name })),
+              selectedDates: data.dates,
+              calendarName: data.title,
+              isRetry: true, // [추가] 재요청 플래그 전달
+            },
+          });
+          return;
+        } else {
+          toast.error('해당 약속 정보를 찾을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('Error fetching meeting data:', error);
+        toast.error('약속 정보를 불러오는 중 오류가 발생했습니다.');
+      }
+      return;
     }
 
     await handleNavigation(notification);
@@ -204,6 +232,8 @@ const NotificationCenter = () => {
         return <UserPlus size={20} className="text-sky-500" />;
       case 'CALENDAR_LEAVE':
         return <UserX size={20} className="text-gray-500" />;
+      case 'MEETING_RETRY':
+        return <RefreshCw size={20} className="text-amber-500" />;
       default:
         return <Bell size={20} className="text-gray-500" />;
     }
