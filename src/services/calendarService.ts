@@ -1,9 +1,9 @@
 import { User } from 'firebase/auth';
 import { collection, query, where, doc, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getDocuments, addDocument, deleteDocument, createBatch } from './firestoreService';
+import { getDocuments, addDocument, createBatch } from './firestoreService';
 import { notifyCalendarInvite, notifyCalendarLeave } from './notificationService';
-import { CalendarType } from 'contexts';
+import { CalendarType } from 'types';
 
 export interface CreateCalendarData {
   name: string;
@@ -60,13 +60,27 @@ export const createCalendar = async (user: User, data: CreateCalendarData): Prom
 };
 
 /**
- * Deletes a calendar.
- * NOTE: This does not delete associated schedules. That should be handled by a Cloud Function.
+ * Deletes a calendar and all associated schedules.
  * @param calendarId The ID of the calendar to delete.
  */
 export const deleteCalendar = async (calendarId: string): Promise<void> => {
-  // TODO: Implement a Cloud Function to delete all associated schedules.
-  await deleteDocument('calendars', calendarId);
+  const batch = createBatch();
+
+  // 1. 캘린더에 속한 일정들 조회
+  const schedules = await getDocuments<{ id: string }>('schedules', where('calendarId', '==', calendarId));
+
+  // 2. 일정들 삭제 (Batch)
+  schedules.forEach((schedule) => {
+    const scheduleRef = doc(db, 'schedules', schedule.id);
+    batch.delete(scheduleRef);
+  });
+
+  // 3. 캘린더 문서 삭제 (Batch)
+  const calendarRef = doc(db, 'calendars', calendarId);
+  batch.delete(calendarRef);
+
+  // 4. 커밋
+  await batch.commit();
 };
 
 /**
@@ -77,7 +91,7 @@ export const deleteCalendar = async (calendarId: string): Promise<void> => {
  */
 export const leaveCalendar = async (calendar: CalendarType, user: User): Promise<void> => {
   if (calendar.members.length <= 1) {
-    await deleteDocument('calendars', calendar.id);
+    await deleteCalendar(calendar.id);
   } else {
     const batch = createBatch();
     const calendarRef = doc(db, 'calendars', calendar.id);

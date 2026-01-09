@@ -3,14 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
 // [추가] Firebase 관련 import
-import { collection, query, where, deleteDoc, doc, arrayRemove, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal, PageHeader, ConfirmModal } from 'components';
 import { TopNav } from 'components';
 import { useFirestoreQuery } from 'hooks';
 import { CalendarType } from 'types';
-import { notifyCalendarLeave } from 'services';
+import { deleteCalendar, leaveCalendar } from 'services';
 
 const CalendarManager = () => {
   const navigate = useNavigate();
@@ -83,24 +83,7 @@ const CalendarManager = () => {
     if (!calendarToDelete) return;
 
     try {
-      const batch = writeBatch(db);
-
-      // 1. 캘린더에 속한 일정들 조회
-      const schedulesQuery = query(collection(db, 'schedules'), where('calendarId', '==', calendarToDelete.id));
-      const schedulesSnapshot = await getDocs(schedulesQuery);
-
-      // 2. 일정들 삭제 (Batch)
-      schedulesSnapshot.forEach((scheduleDoc) => {
-        batch.delete(scheduleDoc.ref);
-      });
-
-      // 3. 캘린더 문서 삭제 (Batch)
-      const calendarRef = doc(db, 'calendars', calendarToDelete.id);
-      batch.delete(calendarRef);
-
-      // 4. 커밋
-      await batch.commit();
-
+      await deleteCalendar(calendarToDelete.id);
       toast.success('캘린더와 포함된 일정이 모두 삭제되었습니다.');
     } catch (error) {
       console.error('Delete failed:', error);
@@ -115,34 +98,13 @@ const CalendarManager = () => {
   const handleLeaveConfirm = async () => {
     if (!calendarToDelete || !user) return;
 
-    const calendarRef = doc(db, 'calendars', calendarToDelete.id);
     try {
+      await leaveCalendar(calendarToDelete, user);
+
       // 사용자가 마지막 멤버인 경우, 캘린더를 삭제합니다.
       if (calendarToDelete.members.length <= 1) {
-        await deleteDoc(calendarRef);
         toast.success(`'${calendarToDelete.name}' 캘린더가 삭제되었습니다.`);
       } else {
-        // [수정] 멤버 목록에서 자신을 제거하고 남은 멤버들에게 알림을 보냅니다.
-        const batch = writeBatch(db);
-
-        // 1. 멤버 목록에서 자신을 제거 (나가기)
-        batch.update(calendarRef, {
-          members: arrayRemove(user.uid),
-        });
-
-        // 2. 남은 멤버들에게 알림 전송
-        const remainingMembers = calendarToDelete.members.filter((memberId) => memberId !== user.uid);
-        for (const memberId of remainingMembers) {
-          await notifyCalendarLeave(batch, {
-            memberId,
-            leaverName: user.displayName || '누군가',
-            calendarName: calendarToDelete.name,
-            calendarId: calendarToDelete.id,
-          });
-        }
-        // 루프가 다 끝난 뒤 배치 커밋
-        await batch.commit();
-
         toast.success(`'${calendarToDelete.name}' 캘린더에서 나갔습니다.`);
       }
     } catch (error) {
