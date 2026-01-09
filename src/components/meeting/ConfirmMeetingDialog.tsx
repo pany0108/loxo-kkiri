@@ -1,5 +1,6 @@
 import React from 'react';
 import { CalendarCheck, X } from 'lucide-react';
+import dayjs from 'dayjs';
 
 /**
  * 약속 확정 확인 다이얼로그의 Props 인터페이스
@@ -25,6 +26,17 @@ interface ConfirmDialogProps {
 const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmDialogProps) => {
   // 모달이 닫혀있거나 데이터가 없는 경우 렌더링하지 않음
   if (!isOpen || !slotData) return null;
+
+  // [추가] 날짜 표시 포맷팅
+  let dateDisplay = slotData.date;
+  if (slotData.date) {
+    if (slotData.date.includes(':')) {
+      const [start, end] = slotData.date.split(':');
+      dateDisplay = `${dayjs(start).format('MM.DD(ddd)')} ~ ${dayjs(end).format('MM.DD(ddd)')}`;
+    } else if (dayjs(slotData.date).isValid()) {
+      dateDisplay = dayjs(slotData.date).format('MM월 DD일 (ddd)');
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
@@ -57,7 +69,7 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData }: ConfirmD
 
           {/* 선택된 시간 정보 표시 영역 */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-[20px] p-4 border border-gray-100 dark:border-gray-600">
-            <p className="text-[15px] font-black text-gray-800 dark:text-gray-200 mb-1">{slotData.date}</p>
+            <p className="text-[15px] font-black text-gray-800 dark:text-gray-200 mb-1">{dateDisplay}</p>
             <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400">{slotData.time}</p>
           </div>
 

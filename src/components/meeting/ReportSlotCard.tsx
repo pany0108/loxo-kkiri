@@ -22,6 +22,15 @@ interface ReportSlotCardProps {
 }
 
 const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirmClick }) => {
+  // [추가] 날짜 범위 처리 로직
+  const isRange = slot.date.includes(':');
+  let dateDisplay = dayjs(slot.date).isValid() ? dayjs(slot.date).format('MM월 DD일 (ddd)') : slot.date;
+
+  if (isRange) {
+    const [start, end] = slot.date.split(':');
+    dateDisplay = `${dayjs(start).format('MM.DD(ddd)')} ~ ${dayjs(end).format('MM.DD(ddd)')}`;
+  }
+
   return (
     <div
       className={`rounded-[32px] overflow-hidden border-2 transition-all duration-300 ${
@@ -33,7 +42,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
       <div className={`px-6 py-5 flex justify-between items-start ${slot.isAllAvailable ? 'bg-emerald-50/30 dark:bg-emerald-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-[16px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
+            <span className="text-[16px] font-black text-gray-900 dark:text-white">{dateDisplay}</span>
             {slot.isAllAvailable && (
               <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-pulse shadow-sm shadow-emerald-200 dark:shadow-emerald-900/50">
                 BEST CHOICE

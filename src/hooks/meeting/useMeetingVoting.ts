@@ -95,6 +95,35 @@ export const useMeetingVoting = () => {
 
   const getConflictInfo = useCallback(
     (dateStr: string, timeStr: string) => {
+      // [추가] 범위 선택(연속 날짜)인 경우 처리
+      if (dateStr.includes(':')) {
+        const [startStr, endStr] = dateStr.split(':');
+        const rangeStart = dayjs(startStr).startOf('day');
+        const rangeEnd = dayjs(endStr).endOf('day');
+
+        const conflicts = events.filter((event) => {
+          const eventStart = dayjs(event.start);
+          const eventEnd = event.end ? dayjs(event.end) : event.allDay ? eventStart.add(1, 'day') : eventStart.add(1, 'hour');
+          // 범위 내에 있거나 겹치는 일정 확인
+          return rangeStart.isBefore(eventEnd) && rangeEnd.isAfter(eventStart);
+        });
+
+        if (conflicts.length > 0) {
+          // 시작 시간순 정렬
+          conflicts.sort((a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf());
+
+          return {
+            isConflict: true,
+            conflicts: conflicts.map((c) => ({
+              date: dayjs(c.start).format('MM.DD(ddd)'),
+              title: c.title,
+              time: c.allDay ? '종일' : `${dayjs(c.start).format('HH:mm')}~${c.end ? dayjs(c.end).format('HH:mm') : ''}`,
+            })),
+          };
+        }
+        return undefined;
+      }
+
       const slotIsAllDay = timeStr === '종일';
       let slotStart: dayjs.Dayjs;
       let slotEnd: dayjs.Dayjs;

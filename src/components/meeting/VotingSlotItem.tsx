@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock, Calendar } from 'lucide-react';
 import dayjs from 'dayjs';
 
@@ -11,38 +11,87 @@ interface VotingSlot {
   myMemo: string;
 }
 
+// [추가] 충돌 정보 상세 인터페이스
+interface ConflictDetail {
+  date: string;
+  title: string;
+  time: string;
+}
+
 interface VotingSlotItemProps {
   slot: VotingSlot;
   onVote: (slotId: string, status: 'available' | 'maybe' | 'unavailable') => void;
   onMemoChange: (slotId: string, text: string) => void;
-  conflictInfo?: { isConflict: boolean; title: string; time?: string };
+  conflictInfo?: { isConflict: boolean; title?: string; time?: string; conflicts?: ConflictDetail[] };
 }
 
 const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoChange, conflictInfo }) => {
+  // [추가] 충돌 일정 펼치기/접기 상태
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // [추가] 날짜 범위 처리 로직
+  const isRange = slot.date.includes(':');
+  let dateDisplay = dayjs(slot.date).format('MM월 DD일 (ddd)');
+
+  if (isRange) {
+    const [start, end] = slot.date.split(':');
+    dateDisplay = `${dayjs(start).format('MM.DD')} ~ ${dayjs(end).format('MM.DD')}`;
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-2 border-gray-50 dark:border-gray-700/50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* 일정 정보 및 등록 멤버 표시 */}
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[15px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
+            <span className="text-[15px] font-black text-gray-900 dark:text-white">{dateDisplay}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
-            <Clock size={14} />
-            <span className="text-[13px]">{slot.time}</span>
-          </div>
+          {!isRange && (
+            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
+              <Clock size={14} />
+              <span className="text-[13px]">{slot.time}</span>
+            </div>
+          )}
           {conflictInfo && (
-            <div
-              className={`mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold animate-in fade-in slide-in-from-top-1 border ${
-                conflictInfo.isConflict
-                  ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
-                  : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
-              }`}
-            >
-              {conflictInfo.isConflict ? <AlertCircle size={14} /> : <Calendar size={14} />}
-              <span className="truncate max-w-[180px]">
-                {conflictInfo.title} ({conflictInfo.time})
-              </span>
+            <div className="mt-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1">
+              {conflictInfo.conflicts ? (
+                // [수정] 충돌 일정이 많을 경우 일부만 표시하고 더보기 버튼 제공
+                <>
+                  {conflictInfo.conflicts.slice(0, isExpanded ? undefined : 2).map((c, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-bold border bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20 w-fit"
+                    >
+                      <AlertCircle size={12} className="shrink-0" />
+                      <span className="shrink-0">{c.date}</span>
+                      <span className="truncate max-w-[120px]">{c.title}</span>
+                      <span className="shrink-0 opacity-80 font-medium">{c.time}</span>
+                    </div>
+                  ))}
+                  {conflictInfo.conflicts.length > 2 && (
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="text-[11px] font-bold text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 text-left px-1 mt-0.5 w-fit transition-colors"
+                    >
+                      {isExpanded ? '접기' : `외 ${conflictInfo.conflicts.length - 2}건 더보기`}
+                    </button>
+                  )}
+                </>
+              ) : (
+                // 기존 단일 충돌 일정 표시
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold border ${
+                    conflictInfo.isConflict
+                      ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
+                      : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
+                  }`}
+                >
+                  {conflictInfo.isConflict ? <AlertCircle size={14} /> : <Calendar size={14} />}
+                  <span className="truncate max-w-[180px]">
+                    {conflictInfo.title} ({conflictInfo.time})
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,11 +1,17 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
+import { auth, db } from '../../firebase';
+import { doc, collection, query, where, addDoc, writeBatch } from 'firebase/firestore';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import 'dayjs/locale/ko';
+import toast from 'react-hot-toast';
 import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader, PageFooter } from 'components';
 import { useProposeMeetingCreate } from 'hooks';
+import { notifyMeetingInvite } from 'services';
 
+dayjs.extend(isSameOrBefore);
 dayjs.locale('ko');
 
 const ProposeMeetingCreate = () => {
@@ -23,8 +29,117 @@ const ProposeMeetingCreate = () => {
   }, [location.pathname]);
 
   const { state, handlers } = useProposeMeetingCreate();
-  const { title, description, meetingLocation, user, friendsList, groupedFriends, invitedFriends, selectedDates, currentMonth, schedulesByDate, schedulePopup, isValid } = state;
-  const { setTitle, setDescription, setMeetingLocation, setCurrentMonth, setSchedulePopup, setSelectedDates, handleDateClick, toggleFriend, toggleGroup, handleNext } = handlers;
+  const {
+    title,
+    description,
+    meetingLocation,
+    user,
+    friendsList,
+    groupedFriends,
+    invitedFriends,
+    selectedDates,
+    currentMonth,
+    schedulesByDate,
+    schedulePopup,
+    isValid,
+    votingItems,
+  } = state;
+  const {
+    setTitle,
+    setDescription,
+    setMeetingLocation,
+    setCurrentMonth,
+    setSchedulePopup,
+    setSelectedDates,
+    handleDateClick,
+    toggleFriend,
+    toggleGroup,
+    handleNext,
+    setVotingItems,
+  } = handlers;
+
+  // [추가] 연속 선택 모드 상태
+  const [isRangeMode, setIsRangeMode] = useState(false);
+  const [rangeStart, setRangeStart] = useState<string | null>(null);
+  const [isRangeRemoving, setIsRangeRemoving] = useState(false);
+
+  // [추가] 날짜 클릭 핸들러 래퍼 (연속 선택 로직 처리)
+  const handleDateClickWrapper = (date: string) => {
+    if (!isRangeMode) {
+      handleDateClick(date);
+      setVotingItems((prev) => {
+        if (prev.includes(date)) {
+          return prev.filter((d) => d !== date);
+        }
+        return [...prev, date];
+      });
+      return;
+    }
+
+    if (!rangeStart) {
+      setRangeStart(date);
+      const isSelected = selectedDates.includes(date);
+      setIsRangeRemoving(isSelected);
+
+      if (isSelected) {
+        setSelectedDates((prev) => prev.filter((d) => d !== date));
+        // [추가] 선택 해제 시 votingItems에서도 제거 (해당 날짜를 포함하는 모든 아이템 제거)
+        setVotingItems((prev) => prev.filter((item) => !item.includes(date)));
+        toast('선택 해제할 종료일을 선택해주세요.', { icon: '🗑️' });
+      } else {
+        setSelectedDates((prev) => [...prev, date]);
+        // [추가] 시작일만 선택된 상태에서는 votingItems에 추가하지 않음 (종료일 선택 시 처리)
+        toast('종료일을 선택해주세요.', { icon: '🗓️' });
+      }
+    } else {
+      const start = dayjs(rangeStart);
+      const end = dayjs(date);
+
+      const startDate = start.isBefore(end) ? start : end;
+      const endDate = start.isBefore(end) ? end : start;
+
+      const datesInRange: string[] = [];
+      let curr = startDate;
+      while (curr.isSameOrBefore(endDate, 'day')) {
+        datesInRange.push(curr.format('YYYY-MM-DD'));
+        curr = curr.add(1, 'day');
+      }
+
+      if (isRangeRemoving) {
+        // 제거 모드: 범위 내 날짜들을 선택 목록에서 제거
+        const newSelectedDates = selectedDates.filter((d) => !datesInRange.includes(d));
+        setSelectedDates(newSelectedDates);
+        // [추가] 범위 내 날짜가 포함된 votingItems 제거
+        setVotingItems((prev) =>
+          prev.filter((item) => {
+            // 아이템이 범위 내의 날짜를 하나라도 포함하면 제거
+            if (item.includes(':')) {
+              const [s, e] = item.split(':');
+              // 단순화를 위해 범위가 겹치면 제거하는 로직 (교집합 확인)
+              const itemStart = dayjs(s);
+              const itemEnd = dayjs(e);
+              const removeStart = dayjs(datesInRange[0]);
+              const removeEnd = dayjs(datesInRange[datesInRange.length - 1]);
+              return itemEnd.isBefore(removeStart) || itemStart.isAfter(removeEnd);
+            }
+            return !datesInRange.includes(item);
+          }),
+        );
+        toast.success(`${datesInRange.length}일이 선택 해제되었습니다.`);
+      } else {
+        // 추가 모드: 범위 내 날짜들을 선택 목록에 추가
+        const newSelectedDates = Array.from(new Set([...selectedDates, ...datesInRange]));
+        setSelectedDates(newSelectedDates);
+        // [추가] 범위 아이템 추가
+        const rangeString = `${datesInRange[0]}:${datesInRange[datesInRange.length - 1]}`;
+        setVotingItems((prev) => [...prev, rangeString]);
+        toast.success(`${datesInRange.length}일이 선택되었습니다.`);
+      }
+
+      setRangeStart(null);
+      setIsRangeRemoving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
@@ -56,13 +171,31 @@ const ProposeMeetingCreate = () => {
             onToggleGroup={toggleGroup}
             user={user}
           />
-          <ProposalCalendar
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            selectedDates={selectedDates}
-            schedulesByDate={schedulesByDate}
-            onDateClick={handleDateClick}
-          />
+          <div className="space-y-3">
+            <ProposalCalendar
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              selectedDates={selectedDates}
+              schedulesByDate={schedulesByDate}
+              onDateClick={handleDateClickWrapper}
+              isRangeMode={isRangeMode}
+              onToggleRangeMode={() => {
+                setIsRangeMode(!isRangeMode);
+                setRangeStart(null);
+                setIsRangeRemoving(false);
+              }}
+            />
+            <div className="flex justify-end gap-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">내 일정</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">선택됨</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -75,6 +208,7 @@ const ProposeMeetingCreate = () => {
           onClose={() => setSchedulePopup(null)}
           onConfirm={(date: string) => {
             setSelectedDates((prev) => [...prev, date]);
+            setVotingItems((prev) => [...prev, date]);
             setSchedulePopup(null);
           }}
         />

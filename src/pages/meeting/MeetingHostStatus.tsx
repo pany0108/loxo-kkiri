@@ -126,11 +126,15 @@ const MeetingHostStatus = () => {
   // --- VOTING 상태 뷰 (기존 로직) ---
   // 투표 참여 현황 계산 (주최자 제외)
   const totalMembers = meetingData.participants.length; // 본인 포함 전체
-  // 실제 투표 데이터에서 유니크한 투표자 수 확인 (슬롯 0번 기준 예시)
-  const firstSlotVotes = meetingData.votes?.[`${meetingData.dates[0]}_0`] || {};
-  const votedCount = Object.keys(firstSlotVotes).length;
 
-  const votedUids = new Set(Object.keys(firstSlotVotes));
+  // [수정] 모든 슬롯의 투표를 확인하여 유니크한 투표자 수 계산
+  const votedUids = new Set<string>();
+  if (meetingData.votes) {
+    Object.values(meetingData.votes).forEach((slotVotes: any) => {
+      if (slotVotes) Object.keys(slotVotes).forEach((uid) => votedUids.add(uid));
+    });
+  }
+  const votedCount = votedUids.size;
 
   const unvotedCount = meetingData.participants.length - votedCount;
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, MapPin, CalendarCheck } from 'lucide-react';
+import dayjs from 'dayjs';
 
 interface ReportHeaderProps {
   title: string;
@@ -12,6 +13,17 @@ interface ReportHeaderProps {
 }
 
 const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot, scheduleId, onNavigate, isRetry }) => {
+  // [추가] 확정된 날짜 표시 포맷팅
+  let confirmedDateDisplay = confirmedSlot?.date;
+  if (confirmedSlot?.date) {
+    if (confirmedSlot.date.includes(':')) {
+      const [start, end] = confirmedSlot.date.split(':');
+      confirmedDateDisplay = `${dayjs(start).format('MM.DD(ddd)')} ~ ${dayjs(end).format('MM.DD(ddd)')}`;
+    } else if (dayjs(confirmedSlot.date).isValid()) {
+      confirmedDateDisplay = dayjs(confirmedSlot.date).format('MM월 DD일 (ddd)');
+    }
+  }
+
   return (
     <header className="mb-8">
       <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -30,7 +42,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
             약속이 <span className="text-blue-600 dark:text-blue-400">확정</span>되었습니다!
           </h2>
           <div className="mt-4 bg-blue-50 dark:bg-blue-900/50 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
-            <p className="text-center text-lg font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.date}</p>
+            <p className="text-center text-lg font-black text-blue-600 dark:text-blue-300">{confirmedDateDisplay}</p>
             <p className="text-center text-2xl font-black text-blue-600 dark:text-blue-300">{confirmedSlot?.time}</p>
           </div>
           {scheduleId && onNavigate && (

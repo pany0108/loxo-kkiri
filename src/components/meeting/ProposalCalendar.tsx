@@ -8,9 +8,11 @@ interface ProposalCalendarProps {
   selectedDates: string[];
   schedulesByDate: Map<string, any[]>;
   onDateClick: (dateStr: string) => void;
+  isRangeMode: boolean;
+  onToggleRangeMode: () => void;
 }
 
-const ProposalCalendar: React.FC<ProposalCalendarProps> = ({ currentMonth, onMonthChange, selectedDates, schedulesByDate, onDateClick }) => {
+const ProposalCalendar: React.FC<ProposalCalendarProps> = ({ currentMonth, onMonthChange, selectedDates, schedulesByDate, onDateClick, isRangeMode, onToggleRangeMode }) => {
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
@@ -27,14 +29,19 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({ currentMonth, onMon
           <CalendarIcon size={18} className="text-gray-400 dark:text-gray-500" />
           <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">날짜 선택</label>
         </div>
-        <div className="flex gap-3 text-[10px] font-bold bg-gray-50 dark:bg-gray-800/50 px-3 py-1 rounded-full">
-          <span className="flex items-center gap-1.5 text-gray-500 dark:text-gray-500">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>내 일정
-          </span>
-          <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>선택됨
-          </span>
-        </div>
+        <button
+          onClick={onToggleRangeMode}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all active:scale-95 ${
+            isRangeMode ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+          }`}
+        >
+          <span className="text-[11px] font-bold">연속 선택</span>
+          <div className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${isRangeMode ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+            <div
+              className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-200 ${isRangeMode ? 'translate-x-4' : 'translate-x-0'}`}
+            />
+          </div>
+        </button>
       </div>
 
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[32px] p-6 border-2 border-transparent">

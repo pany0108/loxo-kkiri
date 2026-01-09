@@ -65,13 +65,15 @@ const ProposeMeeting = () => {
     return meetingsData.map((m: any) => {
       // [추가] 투표 완료 여부 계산
       let isVotingCompleted = false;
-      if (m.status === 'VOTING' && m.dates && m.dates.length > 0) {
-        const firstDate = m.dates[0];
-        const representativeSlotId = `${firstDate}_0`;
-        const votes = m.votes?.[representativeSlotId] || {};
-        const votedCount = Object.keys(votes).length;
+      if (m.status === 'VOTING') {
         const totalParticipants = m.participants?.length || 0;
-        if (totalParticipants > 0 && votedCount >= totalParticipants) {
+        const votedUserIds = new Set<string>();
+        if (m.votes) {
+          Object.values(m.votes).forEach((slotVotes: any) => {
+            if (slotVotes) Object.keys(slotVotes).forEach((uid) => votedUserIds.add(uid));
+          });
+        }
+        if (totalParticipants > 0 && votedUserIds.size >= totalParticipants) {
           isVotingCompleted = true;
         }
       }

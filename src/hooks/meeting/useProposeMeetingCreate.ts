@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query, where, addDoc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreDoc, useFirestoreQuery } from '../common/useFirestore';
+import toast from 'react-hot-toast';
+import { notifyMeetingInvite } from 'services';
 
 export interface Friend {
   uid: string;
@@ -106,6 +108,9 @@ export const useProposeMeetingCreate = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>(initialState?.selectedDates || []);
   const [currentMonth, setCurrentMonth] = useState(initialState?.selectedDates && initialState.selectedDates.length > 0 ? dayjs(initialState.selectedDates[0]) : dayjs());
 
+  // [추가] 투표 아이템 관리 (단일 날짜 또는 범위 문자열 "YYYY-MM-DD:YYYY-MM-DD")
+  const [votingItems, setVotingItems] = useState<string[]>(initialState?.selectedDates || []);
+
   // 내 일정 불러오기
   const schedulesQuery = useMemo(() => {
     if (!user) return null;
@@ -187,13 +192,61 @@ export const useProposeMeetingCreate = () => {
     [friendsList],
   );
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     const calendarName = `나와 ${invitedFriends.map((f) => f.name).join(', ')}의 약속`;
 
-    navigate('/propose/detail', {
-      state: { title, description, location: meetingLocation, invitedFriends, selectedDates, calendarName },
-    });
-  }, [navigate, title, description, meetingLocation, invitedFriends, selectedDates]);
+    // [추가] 연속 선택(범위)이 포함된 경우 바로 약속 생성 (VOTING 상태)
+    const hasRanges = votingItems.some((item) => item.includes(':'));
+
+    if (hasRanges) {
+      if (!user) return;
+      try {
+        // 범위 아이템을 기반으로 timeSlots 생성 (모두 종일 일정)
+        const timeSlots: Record<string, any[]> = {};
+        votingItems.forEach((item) => {
+          timeSlots[item] = [{ start: '00:00', end: '23:59', isAllDay: true }];
+        });
+
+        const meetingRef = await addDoc(collection(db, 'meetings'), {
+          title,
+          description,
+          location: meetingLocation,
+          hostId: user.uid,
+          hostName: user.displayName || '알 수 없음',
+          participants: [user.uid, ...invitedFriends.map((f) => f.id)],
+          invitedFriends: invitedFriends.map((f) => ({ uid: f.id, name: f.name })),
+          dates: votingItems, // [중요] 선택된 아이템(범위 포함)을 dates로 저장
+          timeSlots,
+          status: 'VOTING', // 바로 투표 상태로 시작
+          createdAt: new Date().toISOString(),
+        });
+
+        // 초대 알림 전송
+        const batch = writeBatch(db);
+        if (invitedFriends.length > 0) {
+          for (const friend of invitedFriends) {
+            await notifyMeetingInvite(batch, {
+              friendId: friend.id,
+              inviterName: user.displayName || '알 수 없음',
+              meetingTitle: title,
+              meetingId: meetingRef.id,
+            });
+          }
+          await batch.commit();
+        }
+
+        toast.success('약속이 생성되었습니다! 투표를 시작하세요.');
+        navigate('/propose');
+      } catch (error) {
+        console.error('Error creating meeting:', error);
+        toast.error('약속 생성 중 오류가 발생했습니다.');
+      }
+    } else {
+      navigate('/propose/detail', {
+        state: { title, description, location: meetingLocation, invitedFriends, selectedDates, calendarName },
+      });
+    }
+  }, [navigate, title, description, meetingLocation, invitedFriends, selectedDates, votingItems, user]);
 
   const isValid = title.length > 0 && invitedFriends.length > 0 && selectedDates.length > 0;
 
@@ -211,6 +264,7 @@ export const useProposeMeetingCreate = () => {
       schedulesByDate,
       schedulePopup,
       isValid,
+      votingItems,
     },
     handlers: {
       setTitle,
@@ -223,6 +277,7 @@ export const useProposeMeetingCreate = () => {
       toggleFriend,
       toggleGroup,
       handleNext,
+      setVotingItems,
     },
   };
 };
