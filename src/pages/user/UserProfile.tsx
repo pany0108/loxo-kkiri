@@ -7,7 +7,7 @@ import { User, Loader2, UserPlus, Check } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav } from 'components';
+import { TopNav, PageFooter } from 'components';
 
 interface UserProfileData {
   uid: string;
@@ -119,7 +119,7 @@ const UserProfile = () => {
         </div>
       </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-50 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <PageFooter>
         <button
           onClick={handleAddFriend}
           disabled={isAdding || isAlreadyFriend}
@@ -139,7 +139,7 @@ const UserProfile = () => {
             </>
           )}
         </button>
-      </footer>
+      </PageFooter>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import { auth, db } from '../../firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { useFirestoreDoc, useFirestoreQuery } from 'hooks';
 import { onAuthStateChanged } from 'firebase/auth';
-import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader } from 'components';
+import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, TopNav, PageHeader, PageFooter } from 'components';
 
 dayjs.locale('ko');
 
@@ -301,7 +301,7 @@ const ProposeMeetingCreate = () => {
       )}
 
       {/* 하단 고정 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <PageFooter>
         <button
           onClick={handleNext}
           disabled={!isValid}
@@ -316,7 +316,7 @@ const ProposeMeetingCreate = () => {
         >
           {selectedDates.length > 0 ? `다음 단계로 (${selectedDates.length}일 선택)` : '날짜를 선택해주세요'}
         </button>
-      </footer>
+      </PageFooter>
     </div>
   );
 };

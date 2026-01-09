@@ -317,7 +317,7 @@ const ScheduleDetail = () => {
   };
 
   const renderFooter = () => (
-    <footer className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
+    <footer className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
       <button
         type="button"
         onClick={handleCopy}

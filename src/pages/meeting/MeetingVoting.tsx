@@ -8,7 +8,7 @@ import { doc, updateDoc, getDoc, writeBatch, collection } from 'firebase/firesto
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { useFirestoreDoc } from 'hooks';
-import { VotingSlotItem, TopNav, PageHeader, ConfirmModal } from 'components';
+import { VotingSlotItem, TopNav, PageHeader, ConfirmModal, PageFooter } from 'components';
 import { notifyMeetingVote, notifyVotingCompleteForHost, notifyVotingCompleteForParticipant } from 'services';
 import { useCalendar } from 'contexts';
 
@@ -39,6 +39,7 @@ interface MeetingData {
   timeSlots: Record<string, { start: string; end: string; isAllDay: boolean }[]>;
   votes?: Record<string, Record<string, { vote: string; memo: string; name: string }>>;
   scheduleId?: string;
+  isRetry?: boolean;
 }
 
 /**
@@ -296,7 +297,9 @@ const MeetingVoting = () => {
         {/* 헤더 섹션 */}
         <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
           <>
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight mb-2">{meetingData.title}</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">{meetingData.title}</h2>
+            </div>
             {meetingData.location && (
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
                 <MapPin size={16} />
@@ -304,7 +307,16 @@ const MeetingVoting = () => {
               </div>
             )}
             <p className="text-gray-500 dark:text-gray-400 font-medium">
-              나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+              {meetingData.isRetry ? (
+                <>
+                  재요청된 일정입니다. <br />
+                  <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
+                </>
+              ) : (
+                <>
+                  나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+                </>
+              )}
             </p>
           </>
         </PageHeader>
@@ -318,7 +330,7 @@ const MeetingVoting = () => {
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <PageFooter>
         <div className="flex gap-3">
           {isHost && (
             <button
@@ -341,7 +353,7 @@ const MeetingVoting = () => {
             투표 완료하기
           </button>
         </div>
-      </footer>
+      </PageFooter>
 
       {/* [추가] 일정 충돌 경고 모달 */}
       <ConfirmModal

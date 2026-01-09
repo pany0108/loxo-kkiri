@@ -222,6 +222,7 @@ const MeetingReport = () => {
           confirmedSlot={meetingData.confirmedSlot}
           scheduleId={meetingData.scheduleId}
           onNavigate={navigate}
+          isRetry={(meetingData as any).isRetry}
         />
 
         {/* 리포트 카드 리스트 */}

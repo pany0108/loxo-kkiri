@@ -9,7 +9,7 @@ import 'dayjs/locale/ko';
 import { useFirestoreDoc, useAuth, useScrollToTop, useMeetingResponseForm } from 'hooks';
 import { useCalendar } from 'contexts';
 import toast from 'react-hot-toast';
-import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader } from 'components';
+import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader, PageFooter } from 'components';
 import { submitMeetingResponse, Meeting as MeetingData } from 'services';
 
 dayjs.extend(isSameOrBefore);
@@ -116,9 +116,18 @@ const MeetingResponse = () => {
         {/* 헤더 섹션 */}
         <PageHeader className="mb-6" icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            {meetingData.hostName}님의 제안에
-            <br />
-            <span className="text-blue-600 dark:text-blue-400">응답해주세요</span>
+            {(meetingData as any).isRetry ? (
+              <>
+                {meetingData.hostName}님이 <br />
+                <span className="text-blue-600 dark:text-blue-400">일정을 재요청했어요</span>
+              </>
+            ) : (
+              <>
+                {meetingData.hostName}님의 제안에
+                <br />
+                <span className="text-blue-600 dark:text-blue-400">응답해주세요</span>
+              </>
+            )}
           </h2>
         </PageHeader>
 
@@ -195,7 +204,7 @@ const MeetingResponse = () => {
       </div>
 
       {/* 하단 고정 제출 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20">
+      <PageFooter>
         <button
           onClick={handleSubmitResponse}
           className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -205,7 +214,7 @@ const MeetingResponse = () => {
             <span className="bg-emerald-500 dark:bg-emerald-400 text-white dark:text-emerald-900 px-2 py-0.5 rounded-lg text-[11px] font-bold">+ 역제안 {myNewSlots.length}건</span>
           )}
         </button>
-      </footer>
+      </PageFooter>
     </div>
   );
 };

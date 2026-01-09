@@ -1,6 +1,6 @@
 import React from 'react';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
-import { TopNav, PageHeader, FormInput, BirthDateInput } from 'components';
+import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
 import { handleEnterToNext } from 'utils';
 import { useSocialSignupForm } from 'hooks/useSocialSignupForm';
 
@@ -69,7 +69,7 @@ const SignupSocial = () => {
             />
           </div>
 
-          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <PageFooter zIndex={50}>
             <button
               type="submit"
               disabled={isLoading || !state.isVerified}
@@ -81,7 +81,7 @@ const SignupSocial = () => {
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '슈퍼 스케줄러 시작하기'}
             </button>
-          </footer>
+          </PageFooter>
         </form>
       </div>
     </div>

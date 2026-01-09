@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { TopNav, PageHeader, FormInput, BirthDateInput } from 'components';
+import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
 import { handleEnterToNext } from 'utils';
 import { useSignupForm } from 'hooks/useSignupForm';
 
@@ -147,7 +147,7 @@ const Signup = () => {
             />
           </div>
 
-          <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <PageFooter zIndex={50}>
             <button
               type="submit"
               disabled={isLoading || !state.isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
@@ -160,7 +160,7 @@ const Signup = () => {
             >
               {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
             </button>
-          </footer>
+          </PageFooter>
         </form>
       </div>
     </div>

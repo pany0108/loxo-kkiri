@@ -8,9 +8,10 @@ interface ReportHeaderProps {
   confirmedSlot?: { date: string; time: string };
   scheduleId?: string;
   onNavigate?: (path: string) => void;
+  isRetry?: boolean;
 }
 
-const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot, scheduleId, onNavigate }) => {
+const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot, scheduleId, onNavigate, isRetry }) => {
   return (
     <header className="mb-8">
       <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">
@@ -47,8 +48,17 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
       ) : (
         <>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            가장 <span className="text-blue-600 dark:text-blue-400">적절한 시간</span>을<br />
-            확정해주세요!
+            {isRetry ? (
+              <>
+                재요청된 약속의 <br />
+                <span className="text-blue-600 dark:text-blue-400">시간</span>을 확정해주세요!
+              </>
+            ) : (
+              <>
+                가장 <span className="text-blue-600 dark:text-blue-400">적절한 시간</span>을<br />
+                확정해주세요!
+              </>
+            )}
           </h2>
           <p className="mt-2 text-gray-400 dark:text-gray-500 text-sm font-medium flex items-center gap-1.5">
             <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />

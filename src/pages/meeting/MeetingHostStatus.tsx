@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { doc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreDoc } from 'hooks';
-import { TopNav, ConfirmModal, ShareMeetingModal, PageHeader } from 'components';
+import { TopNav, ConfirmModal, ShareMeetingModal, PageHeader, PageFooter } from 'components';
 import { MeetingData } from 'types';
 import { notifyMeetingUrge } from 'services';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -201,15 +201,10 @@ const MeetingHostStatus = () => {
           }
         />
 
-        <div ref={scrollContainerRef} className="flex-1 flex flex-col px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-12 overflow-y-auto w-full">
+        <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-6">
           <PageHeader icon={<Clock className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
             <>
-              <div className="flex items-center gap-2 mb-2">
-                {(meetingData as any).isRetry && (
-                  <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md">재요청</span>
-                )}
-                <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">{meetingData.title}</h3>
-              </div>
+              <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">{meetingData.title}</h3>
               {meetingData.location && (
                 <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
                   <MapPin size={16} />
@@ -217,7 +212,16 @@ const MeetingHostStatus = () => {
                 </div>
               )}
               <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-                친구들의 <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
+                {(meetingData as any).isRetry ? (
+                  <>
+                    재요청에 대한 <br />
+                    <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
+                  </>
+                ) : (
+                  <>
+                    친구들의 <span className="text-blue-600 dark:text-blue-400">응답을 기다리는 중</span>입니다.
+                  </>
+                )}
               </h2>
             </>
           </PageHeader>
@@ -414,6 +418,15 @@ const MeetingHostStatus = () => {
           ))}
         </div>
       </div>
+
+      <PageFooter>
+        <button
+          onClick={() => navigate(`/meeting/vote/${meetingId}`)}
+          className="w-full h-[56px] bg-blue-600 text-white rounded-[20px] font-black text-[16px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          투표하러 가기
+        </button>
+      </PageFooter>
     </div>
   );
 };

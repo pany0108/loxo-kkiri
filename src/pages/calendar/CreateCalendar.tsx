@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader } from 'components';
+import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader, PageFooter } from 'components';
 import { notifyCalendarInvite } from 'services';
 
 const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
@@ -261,7 +261,7 @@ const CreateCalendar = () => {
   };
 
   const renderFooter = () => (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+    <PageFooter>
       <div className="mb-3 text-center h-5">
         {finalName && <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
       </div>
@@ -279,7 +279,7 @@ const CreateCalendar = () => {
       >
         {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <span>캘린더 생성하기</span>}
       </button>
-    </footer>
+    </PageFooter>
   );
 
   return (

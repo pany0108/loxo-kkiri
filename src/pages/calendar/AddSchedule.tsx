@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { MapPin, AlignLeft, Clock, Camera, Bell, Sparkles, ChevronDown, Plus, Check, Loader2, History } from 'lucide-react';
-import { PageLayout, RecurrenceOptions, RecurrenceSettings, PageHeader } from 'components';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, PageHeader, PageFooter } from 'components';
 import { collection, addDoc, query, where, writeBatch, doc, orderBy } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -388,7 +388,7 @@ const AddSchedule = () => {
   const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
 
   const renderFooter = () => (
-    <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+    <PageFooter>
       <button
         type="submit"
         form="add-schedule-form" // [추가] form 속성으로 외부 form과 연결
@@ -402,7 +402,7 @@ const AddSchedule = () => {
       >
         {isSubmitting ? <Loader2 className="animate-spin" /> : <span>일정 등록하기</span>}
       </button>
-    </footer>
+    </PageFooter>
   );
 
   return (

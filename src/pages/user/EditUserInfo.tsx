@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
-import { TopNav, PageHeader, FormInput } from 'components';
+import { TopNav, PageHeader, FormInput, PageFooter } from 'components';
 import { auth, db } from '../../firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
@@ -380,7 +380,7 @@ const EditUserInfo = () => {
       </div>
 
       {/* 하단 고정 저장 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-50 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <PageFooter zIndex={50}>
         <button
           onClick={handleSave}
           disabled={isSaving} // [임시] 휴대폰 인증 비활성화
@@ -400,7 +400,7 @@ const EditUserInfo = () => {
           )}
         </button>
         <p className="text-center text-[11px] text-gray-300 dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
-      </footer>
+      </PageFooter>
     </div>
   );
 };

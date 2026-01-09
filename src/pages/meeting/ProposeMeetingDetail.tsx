@@ -5,7 +5,7 @@ import { Sparkles, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader } from 'components';
+import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader, PageFooter } from 'components';
 import { notifyMeetingInvite } from 'services';
 
 /**
@@ -26,7 +26,6 @@ interface LocationState {
   invitedFriends: InvitedFriend[];
   selectedDates: string[];
   calendarName: string;
-  isRetry?: boolean; // [추가] 재요청 여부
 }
 
 /**
@@ -70,7 +69,6 @@ const ProposeMeetingDetail = () => {
     location: meetingLocation,
     invitedFriends,
     selectedDates,
-    isRetry,
   } = (location.state as LocationState) || {
     title: '새 약속',
     description: '',
@@ -78,7 +76,6 @@ const ProposeMeetingDetail = () => {
     selectedDates: [dayjs().format('YYYY-MM-DD')],
     invitedFriends: [] as InvitedFriend[],
     calendarName: '',
-    isRetry: false,
   };
 
   /**
@@ -279,11 +276,6 @@ const ProposeMeetingDetail = () => {
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
         <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
-          {isRetry && (
-            <div className="inline-block bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md mb-2">
-              재요청된 약속
-            </div>
-          )}
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             선택한 날짜의 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
             설정해주세요.
@@ -326,7 +318,7 @@ const ProposeMeetingDetail = () => {
       <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
 
       {/* 하단 고정 제안 발송 버튼 */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-t border-gray-50 dark:border-gray-800 z-20 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <PageFooter>
         <button
           onClick={handleFinalConfirm}
           className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -334,7 +326,7 @@ const ProposeMeetingDetail = () => {
           <span>약속 제안 발송하기</span>
           <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[12px] font-bold">{Object.values(timeSlots).flat().length}개 슬롯</span>
         </button>
-      </footer>
+      </PageFooter>
     </div>
   );
 };
