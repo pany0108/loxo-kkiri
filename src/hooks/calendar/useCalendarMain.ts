@@ -110,8 +110,54 @@ export const useCalendarMain = () => {
   }, [events, activeCalendar]);
 
   const allDisplayedEvents = useMemo(() => {
-    return [...displayedEvents, ...holidays];
-  }, [displayedEvents, holidays]);
+    const baseEvents = [...displayedEvents, ...holidays];
+
+    // Compact 모드(리스트가 보일 때)이고 월간 뷰일 때, 연속 일정을 개별 일자로 분리하여 dot 표시
+    if (isListVisible && currentView === 'dayGridMonth') {
+      const expandedEvents: any[] = [];
+
+      baseEvents.forEach((event) => {
+        const start = dayjs(event.start);
+        const end = event.end ? dayjs(event.end) : null;
+
+        // 단일 날짜 일정인지 확인
+        const isSingleDay = !end || start.format('YYYY-MM-DD') === end.format('YYYY-MM-DD') || (event.allDay && end.diff(start, 'day') === 1);
+
+        if (isSingleDay) {
+          expandedEvents.push(event);
+          return;
+        }
+
+        // 연속 일정 분할
+        let curr = start.clone().startOf('day');
+        const loopEnd = end || start.clone().endOf('day');
+
+        while (curr.isBefore(loopEnd)) {
+          if (!event.allDay && curr.isSame(loopEnd, 'day') && loopEnd.format('HH:mm') === '00:00') break;
+          if (event.allDay && curr.isSame(loopEnd, 'day')) break;
+
+          expandedEvents.push({
+            ...event,
+            id: `${event.id}_split_${curr.format('YYYYMMDD')}`,
+            start: curr.format('YYYY-MM-DD'),
+            end: curr.add(1, 'day').format('YYYY-MM-DD'),
+            allDay: true,
+            extendedProps: {
+              ...((event as any).extendedProps || {}),
+              originalId: event.id,
+              originalStart: event.start,
+              originalEnd: event.end,
+              originalAllDay: event.allDay,
+            },
+          });
+          curr = curr.add(1, 'day');
+        }
+      });
+      return expandedEvents;
+    }
+
+    return baseEvents;
+  }, [displayedEvents, holidays, isListVisible, currentView]);
 
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();

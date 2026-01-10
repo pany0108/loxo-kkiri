@@ -1,8 +1,11 @@
 import React from 'react';
 import { X, Trash2, User, Users } from 'lucide-react';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 import { CalendarEvent } from 'contexts';
 import { motion, AnimatePresence } from 'framer-motion';
+
+dayjs.locale('ko');
 
 interface EventListSheetProps {
   isVisible: boolean;
@@ -46,7 +49,15 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
   const filteredEvents = events.filter((event: CalendarEvent) => {
     if (!selectedDate) return false;
     if (event.calendarId === 'holidays') return false;
-    return dayjs(event.start).format('YYYY-MM-DD') === selectedDate;
+
+    const targetDate = dayjs(selectedDate);
+    const eventStart = dayjs(event.start);
+    const eventEnd = event.end ? dayjs(event.end) : null;
+
+    if (!eventEnd) {
+      return eventStart.isSame(targetDate, 'day');
+    }
+    return eventStart.isBefore(targetDate.endOf('day')) && eventEnd.isAfter(targetDate.startOf('day'));
   });
 
   return (
@@ -85,6 +96,27 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
           >
             {filteredEvents.map((event: CalendarEvent, index: number) => {
               const originalId = event.originalId || event.id!;
+              const displayStart = (event as any).extendedProps?.originalStart || event.start;
+              const displayEnd = (event as any).extendedProps?.originalEnd || event.end;
+              const displayAllDay = (event as any).extendedProps?.originalAllDay ?? event.allDay;
+
+              let timeDisplay = '';
+              if (displayAllDay) {
+                timeDisplay = '종일';
+              } else {
+                const start = dayjs(displayStart);
+                const end = displayEnd ? dayjs(displayEnd) : null;
+                if (end && !start.isSame(end, 'day')) {
+                  if (start.isSame(end, 'month')) {
+                    timeDisplay = `${start.format('M월 D일 A h:mm')} ~ ${end.format('D일 A h:mm')}`;
+                  } else {
+                    timeDisplay = `${start.format('M월 D일 A h:mm')} ~ ${end.format('M월 D일 A h:mm')}`;
+                  }
+                } else {
+                  timeDisplay = `${start.format('A h:mm')} - ${end ? end.format('A h:mm') : ''}`;
+                }
+              }
+
               return (
                 <div
                   key={`${originalId}-${index}`}
@@ -114,9 +146,7 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                   <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#3b82f6' }} />
                   <div className="pl-2">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-300 rounded-[8px]">
-                        {event.allDay ? '종일' : `${dayjs(event.start).format('A h:mm')} - ${event.end ? dayjs(event.end).format('A h:mm') : ''}`}
-                      </span>
+                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700 text-[10px] font-bold text-gray-600 dark:text-gray-300 rounded-[8px]">{timeDisplay}</span>
                       <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 dark:text-gray-500">
                         {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
                         <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>

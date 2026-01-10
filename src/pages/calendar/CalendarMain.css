@@ -516,3 +516,13 @@
 .jiggle-animation {
   animation: jiggle 0.25s ease-in-out infinite;
 }
+
+/* [추가] 월간 뷰에서 이벤트 클릭 시 해당 날짜가 선택되도록 이벤트의 포인터 이벤트를 제거 */
+.fc-dayGridMonth-view .fc-event {
+  pointer-events: none !important;
+}
+
+/* [추가] 월간 뷰 날짜 셀에 포인터 커서 표시 */
+.fc-dayGridMonth-view .fc-daygrid-day-frame {
+  cursor: pointer !important;
+}
