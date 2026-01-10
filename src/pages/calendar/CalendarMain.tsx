@@ -1,4 +1,4 @@
-import React, { useMemo, useLayoutEffect, useRef } from 'react';
+import React, { useMemo, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2, Trash2 } from 'lucide-react';
 import { DayHeaderContentArg, EventContentArg, EventMountArg } from '@fullcalendar/core';
@@ -20,6 +20,13 @@ const CalendarMain = () => {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
+
+  // [추가] 리스트 스와이프를 위한 상태 및 Refs
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const sheetTouchStartX = useRef<number | null>(null);
+  const sheetTouchStartY = useRef<number | null>(null);
+  const sheetTouchEndX = useRef<number | null>(null);
+  const sheetTouchEndY = useRef<number | null>(null);
 
   const { refs, state, handlers } = useCalendarMain();
   const { calendarRef, dropdownRef, listRef, datePickerRef } = refs;
@@ -96,6 +103,68 @@ const CalendarMain = () => {
     if (isRightSwipe) goToPrev();
   };
 
+  // [추가] 날짜 이동 핸들러
+  const handlePrevDate = () => {
+    if (!selectedDate) return;
+    setSlideDirection('left');
+    const prevDate = dayjs(selectedDate).subtract(1, 'day');
+    handlers.setSelectedDate(prevDate.format('YYYY-MM-DD'));
+
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.gotoDate(prevDate.toDate());
+    }
+  };
+
+  const handleNextDate = () => {
+    if (!selectedDate) return;
+    setSlideDirection('right');
+    const nextDate = dayjs(selectedDate).add(1, 'day');
+    handlers.setSelectedDate(nextDate.format('YYYY-MM-DD'));
+
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.gotoDate(nextDate.toDate());
+    }
+  };
+
+  // [추가] 시트 터치 핸들러 래퍼
+  const onSheetTouchStart = (e: React.TouchEvent) => {
+    sheetTouchStartX.current = e.targetTouches[0].clientX;
+    sheetTouchStartY.current = e.targetTouches[0].clientY;
+    handlers.onSheetTouchStart(e);
+  };
+
+  const onSheetTouchMove = (e: React.TouchEvent) => {
+    sheetTouchEndX.current = e.targetTouches[0].clientX;
+    sheetTouchEndY.current = e.targetTouches[0].clientY;
+    handlers.onSheetTouchMove(e);
+  };
+
+  const onSheetTouchEnd = (e: React.TouchEvent) => {
+    if (sheetTouchStartX.current !== null && sheetTouchEndX.current !== null && sheetTouchStartY.current !== null && sheetTouchEndY.current !== null) {
+      const xDiff = sheetTouchStartX.current - sheetTouchEndX.current;
+      const yDiff = sheetTouchStartY.current - sheetTouchEndY.current;
+
+      // 수평 스와이프 감지 (수직 이동보다 수평 이동이 크고, 최소 거리 이상일 때)
+      if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > minSwipeDistance) {
+        if (xDiff > 0) {
+          handleNextDate();
+        } else {
+          handlePrevDate();
+        }
+      }
+    }
+
+    // 초기화
+    sheetTouchStartX.current = null;
+    sheetTouchStartY.current = null;
+    sheetTouchEndX.current = null;
+    sheetTouchEndY.current = null;
+
+    handlers.onSheetTouchEnd();
+  };
+
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
@@ -133,7 +202,7 @@ const CalendarMain = () => {
         <div className="flex items-center h-full w-full overflow-hidden pl-0.5">
           <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
           <div className="text-[10px] font-medium text-gray-400 mr-1 whitespace-nowrap">{eventInfo.timeText}</div>
-          <div className="text-[10px] font-bold text-gray-700 truncate">{eventInfo.event.title}</div>
+          <div className="text-[10px] font-bold truncate">{eventInfo.event.title}</div>
         </div>
       );
     }
@@ -265,10 +334,11 @@ const CalendarMain = () => {
           onPointerLeave={handlePointerUp}
           onDeleteClick={handleDeleteClick}
           listRef={listRef}
-          onTouchStart={handlers.onSheetTouchStart}
-          onTouchMove={handlers.onSheetTouchMove}
-          onTouchEnd={handlers.onSheetTouchEnd}
+          onTouchStart={onSheetTouchStart}
+          onTouchMove={onSheetTouchMove}
+          onTouchEnd={onSheetTouchEnd}
           exitJiggleMode={exitJiggleMode}
+          slideDirection={slideDirection}
         />
       </main>
 
