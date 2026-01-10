@@ -347,18 +347,18 @@ const FriendList = () => {
     <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {isSelectionMode ? (
         <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="relative flex items-center justify-center">
             <button
               onClick={() => {
                 setIsSelectionMode(false);
                 setSelectedFriendUids(new Set());
               }}
-              className="p-2 -ml-2 text-gray-500"
+              className="absolute left-0 p-2 -ml-2 text-gray-500"
             >
               <X size={24} />
             </button>
             <h3 className="text-lg font-black text-gray-900 dark:text-white">{selectedFriendUids.size}명 선택됨</h3>
-            <button onClick={handleSelectAll} className="text-sm font-bold text-blue-600 p-2">
+            <button onClick={handleSelectAll} className="absolute right-0 text-sm font-bold text-blue-600 p-2">
               {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
             </button>
           </div>
@@ -367,7 +367,7 @@ const FriendList = () => {
         // Normal mode header
         <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">친구 목록</h3>
+            <h3 className="text-lg font-black text-gray-900 dark:text-white">친구</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsAddModalOpen(true)}

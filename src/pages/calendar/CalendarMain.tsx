@@ -206,9 +206,9 @@ const CalendarMain = () => {
       return (
         <div
           className="flex items-center h-full w-full overflow-hidden pl-0.5 rounded-[4px]"
-          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#3b82f6'}, transparent 90%)` }}
+          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#3b82f6'}, transparent 80%)` }}
         >
-          <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
+          <div className="w-0.5 h-2.5 mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
           <div className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );

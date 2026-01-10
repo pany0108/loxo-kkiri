@@ -22,7 +22,7 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between mb-4 px-1">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CalendarIcon size={18} className="text-blue-600 dark:text-blue-400" />
           <h3 className="text-[16px] font-black text-gray-900 dark:text-white">{dayjs(dateStr).format('MM월 DD일 (ddd)')}</h3>

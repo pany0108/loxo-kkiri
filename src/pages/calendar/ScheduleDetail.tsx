@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Calendar, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
-import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal } from 'components';
+import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal, PageHeader } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
@@ -315,28 +315,6 @@ const ScheduleDetail = () => {
     navigate('/add-schedule', { state: finalCopiedData });
   };
 
-  const renderFooter = () => (
-    <footer className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="w-full text-center text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-3 flex items-center justify-center gap-2"
-      >
-        <Copy size={14} /> 이 일정 복사하기
-      </button>
-      {/* [추가] 일정 소유자만 삭제 버튼이 보이도록 수정 */}
-      {auth.currentUser?.uid === data.userId && (
-        <button
-          type="button"
-          onClick={handleDeleteClick}
-          className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3 flex items-center justify-center gap-2"
-        >
-          <Trash2 size={14} /> 이 일정 삭제하기
-        </button>
-      )}
-    </footer>
-  );
-
   // const handleViewAllMedia = () => {
   //   navigate(`/schedule/${id}/media`, {
   //     state: {
@@ -389,22 +367,17 @@ const ScheduleDetail = () => {
         }
       >
         {/* 타이틀 및 상세 정보 */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-              <Calendar className="text-blue-600 w-6 h-6" />
-            </div>
-
-            {data.recurrence && data.recurrence.frequency !== 'none' && (
+        <PageHeader icon={<Calendar className="text-blue-600 w-6 h-6" />}>
+          {data.recurrence && data.recurrence.frequency !== 'none' && (
+            <div className="mb-2">
               <span className="text-[12px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">반복 일정</span>
-            )}
-          </div>
-
+            </div>
+          )}
           <div className="flex relative pl-4">
             <div className="absolute left-0 top-1 bottom-1 w-[5px] rounded-full" style={{ backgroundColor: data.color }} />
             <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{data.title}</h1>
           </div>
-        </div>
+        </PageHeader>
 
         <div className="space-y-8">
           {/* 상세 정보 섹션 */}
@@ -498,7 +471,6 @@ const ScheduleDetail = () => {
                   <MessageCircle size={18} className="text-blue-600 dark:text-blue-400" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
-                  {' '}
                   {/* [수정] attendee 타입 명시 */}
                   {data.attendees.map((attendee: AttendeeProfile) => (
                     <div
@@ -599,8 +571,25 @@ const ScheduleDetail = () => {
           )}
         </div>
 
-        {/* [수정] 복사 및 삭제 버튼을 스크롤 가능한 콘텐츠 영역 하단으로 이동 */}
-        {renderFooter()}
+        <footer className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="w-full text-center text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-3 flex items-center justify-center gap-2"
+          >
+            <Copy size={14} /> 이 일정 복사하기
+          </button>
+          {/* [추가] 일정 소유자만 삭제 버튼이 보이도록 수정 */}
+          {auth.currentUser?.uid === data.userId && (
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3 flex items-center justify-center gap-2"
+            >
+              <Trash2 size={14} /> 이 일정 삭제하기
+            </button>
+          )}
+        </footer>
       </PageLayout>
 
       {/* [추가] 반복 일정 삭제 모달 */}

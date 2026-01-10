@@ -1,7 +1,7 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Sparkles, Clock } from 'lucide-react';
+import { Sparkles, Clock, CalendarClock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -138,6 +138,14 @@ const ProposeMeetingDetail = () => {
       if (startTime.isSameOrAfter(endTime)) {
         newSlotData.end = startTime.add(1, 'hour').format('HH:mm');
       }
+    } else if (field === 'end') {
+      const startTime = dayjs(`${dateStr}T${newSlotData.start}`);
+      const endTime = dayjs(`${dateStr}T${value}`);
+
+      if (endTime.isSameOrBefore(startTime)) {
+        toast.error('종료 시간을 시작 시간 이후로 설정해주세요.');
+        return;
+      }
     }
 
     newSlots[index] = newSlotData;
@@ -204,7 +212,7 @@ const ProposeMeetingDetail = () => {
     }
 
     setTimeSlots(newTimeSlots);
-    toast.success('모든 시간대가 통일되었습니다.');
+    toast.success(`${selectedDates.length}일의 시간이 ${syncTime.start}~${syncTime.end}로 설정되었습니다.`);
     setIsSyncModalOpen(false);
   };
 
@@ -219,6 +227,14 @@ const ProposeMeetingDetail = () => {
       const endTime = dayjs(`2000-01-01T${newSyncTime.end}`);
       if (startTime.isSameOrAfter(endTime)) {
         newSyncTime.end = startTime.add(1, 'hour').format('HH:mm');
+      }
+    } else if (field === 'end') {
+      const startTime = dayjs(`2000-01-01T${newSyncTime.start}`);
+      const endTime = dayjs(`2000-01-01T${value}`);
+
+      if (endTime.isSameOrBefore(startTime)) {
+        toast.error('종료 시간을 시작 시간 이후로 설정해주세요.');
+        return;
       }
     }
     setSyncTime(newSyncTime);
@@ -275,7 +291,7 @@ const ProposeMeetingDetail = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader icon={<CalendarClock className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             선택한 날짜의 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
             설정해주세요.
@@ -292,7 +308,7 @@ const ProposeMeetingDetail = () => {
           </h3>
           <button
             onClick={handleSyncTimes}
-            className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
           >
             시간 일괄 설정
           </button>

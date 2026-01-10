@@ -196,12 +196,22 @@ const ScheduleEdit = () => {
       const newData = { ...prev, [name]: value };
 
       // [수정] 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정 (AddSchedule.tsx와 동일한 로직 적용)
-      if (!newData.isAllDay && name === 'start') {
-        const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
-        const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
+      if (!newData.isAllDay) {
+        if (name === 'start') {
+          const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
+          const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
 
-        if (isInitialTime || isStartTimeAfterEndTime) {
-          newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+          if (isInitialTime || isStartTimeAfterEndTime) {
+            newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+          }
+        } else if (name === 'end') {
+          // [추가] 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
+          const startTime = dayjs(prev.start);
+          const newEndTime = dayjs(value);
+
+          if (newEndTime.isValid() && startTime.isValid() && newEndTime.isBefore(startTime)) {
+            newData.end = newEndTime.add(1, 'day').format('YYYY-MM-DDTHH:mm');
+          }
         }
       }
       return newData;

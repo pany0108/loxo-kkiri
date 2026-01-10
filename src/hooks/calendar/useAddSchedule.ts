@@ -188,11 +188,28 @@ export const useAddSchedule = () => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
-      if (!newData.isAllDay && name === 'start') {
-        const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
-        const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
-        if (isInitialTime || isStartTimeAfterEndTime) {
-          newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+      // if (!newData.isAllDay && name === 'start') {
+      //   const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
+      //   const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
+      //   if (isInitialTime || isStartTimeAfterEndTime) {
+      //     newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+      if (!newData.isAllDay) {
+        if (name === 'start') {
+          // [수정] 최초 시간이 설정되지 않았거나(시작=종료), 시작 시간이 종료 시간을 넘어서는 경우에만 종료 시간을 1시간 뒤로 자동 조정
+          const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
+          const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
+
+          if (isInitialTime || isStartTimeAfterEndTime) {
+            newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+          }
+        } else if (name === 'end') {
+          // [추가] 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
+          const startTime = dayjs(prev.start);
+          const newEndTime = dayjs(value);
+
+          if (newEndTime.isValid() && startTime.isValid() && newEndTime.isBefore(startTime)) {
+            newData.end = newEndTime.add(1, 'day').format('YYYY-MM-DDTHH:mm');
+          }
         }
       }
       return newData;

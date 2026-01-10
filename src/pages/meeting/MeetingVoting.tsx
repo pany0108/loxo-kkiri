@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, Loader2, MapPin, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, MapPin, AlertCircle, Vote } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { VotingSlotItem, TopNav, PageHeader, ConfirmModal, PageFooter } from 'components';
+import { VotingSlotItem, TopNav, PageHeader, ConfirmModal, PageFooter, LoadingButton } from 'components';
 import { useMeetingVoting } from 'hooks';
 
 dayjs.locale('ko');
@@ -46,7 +46,7 @@ const MeetingVoting = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+        <PageHeader icon={<Vote className="text-blue-600 w-6 h-6" />}>
           <>
             <div className="flex items-center gap-2 mb-2">
               <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">{meetingData.title}</h2>
@@ -91,18 +91,19 @@ const MeetingVoting = () => {
               현황 보기
             </button>
           )}
-          <button
+          <LoadingButton
             onClick={handleSubmit}
             disabled={!isAllVoted}
+            // isLoading={isSubmitting} // 로딩 상태 변수가 있다면 여기에 연결하세요
             className={`h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${isHost ? 'flex-[2]' : 'w-full'}
-              ${
-                isAllVoted
-                  ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
-              }`}
+            ${
+              isAllVoted
+                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+            }`}
           >
             투표 완료하기
-          </button>
+          </LoadingButton>
         </div>
       </PageFooter>
 

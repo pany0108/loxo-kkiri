@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock, Calendar } from 'lucide-react';
+import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock, Calendar, TriangleAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface VotingSlot {
@@ -86,7 +86,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
                       : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
                   }`}
                 >
-                  {conflictInfo.isConflict ? <AlertCircle size={14} /> : <Calendar size={14} />}
+                  {conflictInfo.isConflict ? <TriangleAlert size={14} /> : <Calendar size={14} />}
                   <span className="truncate max-w-[180px]">
                     {conflictInfo.title} ({conflictInfo.time})
                   </span>
