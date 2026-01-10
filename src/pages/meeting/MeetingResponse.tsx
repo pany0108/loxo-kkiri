@@ -9,7 +9,7 @@ import 'dayjs/locale/ko';
 import { useFirestoreDoc, useAuth, useScrollToTop, useMeetingResponseForm } from 'hooks';
 import { useCalendar } from 'contexts';
 import toast from 'react-hot-toast';
-import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader, PageFooter } from 'components';
+import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader, PageFooter, SyncTimeModal } from 'components';
 import { submitMeetingResponse, Meeting as MeetingData } from 'services';
 
 dayjs.extend(isSameOrBefore);
@@ -73,6 +73,53 @@ const MeetingResponse = () => {
 
   // [Refactor] 응답 폼 로직 훅 사용
   const { selectedHostSlots, myNewSlots, toggleHostSlot, toggleMyNewSlot, updateSlotTime, toggleAllDay } = useMeetingResponseForm(hostSlots);
+
+  // [추가] 시간 통일 모달 상태
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
+
+  const handleSyncTimes = () => {
+    if (myNewSlots.length < 1) {
+      toast('시간을 설정할 날짜를 먼저 선택해주세요.');
+      return;
+    }
+    // 첫 번째 슬롯의 시간으로 초기화
+    const firstSlot = myNewSlots[0];
+    if (firstSlot && !firstSlot.isAllDay) {
+      setSyncTime({ start: firstSlot.startTime, end: firstSlot.endTime });
+    }
+    setIsSyncModalOpen(true);
+  };
+
+  const handleSyncTimeChange = (field: 'start' | 'end', value: string) => {
+    const newSyncTime = { ...syncTime, [field]: value };
+
+    if (field === 'start') {
+      const startTime = dayjs(`2000-01-01T${value}`);
+      const endTime = dayjs(`2000-01-01T${newSyncTime.end}`);
+      if (startTime.isSameOrAfter(endTime)) {
+        newSyncTime.end = startTime.add(1, 'hour').format('HH:mm');
+      }
+    } else if (field === 'end') {
+      const startTime = dayjs(`2000-01-01T${newSyncTime.start}`);
+      const endTime = dayjs(`2000-01-01T${value}`);
+
+      if (endTime.isSameOrBefore(startTime)) {
+        toast.error('종료 시간을 시작 시간 이후로 설정해주세요.');
+        return;
+      }
+    }
+    setSyncTime(newSyncTime);
+  };
+
+  const applySyncedTime = () => {
+    myNewSlots.forEach((slot) => {
+      updateSlotTime(slot.date, 'startTime', syncTime.start);
+      updateSlotTime(slot.date, 'endTime', syncTime.end);
+    });
+    toast.success('모든 제안 시간이 통일되었습니다.');
+    setIsSyncModalOpen(false);
+  };
 
   /**
    * 최종 응답 제출 핸들러
@@ -186,8 +233,17 @@ const MeetingResponse = () => {
           {/* 추가된 역제안 슬롯 설정 영역 */}
           {myNewSlots.length > 0 && (
             <div className="space-y-4 pt-4">
-              <div className="px-1">
-                <p className="text-[13px] font-black text-gray-900 dark:text-gray-200">추가된 시간 설정</p>
+              <div className="flex items-center justify-between px-1 border-t border-gray-100 dark:border-gray-700/50 pt-6 mt-2">
+                <p className="text-[13px] font-black text-gray-900 dark:text-gray-200 flex items-center gap-2">
+                  <Clock size={16} className="text-blue-600 dark:text-blue-400" />
+                  추가된 시간 설정
+                </p>
+                <button
+                  onClick={handleSyncTimes}
+                  className="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                >
+                  시간 일괄 설정
+                </button>
               </div>
 
               <div className="space-y-3">
@@ -202,6 +258,9 @@ const MeetingResponse = () => {
           {myNewSlots.length === 0 && <EmptyProposalGuide />}
         </section>
       </div>
+
+      {/* [추가] 시간 통일 모달 */}
+      <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
 
       {/* 하단 고정 제출 버튼 */}
       <PageFooter>
