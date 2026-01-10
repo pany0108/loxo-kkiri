@@ -421,6 +421,11 @@
   color: #ef4444 !important; /* red-500 */
 }
 
+/* [추가] 공휴일 (Holiday) - 빨강 */
+.holiday-day .fc-daygrid-day-number {
+  color: #ef4444 !important; /* red-500 */
+}
+
 /* 토요일 (Saturday) - 파랑 */
 .fc-day-sat .fc-daygrid-day-number {
   color: #3b82f6 !important; /* blue-500 */

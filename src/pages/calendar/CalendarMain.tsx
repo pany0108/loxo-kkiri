@@ -169,9 +169,14 @@ const CalendarMain = () => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
     const dayOfWeek = args.date.getDay();
+
+    // [추가] 공휴일 여부 확인
+    const dateStr = dayjs(args.date).format('YYYY-MM-DD');
+    const isHoliday = allDisplayedEvents.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
+
     let dateColor = 'text-gray-900 dark:text-gray-200';
     let dayNameColor = 'text-gray-400 dark:text-gray-500';
-    if (dayOfWeek === 0) {
+    if (dayOfWeek === 0 || isHoliday) {
       dateColor = 'text-red-500';
       dayNameColor = 'text-red-400';
     } else if (dayOfWeek === 6) {

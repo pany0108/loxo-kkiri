@@ -5,6 +5,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
 import { CalendarEvent } from 'contexts';
+import dayjs from 'dayjs';
 
 interface CalendarProps {
   currentView: string;
@@ -92,8 +93,15 @@ const Calendar = forwardRef<FullCalendar, CalendarProps>(
         allDayText="종일"
         displayEventTime={false}
         dayCellClassNames={(arg: DayCellContentArg) => {
-          const dateStr = arg.date.toLocaleDateString('en-CA');
-          return dateStr === selectedDate ? 'selected-day' : '';
+          const dateStr = dayjs(arg.date).format('YYYY-MM-DD');
+          let classes = dateStr === selectedDate ? 'selected-day' : '';
+
+          const isHoliday = events.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
+
+          if (isHoliday) {
+            classes += ' holiday-day';
+          }
+          return classes;
         }}
         events={events}
         eventDidMount={eventDidMount}
