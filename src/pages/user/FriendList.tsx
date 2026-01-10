@@ -16,7 +16,9 @@ import {
   AddFromContactsModal,
 } from 'components';
 import { useFirestoreDoc } from 'hooks';
+import { useCalendar } from 'contexts';
 import { Friend, FriendGroup } from 'types';
+import { deleteCalendar } from 'services';
 
 /**
  * 친구 목록 관리 컴포넌트입니다.
@@ -65,6 +67,7 @@ const FriendList = () => {
   const user = auth.currentUser;
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
+  const { myCalendars } = useCalendar();
 
   // myInfo 데이터가 변경될 때마다 friends 목록을 파생시킵니다.
   const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
@@ -150,6 +153,18 @@ const FriendList = () => {
     setSelectedFriendUids(selectedFriendUids.size === friends.length ? new Set() : allFriendUids);
   };
 
+  // [추가] 삭제할 친구와 단독으로 공유 중인 캘린더 목록 조회
+  const sharedCalendarsToDelete = useMemo(() => {
+    if (!selectedFriend || !user) return [];
+    return myCalendars.filter((cal) => cal.members.length === 2 && cal.members.includes(user.uid) && cal.members.includes(selectedFriend.uid) && !cal.isDefault);
+  }, [selectedFriend, user, myCalendars]);
+
+  const sharedCalendarName = useMemo(() => {
+    if (sharedCalendarsToDelete.length === 0) return undefined;
+    if (sharedCalendarsToDelete.length === 1) return sharedCalendarsToDelete[0].name;
+    return `${sharedCalendarsToDelete[0].name} 외 ${sharedCalendarsToDelete.length - 1}개`;
+  }, [sharedCalendarsToDelete]);
+
   /**
    * 선택한 친구의 표시 이름(별명)을 수정합니다.
    * Firestore의 배열 데이터를 업데이트합니다.
@@ -180,6 +195,11 @@ const FriendList = () => {
     try {
       const myRef = doc(db, 'users', auth.currentUser!.uid);
       await updateDoc(myRef, { friendsList: arrayRemove(selectedFriend) });
+
+      // [추가] 공유 캘린더 삭제
+      if (sharedCalendarsToDelete.length > 0) {
+        await Promise.all(sharedCalendarsToDelete.map((cal) => deleteCalendar(cal.id)));
+      }
       toast.success('친구를 삭제했습니다.');
       setIsDeleteModalOpen(false);
       setIsMenuOpen(false);
@@ -568,7 +588,13 @@ const FriendList = () => {
 
       <EditFriendNameModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} initialName={editName} onSave={handleEditSave} />
 
-      <DeleteFriendModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} friendName={selectedFriend?.name} onConfirm={handleDeleteConfirm} />
+      <DeleteFriendModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        friendName={selectedFriend?.name}
+        onConfirm={handleDeleteConfirm}
+        sharedCalendarName={sharedCalendarName}
+      />
 
       {/* 이미지 미리보기 모달 */}
       {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}

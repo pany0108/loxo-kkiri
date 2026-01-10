@@ -6,9 +6,10 @@ interface DeleteFriendModalProps {
   onClose: () => void;
   friendName: string | undefined;
   onConfirm: () => void;
+  sharedCalendarName?: string;
 }
 
-const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, friendName, onConfirm }) => {
+const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, friendName, onConfirm, sharedCalendarName }) => {
   if (!isOpen) return null;
 
   return (
@@ -19,10 +20,20 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
           <AlertCircle size={32} />
         </div>
         <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">친구 삭제</h3>
-        <p className="text-gray-400 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
-          정말 <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님을
-          <br />
-          친구 목록에서 삭제할까요?
+        <p className="text-gray-400 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed break-keep">
+          {sharedCalendarName ? (
+            <>
+              <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님과 함께 사용하는
+              <br />
+              <span className="text-blue-600 font-bold">'{sharedCalendarName}'</span> 캘린더도 함께 삭제됩니다.
+            </>
+          ) : (
+            <>
+              정말 <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님을
+              <br />
+              친구 목록에서 삭제할까요?
+            </>
+          )}
         </p>
         <div className="flex flex-col gap-2">
           <button onClick={onConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
