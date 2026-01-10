@@ -7,9 +7,10 @@ interface DeleteFriendModalProps {
   friendName: string | undefined;
   onConfirm: () => void;
   sharedCalendarName?: string;
+  sharedCalendarActionText?: React.ReactNode;
 }
 
-const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, friendName, onConfirm, sharedCalendarName }) => {
+const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, friendName, onConfirm, sharedCalendarName, sharedCalendarActionText }) => {
   if (!isOpen) return null;
 
   return (
@@ -25,7 +26,7 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
             <>
               <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님과 함께 사용하는
               <br />
-              <span className="text-blue-600 font-bold">'{sharedCalendarName}'</span> 캘린더도 함께 삭제됩니다.
+              <span className="text-blue-600 font-bold">'{sharedCalendarName}'</span> 캘린더{sharedCalendarActionText || '도 함께 삭제됩니다.'}
             </>
           ) : (
             <>

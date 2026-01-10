@@ -15,10 +15,10 @@ import {
   MoveToGroupModal,
   AddFromContactsModal,
 } from 'components';
-import { useFirestoreDoc } from 'hooks';
+import { useFirestoreDoc, useAuth } from 'hooks';
 import { useCalendar } from 'contexts';
 import { Friend, FriendGroup } from 'types';
-import { deleteCalendar } from 'services';
+import { deleteCalendar, leaveCalendar } from 'services';
 
 /**
  * 친구 목록 관리 컴포넌트입니다.
@@ -64,7 +64,7 @@ const FriendList = () => {
   // 스크롤 컨테이너 Ref 정의
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const user = auth.currentUser;
+  const { user } = useAuth();
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
   const { myCalendars } = useCalendar();
@@ -155,8 +155,22 @@ const FriendList = () => {
 
   // [추가] 삭제할 친구와 단독으로 공유 중인 캘린더 목록 조회
   const sharedCalendarsToDelete = useMemo(() => {
-    if (!selectedFriend || !user) return [];
-    return myCalendars.filter((cal) => cal.members.length === 2 && cal.members.includes(user.uid) && cal.members.includes(selectedFriend.uid) && !cal.isDefault);
+    if (!selectedFriend || !user || !myCalendars) return [];
+    return myCalendars.filter((cal) => {
+      const members = cal.members || [];
+      // 1:1 캘린더인지 확인 (나와 친구만 있는 경우)
+      const isTwoMembers = members.length === 2;
+      const hasMe = members.includes(user.uid);
+      const hasFriend = members.includes(selectedFriend.uid);
+
+      if (!isTwoMembers || !hasMe || !hasFriend) return false;
+
+      // 내가 주인인 경우: 기본 캘린더가 아니면 삭제 대상
+      if (cal.ownerId === user.uid) return !cal.isDefault;
+
+      // 내가 주인이 아닌 경우: 무조건 나가기 대상 (기본 캘린더 여부 상관없음)
+      return true;
+    });
   }, [selectedFriend, user, myCalendars]);
 
   const sharedCalendarName = useMemo(() => {
@@ -164,6 +178,21 @@ const FriendList = () => {
     if (sharedCalendarsToDelete.length === 1) return sharedCalendarsToDelete[0].name;
     return `${sharedCalendarsToDelete[0].name} 외 ${sharedCalendarsToDelete.length - 1}개`;
   }, [sharedCalendarsToDelete]);
+
+  const sharedCalendarActionText = useMemo(() => {
+    if (sharedCalendarsToDelete.length === 0) return undefined;
+    const ownedCount = sharedCalendarsToDelete.filter((c) => c.ownerId === user?.uid).length;
+    const unownedCount = sharedCalendarsToDelete.length - ownedCount;
+
+    if (ownedCount > 0 && unownedCount === 0) return '도 함께 삭제됩니다.';
+    if (ownedCount === 0 && unownedCount > 0)
+      return (
+        <>
+          에서 나가게 됩니다. <br /> 그래도 삭제하시겠습니까?
+        </>
+      );
+    return '가 정리됩니다.';
+  }, [sharedCalendarsToDelete, user]);
 
   /**
    * 선택한 친구의 표시 이름(별명)을 수정합니다.
@@ -191,16 +220,38 @@ const FriendList = () => {
    * 친구 목록에서 선택한 대상을 삭제합니다.
    */
   const handleDeleteConfirm = async () => {
-    if (!selectedFriend) return;
+    if (!selectedFriend || !user) return;
     try {
       const myRef = doc(db, 'users', auth.currentUser!.uid);
       await updateDoc(myRef, { friendsList: arrayRemove(selectedFriend) });
 
-      // [추가] 공유 캘린더 삭제
+      let deletedCount = 0;
+      let leftCount = 0;
+
+      // [추가] 공유 캘린더 삭제 또는 나가기
       if (sharedCalendarsToDelete.length > 0) {
-        await Promise.all(sharedCalendarsToDelete.map((cal) => deleteCalendar(cal.id)));
+        await Promise.all(
+          sharedCalendarsToDelete.map((cal) => {
+            if (cal.ownerId === user.uid) {
+              deletedCount++;
+              return deleteCalendar(cal.id);
+            }
+            leftCount++;
+            return leaveCalendar(cal as any, user);
+          }),
+        );
       }
-      toast.success('친구를 삭제했습니다.');
+
+      let message = '친구를 삭제했습니다.';
+      if (deletedCount > 0 && leftCount === 0) {
+        message = '친구를 삭제하고 공유 캘린더를 삭제했습니다.';
+      } else if (deletedCount === 0 && leftCount > 0) {
+        message = '친구를 삭제하고 공유 캘린더에서 나갔습니다.';
+      } else if (deletedCount > 0 && leftCount > 0) {
+        message = '친구를 삭제하고 공유 캘린더를 정리했습니다.';
+      }
+
+      toast.success(message);
       setIsDeleteModalOpen(false);
       setIsMenuOpen(false);
     } catch (e) {
@@ -594,6 +645,7 @@ const FriendList = () => {
         friendName={selectedFriend?.name}
         onConfirm={handleDeleteConfirm}
         sharedCalendarName={sharedCalendarName}
+        sharedCalendarActionText={sharedCalendarActionText}
       />
 
       {/* 이미지 미리보기 모달 */}
