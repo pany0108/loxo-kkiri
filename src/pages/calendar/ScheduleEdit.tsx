@@ -3,7 +3,35 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs'; // Keep dayjs import
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { MapPin, AlignLeft, Clock, Bell, X, Check, ImageIcon, Paperclip, BookOpen, Sparkles, ChevronDown, Plus, Camera, Trash2 } from 'lucide-react';
+import {
+  MapPin,
+  AlignLeft,
+  Clock,
+  Bell,
+  X,
+  Check,
+  ImageIcon,
+  Paperclip,
+  BookOpen,
+  Sparkles,
+  ChevronDown,
+  Plus,
+  Camera,
+  Trash2,
+  Calendar as CalendarIcon,
+  Home,
+  Briefcase,
+  GraduationCap,
+  Dumbbell,
+  Plane,
+  Music,
+  Heart,
+  Star,
+  Gift,
+  Coffee,
+  ShoppingCart,
+  Gamepad2,
+} from 'lucide-react';
 import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -22,6 +50,39 @@ const NOTIFICATION_OPTIONS = [
   { label: '1시간 전', value: '60' },
   { label: '1일 전', value: '1440' },
 ];
+
+const COLOR_OPTIONS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#84cc16', // lime
+  '#10b981', // emerald
+  '#06b6d4', // cyan
+  '#0ea5e9', // sky
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#d946ef', // fuchsia
+  '#ec4899', // pink
+  '#f43f5e', // rose
+  '#64748b', // slate
+  '#71717a', // zinc
+];
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
 
 interface Attachment {
   name: string;
@@ -46,6 +107,7 @@ interface EventDataState {
   files?: Attachment[];
   recurrence?: RecurrenceSettings;
   attendees?: string[]; // 이 페이지에서는 직접 사용하지 않지만, 타입 정의에 포함
+  color?: string;
 }
 
 const ScheduleEdit = () => {
@@ -82,6 +144,7 @@ const ScheduleEdit = () => {
     notification: eventData?.notification || 'none',
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
+    color: eventData?.color || '#3b82f6',
   });
 
   const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
@@ -102,6 +165,16 @@ const ScheduleEdit = () => {
   const isShared = selectedCalendar ? selectedCalendar.members.length > 1 : false;
   const isPastEvent = dayjs().isAfter(formData.end);
 
+  const sortedCalendars = React.useMemo(() => {
+    return [...myCalendars].sort((a, b) => {
+      if (selectedCalendar && a.id === selectedCalendar.id) return -1;
+      if (selectedCalendar && b.id === selectedCalendar.id) return 1;
+      if (a.isDefault) return -1;
+      if (b.isDefault) return 1;
+      return 0;
+    });
+  }, [myCalendars, selectedCalendar]);
+
   // [추가] 드롭다운 외부 클릭 시 닫기
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -119,6 +192,7 @@ const ScheduleEdit = () => {
     setFormData((prev) => ({
       ...prev,
       calendarId: calendar.id,
+      color: calendar.color || '#3b82f6',
     }));
     setIsCalListOpen(false);
   };
@@ -243,7 +317,6 @@ const ScheduleEdit = () => {
         const scheduleUpdateData: any = {
           ...formData,
           attendees,
-          color: selectedCalendar?.color || '#3b82f6',
           recurrence,
         };
 
@@ -337,7 +410,13 @@ const ScheduleEdit = () => {
                   className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
+                      {(selectedCalendar as any)?.icon && ICON_MAP[(selectedCalendar as any).icon] ? (
+                        React.createElement(ICON_MAP[(selectedCalendar as any).icon], { size: 14 })
+                      ) : (
+                        <CalendarIcon size={14} />
+                      )}
+                    </div>
                     <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
                   </div>
                   <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
@@ -345,24 +424,29 @@ const ScheduleEdit = () => {
 
                 {isCalListOpen && (
                   <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                    {myCalendars.map((cal) => (
-                      <button
-                        key={cal.id}
-                        type="button"
-                        onClick={() => handleCalendarSelect(cal)}
-                        className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                          selectedCalendar?.id === cal.id
-                            ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
-                          <span className="text-[14px] font-bold">{cal.name}</span>
-                        </div>
-                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
-                      </button>
-                    ))}
+                    {sortedCalendars.map((cal) => {
+                      const IconComponent = (cal as any).icon && ICON_MAP[(cal as any).icon] ? ICON_MAP[(cal as any).icon] : CalendarIcon;
+                      return (
+                        <button
+                          key={cal.id}
+                          type="button"
+                          onClick={() => handleCalendarSelect(cal)}
+                          className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
+                            selectedCalendar?.id === cal.id
+                              ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                              <IconComponent size={16} />
+                            </div>
+                            <span className="text-[14px] font-bold">{cal.name}</span>
+                          </div>
+                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                        </button>
+                      );
+                    })}
                     <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
                     <button
                       type="button"
@@ -431,6 +515,26 @@ const ScheduleEdit = () => {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* [추가] 색상 선택 섹션 */}
+              <div className="space-y-3">
+                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">색상</label>
+                <div className="flex flex-wrap gap-3 px-1">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, color }))}
+                      className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
+                        formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    >
+                      {formData.color === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                    </button>
+                  ))}
                 </div>
               </div>
 

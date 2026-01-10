@@ -1,6 +1,29 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Check, Sparkles, UserPlus, PenLine, Loader2, Search, Plus, X } from 'lucide-react';
+import {
+  Users,
+  Check,
+  Sparkles,
+  UserPlus,
+  PenLine,
+  Loader2,
+  Search,
+  Plus,
+  X,
+  Home,
+  Briefcase,
+  ChevronDown,
+  GraduationCap,
+  Dumbbell,
+  Plane,
+  Music,
+  Heart,
+  Star,
+  Gift,
+  Coffee,
+  ShoppingCart,
+  Gamepad2,
+} from 'lucide-react';
 // Firebase 관련 import
 import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
@@ -9,7 +32,20 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader, PageFooter } from 'components';
 import { notifyCalendarInvite } from 'services';
 
-const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
+const CALENDAR_ICONS = [
+  { id: 'home', component: Home, label: '집' },
+  { id: 'work', component: Briefcase, label: '직장' },
+  { id: 'study', component: GraduationCap, label: '공부' },
+  { id: 'workout', component: Dumbbell, label: '운동' },
+  { id: 'travel', component: Plane, label: '여행' },
+  { id: 'music', component: Music, label: '음악' },
+  { id: 'love', component: Heart, label: '연애' },
+  { id: 'star', component: Star, label: '중요' },
+  { id: 'gift', component: Gift, label: '기념일' },
+  { id: 'food', component: Coffee, label: '약속' },
+  { id: 'shopping', component: ShoppingCart, label: '쇼핑' },
+  { id: 'game', component: Gamepad2, label: '취미' },
+];
 
 // [추가] 친구 데이터 타입 정의
 interface Friend {
@@ -25,6 +61,24 @@ interface FriendGroup {
   name: string;
 }
 
+const COLOR_OPTIONS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#84cc16', // lime
+  '#10b981', // emerald
+  '#06b6d4', // cyan
+  '#0ea5e9', // sky
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#d946ef', // fuchsia
+  '#ec4899', // pink
+  '#f43f5e', // rose
+  '#64748b', // slate
+  '#71717a', // zinc
+];
+
 const CreateCalendar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,7 +88,10 @@ const CreateCalendar = () => {
 
   const [calName, setCalName] = useState('');
   const [selectedFriendUids, setSelectedFriendUids] = useState<string[]>([]);
-  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [selectedIcon, setSelectedIcon] = useState(CALENDAR_ICONS[0].id);
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[7]); // Default blue
+  const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
+  const colorDropdownRef = useRef<HTMLDivElement>(null);
 
   // [수정] DB에서 불러온 친구 목록 상태
   const [friends, setFriends] = useState<Friend[]>([]); // 모든 친구 목록
@@ -77,6 +134,17 @@ const CreateCalendar = () => {
     setIsAddModalOpen(false);
     setIsAddFromContactsModalOpen(true);
   };
+
+  // [추가] 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
+        setIsColorDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // [추가] 친구 검색 결과 업데이트
   useEffect(() => {
@@ -205,7 +273,8 @@ const CreateCalendar = () => {
         name: finalName,
         ownerId: user.uid,
         members: newMembers, // 정렬된 멤버 배열 저장
-        color: selectedColor,
+        color: selectedColor, // [수정] 선택된 색상 저장
+        icon: selectedIcon, // [추가] 선택된 아이콘 저장
         createdAt: new Date().toISOString(),
         isDefault: false, // 기본 캘린더 여부
       });
@@ -306,19 +375,59 @@ const CreateCalendar = () => {
           </section>
 
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 색상</label>
-            <div className="flex flex-wrap gap-3 px-1">
-              {COLORS.map((color) => (
+            <div className="flex items-center justify-between">
+              <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 아이콘</label>
+              <div className="relative" ref={colorDropdownRef}>
                 <button
-                  key={color}
                   type="button"
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
-                    selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
-                  }`}
-                  style={{ backgroundColor: color }}
+                  onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 transition-all"
                 >
-                  {selectedColor === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                  <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: selectedColor }} />
+                  <span className="text-[12px] font-bold text-gray-600 dark:text-gray-300"></span>
+                  <ChevronDown size={14} className="text-gray-400" />
+                </button>
+                {isColorDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 w-[240px]">
+                    <div className="grid grid-cols-5 gap-2">
+                      {COLOR_OPTIONS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColor(color);
+                            setIsColorDropdownOpen(false);
+                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                          style={{ backgroundColor: color }}
+                        >
+                          {selectedColor === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 px-1">
+              {CALENDAR_ICONS.map(({ id, component: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedIcon(id)}
+                  className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border-2`}
+                  style={{
+                    borderColor: selectedIcon === id ? selectedColor : 'transparent',
+                    backgroundColor: selectedIcon === id ? `${selectedColor}20` : 'transparent', // 20 is hex opacity ~12%
+                  }}
+                >
+                  <Icon
+                    size={20}
+                    style={{
+                      color: selectedColor,
+                      opacity: selectedIcon === id ? 1 : 0.4,
+                    }}
+                  />
                 </button>
               ))}
             </div>

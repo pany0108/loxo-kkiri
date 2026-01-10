@@ -31,6 +31,15 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   currentView,
   onViewChange,
 }) => {
+  // [추가] 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
+  const sortedCalendars = React.useMemo(() => {
+    return [...myCalendars].sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return 0;
+    });
+  }, [myCalendars]);
+
   return (
     <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
       <div className="flex items-center justify-between pb-2">
@@ -45,7 +54,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
           {isCalListOpen && (
             <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-              {myCalendars.map((cal: CalendarType) => (
+              {sortedCalendars.map((cal: CalendarType) => (
                 <button
                   key={cal.id}
                   onClick={() => onCalendarChange(cal)}

@@ -296,7 +296,7 @@ const NotificationCenter = () => {
             }}
           >
             {filteredNotifications.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 text-gray-400 dark:text-gray-600">
+              <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 pt-4 text-gray-400 dark:text-gray-600">
                 <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-in zoom-in-95 duration-500">
                   <Bell size={32} className="text-gray-300 dark:text-gray-600" />
                 </div>
@@ -308,7 +308,7 @@ const NotificationCenter = () => {
                 </p>
               </div>
             ) : (
-              <div className="px-6 pb-20 space-y-3">
+              <div className="px-6 pb-20 pt-4 space-y-3">
                 <SafeAnimatePresence mode="popLayout">
                   {filteredNotifications.map((noti) => {
                     const isSelected = selectedIds.has(noti.id);

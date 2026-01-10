@@ -1,6 +1,6 @@
 import React, { useMemo, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, Trash2, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2 } from 'lucide-react';
 import { DayHeaderContentArg, EventContentArg, EventMountArg } from '@fullcalendar/core';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -12,6 +12,21 @@ import { auth, db } from '../../firebase';
 import { DeleteRecurringModal, Calendar, ConfirmModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
 
 dayjs.extend(isSameOrBefore);
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
 
 const CalendarMain = () => {
   const navigate = useNavigate();
@@ -193,22 +208,35 @@ const CalendarMain = () => {
 
   const renderEventContent = (eventInfo: EventContentArg) => {
     const isHoliday = eventInfo.event.extendedProps.calendarId === 'holidays';
+    const calendarId = eventInfo.event.extendedProps.calendarId;
+    const eventCalendar = myCalendars.find((c) => c.id === calendarId);
 
+    let IconComponent = null;
+    // '내 캘린더'(기본 캘린더)가 활성화된 경우에만, 다른 특정 캘린더의 아이콘을 표시합니다.
+    if (activeCalendar?.isDefault && eventCalendar && !eventCalendar.isDefault && eventCalendar.icon) {
+      IconComponent = ICON_MAP[eventCalendar.icon];
+    }
     // [추가] 공휴일 스타일링
     if (isHoliday) {
-      return <div className="fc-event-title fc-sticky px-1 text-[10px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
+      return <div className="fc-event-title fc-sticky px-1 text-[9px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
     }
 
     if (eventInfo.view.type === 'dayGridMonth') {
       if (eventInfo.event.allDay) {
-        return <div className="fc-event-title fc-sticky px-1 text-[10px] font-bold">{eventInfo.event.title}</div>;
+        return (
+          <div className="px-1 overflow-hidden flex items-center justify-center">
+            {IconComponent && <IconComponent size={10} className="mr-1 shrink-0" />}
+            <div className="text-[10px] truncate">{eventInfo.event.title}</div>
+          </div>
+        );
       }
       return (
         <div
-          className="flex items-center h-full w-full overflow-hidden pl-0.5 rounded-[4px]"
+          className="flex items-center h-full w-full overflow-hidden"
           style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#3b82f6'}, transparent 90%)` }}
         >
-          <div className="w-0.5 h-2.5 mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
+          <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
+          {IconComponent && <IconComponent size={10} className="mr-1 text-gray-500 dark:text-gray-400 shrink-0" />}
           <div className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );
@@ -228,7 +256,7 @@ const CalendarMain = () => {
     const isWeekView = eventInfo.view.type === 'timeGridWeek';
 
     return (
-      <div className={`w-full h-full flex flex-col items-start overflow-hidden rounded-[4px] ${isWeekView ? 'p-0.5' : 'p-1'}`}>
+      <div className={`px-1 overflow-hidden flex items-center justify-center ${isWeekView ? 'p-0.5' : 'p-1'}`}>
         {!eventInfo.event.allDay && (
           <div className="flex flex-wrap items-center gap-1 text-[10px] font-extrabold text-white/90 leading-tight mb-0.5 tracking-tight">
             <span>{startStr}</span>
@@ -240,10 +268,8 @@ const CalendarMain = () => {
             )}
           </div>
         )}
-
-        {eventInfo.event.title && (
-          <div className={`font-bold text-white leading-tight break-words w-full ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>
-        )}
+        {IconComponent && <IconComponent size={10} className="text-white/90 mr-0.5" />}
+        {eventInfo.event.title && <div className={`font-bold text-white leading-tight truncate ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>}
       </div>
     );
   };
@@ -351,6 +377,8 @@ const CalendarMain = () => {
           onTouchEnd={onSheetTouchEnd}
           exitJiggleMode={exitJiggleMode}
           slideDirection={slideDirection}
+          activeCalendar={activeCalendar}
+          myCalendars={myCalendars}
         />
       </main>
 

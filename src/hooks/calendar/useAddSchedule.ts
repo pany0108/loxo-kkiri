@@ -147,7 +147,7 @@ export const useAddSchedule = () => {
     if (initialCalendar) {
       setFormData((prev) => ({ ...prev, calendarId: initialCalendar!.id, color: initialCalendar!.color || '#3b82f6' }));
     }
-  }, [formData.calendarId, myCalendars, receivedData.calendarId, receivedData.newlyCreatedCalendarId]);
+  }, [formData.calendarId, myCalendars, receivedData?.calendarId, receivedData?.newlyCreatedCalendarId]);
 
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(() => {
     if (receivedData?.from === '/create-calendar' && receivedData.scheduleData) {

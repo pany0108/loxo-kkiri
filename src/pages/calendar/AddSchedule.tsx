@@ -1,6 +1,32 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { MapPin, AlignLeft, Clock, Camera, Bell, ChevronDown, Plus, Check, History, CalendarPlus } from 'lucide-react';
+import {
+  MapPin,
+  AlignLeft,
+  Clock,
+  Camera,
+  Bell,
+  ChevronDown,
+  Plus,
+  Check,
+  History,
+  CalendarPlus,
+  Palette,
+  Home,
+  Briefcase,
+  GraduationCap,
+  Dumbbell,
+  Plane,
+  Music,
+  Heart,
+  Star,
+  Gift,
+  Coffee,
+  ShoppingCart,
+  Gamepad2,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 import dayjs from 'dayjs';
 import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
 import { useAddSchedule } from 'hooks';
@@ -16,12 +42,55 @@ const NOTIFICATION_OPTIONS = [
   { label: '1일 전', value: '1440' },
 ];
 
+const COLOR_OPTIONS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#84cc16', // lime
+  '#10b981', // emerald
+  '#06b6d4', // cyan
+  '#0ea5e9', // sky
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#d946ef', // fuchsia
+  '#ec4899', // pink
+  '#f43f5e', // rose
+  '#64748b', // slate
+  '#71717a', // zinc
+];
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
+
 const AddSchedule = () => {
   const navigate = useNavigate();
   const { state, refs, handlers } = useAddSchedule();
   const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
   const { dropdownRef, titleInputRef } = refs;
   const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleCalendarSelect, handleSuggestionClick, handleToggle, handleSubmit } = handlers;
+
+  const sortedCalendars = React.useMemo(() => {
+    return [...myCalendars].sort((a, b) => {
+      if (selectedCalendar && a.id === selectedCalendar.id) return -1;
+      if (selectedCalendar && b.id === selectedCalendar.id) return 1;
+      if (a.isDefault) return -1;
+      if (b.isDefault) return 1;
+      return 0;
+    });
+  }, [myCalendars, selectedCalendar]);
 
   const renderFooter = () => (
     <PageFooter>
@@ -103,7 +172,13 @@ const AddSchedule = () => {
                 className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }} />
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
+                    {(selectedCalendar as any)?.icon && ICON_MAP[(selectedCalendar as any).icon] ? (
+                      React.createElement(ICON_MAP[(selectedCalendar as any).icon], { size: 14 })
+                    ) : (
+                      <CalendarIcon size={14} />
+                    )}
+                  </div>
                   <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
                 </div>
                 <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
@@ -111,24 +186,29 @@ const AddSchedule = () => {
 
               {isCalListOpen && (
                 <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                  {myCalendars.map((cal) => (
-                    <button
-                      key={cal.id}
-                      type="button"
-                      onClick={() => handleCalendarSelect(cal)}
-                      className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                        selectedCalendar?.id === cal.id
-                          ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
-                        <span className="text-[14px] font-bold">{cal.name}</span>
-                      </div>
-                      {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
-                    </button>
-                  ))}
+                  {sortedCalendars.map((cal) => {
+                    const IconComponent = (cal as any).icon && ICON_MAP[(cal as any).icon] ? ICON_MAP[(cal as any).icon] : CalendarIcon;
+                    return (
+                      <button
+                        key={cal.id}
+                        type="button"
+                        onClick={() => handleCalendarSelect(cal)}
+                        className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
+                          selectedCalendar?.id === cal.id
+                            ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                            <IconComponent size={16} />
+                          </div>
+                          <span className="text-[14px] font-bold">{cal.name}</span>
+                        </div>
+                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                      </button>
+                    );
+                  })}
                   <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
                   <button
                     type="button"
@@ -191,6 +271,26 @@ const AddSchedule = () => {
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* [추가] 색상 선택 섹션 */}
+            <div className="space-y-3">
+              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">색상</label>
+              <div className="flex flex-wrap gap-3 px-1">
+                {COLOR_OPTIONS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => handleChange({ target: { name: 'color', value: color } } as any)}
+                    className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
+                      formData.color === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  >
+                    {formData.color === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                  </button>
+                ))}
               </div>
             </div>
 

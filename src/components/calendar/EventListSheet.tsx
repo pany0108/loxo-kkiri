@@ -1,11 +1,26 @@
 import React from 'react';
-import { X, Trash2, User, Users } from 'lucide-react';
+import { X, Trash2, User, Users, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { CalendarEvent } from 'contexts';
+import { CalendarEvent, CalendarType } from 'contexts';
 import { motion, AnimatePresence } from 'framer-motion';
 
 dayjs.locale('ko');
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
 
 interface EventListSheetProps {
   isVisible: boolean;
@@ -25,6 +40,8 @@ interface EventListSheetProps {
   onTouchEnd: (e: React.TouchEvent) => void;
   exitJiggleMode: () => void;
   slideDirection?: 'left' | 'right';
+  activeCalendar: CalendarType | null;
+  myCalendars: CalendarType[];
 }
 
 const EventListSheet: React.FC<EventListSheetProps> = ({
@@ -45,6 +62,8 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
   onTouchEnd,
   exitJiggleMode,
   slideDirection = 'right',
+  activeCalendar,
+  myCalendars,
 }) => {
   const filteredEvents = events.filter((event: CalendarEvent) => {
     if (!selectedDate) return false;
@@ -120,6 +139,12 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
               const displayEnd = (event as any).extendedProps?.originalEnd || event.end;
               const displayAllDay = (event as any).extendedProps?.originalAllDay ?? event.allDay;
 
+              const eventCalendar = myCalendars.find((c) => c.id === event.calendarId);
+              let IconComponent = null;
+              if (activeCalendar?.isDefault && eventCalendar && !eventCalendar.isDefault && eventCalendar.icon) {
+                IconComponent = ICON_MAP[eventCalendar.icon];
+              }
+
               let timeDisplay = '';
               if (displayAllDay) {
                 timeDisplay = '종일';
@@ -173,7 +198,19 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                       </div>
                     </div>
                     <h4 className="text-[15px] font-black text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 transition-colors truncate">{event.title}</h4>
-                    {event.location && <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">{event.location}</p>}
+                    <div className="flex items-center justify-between">
+                      {event.location ? (
+                        <p className="text-[12px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate flex-1 mr-2">{event.location}</p>
+                      ) : (
+                        <div />
+                      )}
+                      {IconComponent && (
+                        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-md shrink-0" title={eventCalendar?.name}>
+                          <IconComponent size={12} className="text-gray-500 dark:text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 truncate max-w-[60px]">{eventCalendar?.name}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

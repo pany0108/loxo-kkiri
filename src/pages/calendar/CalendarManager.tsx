@@ -1,7 +1,26 @@
 import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Plus, Users, Settings, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Users,
+  Settings,
+  Calendar as CalendarIcon,
+  AlertCircle,
+  Loader2,
+  Home,
+  Briefcase,
+  GraduationCap,
+  Dumbbell,
+  Plane,
+  Music,
+  Heart,
+  Star,
+  Gift,
+  Coffee,
+  ShoppingCart,
+  Gamepad2,
+} from 'lucide-react';
 // [추가] Firebase 관련 import
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -9,8 +28,23 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { EditCalendarModal, PageHeader, ConfirmModal } from 'components';
 import { TopNav } from 'components';
 import { useFirestoreQuery } from 'hooks';
-import { CalendarType } from 'types';
+import { CalendarType } from 'contexts';
 import { deleteCalendar, leaveCalendar } from 'services';
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
 
 const CalendarManager = () => {
   const navigate = useNavigate();
@@ -99,7 +133,7 @@ const CalendarManager = () => {
     if (!calendarToDelete || !user) return;
 
     try {
-      await leaveCalendar(calendarToDelete, user);
+      await leaveCalendar(calendarToDelete as any, user);
 
       // 사용자가 마지막 멤버인 경우, 캘린더를 삭제합니다.
       if (calendarToDelete.members.length <= 1) {
@@ -152,41 +186,44 @@ const CalendarManager = () => {
           </div>
 
           <div className="space-y-3">
-            {sortedCalendars.map((cal) => (
-              <div
-                key={cal.id}
-                onClick={() => handleSwitch(cal.id)}
-                className="group relative w-full bg-white dark:bg-gray-800 p-5 pr-3 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-lg hover:shadow-blue-50/20 dark:hover:shadow-blue-900/30 cursor-pointer"
-              >
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: cal.color || '#3b82f6' }}>
-                    <CalendarIcon size={20} />
-                  </div>
-
-                  <div className="flex flex-col justify-center pt-0.5 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-[16px] font-black text-gray-900 dark:text-white leading-none truncate">{cal.name}</h4>
-                      {cal.isDefault && (
-                        <span className="text-[9px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md shrink-0">기본</span>
-                      )}
-                    </div>
-                    <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 min-w-0">{formatMembers(cal.members)}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCalendarToEdit(cal);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="p-4 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
-                  title="수정"
+            {sortedCalendars.map((cal) => {
+              const IconComponent = cal.icon && ICON_MAP[cal.icon] ? ICON_MAP[cal.icon] : CalendarIcon;
+              return (
+                <div
+                  key={cal.id}
+                  onClick={() => handleSwitch(cal.id)}
+                  className="group relative w-full bg-white dark:bg-gray-800 p-5 pr-3 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-blue-100 dark:hover:border-blue-900/20 hover:shadow-lg hover:shadow-blue-50/20 dark:hover:shadow-blue-900/30 cursor-pointer"
                 >
-                  <Settings size={18} />
-                </button>
-              </div>
-            ))}
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                      <IconComponent size={20} />
+                    </div>
+
+                    <div className="flex flex-col justify-center pt-0.5 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-[16px] font-black text-gray-900 dark:text-white leading-none truncate">{cal.name}</h4>
+                        {cal.isDefault && (
+                          <span className="text-[9px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md shrink-0">기본</span>
+                        )}
+                      </div>
+                      <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500 flex items-center gap-1 min-w-0">{formatMembers(cal.members)}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCalendarToEdit(cal);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="p-4 text-gray-300 dark:text-gray-600 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
+                    title="수정"
+                  >
+                    <Settings size={18} />
+                  </button>
+                </div>
+              );
+            })}
 
             <button
               onClick={() => navigate('/create-calendar')}

@@ -1,31 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Check, PenLine, Trash2 } from 'lucide-react';
+import { PenLine, Trash2, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2, ChevronDown, Check } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
-const COLORS = [
-  '#3b82f6',
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#84cc16',
-  '#10b981',
-  '#14b8a6',
-  '#06b6d4',
-  '#0ea5e9',
-  '#6366f1',
-  '#8b5cf6',
-  '#d946ef',
-  '#ec4899',
-  '#f43f5e',
-  '#64748b',
+const CALENDAR_ICONS = [
+  { id: 'home', component: Home, label: '집' },
+  { id: 'work', component: Briefcase, label: '직장' },
+  { id: 'study', component: GraduationCap, label: '공부' },
+  { id: 'workout', component: Dumbbell, label: '운동' },
+  { id: 'travel', component: Plane, label: '여행' },
+  { id: 'music', component: Music, label: '음악' },
+  { id: 'love', component: Heart, label: '연애' },
+  { id: 'star', component: Star, label: '중요' },
+  { id: 'gift', component: Gift, label: '기념일' },
+  { id: 'food', component: Coffee, label: '약속' },
+  { id: 'shopping', component: ShoppingCart, label: '쇼핑' },
+  { id: 'game', component: Gamepad2, label: '취미' },
+];
+
+const COLOR_OPTIONS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#84cc16', // lime
+  '#10b981', // emerald
+  '#06b6d4', // cyan
+  '#0ea5e9', // sky
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#d946ef', // fuchsia
+  '#ec4899', // pink
+  '#f43f5e', // rose
+  '#64748b', // slate
+  '#71717a', // zinc
 ];
 
 interface CalendarData {
   id: string;
   name: string;
-  color: string;
+  color?: string;
+  icon?: string;
   isDefault?: boolean;
 }
 
@@ -38,14 +54,33 @@ interface EditCalendarModalProps {
 
 const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, calendar, onDelete }) => {
   const [name, setName] = useState('');
-  const [color, setColor] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState(CALENDAR_ICONS[0].id);
+  const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[7]); // Default blue
+  const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
+  const colorDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (calendar) {
       setName(calendar.name);
-      setColor(calendar.color);
+      if (calendar.icon) {
+        setSelectedIcon(calendar.icon);
+      }
+      if (calendar.color) {
+        setSelectedColor(calendar.color);
+      }
     }
   }, [calendar]);
+
+  // [추가] 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
+        setIsColorDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isOpen || !calendar) return null;
 
@@ -56,7 +91,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
     }
     try {
       const calendarRef = doc(db, 'calendars', calendar.id);
-      await updateDoc(calendarRef, { name, color });
+      await updateDoc(calendarRef, { name, icon: selectedIcon, color: selectedColor });
       toast.success('캘린더가 수정되었습니다.');
       onClose();
     } catch (error) {
@@ -79,7 +114,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
             )}
           </div>
         </div>
-        <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 색상을 변경합니다.</p>
+        <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 아이콘, 색상을 변경합니다.</p>
 
         <div className="space-y-6">
           <div className="flex items-center h-[58px] bg-gray-50 dark:bg-gray-700 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-5 transition-all">
@@ -87,18 +122,54 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
             <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="w-full bg-transparent outline-none font-bold text-gray-800 dark:text-white" />
           </div>
 
-          <div className="flex flex-wrap gap-3 px-1">
-            {COLORS.map((c) => (
+          <div className="flex items-center justify-between">
+            <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 아이콘</label>
+            <div className="relative" ref={colorDropdownRef}>
               <button
-                key={c}
                 type="button"
-                onClick={() => setColor(c)}
-                className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${
-                  color === c ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'
-                }`}
-                style={{ backgroundColor: c }}
+                onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 transition-all"
               >
-                {color === c && <Check size={14} className="text-white" strokeWidth={3} />}
+                <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: selectedColor }} />
+                <span className="text-[12px] font-bold text-gray-600 dark:text-gray-300"></span>
+                <ChevronDown size={14} className="text-gray-400" />
+              </button>
+              {isColorDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 w-[240px]">
+                  <div className="grid grid-cols-5 gap-2">
+                    {COLOR_OPTIONS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          setSelectedColor(color);
+                          setIsColorDropdownOpen(false);
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                        style={{ backgroundColor: color }}
+                      >
+                        {selectedColor === color && <Check size={14} className="text-white" strokeWidth={3} />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 px-1">
+            {CALENDAR_ICONS.map(({ id, component: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setSelectedIcon(id)}
+                className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border-2`}
+                style={{
+                  borderColor: selectedIcon === id ? selectedColor : 'transparent',
+                  backgroundColor: selectedIcon === id ? `${selectedColor}20` : 'transparent',
+                }}
+              >
+                <Icon size={20} style={{ color: selectedColor, opacity: selectedIcon === id ? 1 : 0.4 }} />
               </button>
             ))}
           </div>

@@ -2,7 +2,32 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
-import { MapPin, AlignLeft, Clock, MessageCircle, BookOpen, Trash2, Calendar, Edit2, Bell, Calendar as CalendarIcon, Copy, ChevronLeft } from 'lucide-react';
+import {
+  MapPin,
+  AlignLeft,
+  Clock,
+  MessageCircle,
+  BookOpen,
+  Trash2,
+  Calendar,
+  Edit2,
+  Bell,
+  Calendar as CalendarIcon,
+  Copy,
+  ChevronLeft,
+  Home,
+  Briefcase,
+  GraduationCap,
+  Dumbbell,
+  Plane,
+  Music,
+  Heart,
+  Star,
+  Gift,
+  Coffee,
+  ShoppingCart,
+  Gamepad2,
+} from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
 import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal, PageHeader } from 'components';
 import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
@@ -55,6 +80,21 @@ interface AttendeeProfile {
   name: string;
   photoURL?: string;
 }
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  home: Home,
+  work: Briefcase,
+  study: GraduationCap,
+  workout: Dumbbell,
+  travel: Plane,
+  music: Music,
+  love: Heart,
+  star: Star,
+  gift: Gift,
+  food: Coffee,
+  shopping: ShoppingCart,
+  game: Gamepad2,
+};
 
 const ScheduleDetail = () => {
   const navigate = useNavigate();
@@ -383,7 +423,7 @@ const ScheduleDetail = () => {
           {/* 상세 정보 섹션 */}
           <div className="space-y-5">
             {/* 시간 */}
-            <div className="flex items-start gap-4">
+            <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
                 <Clock size={20} className="text-gray-500 dark:text-gray-400" />
               </div>
@@ -406,7 +446,11 @@ const ScheduleDetail = () => {
                 </div>
                 {/* [수정] 클릭 기능이 제거됨에 따라, 다른 항목과 일관성을 위해 UI를 단순화합니다. */}
                 <div className="flex-1 flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
+                  {scheduleCalendar.icon && ICON_MAP[scheduleCalendar.icon] ? (
+                    React.createElement(ICON_MAP[scheduleCalendar.icon], { size: 18, style: { color: scheduleCalendar.color } })
+                  ) : (
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
+                  )}
                   <span className="text-[15px] font-bold text-gray-900 dark:text-white">{scheduleCalendar.name}</span>
                 </div>
               </div>

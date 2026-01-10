@@ -14,6 +14,9 @@ export interface CalendarType {
   isPrivate: boolean;
   isDefault: boolean;
   color?: string;
+  icon?: string; // [추가] 캘린더 아이콘 식별자
+  ownerId: string;
+  createdAt?: string;
 }
 
 export interface CalendarEvent {
