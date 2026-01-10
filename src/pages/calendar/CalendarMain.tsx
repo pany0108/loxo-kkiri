@@ -199,10 +199,12 @@ const CalendarMain = () => {
         return <div className="fc-event-title fc-sticky px-1 text-[10px] font-bold">{eventInfo.event.title}</div>;
       }
       return (
-        <div className="flex items-center h-full w-full overflow-hidden pl-0.5">
+        <div
+          className="flex items-center h-full w-full overflow-hidden pl-0.5 rounded-[4px]"
+          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#3b82f6'}, transparent 90%)` }}
+        >
           <div className="w-1.5 h-1.5 rounded-full mr-1 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#3b82f6' }} />
-          <div className="text-[10px] font-medium text-gray-400 mr-1 whitespace-nowrap">{eventInfo.timeText}</div>
-          <div className="text-[10px] font-bold truncate">{eventInfo.event.title}</div>
+          <div className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );
     }
@@ -311,6 +313,11 @@ const CalendarMain = () => {
               const color = info.event.backgroundColor || info.event.extendedProps.color;
               if (color) {
                 info.el.style.setProperty('--event-color', color);
+              }
+              // [추가] 시간 선택 일정(allDay: false)이 여러 날짜에 걸쳐 블록으로 렌더링될 때 배경색 제거
+              if (!info.event.allDay && info.view.type === 'dayGridMonth') {
+                info.el.style.backgroundColor = 'transparent';
+                info.el.style.borderColor = 'transparent';
               }
             }}
             ref={calendarRef}
