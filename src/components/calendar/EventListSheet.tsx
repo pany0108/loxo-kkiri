@@ -86,10 +86,10 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-800 z-30 transition-transform duration-300 ease-sheet-ease border-t border-gray-100 dark:border-gray-700 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px] ${
+      className={`absolute left-0 right-0 bottom-0 bg-white dark:bg-gray-800 z-30 transition-transform duration-500 border-t border-gray-100 dark:border-gray-700 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] rounded-t-[32px] ${
         isVisible ? 'translate-y-0' : 'translate-y-full'
       }`}
-      style={{ height: '50%' }}
+      style={{ height: '50%', transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
     >
       <div className="w-full flex justify-center pt-3 pb-1" onClick={onClose}>
         <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full" />

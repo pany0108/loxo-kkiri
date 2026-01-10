@@ -163,10 +163,10 @@ export const useCalendarMain = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
       calendarApi.updateSize();
-      // [수정] 리스트 열림/닫힘 애니메이션(0.3s) 동안 캘린더 크기를 지속적으로 업데이트하여 부드럽게 전환
+      // [수정] 리스트 열림/닫힘 애니메이션(0.5s) 동안 캘린더 크기를 지속적으로 업데이트하여 부드럽게 전환
       let frameId: number;
       const startTime = performance.now();
-      const duration = 300;
+      const duration = 500;
       const animateResize = (currentTime: number) => {
         if (currentTime - startTime < duration) {
           calendarApi.updateSize();

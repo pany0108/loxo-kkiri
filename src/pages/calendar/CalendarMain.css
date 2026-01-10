@@ -436,6 +436,11 @@
   color: #ffffff !important;
 }
 
+/* 오늘 날짜 셀 배경색 (기본 노란색 제거) */
+.fc-day-today {
+  background-color: #eff6ff !important; /* blue-50 */
+}
+
 /* 오늘 날짜 */
 .fc-day-today .fc-daygrid-day-number {
   background-color: #111827 !important; /* gray-900 */
@@ -445,6 +450,10 @@
 /* [추가] 오늘 날짜 다크모드 스타일 */
 .dark .fc-day-today {
   background-color: rgba(59, 130, 246, 0.08) !important; /* blue-500 with 8% opacity */
+}
+
+.dark .fc-day-today .fc-daygrid-day-number {
+  border-color: #1e3a8a !important; /* blue-900 */
 }
 
 /* ==========================================================
@@ -465,7 +474,7 @@
 }
 
 .calendar-transition {
-  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   will-change: height;
 }
 
@@ -525,4 +534,11 @@
 /* [추가] 월간 뷰 날짜 셀에 포인터 커서 표시 */
 .fc-dayGridMonth-view .fc-daygrid-day-frame {
   cursor: pointer !important;
+}
+
+/* [추가] 리스트 오픈 시 날짜 셀 부드러운 축소 애니메이션 */
+.fc-daygrid-day-frame,
+.fc-scrollgrid-sync-row {
+  transition: height 0.5s cubic-bezier(0.32, 0.72, 0, 1), min-height 0.5s cubic-bezier(0.32, 0.72, 0, 1), padding 0.5s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  will-change: height, min-height, padding;
 }
