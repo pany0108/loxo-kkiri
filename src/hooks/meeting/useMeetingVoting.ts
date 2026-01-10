@@ -139,7 +139,12 @@ export const useMeetingVoting = () => {
 
       const conflict = events.find((event) => {
         const eventStart = dayjs(event.start);
-        const eventEnd = event.end ? dayjs(event.end) : event.allDay ? eventStart.add(1, 'day') : eventStart.add(1, 'hour');
+        let eventEnd = event.end ? dayjs(event.end) : event.allDay ? eventStart.add(1, 'day') : eventStart.add(1, 'hour');
+
+        // [추가] 종일 일정인데 종료 시간이 시작 시간과 같거나 이전이면(잘못된 데이터 or 0duration), 하루 뒤로 설정
+        if (event.allDay && event.end && !eventEnd.isAfter(eventStart)) {
+          eventEnd = eventStart.add(1, 'day');
+        }
 
         return slotStart.isBefore(eventEnd) && slotEnd.isAfter(eventStart);
       });
@@ -152,7 +157,8 @@ export const useMeetingVoting = () => {
       const sameDayEvent = events.find((event) => dayjs(event.start).format('YYYY-MM-DD') === dateStr);
       if (sameDayEvent) {
         const eventTime = sameDayEvent.allDay ? '종일' : `${dayjs(sameDayEvent.start).format('HH:mm')}~${sameDayEvent.end ? dayjs(sameDayEvent.end).format('HH:mm') : ''}`;
-        return { isConflict: false, title: sameDayEvent.title, time: eventTime };
+        // [수정] 종일 일정인 경우 시간 일정과 겹치는 것으로 간주하여 conflict true 반환
+        return { isConflict: sameDayEvent.allDay, title: sameDayEvent.title, time: eventTime };
       }
 
       return undefined;

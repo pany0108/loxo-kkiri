@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Save, Smartphone, Calendar, Loader2, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
+import { Save, Smartphone, Calendar, Loader2, CheckCircle2, User, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
 import { TopNav, PageHeader, FormInput, PageFooter } from 'components';
 import { auth, db } from '../../firebase';
@@ -214,7 +214,7 @@ const EditUserInfo = () => {
 
       {/* [수정] TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
-        <PageHeader className="mb-10" icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+        <PageHeader className="mb-10" icon={<User className="text-blue-600 w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             내 소중한 <span className="text-blue-600 dark:text-blue-400">정보</span>를<br />
             관리해볼까요?
