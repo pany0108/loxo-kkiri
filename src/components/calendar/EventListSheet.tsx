@@ -50,6 +50,26 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
     if (!selectedDate) return false;
     if (event.calendarId === 'holidays') return false;
 
+    // [수정] 종일 일정 필터링 로직 개선
+    if (event.allDay) {
+      const targetDateStr = selectedDate;
+      const startDateStr = dayjs(event.start).format('YYYY-MM-DD');
+
+      if (!event.end) {
+        return startDateStr === targetDateStr;
+      }
+
+      const endDateStr = dayjs(event.end).format('YYYY-MM-DD');
+
+      // 종료일이 시작일과 같은 경우 (단일 일정인데 end가 있는 경우)
+      if (startDateStr === endDateStr) {
+        return startDateStr === targetDateStr;
+      }
+
+      // 범위 일정 (exclusive end: 종료일은 포함하지 않음)
+      return targetDateStr >= startDateStr && targetDateStr < endDateStr;
+    }
+
     const targetDate = dayjs(selectedDate);
     const eventStart = dayjs(event.start);
     const eventEnd = event.end ? dayjs(event.end) : null;

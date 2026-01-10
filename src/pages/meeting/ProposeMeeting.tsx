@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Clock, Loader2, CalendarCheck2 } from 'lucide-react';
+import dayjs from 'dayjs';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -19,6 +20,8 @@ interface Meeting {
   scheduleId?: string;
   isRetry?: boolean; // [추가] 재요청 여부
   isVotingCompleted?: boolean; // [추가] 투표 완료 여부
+  createdAt?: string;
+  confirmedSlot?: { date: string; time: string };
 }
 
 /**
@@ -44,6 +47,7 @@ const ProposeMeeting = () => {
   }, [location.pathname]);
 
   const [user, setUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'ongoing' | 'past'>('ongoing');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -60,9 +64,18 @@ const ProposeMeeting = () => {
 
   const { data: meetingsData, loading } = useFirestoreQuery<any>(meetingsQuery);
 
-  const ongoingMeetings: Meeting[] = useMemo(() => {
-    if (!meetingsData) return [];
-    return meetingsData.map((m: any) => {
+  const { ongoingMeetings, pastMeetings } = useMemo(() => {
+    if (!meetingsData) return { ongoingMeetings: [], pastMeetings: [] };
+
+    // [수정] 최신순(createdAt 내림차순) 정렬
+    const sortedData = [...meetingsData].sort((a: any, b: any) => {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+
+    const ongoing: Meeting[] = [];
+    const past: Meeting[] = [];
+
+    sortedData.forEach((m: any) => {
       // [추가] 투표 완료 여부 계산
       let isVotingCompleted = false;
       if (m.status === 'VOTING') {
@@ -78,7 +91,7 @@ const ProposeMeeting = () => {
         }
       }
 
-      return {
+      const meetingObj: Meeting = {
         id: m.id,
         title: m.title,
         status: m.status,
@@ -87,8 +100,26 @@ const ProposeMeeting = () => {
         scheduleId: m.scheduleId,
         isRetry: m.isRetry,
         isVotingCompleted, // [추가]
+        createdAt: m.createdAt,
+        confirmedSlot: m.confirmedSlot,
       };
+
+      // [추가] 지난 약속 분리 로직 (확정된 약속 중 날짜가 지난 경우)
+      if (m.status === 'CONFIRMED' && m.confirmedSlot?.date) {
+        let dateStr = m.confirmedSlot.date;
+        if (dateStr.includes(':')) {
+          dateStr = dateStr.split(':')[1]; // 범위인 경우 종료일 기준
+        }
+        if (dayjs(dateStr).isBefore(dayjs(), 'day')) {
+          past.push(meetingObj);
+        } else {
+          ongoing.push(meetingObj);
+        }
+      } else {
+        ongoing.push(meetingObj);
+      }
     });
+    return { ongoingMeetings: ongoing, pastMeetings: past };
   }, [meetingsData]);
 
   /**
@@ -134,6 +165,8 @@ const ProposeMeeting = () => {
     );
   }
 
+  const currentList = activeTab === 'ongoing' ? ongoingMeetings : pastMeetings;
+
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
@@ -149,25 +182,40 @@ const ProposeMeeting = () => {
         {/* 새 약속 만들기 버튼 */}
         <NewMeetingButton />
 
-        {/* 진행 중인 약속 리스트 */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock size={18} className="text-blue-600 dark:text-blue-400" /> 진행 중인 약속
-            </h2>
-            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">{ongoingMeetings.length}개</span>
-          </div>
+        {/* [추가] 탭 버튼 */}
+        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px] mb-6">
+          <button
+            onClick={() => setActiveTab('ongoing')}
+            className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
+              activeTab === 'ongoing' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+            }`}
+          >
+            진행 중 ({ongoingMeetings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('past')}
+            className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
+              activeTab === 'past' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+            }`}
+          >
+            지난 약속 ({pastMeetings.length})
+          </button>
+        </div>
 
-          {ongoingMeetings.length > 0 ? (
+        {/* 진행 중인 약속 리스트 */}
+        <>
+          {currentList.length > 0 ? (
             <div className="space-y-3">
-              {ongoingMeetings.map((meeting) => (
+              {currentList.map((meeting) => (
                 <MeetingListItem key={meeting.id} meeting={meeting} onClick={handleMeetingClick} />
               ))}
             </div>
-          ) : (
+          ) : activeTab === 'ongoing' ? (
             <EmptyMeetingList />
+          ) : (
+            <div className="py-12 text-center text-gray-400 dark:text-gray-500 text-[13px] font-bold">지난 약속이 없습니다.</div>
           )}
-        </section>
+        </>
       </div>
     </div>
   );
