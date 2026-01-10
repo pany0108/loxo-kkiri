@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Loader2, Check, CalendarDays } from 'lucide-react';
+import { Lock, User, CalendarDays } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { signInWithEmail, signInWithGoogle, checkUserRegistration } from 'services/authService';
+import { FormInput, FormCheckbox } from 'components';
+import LoadingButton from '../../components/ui/LoadingButton';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
@@ -185,52 +187,23 @@ const Login = () => {
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div className="space-y-3">
             {/* 이메일 입력 */}
-            <div className="group relative">
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[18px] px-5 transition-all duration-300">
-                <User size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
-                <input
-                  type="email"
-                  placeholder="이메일 주소"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
+            <FormInput icon={<User size={20} />} type="email" placeholder="이메일 주소" value={email} onChange={(e) => setEmail(e.target.value)} required />
 
             {/* 비밀번호 입력 */}
-            <div className="group relative">
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[18px] px-5 transition-all duration-300">
-                <Lock size={20} className="text-gray-300 mr-4 transition-colors group-focus-within:text-blue-600" />
-                <input
-                  type="password"
-                  placeholder="비밀번호"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-            </div>
+            <FormInput
+              icon={<Lock size={20} />}
+              type="password"
+              placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
           </div>
 
           {/* 이메일 저장 및 비밀번호 재설정 링크 */}
           <div className="flex justify-between items-center px-1 pt-1">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <div className="relative">
-                <input type="checkbox" className="sr-only" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-                <div
-                  className={`w-5 h-5 rounded-md border-2 transition-all flex items-center justify-center ${
-                    rememberMe ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 group-hover:border-blue-400'
-                  }`}
-                >
-                  {rememberMe && <Check size={14} className="text-white" strokeWidth={4} />}
-                </div>
-              </div>
-              <span className={`text-sm font-bold transition-colors ${rememberMe ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}`}>이메일 저장</span>
-            </label>
+            <FormCheckbox label="이메일 저장" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
 
             <button
               type="button"
@@ -243,30 +216,26 @@ const Login = () => {
 
           <div className="pt-8 space-y-3">
             {/* 로그인 버튼 */}
-            <button
+            <LoadingButton
               type="submit"
+              isLoading={isEmailLoading}
               disabled={isEmailLoading || isGoogleLoading || isPageLoading}
               className="w-full h-[60px] bg-blue-600 text-white rounded-[20px] font-black text-[17px] shadow-lg flex items-center justify-center"
             >
-              {isEmailLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '로그인'}
-            </button>
+              로그인
+            </LoadingButton>
 
             {/* 구글 로그인 버튼 */}
-            <button
+            <LoadingButton
               type="button"
               onClick={handleGoogleLogin}
+              isLoading={isGoogleLoading}
               disabled={isEmailLoading || isGoogleLoading || isPageLoading}
               className="w-full h-[60px] bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center gap-3"
             >
-              {isGoogleLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="google" className="w-5 h-5" />
-                  구글로 계속하기
-                </>
-              )}
-            </button>
+              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="google" className="w-5 h-5" />
+              구글로 계속하기
+            </LoadingButton>
 
             {/* 회원가입 이동 버튼 */}
             <button

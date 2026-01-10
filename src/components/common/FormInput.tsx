@@ -20,7 +20,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
     ? 'border-red-400 bg-white dark:bg-gray-800'
     : success
     ? 'border-emerald-400 bg-white dark:bg-gray-800'
-    : 'border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800';
+    : 'border-transparent focus-within:border-blue-500';
 
   const iconColorClass = hasError ? 'text-red-400' : success ? 'text-emerald-500' : 'text-gray-300 dark:text-gray-600 group-focus-within:text-blue-600';
 

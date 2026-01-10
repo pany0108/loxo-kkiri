@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Calendar } from 'lucide-react';
-import { FormInput } from 'components';
+import { FormInput, FormCheckbox } from 'components';
 import { formatBirth } from 'utils';
 
 interface BirthDateInputProps {
@@ -30,17 +30,7 @@ const BirthDateInput: React.FC<BirthDateInputProps> = ({ inputRef, value, isLuna
     <div>
       <div className="flex items-center justify-end mb-2 px-1 h-6">
         <div className="flex items-center gap-2">
-          {isLunar && (
-            <label className="flex items-center gap-1.5 cursor-pointer animate-in fade-in">
-              <input
-                type="checkbox"
-                checked={isLeapMonth}
-                onChange={(e) => onTypeChange({ isLunar, isLeapMonth: e.target.checked })}
-                className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
-              />
-              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">윤달</span>
-            </label>
-          )}
+          {isLunar && <FormCheckbox label="윤달" checked={isLeapMonth} onChange={(e) => onTypeChange({ isLunar, isLeapMonth: e.target.checked })} className="animate-in fade-in" />}
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
             <button
               type="button"
