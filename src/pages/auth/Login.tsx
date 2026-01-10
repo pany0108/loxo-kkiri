@@ -187,7 +187,15 @@ const Login = () => {
         <form onSubmit={handleEmailLogin} className="space-y-4">
           <div className="space-y-3">
             {/* 이메일 입력 */}
-            <FormInput icon={<User size={20} />} type="email" placeholder="이메일 주소" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <FormInput
+              icon={<User size={20} />}
+              type="email"
+              placeholder="이메일 주소"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onClear={() => setEmail('')}
+              required
+            />
 
             {/* 비밀번호 입력 */}
             <FormInput

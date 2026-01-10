@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, X } from 'lucide-react';
 
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactElement;
@@ -9,18 +9,15 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   success?: boolean;
   containerClassName?: string;
   inputRef?: React.Ref<HTMLInputElement>;
+  onClear?: () => void;
 }
 
-const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error, success, containerClassName, inputRef, ...props }) => {
+const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error, success, containerClassName, inputRef, onClear, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const hasError = !!error;
   const isPassword = props.type === 'password';
 
-  const borderClass = hasError
-    ? 'border-red-400 bg-white dark:bg-gray-800'
-    : success
-    ? 'border-emerald-400 bg-white dark:bg-gray-800'
-    : 'border-transparent focus-within:border-blue-500';
+  const borderClass = hasError ? 'border-red-400' : success ? 'border-emerald-400' : 'border-transparent focus-within:border-blue-500';
 
   const iconColorClass = hasError ? 'text-red-400' : success ? 'text-emerald-500' : 'text-gray-300 dark:text-gray-600 group-focus-within:text-blue-600';
 
@@ -46,6 +43,9 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
     );
   }
 
+  const hasValue = props.value !== undefined && props.value !== null && String(props.value).length > 0;
+  const showClear = !!onClear && hasValue && !props.disabled && !props.readOnly;
+
   return (
     <div className={`group relative ${containerClassName || ''}`}>
       {label && <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">{label}</label>}
@@ -58,7 +58,22 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
             props.className || ''
           }`}
         />
-        {finalRightContent && <div className="ml-2">{finalRightContent}</div>}
+        {(showClear || finalRightContent) && (
+          <div className="flex items-center gap-2 ml-2">
+            {showClear && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label="입력 초기화"
+                tabIndex={-1}
+              >
+                <X size={16} />
+              </button>
+            )}
+            {finalRightContent}
+          </div>
+        )}
       </div>
       {hasError && (
         <div className="flex items-center gap-1 ml-4 mt-1.5 animate-in fade-in duration-200">

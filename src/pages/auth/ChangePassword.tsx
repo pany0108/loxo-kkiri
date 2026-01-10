@@ -1,8 +1,9 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Mail, User, Smartphone } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Mail, User, Smartphone } from 'lucide-react';
 import { TopNav, PageHeader, FormInput, PageFooter } from 'components';
 import { useChangePasswordForm } from 'hooks';
+import LoadingButton from '../../components/ui/LoadingButton';
 
 /**
  * 비밀번호 변경 및 재설정 페이지 컴포넌트입니다.
@@ -79,6 +80,12 @@ const ChangePassword = () => {
                     onChange={handleFindInfoChange}
                     placeholder="가입하신 휴대폰 번호"
                     required
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleFindEmail();
+                      }
+                    }}
                   />
                 </>
               ) : (
@@ -97,6 +104,12 @@ const ChangePassword = () => {
                       onChange={(e) => dispatch({ type: 'SET_CONFIRMED_EMAIL', payload: e.target.value })}
                       placeholder="위 이메일 주소를 정확히 입력"
                       required
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSendResetEmail();
+                        }
+                      }}
                     />
                   </div>
                 )
@@ -171,9 +184,10 @@ const ChangePassword = () => {
           <PageFooter zIndex={50}>
             {isResetMode ? (
               resetStep === 1 ? (
-                <button
+                <LoadingButton
                   type="button"
                   onClick={handleFindEmail}
+                  isLoading={isSubmitting}
                   disabled={isSubmitting || !findInfo.name || !findInfo.phone}
                   className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
                     !isSubmitting && findInfo.name && findInfo.phone
@@ -181,12 +195,13 @@ const ChangePassword = () => {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : '이메일 찾기'}
-                </button>
+                  이메일 찾기
+                </LoadingButton>
               ) : (
-                <button
+                <LoadingButton
                   type="button"
                   onClick={handleSendResetEmail}
+                  isLoading={isSubmitting}
                   disabled={isSubmitting || !confirmedEmail}
                   className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
                     !isSubmitting && confirmedEmail
@@ -194,12 +209,13 @@ const ChangePassword = () => {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : '재설정 메일 발송'}
-                </button>
+                  재설정 메일 발송
+                </LoadingButton>
               )
             ) : (
-              <button
+              <LoadingButton
                 type="submit"
+                isLoading={isSubmitting}
                 disabled={isSubmitting || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword || !!errors.newPassword || !!errors.confirmPassword}
                 className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
@@ -208,8 +224,8 @@ const ChangePassword = () => {
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
               >
-                {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : '비밀번호 변경하기'}
-              </button>
+                비밀번호 변경하기
+              </LoadingButton>
             )}
           </PageFooter>
         </form>

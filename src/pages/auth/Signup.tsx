@@ -1,7 +1,8 @@
 import React from 'react';
-import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, Loader2, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
+import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
+import LoadingButton from '../../components/ui/LoadingButton';
 import { handleEnterToNext } from 'utils';
 import { useSignupForm } from 'hooks/auth/useSignupForm';
 
@@ -90,9 +91,10 @@ const Signup = () => {
               type="password"
               enterKeyHint="next"
               placeholder="비밀번호 다시 입력"
+              value={formData.confirmPassword}
               onChange={handleChange}
               onKeyDown={(e) => handleEnterToNext(e, lastNameRef)}
-              error={errors.confirmPassword}
+              error={formData.confirmPassword ? errors.confirmPassword : undefined}
               success={!!formData.confirmPassword && !errors.confirmPassword}
               rightContent={formData.confirmPassword && !errors.confirmPassword && <CheckCircle2 size={18} className="text-emerald-500" />}
               required
@@ -148,18 +150,42 @@ const Signup = () => {
           </div>
 
           <PageFooter zIndex={50}>
-            <button
+            <LoadingButton
               type="submit"
-              disabled={isLoading || !state.isVerified || !!errors.email || !!errors.password || !!errors.confirmPassword}
+              isLoading={isLoading}
+              disabled={
+                isLoading ||
+                !state.isVerified ||
+                !!errors.email ||
+                !!errors.password ||
+                !!errors.confirmPassword ||
+                !formData.email ||
+                !formData.password ||
+                !formData.confirmPassword ||
+                !formData.lastName ||
+                !formData.firstName ||
+                !formData.birthDate ||
+                !formData.phone
+              }
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
               ${
-                state.isVerified && !errors.email && !errors.password && !errors.confirmPassword
+                state.isVerified &&
+                !errors.email &&
+                !errors.password &&
+                !errors.confirmPassword &&
+                formData.email &&
+                formData.password &&
+                formData.confirmPassword &&
+                formData.lastName &&
+                formData.firstName &&
+                formData.birthDate &&
+                formData.phone
                   ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
               }`}
             >
-              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '회원가입 완료'}
-            </button>
+              회원가입 완료
+            </LoadingButton>
           </PageFooter>
         </form>
       </div>
