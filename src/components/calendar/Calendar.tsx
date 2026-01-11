@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -27,6 +27,46 @@ const Calendar = forwardRef<FullCalendar, CalendarProps>(
     { currentView, events, selectedDate, dateClick, eventClick, handleDateSelect, handleDatesSet, renderEventContent, renderTimeGridHeader, goToPrev, goToNext, eventDidMount },
     ref,
   ) => {
+    const customButtons = useMemo(
+      () => ({
+        myPrev: {
+          icon: 'chevron-left',
+          click: goToPrev,
+        },
+        myToday: {
+          text: '오늘',
+          click: () => {
+            if (ref && typeof ref !== 'function' && ref.current) {
+              ref.current.getApi().today();
+            }
+          },
+        },
+        myNext: {
+          icon: 'chevron-right',
+          click: goToNext,
+        },
+      }),
+      [goToPrev, goToNext, ref],
+    );
+
+    const views = useMemo(
+      () => ({
+        dayGridMonth: {
+          titleFormat: { year: 'numeric', month: 'short' } as const,
+          dayHeaderFormat: { weekday: 'short' } as const,
+          dayCellContent: (args: DayCellContentArg) => args.date.getDate(),
+        },
+        timeGridWeek: {
+          dayHeaderContent: renderTimeGridHeader,
+        },
+        timeGridDay: {
+          titleFormat: { year: 'numeric', month: 'long', day: 'numeric' } as const,
+          dayHeaderContent: renderTimeGridHeader,
+        },
+      }),
+      [renderTimeGridHeader],
+    );
+
     return (
       <FullCalendar
         ref={ref}
@@ -54,39 +94,9 @@ const Calendar = forwardRef<FullCalendar, CalendarProps>(
           center: '',
           right: 'myToday,myPrev,myNext',
         }}
-        customButtons={{
-          myPrev: {
-            icon: 'chevron-left',
-            click: goToPrev,
-          },
-          myToday: {
-            text: '오늘',
-            click: () => {
-              if (ref && typeof ref !== 'function' && ref.current) {
-                ref.current.getApi().today();
-              }
-            },
-          },
-          myNext: {
-            icon: 'chevron-right',
-            click: goToNext,
-          },
-        }}
+        customButtons={customButtons}
         datesSet={handleDatesSet}
-        views={{
-          dayGridMonth: {
-            titleFormat: { year: 'numeric', month: 'short' },
-            dayHeaderFormat: { weekday: 'short' },
-            dayCellContent: (args) => args.date.getDate(),
-          },
-          timeGridWeek: {
-            dayHeaderContent: renderTimeGridHeader,
-          },
-          timeGridDay: {
-            titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-            dayHeaderContent: renderTimeGridHeader,
-          },
-        }}
+        views={views}
         slotMinTime="00:00:00"
         slotMaxTime="24:00:00"
         slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}

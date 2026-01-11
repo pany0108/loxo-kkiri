@@ -23,7 +23,6 @@ export const useCalendarMain = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isListVisible, setIsListVisible] = useState(false);
   const [animationClass, setAnimationClass] = useState('');
-  const [isNavigating, setIsNavigating] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
   const [isJiggleMode, setIsJiggleMode] = useState(false);
@@ -309,33 +308,27 @@ export const useCalendarMain = () => {
     }
   };
 
-  const goToNext = useCallback(() => {
-    if (isNavigating) return;
+  const goToNext = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
-      setIsNavigating(true);
       setAnimationClass('calendar-swipe-left');
       calendarApi.next();
       setTimeout(() => {
         setAnimationClass('');
-        setIsNavigating(false);
       }, 350);
     }
-  }, [isNavigating]);
+  };
 
-  const goToPrev = useCallback(() => {
-    if (isNavigating) return;
+  const goToPrev = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
-      setIsNavigating(true);
       setAnimationClass('calendar-swipe-right');
       calendarApi.prev();
       setTimeout(() => {
         setAnimationClass('');
-        setIsNavigating(false);
       }, 350);
     }
-  }, [isNavigating]);
+  };
 
   const handleMonthSelect = (month: number) => {
     const calendarApi = calendarRef.current?.getApi();
