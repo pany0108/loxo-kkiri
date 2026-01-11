@@ -17,7 +17,7 @@ const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, classNa
   // TopNav의 높이를 Safe Area를 포함하여 60px + safe-area-inset-top으로 설정합니다.
   // 내부 콘텐츠는 이 높이 내에서 중앙 정렬됩니다.
   const defaultClassName =
-    'fixed top-0 right-0 left-0 h-[calc(60px+env(safe-area-inset-top))] px-6 pt-[env(safe-area-inset-top)] flex items-center justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-gray-100 dark:border-gray-800';
+    'fixed top-0 right-0 left-0 h-[calc(60px+env(safe-area-inset-top))] px-6 pt-[env(safe-area-inset-top)] flex items-center justify-between bg-[#FDFBF7]/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-gray-100 dark:border-gray-800';
 
   return (
     <nav className={`${defaultClassName} ${className || ''}`}>

@@ -51,7 +51,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#3b82f6', // blue
+  '#4C82B6', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -105,7 +105,7 @@ const AddSchedule = () => {
         className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   formData.title && !isSubmitting
-                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                    ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
       >
@@ -118,9 +118,9 @@ const AddSchedule = () => {
     // [수정] PageLayout으로 전체 구조 변경
     <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
-        <PageHeader icon={<CalendarPlus className="text-blue-600 w-6 h-6" />}>
+        <PageHeader icon={<CalendarPlus className="text-[#4C82B6] w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            새로운 <span className="text-blue-600">일정</span>을<br />
+            새로운 <span className="text-[#4C82B6]">일정</span>을<br />
             등록해볼까요?
           </h2>
         </PageHeader>
@@ -130,7 +130,7 @@ const AddSchedule = () => {
           <section className="space-y-4">
             <div ref={titleInputRef} className="group relative">
               <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+              <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <input
                   name="title"
                   value={formData.title}
@@ -172,7 +172,7 @@ const AddSchedule = () => {
               <button
                 type="button"
                 onClick={() => setIsCalListOpen(!isCalListOpen)}
-                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+                className="w-full flex items-center justify-between h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
@@ -201,17 +201,17 @@ const AddSchedule = () => {
                         onClick={() => handleCalendarSelect(cal)}
                         className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
                           selectedCalendar?.id === cal.id
-                            ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                            ? 'bg-[#4C82B6]/20 dark:bg-[#4C82B6]/10 text-[#4C82B6]'
                             : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#4C82B6' }}>
                             <IconComponent size={16} />
                           </div>
                           <span className="text-[14px] font-bold">{calName}</span>
                         </div>
-                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#4C82B6]" />}
                       </button>
                     );
                   })}
@@ -226,7 +226,7 @@ const AddSchedule = () => {
                         },
                       })
                     }
-                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
+                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 rounded-[18px] transition-colors"
                   >
                     <Plus size={16} /> 새 캘린더 만들기
                   </button>
@@ -249,7 +249,7 @@ const AddSchedule = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
+              <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-3">
                   <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between gap-3">
@@ -304,8 +304,8 @@ const AddSchedule = () => {
 
             <div className="group relative">
               <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">푸시 알림</label>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <Bell size={18} className="text-gray-300 mr-4 group-focus-within:text-blue-600" />
+              <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                <Bell size={18} className="text-gray-300 mr-4 group-focus-within:text-[#4C82B6]" />
                 <select
                   name="notification"
                   value={formData.notification}
@@ -323,7 +323,7 @@ const AddSchedule = () => {
 
             <div className="space-y-3">
               <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
+              <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
                   <MapPin size={18} className="text-gray-300 dark:text-gray-600 shrink-0" />
                   <input
@@ -353,7 +353,7 @@ const AddSchedule = () => {
               <button
                 type="button"
                 onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                className="w-full h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 cursor-not-allowed"
               >
                 <Camera size={20} />
                 <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>

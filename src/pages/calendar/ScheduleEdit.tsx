@@ -59,7 +59,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#3b82f6', // blue
+  '#4C82B6', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -144,7 +144,7 @@ const ScheduleEdit = () => {
     notification: eventData?.notification || 'none',
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
-    color: eventData?.color || '#3b82f6',
+    color: eventData?.color || '#4C82B6',
   });
 
   const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
@@ -192,7 +192,7 @@ const ScheduleEdit = () => {
     setFormData((prev) => ({
       ...prev,
       calendarId: calendar.id,
-      color: calendar.color || '#3b82f6',
+      color: calendar.color || '#4C82B6',
     }));
     setIsCalListOpen(false);
   };
@@ -370,19 +370,15 @@ const ScheduleEdit = () => {
         title="일정 수정"
         onBack={() => navigate(-1)}
         extraNav={
-          <LoadingButton
-            onClick={handleSave}
-            isLoading={isSubmitting}
-            className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-          >
+          <LoadingButton onClick={handleSave} isLoading={isSubmitting} className="p-2 text-[#4C82B6] hover:text-[#4C82B6]/80 transition-colors">
             <Check size={28} strokeWidth={3} />
           </LoadingButton>
         }
       >
         <>
-          <PageHeader icon={<Sparkles className="text-blue-600 w-6 h-6" />}>
+          <PageHeader icon={<Sparkles className="text-[#4C82B6] w-6 h-6" />}>
             <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-              일정을 <span className="text-blue-600 dark:text-blue-400">수정</span>해볼까요?
+              일정을 <span className="text-[#4C82B6]">수정</span>해볼까요?
             </h2>
           </PageHeader>
 
@@ -390,7 +386,7 @@ const ScheduleEdit = () => {
             <section className="space-y-4">
               <div className="group relative">
                 <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     name="title"
                     value={formData.title}
@@ -407,7 +403,7 @@ const ScheduleEdit = () => {
                 <button
                   type="button"
                   onClick={() => setIsCalListOpen(!isCalListOpen)}
-                  className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+                  className="w-full flex items-center justify-between h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
@@ -435,18 +431,16 @@ const ScheduleEdit = () => {
                           type="button"
                           onClick={() => handleCalendarSelect(cal)}
                           className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                            selectedCalendar?.id === cal.id
-                              ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                            selectedCalendar?.id === cal.id ? 'bg-[#4C82B6]/20 text-[#4C82B6]' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#3b82f6' }}>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#4C82B6' }}>
                               <IconComponent size={16} />
                             </div>
                             <span className="text-[14px] font-bold">{calName}</span>
                           </div>
-                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
+                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#4C82B6]" />}
                         </button>
                       );
                     })}
@@ -461,7 +455,7 @@ const ScheduleEdit = () => {
                           },
                         })
                       }
-                      className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
+                      className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 rounded-[18px] transition-colors"
                     >
                       <Plus size={16} /> 새 캘린더 만들기
                     </button>
@@ -490,7 +484,7 @@ const ScheduleEdit = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
+                <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
                   <div className="flex items-center h-[56px] px-4 gap-4">
                     <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                     <div className="flex-1 flex items-center justify-between gap-3">
@@ -547,7 +541,7 @@ const ScheduleEdit = () => {
               <div className="space-y-3">
                 <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
 
-                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
+                <div className="flex items-center h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
                   <MapPin size={18} className="text-gray-300 dark:text-gray-600" />
                   <input
                     name="location"
@@ -558,7 +552,7 @@ const ScheduleEdit = () => {
                   />
                 </div>
 
-                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                <div className="flex items-center h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
                   <Bell size={18} className="text-gray-300 dark:text-gray-600" />
                   <select
                     name="notification"
@@ -574,7 +568,7 @@ const ScheduleEdit = () => {
                   </select>
                 </div>
 
-                <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
+                <div className="flex items-start bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
                   <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-1" />
                   <textarea
                     name="content"
@@ -593,7 +587,7 @@ const ScheduleEdit = () => {
                   <button
                     type="button"
                     onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                    className="text-[11px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                    className="text-[11px] font-bold text-[#4C82B6] bg-[#4C82B6]/20 px-2 py-1 rounded-md hover:bg-[#4C82B6]/30 transition-colors"
                   >
                     + 추가
                   </button>
@@ -602,10 +596,10 @@ const ScheduleEdit = () => {
                   {attachments.map((file, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                      className="flex items-center justify-between bg-[#F7F6F2] dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
-                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-blue-500" />}
+                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#4C82B6]" />}
                         <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
                       </div>
                       <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-gray-300 hover:text-red-500">

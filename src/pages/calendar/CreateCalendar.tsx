@@ -69,7 +69,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#3b82f6', // blue
+  '#4C82B6', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -375,7 +375,7 @@ const CreateCalendar = () => {
   const renderFooter = () => (
     <PageFooter>
       <div className="mb-3 text-center h-5">
-        {finalName && <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400 animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
+        {finalName && <p className="text-[13px] font-bold text-[#4C82B6] animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
       </div>
       <button
         disabled={isSubmitDisabled}
@@ -384,7 +384,7 @@ const CreateCalendar = () => {
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
             ${
               !isSubmitDisabled
-                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
                 : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
             }
           `}
@@ -397,9 +397,9 @@ const CreateCalendar = () => {
   return (
     <>
       <PageLayout title="새 캘린더 만들기" footer={renderFooter()} onBack={() => navigate(-1)}>
-        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader icon={<Sparkles className="text-[#4C82B6] w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            새로운 <span className="text-blue-600 dark:text-blue-400">캘린더</span>를<br />
+            새로운 <span className="text-[#4C82B6]">캘린더</span>를<br />
             만들어볼까요?
           </h2>
         </PageHeader>
@@ -407,7 +407,7 @@ const CreateCalendar = () => {
         <div className="space-y-8">
           <section className="space-y-3">
             <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">캘린더 이름</label>
-            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
+            <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
               <PenLine size={20} className="text-gray-300 dark:text-gray-600 mr-4" />
               <input
                 value={calName}
@@ -483,16 +483,14 @@ const CreateCalendar = () => {
                 <Users size={18} className="text-gray-400 dark:text-gray-500" />
                 <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">공유할 친구 선택</label>
               </div>
-              <span className="text-[11px] font-bold px-2 py-1 rounded-lg transition-colors bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300">
-                {selectedFriendUids.length}명
-              </span>
+              <span className="text-[11px] font-bold px-2 py-1 rounded-lg transition-colors bg-[#4C82B6]/20 text-[#4C82B6]">{selectedFriendUids.length}명</span>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">
               <div className="relative">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-[#4C82B6]/50 transition-all">
                       <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
                       <input
                         type="text"
@@ -524,7 +522,7 @@ const CreateCalendar = () => {
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
+                    className="w-[52px] h-[52px] bg-[#4C82B6] text-gray-900 rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-95 transition-all"
                   >
                     <Plus size={20} strokeWidth={3} />
                   </button>
@@ -542,7 +540,7 @@ const CreateCalendar = () => {
                           key={`invited-${friend.uid}`}
                           type="button"
                           onClick={() => toggleFriend(friend.uid)}
-                          className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-600 text-white"
+                          className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-[#4C82B6] text-gray-900"
                         >
                           {friend.name}
                           <X size={14} className="bg-white/20 rounded-full p-0.5" />
@@ -555,7 +553,7 @@ const CreateCalendar = () => {
               <button
                 type="button"
                 onClick={() => setIsFriendSelectionPopupOpen(true)}
-                className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"
+                className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:border-[#4C82B6] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 transition-all active:scale-[0.99]"
               >
                 <UserPlus size={16} strokeWidth={2.5} />
                 친구 목록에서 선택하기

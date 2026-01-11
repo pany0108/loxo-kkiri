@@ -17,7 +17,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.2)] z-40">
+    <nav className="fixed bottom-0 left-0 right-0 bg-[#FDFBF7]/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.2)] z-40">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -26,11 +26,11 @@ const BottomNav = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
-                isActive ? 'text-blue-600 scale-110' : 'text-gray-400 dark:text-gray-500'
+                isActive ? 'text-[#4C82B6] scale-110' : 'text-gray-400 dark:text-gray-500'
               }`}
             >
-              <div className={isActive ? 'drop-shadow-[0_0_8px_rgba(37,99,235,0.3)]' : ''}>{item.icon}</div>
-              <span className={`text-[10px] mt-1 font-bold ${isActive ? 'text-blue-600' : 'text-gray-400 dark:text-gray-500'}`}>{item.label}</span>
+              <div className={isActive ? 'drop-shadow-[0_0_8px_rgba(248,239,211,0.5)]' : ''}>{item.icon}</div>
+              <span className={`text-[10px] mt-1 font-bold ${isActive ? 'text-[#4C82B6]' : 'text-gray-400 dark:text-gray-500'}`}>{item.label}</span>
             </button>
           );
         })}

@@ -106,9 +106,9 @@ const ScheduleChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#F2F4F6] font-['Pretendard'] overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[#FDFBF7] font-['Pretendard'] overflow-hidden">
       {/* 상단 헤더: 뒤로가기 및 일정 정보 */}
-      <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-white/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
+      <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-[#FDFBF7]/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
         <div className="flex items-center gap-2 pt-[env(safe-area-inset-top)]">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-gray-800 hover:bg-gray-100 rounded-full transition-colors" aria-label="뒤로 가기">
             <ChevronLeft size={26} />
@@ -154,7 +154,7 @@ const ScheduleChat = () => {
                   <div
                     className={`
                       px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm
-                      ${msg.isMe ? 'bg-blue-600 text-white rounded-[20px] rounded-tr-none' : 'bg-white text-gray-800 rounded-[20px] rounded-tl-none border border-gray-100'}
+                      ${msg.isMe ? 'bg-[#4C82B6] text-gray-900 rounded-[20px] rounded-tr-none' : 'bg-white text-gray-800 rounded-[20px] rounded-tl-none border border-gray-100'}
                     `}
                   >
                     {msg.text}
@@ -171,13 +171,13 @@ const ScheduleChat = () => {
       </div>
 
       {/* 입력창 영역 */}
-      <div className="shrink-0 bg-white border-t border-gray-100 px-4 pt-3 pb-3 z-20 w-full">
+      <div className="shrink-0 bg-[#FDFBF7] border-t border-gray-100 px-4 pt-3 pb-3 z-20 w-full">
         <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
           <button type="button" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0">
             <Plus size={24} />
           </button>
 
-          <div className="flex-1 min-w-0 bg-gray-50 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-blue-200 focus-within:bg-white transition-all">
+          <div className="flex-1 min-w-0 bg-[#F7F6F2] rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-[#4C82B6]/50 focus-within:bg-white transition-all">
             <input
               type="text"
               value={inputText}
@@ -193,7 +193,7 @@ const ScheduleChat = () => {
             disabled={!inputText.trim()}
             className={`
               p-2.5 rounded-full transition-all active:scale-95 shrink-0
-              ${inputText.trim() ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-gray-100 text-gray-300'}
+              ${inputText.trim() ? 'bg-[#4C82B6] text-gray-900 shadow-md shadow-[#4C82B6]/50' : 'bg-[#F0F0EB] text-gray-300'}
             `}
           >
             <Send size={20} className={inputText.trim() ? 'ml-0.5' : ''} />

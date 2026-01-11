@@ -36,7 +36,7 @@ const DatePickerPopup: React.FC<DatePickerPopupProps> = ({ isOpen, datePickerRef
               key={i}
               onClick={() => onMonthSelect(i)}
               className={`p-3 rounded-lg text-sm font-bold transition-colors ${
-                isCurrentSelection ? 'bg-blue-600 text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                isCurrentSelection ? 'bg-[#4C82B6] text-gray-900' : 'bg-[#F7F6F2] dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-[#4C82B6]/20'
               }`}
             >
               {i + 1}월

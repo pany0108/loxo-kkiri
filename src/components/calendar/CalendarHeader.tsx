@@ -41,7 +41,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   }, [myCalendars]);
 
   return (
-    <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
+    <header className="px-6 pt-6 pb-2 bg-[#FDFBF7]/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
       <div className="flex items-center justify-between pb-2">
         <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
           <button onClick={onCalListToggle} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
@@ -59,9 +59,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                   key={cal.id}
                   onClick={() => onCalendarChange(cal)}
                   className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                    activeCalendar?.id === cal.id
-                      ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                    activeCalendar?.id === cal.id ? 'bg-[#4C82B6]/20 text-[#4C82B6]' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="flex flex-col items-start">
@@ -80,7 +78,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               </button>
               <button
                 onClick={onCreateClick}
-                className="w-full flex items-center gap-2 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-blue-500/10 rounded-[18px] transition-colors"
+                className="w-full flex items-center gap-2 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 rounded-[18px] transition-colors"
               >
                 <Plus size={16} /> 새 캘린더 만들기
               </button>

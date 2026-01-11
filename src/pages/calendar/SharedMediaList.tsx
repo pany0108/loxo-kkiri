@@ -27,13 +27,13 @@ const SharedMediaList = () => {
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
       {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
       <TopNav title={`공유된 미디어 (${title})`} />
 
       {/* 탭 컨트롤 */}
       <div className="px-6 pt-[calc(1rem+env(safe-area-inset-top))]">
-        <div className="flex p-1 bg-gray-100 rounded-[16px]">
+        <div className="flex p-1 bg-[#F0F0EB] rounded-[16px]">
           <button
             onClick={() => setActiveTab('photo')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all
@@ -78,8 +78,8 @@ const SharedMediaList = () => {
           <div className="space-y-3">
             {files.length > 0 ? (
               files.map((file: { name: string; type: string }, idx: number) => (
-                <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-[20px] border border-gray-100">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-blue-500">
+                <div key={idx} className="flex items-center gap-4 p-4 bg-[#F7F6F2] rounded-[20px] border border-gray-100">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-[#4C82B6]">
                     <FileText size={20} />
                   </div>
                   <div className="flex-1 overflow-hidden">

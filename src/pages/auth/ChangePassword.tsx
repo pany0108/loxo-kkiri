@@ -31,22 +31,22 @@ const ChangePassword = () => {
   const isResetMode = mode === 'reset';
 
   return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
       <TopNav title="비밀번호 변경" />
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-8 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-10" icon={<Lock className="text-blue-600 w-6 h-6" />}>
+        <PageHeader className="mb-10" icon={<Lock className="text-[#4C82B6] w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             {isResetMode ? (
               <>
                 잊으신 비밀번호를 <br />
-                <span className="text-blue-600 dark:text-blue-400">새로 설정할게요</span>
+                <span className="text-[#4C82B6]">새로 설정할게요</span>
               </>
             ) : (
               <>
                 보안을 위해 <br />
-                <span className="text-blue-600 dark:text-blue-400">비밀번호를 변경할게요</span>
+                <span className="text-[#4C82B6]">비밀번호를 변경할게요</span>
               </>
             )}
           </h2>
@@ -93,7 +93,7 @@ const ChangePassword = () => {
                   <div className="animate-in fade-in duration-300 space-y-4">
                     <div className="text-center bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl">
                       <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">가입하신 이메일은 아래와 같습니다.</p>
-                      <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-1">{foundEmail.masked}</p>
+                      <p className="text-lg font-bold text-[#4C82B6] mt-1">{foundEmail.masked}</p>
                     </div>
                     <FormInput
                       label="이메일 주소 확인"
@@ -191,7 +191,7 @@ const ChangePassword = () => {
                   disabled={isSubmitting || !findInfo.name || !findInfo.phone}
                   className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
                     !isSubmitting && findInfo.name && findInfo.phone
-                      ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                      ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                   }`}
                 >
@@ -205,7 +205,7 @@ const ChangePassword = () => {
                   disabled={isSubmitting || !confirmedEmail}
                   className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
                     !isSubmitting && confirmedEmail
-                      ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                      ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                   }`}
                 >
@@ -220,7 +220,7 @@ const ChangePassword = () => {
                 className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   !isSubmitting && formData.currentPassword && formData.newPassword && formData.confirmPassword && !errors.newPassword && !errors.confirmPassword
-                    ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
+                    ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
               >

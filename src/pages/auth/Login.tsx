@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, CalendarDays } from 'lucide-react';
+import { Lock, User } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { signInWithEmail, signInWithGoogle, checkUserRegistration } from 'services/authService';
-import { FormInput, FormCheckbox } from 'components';
-import LoadingButton from '../../components/ui/LoadingButton';
+import { FormInput, FormCheckbox, LogoImage, LoadingButton } from 'components';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
@@ -174,16 +173,14 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] bg-white dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
       <div className="flex flex-1 flex-col justify-center px-6 max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-10 text-left">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/50 ring-4 ring-blue-50 dark:ring-blue-500/10">
-            <CalendarDays className="text-white w-7 h-7 fill-white/20" />
-          </div>
+          <LogoImage className="mb-8" />
           <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             아무도 모르게, <br />
-            <span className="text-blue-600">우리 끼리</span>
+            <span className="text-[#4C82B6]">우리 끼리</span>
           </h2>
           <p className="mt-3 text-gray-400 font-medium text-[15px]">
             우리만의 비밀스러운 약속 아지트,
@@ -224,7 +221,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => navigate('/change-password', { state: { from: 'login' } })}
-              className="text-xs font-bold text-gray-300 dark:text-gray-600 hover:text-blue-500 transition-colors"
+              className="text-xs font-bold text-gray-300 dark:text-gray-600 hover:text-[#4C82B6] transition-colors"
             >
               비밀번호 재설정
             </button>
@@ -236,7 +233,7 @@ const Login = () => {
               type="submit"
               isLoading={isEmailLoading}
               disabled={isEmailLoading || isGoogleLoading || isPageLoading}
-              className="w-full h-[60px] bg-blue-600 text-white rounded-[20px] font-black text-[17px] shadow-lg flex items-center justify-center"
+              className="w-full h-[60px] bg-[#4C82B6] text-white rounded-[20px] font-black text-[17px] shadow-lg flex items-center justify-center"
             >
               로그인
             </LoadingButton>

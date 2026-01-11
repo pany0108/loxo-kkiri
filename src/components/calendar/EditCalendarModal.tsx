@@ -27,7 +27,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#3b82f6', // blue
+  '#4C82B6', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -117,7 +117,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
         <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 아이콘, 색상을 변경합니다.</p>
 
         <div className="space-y-6">
-          <div className="flex items-center h-[58px] bg-gray-50 dark:bg-gray-700 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-5 transition-all">
+          <div className="flex items-center h-[58px] bg-[#F7F6F2] dark:bg-gray-700 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-5 transition-all">
             <PenLine size={18} className="text-gray-400 mr-3" />
             <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="w-full bg-transparent outline-none font-bold text-gray-800 dark:text-white" />
           </div>
@@ -176,10 +176,10 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
         </div>
 
         <div className="flex gap-3 mt-8">
-          <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold rounded-[20px]">
+          <button onClick={onClose} className="flex-1 py-4 bg-[#F0F0EB] dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold rounded-[20px]">
             취소
           </button>
-          <button onClick={handleSave} className="flex-1 py-4 bg-blue-600 text-white font-bold rounded-[20px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50">
+          <button onClick={handleSave} className="flex-1 py-4 bg-[#4C82B6] text-gray-900 font-bold rounded-[20px] shadow-lg shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20">
             저장
           </button>
         </div>

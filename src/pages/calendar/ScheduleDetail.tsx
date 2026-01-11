@@ -111,7 +111,7 @@ const ScheduleDetail = () => {
     end: initialState?.end ? dayjs(initialState.end) : dayjs().add(1, 'hour'),
     location: initialState?.location || '',
     content: initialState?.content || '',
-    color: initialState?.color || '#3b82f6',
+    color: initialState?.color || '#4C82B6',
     calendarId: initialState?.calendarId || '',
     notification: initialState?.notification || 'none',
     allDay: initialState?.allDay || false,
@@ -184,7 +184,7 @@ const ScheduleDetail = () => {
           end: displayEnd, // 보정된 종료 날짜 사용
           location: dbData.location || '',
           content: dbData.content || '',
-          color: dbData.color || '#3b82f6',
+          color: dbData.color || '#4C82B6',
           calendarId: dbData.calendarId,
           notification: dbData.notification || 'none',
           allDay: dbData.isAllDay || false,
@@ -407,10 +407,10 @@ const ScheduleDetail = () => {
         }
       >
         {/* 타이틀 및 상세 정보 */}
-        <PageHeader icon={<Calendar className="text-blue-600 w-6 h-6" />}>
+        <PageHeader icon={<Calendar className="text-[#4C82B6] w-6 h-6" />}>
           {data.recurrence && data.recurrence.frequency !== 'none' && (
             <div className="mb-2">
-              <span className="text-[12px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg">반복 일정</span>
+              <span className="text-[12px] font-bold text-[#4C82B6] bg-[#4C82B6]/20 px-2 py-1 rounded-lg">반복 일정</span>
             </div>
           )}
           <div className="flex relative pl-4">
@@ -498,7 +498,7 @@ const ScheduleDetail = () => {
                 <div className="flex gap-2 flex-wrap">
                   {data.files.map((file, idx) => (
                     <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-[14px] border border-gray-100">
-                      <Paperclip size={14} className="text-blue-500" />
+                      <Paperclip size={14} className="text-[#4C82B6]" />
                       <span className="text-[12px] font-bold text-gray-700">{file.name}</span>
                     </div>
                   ))}
@@ -514,7 +514,7 @@ const ScheduleDetail = () => {
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <MessageCircle size={18} className="text-blue-600 dark:text-blue-400" /> 공유 멤버 및 채팅
+                  <MessageCircle size={18} className="text-[#4C82B6]" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
                   {/* [수정] attendee 타입 명시 */}
@@ -522,7 +522,7 @@ const ScheduleDetail = () => {
                     <div
                       key={attendee.uid}
                       title={attendee.name}
-                      className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-300 overflow-hidden"
+                      className="w-8 h-8 rounded-full bg-[#4C82B6]/30 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-[#4C82B6] overflow-hidden"
                     >
                       {attendee.photoURL ? <img src={attendee.photoURL} alt={attendee.name} className="w-full h-full object-cover" /> : attendee.name[0] || '?'}
                     </div>
@@ -532,14 +532,14 @@ const ScheduleDetail = () => {
 
               <button
                 onClick={() => navigate(`/chat/${id}`)}
-                className="w-full h-[60px] bg-[#EBF4FF] dark:bg-blue-500/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-blue-100 dark:border-blue-900/50 group"
+                className="w-full h-[60px] bg-[#4C82B6]/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-[#4C82B6]/30 group"
               >
                 <div className="flex flex-col items-start">
-                  <span className="text-[15px] font-black text-blue-600 dark:text-blue-300">채팅방 입장하기</span>
-                  <span className="text-[11px] font-medium text-blue-400 dark:text-blue-500">일정 조율 및 사진 공유</span>
+                  <span className="text-[15px] font-black text-[#4C82B6]">채팅방 입장하기</span>
+                  <span className="text-[11px] font-medium text-[#4C82B6]/80">일정 조율 및 사진 공유</span>
                 </div>
-                <div className="w-10 h-10 bg-white dark:bg-blue-500/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <ChevronLeft size={20} className="text-blue-600 dark:text-blue-300 rotate-180 ml-0.5" />
+                <div className="w-10 h-10 bg-white dark:bg-[#4C82B6]/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <ChevronLeft size={20} className="text-[#4C82B6] rotate-180 ml-0.5" />
                 </div>
               </button>
 
@@ -564,7 +564,7 @@ const ScheduleDetail = () => {
                   ))}
                   <button
                     onClick={handleViewAllMedia}
-                    className="w-20 h-20 shrink-0 rounded-[16px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 gap-1 hover:border-blue-300 hover:text-blue-500 transition-colors"
+                    className="w-20 h-20 shrink-0 rounded-[16px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 gap-1 hover:border-[#4C82B6] hover:text-[#4C82B6] transition-colors"
                   >
                     <FileText size={20} />
                     <span className="text-[10px] font-bold">More</span>
@@ -621,7 +621,7 @@ const ScheduleDetail = () => {
           <button
             type="button"
             onClick={handleCopy}
-            className="w-full text-center text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors py-3 flex items-center justify-center gap-2"
+            className="w-full text-center text-sm font-bold text-[#4C82B6] hover:text-[#4C82B6]/80 transition-colors py-3 flex items-center justify-center gap-2"
           >
             <Copy size={14} /> 이 일정 복사하기
           </button>

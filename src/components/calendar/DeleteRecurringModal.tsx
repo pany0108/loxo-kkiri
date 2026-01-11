@@ -31,28 +31,26 @@ const DeleteRecurringModal = ({ onClose, onDeleteOne, onDeleteFollowing, onDelet
         <div className="space-y-3">
           <button
             onClick={onDeleteOne}
-            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-200 dark:hover:border-blue-800 rounded-[20px] transition-all group"
+            className="w-full flex items-center justify-between p-4 bg-[#F7F6F2] dark:bg-gray-700/50 hover:bg-[#4C82B6]/20 border border-transparent hover:border-[#4C82B6]/50 rounded-[20px] transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-gray-400 dark:text-gray-500 group-hover:text-[#4C82B6] transition-colors">
                 <Trash2 size={18} />
               </div>
-              <span className="text-[14px] font-bold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">이 일정만 삭제</span>
+              <span className="text-[14px] font-bold text-gray-700 dark:text-gray-200 group-hover:text-[#4C82B6]">이 일정만 삭제</span>
             </div>
           </button>
 
           <button
             onClick={onDeleteFollowing}
-            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-200 dark:hover:border-blue-800 rounded-[20px] transition-all group"
+            className="w-full flex items-center justify-between p-4 bg-[#F7F6F2] dark:bg-gray-700/50 hover:bg-[#4C82B6]/20 border border-transparent hover:border-[#4C82B6]/50 rounded-[20px] transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-gray-400 dark:text-gray-500 group-hover:text-[#4C82B6] transition-colors">
                 <ArrowRight size={18} />
               </div>
               <div className="text-left">
-                <span className="block text-[14px] font-bold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                  이 일정 포함 향후 일정 삭제
-                </span>
+                <span className="block text-[14px] font-bold text-gray-700 dark:text-gray-200 group-hover:text-[#4C82B6]">이 일정 포함 향후 일정 삭제</span>
                 <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">이 날짜 이후의 모든 반복이 사라집니다.</span>
               </div>
             </div>
@@ -60,7 +58,7 @@ const DeleteRecurringModal = ({ onClose, onDeleteOne, onDeleteFollowing, onDelet
 
           <button
             onClick={onDeleteAll}
-            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800 rounded-[20px] transition-all group"
+            className="w-full flex items-center justify-between p-4 bg-[#F7F6F2] dark:bg-gray-700/50 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-200 dark:hover:border-red-800 rounded-[20px] transition-all group"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm text-gray-400 dark:text-gray-500 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors">
