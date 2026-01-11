@@ -178,10 +178,14 @@ const Login = () => {
             <CalendarDays className="text-white w-7 h-7 fill-white/20" />
           </div>
           <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
-            일정 관리의 <br />
-            <span className="text-blue-600">새로운 기준</span>
+            아무도 모르게, <br />
+            <span className="text-blue-600">우리 끼리</span>
           </h2>
-          <p className="mt-3 text-gray-400 font-medium text-[15px]">슈퍼 스케줄러와 함께 스마트하게 약속하세요.</p>
+          <p className="mt-3 text-gray-400 font-medium text-[15px]">
+            우리만의 비밀스러운 약속 아지트,
+            <br />
+            끼리(Kkiri)에 오신 것을 환영합니다.
+          </p>
         </div>
 
         <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -258,7 +262,7 @@ const Login = () => {
       </div>
 
       <footer className="text-center">
-        <p className="text-[11px] font-bold text-gray-200 dark:text-gray-700 tracking-[0.2em] uppercase">Powered by Super Scheduler</p>
+        <p className="text-[11px] font-bold text-gray-200 dark:text-gray-700 tracking-[0.2em] uppercase">Powered by Kkiri</p>
       </footer>
     </div>
   );
