@@ -188,6 +188,8 @@ const CalendarManager = () => {
           <div className="space-y-3">
             {sortedCalendars.map((cal) => {
               const IconComponent = cal.icon && ICON_MAP[cal.icon] ? ICON_MAP[cal.icon] : CalendarIcon;
+              // [추가] customNames가 있으면 내 uid에 맞는 이름을 우선 사용
+              const displayName = (cal as any).customNames?.[user?.uid] || cal.name;
               return (
                 <div
                   key={cal.id}
@@ -201,7 +203,7 @@ const CalendarManager = () => {
 
                     <div className="flex flex-col justify-center pt-0.5 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-[16px] font-black text-gray-900 dark:text-white leading-none truncate">{cal.name}</h4>
+                        <h4 className="text-[16px] font-black text-gray-900 dark:text-white leading-none truncate">{displayName}</h4>
                         {cal.isDefault && (
                           <span className="text-[9px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded-md shrink-0">기본</span>
                         )}

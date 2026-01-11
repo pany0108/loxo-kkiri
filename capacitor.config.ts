@@ -1,26 +1,17 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kairos.superscheduler',
-  appName: 'Super Scheduler',
+  appId: 'com.loxo.kkiri',
+  appName: 'Kkiri',
   webDir: 'build',
   server: {
     androidScheme: 'https',
   },
   plugins: {
-    SplashScreen: {
-      launchShowDuration: 2000,
-      launchAutoHide: true,
-      backgroundColor: '#ffffffff',
-      androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
-    },
     GoogleAuth: {
       scopes: ['profile', 'email'],
-      serverClientId: '260376909396-3oto6s0uevl8mudqgdh0h5ih3efqo93v.apps.googleusercontent.com',
+      serverClientId: '831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com',
+      androidClientId: '831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com',
       forceCodeForRefreshToken: true,
     },
   },

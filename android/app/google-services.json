@@ -1,41 +1,41 @@
 {
   "project_info": {
-    "project_number": "260376909396",
-    "project_id": "super-scheduler-c99f7",
-    "storage_bucket": "super-scheduler-c99f7.firebasestorage.app"
+    "project_number": "831596904912",
+    "project_id": "loxo-kkiri",
+    "storage_bucket": "loxo-kkiri.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:260376909396:android:eadd504a1c356dd4d13fc1",
+        "mobilesdk_app_id": "1:831596904912:android:4b43145209eb14e7d979d5",
         "android_client_info": {
-          "package_name": "com.kairos.superscheduler"
+          "package_name": "com.loxo.kkiri"
         }
       },
       "oauth_client": [
         {
-          "client_id": "260376909396-6qimv6tk7qdp47b9ibnsqda3a7ntn3ao.apps.googleusercontent.com",
+          "client_id": "831596904912-3ds37uitmfkhajhs9ncd6gqjmdmn1sra.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.kairos.superscheduler",
-            "certificate_hash": "7d10b6b7250eb3833739082182490a616c0bc4d9"
+            "package_name": "com.loxo.kkiri",
+            "certificate_hash": "f96e72416676b621be0e02e3e8dc2ccb107bd02f"
           }
         },
         {
-          "client_id": "260376909396-3oto6s0uevl8mudqgdh0h5ih3efqo93v.apps.googleusercontent.com",
+          "client_id": "831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD4F6QGNsWBpaWwcEt18bLaAgOkXiypXLQ"
+          "current_key": "AIzaSyBFx3q2S2h5ZGigjV7vWHWUfhAxhvj4WNg"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "260376909396-3oto6s0uevl8mudqgdh0h5ih3efqo93v.apps.googleusercontent.com",
+              "client_id": "831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

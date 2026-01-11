@@ -1,22 +1,20 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyCatGVUjIC50vXsAuaCr9Qdmj-nOgN8Ei0',
-  authDomain: 'super-scheduler-c99f7.web.app',
-  projectId: 'super-scheduler-c99f7',
-  storageBucket: 'super-scheduler-c99f7.appspot.com',
-  messagingSenderId: '260376909396',
-  appId: '1:260376909396:web:c423df6dcf26b60dd13fc1',
-  measurementId: 'G-2PJ3FMH867',
+  apiKey: 'AIzaSyAfy3DK-scMiec9nxf56c4xv5mNn-W_Xk0',
+  authDomain: 'loxo-kkiri.firebaseapp.com',
+  projectId: 'loxo-kkiri',
+  storageBucket: 'loxo-kkiri.firebasestorage.app',
+  messagingSenderId: '831596904912',
+  appId: '1:831596904912:web:580cd76862398a09d979d5',
+  measurementId: 'G-VV39T2YVQ1',
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
-export { app, auth, db, storage, googleProvider };
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
+export { app };

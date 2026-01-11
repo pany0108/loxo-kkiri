@@ -27,9 +27,11 @@ const Login = () => {
 
   // 앱 실행 시 GoogleAuth 초기화 (한 번만 실행)
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      GoogleAuth.initialize();
-    }
+    // Native는 자동 초기화되지만, Web 환경에서는 명시적 초기화가 필수입니다.
+    // 플랫폼 구분 없이 호출하여 Web 지원을 추가하고, Native에서의 중복 호출은 플러그인이 처리합니다.
+    GoogleAuth.initialize().catch((error) => {
+      console.error('GoogleAuth initialization failed:', error);
+    });
   }, []);
 
   /**
@@ -132,8 +134,10 @@ const Login = () => {
 
       // Firebase Auth 에러 코드 처리
       let errorMessage = '로그인에 실패했습니다. 다시 시도해주세요.';
-      if (error.code) {
-        switch (error.code) {
+      // [수정] error.code가 숫자일 수도 있으므로 문자열로 변환하여 비교합니다.
+      const errorCode = error.code ? String(error.code) : null;
+      if (errorCode) {
+        switch (errorCode) {
           case 'auth/network-request-failed':
             errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
             break;
@@ -160,7 +164,7 @@ const Login = () => {
             errorMessage = '앱 설정에 오류가 있습니다. SHA-1 지문 또는 패키지 이름이 올바르게 등록되었는지 확인해주세요. (에러 코드: 10)';
             break;
           default:
-            errorMessage = `로그인 중 오류가 발생했습니다. (${error.code})`;
+            errorMessage = `로그인 중 오류가 발생했습니다. (${errorCode})`;
             break;
         }
       }

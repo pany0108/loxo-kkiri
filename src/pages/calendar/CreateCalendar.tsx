@@ -231,15 +231,20 @@ const CreateCalendar = () => {
 
     // 3. 선택된 친구 목록을 기반으로 캘린더 이름을 요약하여 생성
     const selectedFriendNames = friends.filter((f) => selectedFriendUids.includes(f.uid)).map((f) => f.name);
-    const totalMemberNames = [user.displayName, ...selectedFriendNames];
-    const totalCount = totalMemberNames.length;
 
-    if (totalCount <= 2) {
-      // 2명 이하일 경우: "홍길동, 김철수의 캘린더"
-      return `${totalMemberNames.join(', ')}의 캘린더`;
+    if (selectedFriendNames.length > 0) {
+      const targetName = selectedFriendNames[0];
+      const lastCharCode = targetName.charCodeAt(targetName.length - 1);
+      const isHangul = lastCharCode >= 0xac00 && lastCharCode <= 0xd7a3;
+      const hasBatchim = isHangul && (lastCharCode - 0xac00) % 28 > 0;
+      const particle = hasBatchim ? '과' : '와';
+
+      if (selectedFriendNames.length === 1) {
+        return `${targetName}${particle}의 캘린더`;
+      }
+      return `${targetName}님 외 ${selectedFriendNames.length - 1}명${particle}의 캘린더`;
     }
-    // 3명 이상일 경우: "홍길동님 외 2명의 캘린더"
-    return `${totalMemberNames[0]}님 외 ${totalCount - 1}명의 캘린더`;
+    return '';
   }, [calName, selectedFriendUids, friends, user?.displayName]);
 
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
@@ -269,8 +274,44 @@ const CreateCalendar = () => {
         return;
       }
 
+      // [추가] 캘린더 이름 및 사용자별 맞춤 이름 생성 로직
+      let dbName = calName;
+      let customNames: Record<string, string> | null = null;
+
+      // 사용자가 이름을 직접 입력하지 않은 경우 (자동 생성)
+      if (!calName.trim()) {
+        const selectedFriends = friends.filter((f) => selectedFriendUids.includes(f.uid));
+        // 1. 기본 name 필드는 참여자들의 이름을 나열하여 저장 (fallback 용도)
+        const allMemberNames = [user.displayName || '알 수 없음', ...selectedFriends.map((f) => f.name)];
+        dbName = allMemberNames.join(', ');
+
+        // 2. 각 멤버별로 상대방의 이름을 딴 맞춤 이름 생성 (customNames)
+        customNames = {};
+        const allMembers = [{ uid: user.uid, name: user.displayName || '알 수 없음' }, ...selectedFriends];
+
+        allMembers.forEach((member) => {
+          const others = allMembers.filter((m) => m.uid !== member.uid);
+          if (others.length > 0) {
+            const targetName = others[0].name;
+            const lastCharCode = targetName.charCodeAt(targetName.length - 1);
+            const isHangul = lastCharCode >= 0xac00 && lastCharCode <= 0xd7a3;
+            const hasBatchim = isHangul && (lastCharCode - 0xac00) % 28 > 0;
+            const particle = hasBatchim ? '과' : '와';
+
+            if (others.length === 1) {
+              customNames![member.uid] = `${targetName}${particle}의 캘린더`;
+            } else {
+              customNames![member.uid] = `${targetName}님 외 ${others.length - 1}명${particle}의 캘린더`;
+            }
+          } else {
+            customNames![member.uid] = '나만의 캘린더';
+          }
+        });
+      }
+
       const docRef = await addDoc(collection(db, 'calendars'), {
-        name: finalName,
+        name: dbName,
+        customNames: customNames, // [추가] 사용자별 이름 저장
         ownerId: user.uid,
         members: newMembers, // 정렬된 멤버 배열 저장
         color: selectedColor, // [수정] 선택된 색상 저장
@@ -283,19 +324,22 @@ const CreateCalendar = () => {
       if (selectedFriendUids.length > 0 && user?.displayName) {
         const batch = writeBatch(db);
         for (const friendUid of selectedFriendUids) {
+          // 알림 메시지에는 해당 친구가 보게 될 캘린더 이름을 사용
+          const inviteCalendarName = customNames ? customNames[friendUid] : dbName;
+
           await notifyCalendarInvite(batch, {
             friendUid,
             inviterId: user.uid,
             inviterName: user.displayName,
             calendarId: docRef.id,
-            calendarName: finalName,
+            calendarName: inviteCalendarName,
           });
         }
         // 모든 알림 준비가 끝난 후 배치 커밋
         await batch.commit();
       }
 
-      toast.success(`'${finalName}' 캘린더가 생성되었습니다!`);
+      toast.success(`'${customNames ? customNames[user.uid] : dbName}' 캘린더가 생성되었습니다!`);
 
       const { from, scheduleData } = location.state || {};
 

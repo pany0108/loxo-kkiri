@@ -30,6 +30,7 @@ import {
 import dayjs from 'dayjs';
 import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
 import { useAddSchedule } from 'hooks';
+import { auth } from '../../firebase';
 import LoadingButton from '../../components/ui/LoadingButton';
 
 const NOTIFICATION_OPTIONS = [
@@ -81,6 +82,8 @@ const AddSchedule = () => {
   const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
   const { dropdownRef, titleInputRef } = refs;
   const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleCalendarSelect, handleSuggestionClick, handleToggle, handleSubmit } = handlers;
+
+  const currentUser = auth.currentUser;
 
   const sortedCalendars = React.useMemo(() => {
     return [...myCalendars].sort((a, b) => {
@@ -179,7 +182,9 @@ const AddSchedule = () => {
                       <CalendarIcon size={14} />
                     )}
                   </div>
-                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">{selectedCalendar?.name || '캘린더 선택...'}</span>
+                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">
+                    {selectedCalendar ? (selectedCalendar as any).customNames?.[currentUser?.uid || ''] || selectedCalendar.name : '캘린더 선택...'}
+                  </span>
                 </div>
                 <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -188,6 +193,7 @@ const AddSchedule = () => {
                 <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                   {sortedCalendars.map((cal) => {
                     const IconComponent = (cal as any).icon && ICON_MAP[(cal as any).icon] ? ICON_MAP[(cal as any).icon] : CalendarIcon;
+                    const calName = (cal as any).customNames?.[currentUser?.uid || ''] || cal.name;
                     return (
                       <button
                         key={cal.id}
@@ -203,7 +209,7 @@ const AddSchedule = () => {
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#3b82f6' }}>
                             <IconComponent size={16} />
                           </div>
-                          <span className="text-[14px] font-bold">{cal.name}</span>
+                          <span className="text-[14px] font-bold">{calName}</span>
                         </div>
                         {selectedCalendar?.id === cal.id && <Check size={16} className="text-blue-600 dark:text-blue-300" />}
                       </button>

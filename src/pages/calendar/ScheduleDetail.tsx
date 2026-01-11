@@ -451,7 +451,9 @@ const ScheduleDetail = () => {
                   ) : (
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
                   )}
-                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">{scheduleCalendar.name}</span>
+                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">
+                    {(scheduleCalendar as any).customNames?.[auth.currentUser?.uid || ''] || scheduleCalendar.name}
+                  </span>
                 </div>
               </div>
             )}
