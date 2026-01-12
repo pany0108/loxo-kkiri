@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarCheck, X } from 'lucide-react';
 import dayjs from 'dayjs';
-import { LoadingButton } from 'components';
+import { LoadingButton, PageTitle } from 'components';
 
 /**
  * 약속 확정 확인 다이얼로그의 Props 인터페이스
@@ -46,7 +46,7 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} aria-hidden="true" />
 
       {/* 모달 본문 */}
-      <div className="relative bg-white dark:bg-gray-800 w-full max-w-sm rounded-[32px] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-gray-800 w-full max-w-sm rounded-4xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-300 transition-colors"
@@ -61,7 +61,7 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-2">이 시간으로 확정할까요?</h3>
+            <PageTitle className="text-xl mb-2">이 시간으로 확정할까요?</PageTitle>
             <p className="text-[14px] text-[#8B95A1] dark:text-gray-400 font-medium leading-relaxed">
               확정하면 모든 멤버에게 알림이 전송되고
               <br />
@@ -70,7 +70,7 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
           </div>
 
           {/* 선택된 시간 정보 표시 영역 */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-[20px] p-4 border border-gray-200 dark:border-gray-600">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
             <p className="text-[15px] font-black text-[#191F28] dark:text-gray-200 mb-1">{dateDisplay}</p>
             <p className="text-[13px] font-bold text-[#007AFF] dark:text-blue-400">{slotData.time}</p>
           </div>
@@ -78,14 +78,14 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
           <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 h-[52px] rounded-[20px] bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="flex-1 h-[52px] rounded-xl bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               취소
             </button>
             <LoadingButton
               onClick={onConfirm}
               isLoading={isLoading}
-              className="flex-1 h-[52px] rounded-[20px] bg-[#007AFF] text-white font-black text-[14px] shadow-lg shadow-[#007AFF]/30 dark:shadow-blue-900/50 active:scale-95 transition-all flex items-center justify-center"
+              className="flex-1 h-[52px] rounded-xl bg-[#007AFF] text-white font-black text-[14px] shadow-lg shadow-[#007AFF]/30 dark:shadow-blue-900/50 active:scale-95 transition-all flex items-center justify-center"
             >
               확정하기
             </LoadingButton>

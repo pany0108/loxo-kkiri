@@ -81,7 +81,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
         >
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl"
+            className="relative bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}

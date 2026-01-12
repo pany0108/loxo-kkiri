@@ -89,7 +89,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
 
   return (
     <div className="space-y-3">
-      <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">반복 설정</label>
+      <label className="block text-caption ml-1">반복 설정</label>
 
       <div
         onClick={() => setIsOpen(!isOpen)}

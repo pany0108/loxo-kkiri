@@ -33,10 +33,10 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
 
   return (
     <div
-      className={`rounded-[32px] overflow-hidden border-2 transition-all duration-300 ${
+      className={`rounded-4xl overflow-hidden border-2 transition-all duration-300 ${
         slot.isAllAvailable
           ? 'bg-white dark:bg-gray-800 border-emerald-500 dark:border-emerald-700 shadow-xl shadow-emerald-50 dark:shadow-emerald-900/30 ring-4 ring-emerald-50 dark:ring-emerald-900/20 scale-[1.02]'
-          : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-sm'
+          : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-card'
       }`}
     >
       <div className={`px-6 py-5 flex justify-between items-start ${slot.isAllAvailable ? 'bg-emerald-50/30 dark:bg-emerald-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
@@ -179,7 +179,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
         {status !== 'CONFIRMED' && (
           <button
             onClick={() => onConfirmClick(slot)}
-            className={`w-full py-4 rounded-[20px] font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 ${
+            className={`w-full py-4 rounded-xl font-black text-[15px] transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2 ${
               slot.isAllAvailable
                 ? 'bg-emerald-500 text-white shadow-emerald-200 dark:shadow-emerald-900/50 hover:bg-emerald-600'
                 : 'bg-white dark:bg-gray-700 text-gray-400 dark:text-gray-400 border-2 bordmeeting/report/er-gray-100 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shadow-none'

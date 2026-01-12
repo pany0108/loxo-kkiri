@@ -66,7 +66,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <Users size={18} className="text-[#8B95A1] dark:text-gray-500" />
-          <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">누구와 함께하나요?</label>
+          <label className="text-caption">누구와 함께하나요?</label>
         </div>
 
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">

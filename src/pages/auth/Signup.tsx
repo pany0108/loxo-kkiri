@@ -1,7 +1,7 @@
 import React from 'react';
 import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
+import { PageLayout, PageHeader, FormInput, BirthDateInput, PageFooter, PageTitle } from 'components';
 import LoadingButton from '../../components/ui/LoadingButton';
 import { handleEnterToNext } from 'utils';
 import { useSignupForm } from 'hooks/auth/useSignupForm';
@@ -42,20 +42,44 @@ const Signup = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title="회원가입" />
+  const renderFooter = () => (
+    <PageFooter zIndex={50}>
+      <LoadingButton
+        type="submit"
+        form="signup-form"
+        isLoading={isLoading}
+        disabled={
+          isLoading ||
+          !state.isVerified ||
+          !!errors.email ||
+          !!errors.password ||
+          !!errors.confirmPassword ||
+          !formData.email ||
+          !formData.password ||
+          !formData.confirmPassword ||
+          !formData.lastName ||
+          !formData.firstName ||
+          !formData.birthDate ||
+          !formData.phone
+        }
+        className="btn-primary"
+      >
+        회원가입 완료
+      </LoadingButton>
+    </PageFooter>
+  );
 
-      <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
-        {/* 헤더 섹션 */}
-        <PageHeader className="mb-10" icon={<Sparkles className="text-[#478BCC] w-6 h-6" />}>
-          <h2 className="text-[28px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
+  return (
+    <PageLayout title="회원가입" footer={renderFooter()}>
+      <>
+        <PageHeader className="mb-10" icon={<Sparkles className="text-primary w-6 h-6" />}>
+          <PageTitle className="text-[28px] leading-[1.2]">
             새로운 시작, <br />
-            <span className="text-[#478BCC]">회원가입을 시작할까요?</span>
-          </h2>
+            <span className="text-primary">회원가입을 시작할까요?</span>
+          </PageTitle>
         </PageHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="signup-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
             <FormInput
               inputRef={emailRef}
@@ -148,48 +172,9 @@ const Signup = () => {
               required
             />
           </div>
-
-          <PageFooter zIndex={50}>
-            <LoadingButton
-              type="submit"
-              isLoading={isLoading}
-              disabled={
-                isLoading ||
-                !state.isVerified ||
-                !!errors.email ||
-                !!errors.password ||
-                !!errors.confirmPassword ||
-                !formData.email ||
-                !formData.password ||
-                !formData.confirmPassword ||
-                !formData.lastName ||
-                !formData.firstName ||
-                !formData.birthDate ||
-                !formData.phone
-              }
-              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-              ${
-                state.isVerified &&
-                !errors.email &&
-                !errors.password &&
-                !errors.confirmPassword &&
-                formData.email &&
-                formData.password &&
-                formData.confirmPassword &&
-                formData.lastName &&
-                formData.firstName &&
-                formData.birthDate &&
-                formData.phone
-                  ? 'bg-[#478BCC] text-gray-900 shadow-[#478BCC]/30 dark:shadow-[#478BCC]/20 active:scale-[0.98]'
-                  : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
-              }`}
-            >
-              회원가입 완료
-            </LoadingButton>
-          </PageFooter>
         </form>
-      </div>
-    </div>
+      </>
+    </PageLayout>
   );
 };
 

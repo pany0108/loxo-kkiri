@@ -132,7 +132,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-4xl p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-1">새 친구 찾기</h3>
         <p className="text-[#8B95A1] dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 또는 휴대폰 번호로 추가하세요.</p>
         <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl mb-4">
@@ -155,7 +155,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
             휴대폰 번호
           </button>
         </div>
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[20px] p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
           <input
             ref={addFriendInputRef}
             type={addFriendMethod === 'email' ? 'email' : 'tel'}
@@ -170,13 +170,13 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
           />
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3.5 rounded-[20px] bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px]">
+          <button onClick={onClose} className="flex-1 py-3.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px]">
             취소
           </button>
           <button
             onClick={handleAddFriend}
             disabled={isAdding || !newFriendInput.trim()}
-            className="flex-1 py-3.5 rounded-[20px] bg-[#007AFF] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300 dark:disabled:bg-blue-800"
+            className="flex-1 py-3.5 rounded-xl bg-[#007AFF] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-95 disabled:bg-blue-300 dark:disabled:bg-blue-800"
           >
             {isAdding ? (
               <Loader2 size={16} className="animate-spin" />
@@ -190,7 +190,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
         <button
           type="button"
           onClick={onOpenContacts}
-          className="w-full flex items-center justify-center gap-2 mt-3 py-3.5 rounded-[20px] bg-gray-50 dark:bg-gray-700/50 text-[#8B95A1] dark:text-gray-400 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="w-full flex items-center justify-center gap-2 mt-3 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-[#8B95A1] dark:text-gray-400 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <Users size={16} />
           연락처에서 친구 추가

@@ -8,8 +8,8 @@ import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useTheme } from 'contexts';
-import { useFirestoreDoc, useScrollToTop } from 'hooks';
-import { PageHeader, ConfirmModal } from 'components';
+import { useFirestoreDoc } from 'hooks';
+import { PageHeader, ConfirmModal, PageTitle, PageLayout } from 'components';
 import { UserProfile } from 'types';
 
 /**
@@ -21,7 +21,6 @@ import { UserProfile } from 'types';
 const MyProfile = () => {
   const navigate = useNavigate();
   const { themeMode, toggleThemeMode } = useTheme();
-  const scrollContainerRef = useScrollToTop();
 
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [isCheckingPermission, setIsCheckingPermission] = useState(true);
@@ -148,15 +147,14 @@ const MyProfile = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
-      {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
+    <PageLayout title="마이페이지" onBack={null}>
+      <div className="space-y-8 pb-24">
         <PageHeader className="mb-2">
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             <span className="text-[#007AFF] dark:text-blue-400">{userData?.name || '사용자'}</span>님,
             <br />
             안녕하세요!
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         {/* 프로필 카드 섹션 */}
@@ -266,7 +264,7 @@ const MyProfile = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 

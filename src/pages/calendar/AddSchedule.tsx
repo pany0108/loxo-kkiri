@@ -28,7 +28,7 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, RecurrenceOptions, PageHeader, PageFooter } from 'components';
+import { PageLayout, RecurrenceOptions, PageHeader, PageFooter, PageTitle, FormInput, FormTextarea } from 'components';
 import { useAddSchedule } from 'hooks';
 import { auth } from '../../firebase';
 import LoadingButton from '../../components/ui/LoadingButton';
@@ -102,12 +102,7 @@ const AddSchedule = () => {
         form="add-schedule-form" // [추가] form 속성으로 외부 form과 연결
         disabled={!formData.title}
         isLoading={isSubmitting}
-        className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-                ${
-                  formData.title && !isSubmitting
-                    ? 'bg-[#007AFF] text-white shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-[0.98]'
-                    : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
-                }`}
+        className="btn-primary"
       >
         <span>일정 등록하기</span>
       </LoadingButton>
@@ -118,30 +113,27 @@ const AddSchedule = () => {
     // [수정] PageLayout으로 전체 구조 변경
     <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
-        <PageHeader icon={<CalendarPlus className="text-[#007AFF] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
-            새로운 <span className="text-[#007AFF]">일정</span>을<br />
+        <PageHeader icon={<CalendarPlus className="text-primary w-6 h-6" />}>
+          <PageTitle>
+            새로운 <span className="text-primary">일정</span>을<br />
             등록해볼까요?
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         {/* [수정] form에 id 추가 */}
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
             <div ref={titleInputRef} className="group relative">
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  onFocus={() => formData.title && scheduleSearchResults.length > 0 && setShowSuggestions(true)}
-                  placeholder="무엇을 하나요?"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1]"
-                  required
-                  autoComplete="off"
-                />
-              </div>
+              <FormInput
+                label="일정 제목"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                onFocus={() => formData.title && scheduleSearchResults.length > 0 && setShowSuggestions(true)}
+                placeholder="무엇을 하나요?"
+                required
+                autoComplete="off"
+              />
               {/* [추가] 이전 일정 추천 UI */}
               {showSuggestions && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-100 dark:border-gray-600 z-20 max-h-48 overflow-y-auto">
@@ -168,12 +160,8 @@ const AddSchedule = () => {
 
             {/* [추가] 캘린더 선택 섹션 */}
             <div className="group relative" ref={dropdownRef}>
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">캘린더</label>
-              <button
-                type="button"
-                onClick={() => setIsCalListOpen(!isCalListOpen)}
-                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
-              >
+              <label className="block text-caption ml-1 mb-2">캘린더</label>
+              <button type="button" onClick={() => setIsCalListOpen(!isCalListOpen)} className="w-full justify-between text-left input-field rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
                     {(selectedCalendar as any)?.icon && ICON_MAP[(selectedCalendar as any).icon] ? (
@@ -182,15 +170,15 @@ const AddSchedule = () => {
                       <CalendarIcon size={14} />
                     )}
                   </div>
-                  <span className="text-[15px] font-bold text-[#191F28] dark:text-gray-200">
+                  <span className="text-body">
                     {selectedCalendar ? (selectedCalendar as any).customNames?.[currentUser?.uid || ''] || selectedCalendar.name : '캘린더 선택...'}
                   </span>
                 </div>
-                <ChevronDown size={20} className={`text-[#8B95A1] dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-sub dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isCalListOpen && (
-                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-[24px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-gray-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-gray-100 dark:border-gray-700 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                   {sortedCalendars.map((cal) => {
                     const IconComponent = (cal as any).icon && ICON_MAP[(cal as any).icon] ? ICON_MAP[(cal as any).icon] : CalendarIcon;
                     const calName = (cal as any).customNames?.[currentUser?.uid || ''] || cal.name;
@@ -199,10 +187,8 @@ const AddSchedule = () => {
                         key={cal.id}
                         type="button"
                         onClick={() => handleCalendarSelect(cal)}
-                        className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                          selectedCalendar?.id === cal.id
-                            ? 'bg-[#007AFF]/20 dark:bg-[#007AFF]/10 text-[#007AFF]'
-                            : 'text-[#8B95A1] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                        className={`w-full flex items-center justify-between p-4 rounded-lg transition-all ${
+                          selectedCalendar?.id === cal.id ? 'bg-primary/20 dark:bg-primary/10 text-primary' : 'text-sub dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -211,7 +197,7 @@ const AddSchedule = () => {
                           </div>
                           <span className="text-[14px] font-bold">{calName}</span>
                         </div>
-                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#007AFF]" />}
+                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-primary" />}
                       </button>
                     );
                   })}
@@ -226,7 +212,7 @@ const AddSchedule = () => {
                         },
                       })
                     }
-                    className="w-full flex items-center gap-3 p-4 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-[18px] transition-colors"
+                    className="w-full flex items-center gap-3 p-4 text-sub dark:text-gray-400 font-bold text-[13px] hover:text-primary hover:bg-primary/20 rounded-lg transition-colors"
                   >
                     <Plus size={16} /> 새 캘린더 만들기
                   </button>
@@ -236,9 +222,9 @@ const AddSchedule = () => {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">시간 설정</label>
+                <label className="text-caption">시간 설정</label>
                 <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-[#8B95A1]'}`}>종일</span>
+                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-caption'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
                     <div
                       className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
@@ -249,7 +235,7 @@ const AddSchedule = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-3">
                   <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between gap-3">
@@ -259,7 +245,7 @@ const AddSchedule = () => {
                       name="start"
                       value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
+                      className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                     />
                   </div>
                 </div>
@@ -273,7 +259,7 @@ const AddSchedule = () => {
                       name="end"
                       value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                       onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
+                      className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                     />
                   </div>
                 </div>
@@ -282,7 +268,7 @@ const AddSchedule = () => {
 
             {/* [추가] 색상 선택 섹션 */}
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">색상</label>
+              <label className="block text-caption ml-1">색상</label>
               <div className="flex flex-wrap gap-3 px-1">
                 {COLOR_OPTIONS.map((color) => (
                   <button
@@ -303,14 +289,14 @@ const AddSchedule = () => {
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             <div className="group relative">
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">푸시 알림</label>
-              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <Bell size={18} className="text-[#8B95A1] mr-4 group-focus-within:text-[#007AFF]" />
+              <label className="block text-caption ml-1 mb-2">푸시 알림</label>
+              <div className="input-field rounded-xl">
+                <Bell size={18} className="text-sub mr-4 group-focus-within:text-primary" />
                 <select
                   name="notification"
                   value={formData.notification}
                   onChange={handleChange}
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-[#191F28] dark:text-gray-200 appearance-none"
+                  className="bg-transparent border-none outline-none w-full h-full text-body appearance-none"
                 >
                   {NOTIFICATION_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -322,38 +308,16 @@ const AddSchedule = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">상세 정보</label>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
-                <div className="flex items-center h-[56px] px-4 gap-4">
-                  <MapPin size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
-                  <input
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="장소 추가"
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1]"
-                  />
-                </div>
-                <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
-                <div className="flex items-start p-4 gap-4">
-                  <AlignLeft size={18} className="text-[#8B95A1] dark:text-gray-600 mt-0.5 shrink-0" />
-                  <textarea
-                    name="content"
-                    value={formData.content}
-                    onChange={handleChange}
-                    placeholder="메모를 입력하세요"
-                    rows={3}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1] resize-none"
-                  />
-                </div>
-              </div>
+              <label className="block text-caption ml-1">상세 정보</label>
+              <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소 추가" />
+              <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} placeholder="메모를 입력하세요" rows={3} />
             </div>
 
             <div className="space-y-3">
               <button
                 type="button"
                 onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed"
+                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-xl flex items-center justify-center gap-2 text-sub dark:text-gray-500 cursor-not-allowed"
               >
                 <Camera size={20} />
                 <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>

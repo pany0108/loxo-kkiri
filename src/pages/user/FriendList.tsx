@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Search, UserPlus, Check, Loader2, MoreVertical, X, Folder, FolderPlus, Users } from 'lucide-react';
+import { Search, UserPlus, Check, Loader2, MoreVertical, Folder, FolderPlus, Users } from 'lucide-react';
 import { auth, db, app as firebaseApp } from '../../firebase'; // firebaseApp 추가
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import {
@@ -14,9 +14,11 @@ import {
   GroupManagerModal,
   MoveToGroupModal,
   AddFromContactsModal,
+  PageLayout,
+  PageFooter,
 } from 'components';
 import { useFirestoreDoc, useAuth } from 'hooks';
-import { useCalendar } from 'contexts';
+import { useCalendar, useUI } from 'contexts'; // useUI 훅 추가
 import { Friend, FriendGroup } from 'types';
 import { deleteCalendar, leaveCalendar } from 'services';
 
@@ -61,10 +63,8 @@ const FriendList = () => {
   // [추가] 친구 목록 보기 모드 ('default': 가나다순, 'group': 그룹별)
   const [viewMode, setViewMode] = useState<'default' | 'group'>('default');
 
-  // 스크롤 컨테이너 Ref 정의
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
   const { user } = useAuth();
+  const { setIsBottomNavVisible } = useUI(); // UI 컨텍스트 사용
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
   const { myCalendars } = useCalendar();
@@ -87,22 +87,18 @@ const FriendList = () => {
     }
   }, [location.state, navigate, location.pathname]);
 
-  // [수정] viewMode가 변경될 때 스크롤 초기화 (Window + Div 모두 적용)
+  // [추가] 다중 선택 모드에 따라 하단 네비게이션 바 표시 여부 제어
   useEffect(() => {
-    // 렌더링 직후 실행을 위해 setTimeout 사용
-    const timer = setTimeout(() => {
-      // 렌더링 후 DOM이 업데이트될 시간을 줍니다.
-      // 1. 브라우저 전체 스크롤 초기화
-      window.scrollTo(0, 0);
+    setIsBottomNavVisible(!isSelectionMode);
 
-      // 2. 내부 컨테이너 스크롤 초기화
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0; // 직접 scrollTop을 0으로 설정
-      }
-    }, 50); // 약간의 딜레이를 주어 확실하게 스크롤을 초기화합니다.
+    // 컴포넌트 언마운트 시 다시 보이도록 정리
+    return () => {
+      setIsBottomNavVisible(true);
+    };
+  }, [isSelectionMode, setIsBottomNavVisible]);
 
+  useEffect(() => {
     setNewFriendId(null);
-    return () => clearTimeout(timer);
   }, [viewMode]);
 
   const handleOpenContactsModal = () => {
@@ -414,82 +410,84 @@ const FriendList = () => {
     );
   }
 
+  const renderFooter = () => {
+    if (isSelectionMode && selectedFriendUids.size > 0) {
+      return (
+        <PageFooter>
+          <button
+            onClick={() => setIsMoveToGroupOpen(true)}
+            className="w-full h-[52px] bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+          >
+            <FolderPlus size={20} />
+            그룹 변경
+          </button>
+        </PageFooter>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
-      {isSelectionMode ? (
-        <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40 shadow-sm">
-          <div className="relative flex items-center justify-center">
-            <button
-              onClick={() => {
-                setIsSelectionMode(false);
-                setSelectedFriendUids(new Set());
-              }}
-              className="absolute left-0 p-2 -ml-2 text-[#8B95A1]"
-            >
-              <X size={24} />
-            </button>
-            <h3 className="text-lg font-black text-[#191F28] dark:text-white">{selectedFriendUids.size}명 선택됨</h3>
-            <button onClick={handleSelectAll} className="absolute right-0 text-sm font-bold text-[#007AFF] p-2">
-              {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        // Normal mode header
-        <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-[#191F28] dark:text-white">친구</h3>
-            <div className="flex items-center gap-2">
+    <PageLayout
+      title={isSelectionMode ? `${selectedFriendUids.size}명 선택됨` : '친구'}
+      onBack={
+        isSelectionMode
+          ? () => {
+              setIsSelectionMode(false);
+              setSelectedFriendUids(new Set());
+            }
+          : null
+      }
+      extraNav={
+        isSelectionMode ? (
+          <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF] p-2">
+            {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
+          </button>
+        ) : (
+          <button onClick={() => setIsAddModalOpen(true)} className="p-2 text-[#191F28] dark:text-white transition-opacity hover:opacity-70" aria-label="친구 추가">
+            <UserPlus size={24} />
+          </button>
+        )
+      }
+      footer={renderFooter()}
+    >
+      <div className="space-y-4 pb-24" onScroll={cancelLongPress}>
+        {!isSelectionMode && (
+          <>
+            <div className="relative">
+              <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  placeholder="친구 이름 검색"
+                  className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* [추가] 보기 모드 선택 버튼 */}
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px]">
               <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="p-2.5 bg-gray-900 text-white dark:bg-gray-700 rounded-full shadow-lg active:scale-90 transition-transform"
-                aria-label="친구 추가"
+                onClick={() => setViewMode('default')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
+                  viewMode === 'default' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
+                }`}
               >
-                <UserPlus size={20} />
+                <Users size={16} /> 전체
+              </button>
+              <button
+                onClick={() => setViewMode('group')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
+                  viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
+                }`}
+              >
+                <Folder size={16} /> 그룹
               </button>
             </div>
-          </div>
-          <div className="relative">
-            <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-              <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
-              <input
-                type="text"
-                value={searchTerm}
-                placeholder="친구 이름 검색"
-                className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          {/* [추가] 보기 모드 선택 버튼 */}
-          <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px] mt-4">
-            <button
-              onClick={() => setViewMode('default')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'default' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
-              }`}
-            >
-              <Users size={16} /> 전체
-            </button>
-            <button
-              onClick={() => setViewMode('group')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
-              }`}
-            >
-              <Folder size={16} /> 그룹
-            </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      <div
-        ref={scrollContainerRef}
-        className={`flex-1 px-6 pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full min-h-0 overscroll-y-contain ${
-          isSelectionMode ? 'pt-[calc(81px+env(safe-area-inset-top))]' : 'pt-[calc(213px+env(safe-area-inset-top))]'
-        }`}
-        onScroll={cancelLongPress}
-      >
         <>
           {groupedFriends.length > 0 ? (
             groupedFriends.map((group) => (
@@ -583,7 +581,7 @@ const FriendList = () => {
         </>
       </div>
 
-      {/* [추가] 다중 선택 시 하단 액션 바 */}
+      {/* [추가] 다중 선택 시 하단 액션 바
       {isSelectionMode && selectedFriendUids.size > 0 && (
         <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-bottom duration-300">
           <button
@@ -594,7 +592,7 @@ const FriendList = () => {
             그룹 변경
           </button>
         </div>
-      )}
+      )} */}
 
       <FriendActionMenu
         isOpen={isMenuOpen}
@@ -655,7 +653,7 @@ const FriendList = () => {
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} onOpenContacts={handleOpenContactsModal} />
-    </div>
+    </PageLayout>
   );
 };
 

@@ -240,7 +240,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
@@ -269,7 +269,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
                     <input
                       type="text"
                       placeholder="이름, 전화번호, 이메일로 검색"
-                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-full text-[#191F28] dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#007AFF]"
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-xl text-[#191F28] dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#007AFF]"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />

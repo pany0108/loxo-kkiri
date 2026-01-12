@@ -16,7 +16,7 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-[320px] bg-white dark:bg-gray-800 rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[320px] bg-white dark:bg-gray-800 rounded-4xl p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertCircle size={32} />
         </div>
@@ -37,7 +37,7 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
           )}
         </p>
         <div className="flex flex-col gap-2">
-          <button onClick={onConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
+          <button onClick={onConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-xl active:scale-95 transition-all">
             삭제하기
           </button>
           <button onClick={onClose} className="w-full py-4 text-[#8B95A1] dark:text-gray-500 font-bold hover:text-[#191F28] dark:hover:text-gray-300">

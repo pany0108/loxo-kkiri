@@ -36,7 +36,7 @@ const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) =
   return (
     <button
       onClick={() => onClick(meeting)}
-      className="w-full bg-white dark:bg-gray-800 p-5 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-[#007AFF]/20 dark:hover:border-blue-500/20 hover:shadow-lg hover:shadow-[#007AFF]/10 dark:hover:shadow-blue-900/30 group"
+      className="w-full bg-white dark:bg-gray-800 p-5 rounded-2xl border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-[#007AFF]/20 dark:hover:border-blue-500/20 hover:shadow-lg hover:shadow-[#007AFF]/10 dark:hover:shadow-blue-900/30 group"
     >
       <div className="text-left space-y-2">
         <div className="flex items-center gap-2">

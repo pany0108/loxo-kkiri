@@ -3,7 +3,7 @@ import { CalendarCheck } from 'lucide-react';
 
 const EmptyMeetingList = () => {
   return (
-    <div className="py-12 text-center space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-[24px] border-2 border-dashed border-gray-100 dark:border-gray-700/50">
+    <div className="py-12 text-center space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-700/50">
       <div className="w-14 h-14 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto text-[#8B95A1] dark:text-gray-600 mb-2 shadow-sm">
         <CalendarCheck size={24} />
       </div>

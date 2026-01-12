@@ -32,7 +32,7 @@ import {
   ShoppingCart,
   Gamepad2,
 } from 'lucide-react';
-import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader } from 'components';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader, PageTitle, FormInput, FormTextarea } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
@@ -377,29 +377,20 @@ const ScheduleEdit = () => {
       >
         <>
           <PageHeader icon={<Sparkles className="text-[#007AFF] w-6 h-6" />}>
-            <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+            <PageTitle>
               일정을 <span className="text-[#007AFF]">수정</span>해볼까요?
-            </h2>
+            </PageTitle>
           </PageHeader>
 
           <form className="space-y-6">
             <section className="space-y-4">
               <div className="group relative">
-                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                  <input
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    placeholder="무엇을 하나요?"
-                    className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
-                  />
-                </div>
+                <FormInput label="일정 제목" name="title" value={formData.title} onChange={handleChange} placeholder="무엇을 하나요?" />
               </div>
 
               {/* [추가] 캘린더 선택 드롭다운 */}
               <div className="group relative" ref={dropdownRef}>
-                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">캘린더</label>
+                <label className="block text-caption ml-1 mb-2">캘린더</label>
                 <button
                   type="button"
                   onClick={() => setIsCalListOpen(!isCalListOpen)}
@@ -465,13 +456,9 @@ const ScheduleEdit = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">시간 설정</label>
+                  <label className="text-caption">시간 설정</label>
                   <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
-                    <span
-                      className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B95A1] dark:text-gray-500'}`}
-                    >
-                      종일
-                    </span>
+                    <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-caption'}`}>종일</span>
                     <div
                       className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                     >
@@ -517,7 +504,7 @@ const ScheduleEdit = () => {
 
               {/* [추가] 색상 선택 섹션 */}
               <div className="space-y-3">
-                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">색상</label>
+                <label className="block text-caption ml-1">색상</label>
                 <div className="flex flex-wrap gap-3 px-1">
                   {COLOR_OPTIONS.map((color) => (
                     <button
@@ -539,18 +526,9 @@ const ScheduleEdit = () => {
               {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
 
               <div className="space-y-3">
-                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">상세 정보</label>
+                <label className="block text-caption ml-1">상세 정보</label>
 
-                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
-                  <MapPin size={18} className="text-[#8B95A1] dark:text-gray-600" />
-                  <input
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
-                    placeholder="장소"
-                  />
-                </div>
+                <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소" />
 
                 <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
                   <Bell size={18} className="text-[#8B95A1] dark:text-gray-600" />
@@ -568,22 +546,12 @@ const ScheduleEdit = () => {
                   </select>
                 </div>
 
-                <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
-                  <AlignLeft size={18} className="text-[#8B95A1] dark:text-gray-600 mt-1" />
-                  <textarea
-                    name="content"
-                    value={formData.content}
-                    onChange={handleChange}
-                    rows={3}
-                    className="bg-transparent outline-none w-full text-[14px] font-medium text-[#191F28] dark:text-gray-200 resize-none placeholder:text-[#8B95A1] dark:placeholder:text-gray-600 leading-relaxed"
-                    placeholder="메모"
-                  />
-                </div>
+                <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} rows={3} placeholder="메모" />
               </div>
 
               <div>
                 <div className="flex items-center justify-between px-1 mb-2 ">
-                  <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">첨부파일</label>
+                  <label className="text-caption">첨부파일</label>
                   <button
                     type="button"
                     onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
@@ -616,12 +584,13 @@ const ScheduleEdit = () => {
                     <BookOpen size={20} className="text-emerald-500" />
                     <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">후기 작성</h3>
                   </div>
-                  <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
-                    <textarea
+                  <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-3xl p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
+                    <FormTextarea
                       placeholder="후기를 작성해주세요."
-                      className="w-full text-[14px] font-medium text-[#191F28] dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-[#8B95A1] dark:placeholder:text-gray-600 leading-relaxed"
                       value={formData.review}
                       onChange={(e) => setFormData({ ...formData, review: e.target.value })}
+                      containerClassName="border-none p-0"
+                      className="min-h-[100px]"
                     />
                     {formData.reviewImages && formData.reviewImages.length > 0 && (
                       <div className="flex gap-2 overflow-x-auto scrollbar-hide">

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
-import { TopNav, PageHeader, FormInput, BirthDateInput, PageFooter } from 'components';
+import { PageLayout, PageHeader, FormInput, BirthDateInput, PageFooter, PageTitle } from 'components';
 import { handleEnterToNext } from 'utils';
 import { useSocialSignupForm } from 'hooks/auth/useSocialSignupForm';
+import LoadingButton from '../../components/ui/LoadingButton';
 
 /**
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
@@ -28,22 +29,30 @@ const SignupSocial = () => {
   const { lastName, firstName } = userData;
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title="추가 정보 입력" onBack={handleBack} />
-
-      <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
-        <PageHeader className="mb-12" icon={<Sparkles className="text-[#478BCC] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+    <PageLayout
+      title="추가 정보 입력"
+      onBack={handleBack}
+      footer={
+        <PageFooter zIndex={50}>
+          <LoadingButton type="submit" form="social-signup-form" isLoading={isLoading} disabled={isLoading || !formData.birthDate || !formData.phone} className="btn-primary">
+            슈퍼 스케줄러 시작하기
+          </LoadingButton>
+        </PageFooter>
+      }
+    >
+      <>
+        <PageHeader className="mb-12" icon={<Sparkles className="text-primary w-6 h-6" />}>
+          <PageTitle>
             반가워요,
-            <span className="text-[#478BCC]">
+            <span className="text-primary">
               {lastName}
               {firstName}님!
             </span>
             <br />딱 두 가지만 더 알려주세요.
-          </h2>
+          </PageTitle>
         </PageHeader>
 
-        <form onSubmit={handleComplete} className="space-y-8">
+        <form id="social-signup-form" onSubmit={handleComplete} className="space-y-8">
           <div className="space-y-3">
             <BirthDateInput
               inputRef={birthDateRef}
@@ -68,23 +77,9 @@ const SignupSocial = () => {
               required
             />
           </div>
-
-          <PageFooter zIndex={50}>
-            <button
-              type="submit"
-              disabled={isLoading || !state.isVerified}
-              className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
-                state.isVerified
-                  ? 'bg-[#478BCC] text-gray-900 shadow-[#478BCC]/30 dark:shadow-[#478BCC]/20 active:scale-[0.98]'
-                  : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
-              }`}
-            >
-              {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : '슈퍼 스케줄러 시작하기'}
-            </button>
-          </PageFooter>
         </form>
-      </div>
-    </div>
+      </>
+    </PageLayout>
   );
 };
 

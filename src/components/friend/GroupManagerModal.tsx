@@ -79,7 +79,7 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-4xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
         <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-4">그룹 관리</h3>
         <div ref={groupInputsContainerRef} className="space-y-2 mb-6 max-h-60 overflow-y-auto">
           {groups.map((group) => (
@@ -104,10 +104,10 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
           <span className="text-sm font-bold">새 그룹 추가</span>
         </button>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold rounded-[20px]">
+          <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold rounded-xl">
             취소
           </button>
-          <button onClick={() => onSave(groups)} className="flex-1 py-4 bg-[#007AFF] text-white font-bold rounded-[20px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50">
+          <button onClick={() => onSave(groups)} className="flex-1 py-4 bg-[#007AFF] text-white font-bold rounded-xl shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50">
             저장
           </button>
         </div>

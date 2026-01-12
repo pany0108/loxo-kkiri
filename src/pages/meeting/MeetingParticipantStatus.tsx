@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, PageHeader, PageFooter } from 'components';
+import { PageLayout, PageHeader, PageFooter, PageTitle } from 'components';
 import { useMeetingParticipantStatus } from 'hooks';
 
 const MeetingParticipantStatus = () => {
@@ -46,11 +46,11 @@ const MeetingParticipantStatus = () => {
               <span>{meetingData.location}</span>
             </div>
           )}
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             투표가 완료되었습니다.
             <br />
             <span className="text-[#007AFF] dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
-          </h2>
+          </PageTitle>
         </>
       </PageHeader>
       <div className="mb-8">
@@ -80,7 +80,7 @@ const MeetingParticipantStatus = () => {
 
       <div className="space-y-4">
         {statusData.map((slot) => (
-          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-[24px] p-5 border-2 border-gray-50 dark:border-gray-700/50 shadow-sm">
+          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border-2 border-gray-50 dark:border-gray-700/50 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">

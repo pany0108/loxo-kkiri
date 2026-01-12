@@ -8,7 +8,7 @@ const NewMeetingButton = () => {
   return (
     <button
       onClick={() => navigate('/propose/create')}
-      className="w-full h-[80px] bg-[#007AFF] rounded-[24px] flex items-center justify-between px-6 shadow-xl shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-[0.98] transition-all group mb-8"
+      className="w-full h-[80px] bg-[#007AFF] rounded-2xl flex items-center justify-between px-6 shadow-xl shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-[0.98] transition-all group mb-8"
     >
       <div className="text-left">
         <p className="text-blue-100 text-[11px] font-bold mb-1 tracking-wider uppercase">New Meeting</p>

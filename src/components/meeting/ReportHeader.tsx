@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, MapPin, CalendarCheck, Calendar } from 'lucide-react';
 import dayjs from 'dayjs';
+import { PageTitle } from 'components';
 
 interface ReportHeaderProps {
   title: string;
@@ -38,9 +39,9 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
       )}
       {status === 'CONFIRMED' ? (
         <>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             약속이 <span className="text-[#007AFF] dark:text-blue-400">확정</span>되었습니다!
-          </h2>
+          </PageTitle>
           <div className="mt-4 bg-[#007AFF]/10 dark:bg-blue-900/50 p-4 rounded-2xl border border-[#007AFF]/20 dark:border-blue-800">
             <p className="text-center text-lg font-black text-[#007AFF] dark:text-blue-300">{confirmedDateDisplay}</p>
             <p className="text-center text-2xl font-black text-[#007AFF] dark:text-blue-300">{confirmedSlot?.date.includes(':') ? '' : confirmedSlot?.time}</p>
@@ -59,7 +60,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
         </>
       ) : (
         <>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             {isRetry ? (
               <>
                 재요청된 약속의 <br />
@@ -71,7 +72,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
                 확정해주세요!
               </>
             )}
-          </h2>
+          </PageTitle>
           <p className="mt-2 text-[#8B95A1] dark:text-gray-500 text-sm font-medium flex items-center gap-1.5">
             <Sparkles size={14} className="text-emerald-500 dark:text-emerald-400" />
             전원 가능인 시간을 우선 추천합니다.

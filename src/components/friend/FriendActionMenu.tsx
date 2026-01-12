@@ -46,7 +46,7 @@ const FriendActionMenu: React.FC<FriendActionMenuProps> = ({ isOpen, onClose, fr
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
@@ -62,19 +62,19 @@ const FriendActionMenu: React.FC<FriendActionMenuProps> = ({ isOpen, onClose, fr
             </div>
 
             <div className="px-6 space-y-2">
-              <button onClick={onEdit} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors">
+              <button onClick={onEdit} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-2xl transition-colors">
                 <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
                   <Edit2 size={20} />
                 </div>
                 <span className="font-bold text-gray-700 dark:text-gray-300">이름 수정하기</span>
               </button>
-              <button onClick={onMoveGroup} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors">
+              <button onClick={onMoveGroup} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-2xl transition-colors">
                 <div className="w-10 h-10 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
                   <FolderPlus size={20} />
                 </div>
                 <span className="font-bold text-gray-700 dark:text-gray-300">그룹 변경</span>
               </button>
-              <button onClick={onDelete} className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-[22px] transition-colors">
+              <button onClick={onDelete} className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-2xl transition-colors">
                 <div className="w-10 h-10 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center">
                   <Trash2 size={20} />
                 </div>

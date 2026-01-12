@@ -18,7 +18,7 @@ const HostSlotItem: React.FC<HostSlotItemProps> = ({ slot, isSelected, isConflic
     <button
       onClick={() => onToggle(slot.id)}
       className={`
-        w-full flex items-center justify-between p-5 rounded-[24px] border-2 transition-all duration-200 ease-out relative overflow-hidden group
+        w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-200 ease-out relative overflow-hidden group
         ${
           isSelected
             ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-lg shadow-[#007AFF]/30 dark:shadow-blue-900/50 scale-[1.02] z-10'

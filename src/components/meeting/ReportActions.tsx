@@ -13,13 +13,13 @@ const ReportActions: React.FC<ReportActionsProps> = ({ onRetry, onCancel }) => {
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onRetry}
-          className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-gray-50 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 h-[56px] rounded-xl bg-gray-50 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
         >
           <RefreshCw size={16} /> 일정 재요청
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-white dark:bg-gray-800 border-2 border-rose-100 dark:border-rose-500/30 text-rose-500 dark:text-rose-400 font-bold text-[14px] hover:bg-rose-50 dark:hover:bg-rose-500/10 active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 h-[56px] rounded-xl bg-white dark:bg-gray-800 border-2 border-rose-100 dark:border-rose-500/30 text-rose-500 dark:text-rose-400 font-bold text-[14px] hover:bg-rose-50 dark:hover:bg-rose-500/10 active:scale-[0.98] transition-all"
         >
           <Trash2 size={16} /> 약속 취소
         </button>

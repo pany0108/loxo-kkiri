@@ -9,7 +9,7 @@ interface MeetingInfoCardProps {
 
 const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, location }) => {
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-[28px] p-6 mb-10 border border-gray-100 dark:border-gray-700/50 shadow-sm">
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-3xl p-6 mb-10 border border-gray-100 dark:border-gray-700/50 shadow-card">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-[10px] font-bold text-[#007AFF] dark:text-blue-300 bg-[#007AFF]/10 dark:bg-blue-900/50 px-2 py-1 rounded-md">INVITATION</span>
       </div>

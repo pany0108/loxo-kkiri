@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Save, Smartphone, Calendar, Loader2, CheckCircle2, User, ShieldCheck } from 'lucide-react';
 import dayjs from 'dayjs';
-import { TopNav, PageHeader, FormInput, PageFooter } from 'components';
+import { PageLayout, PageHeader, FormInput, PageFooter, PageTitle } from 'components';
 import { auth, db } from '../../firebase';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
@@ -207,25 +207,41 @@ const EditUserInfo = () => {
     );
   }
 
-  return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* [수정] 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
-      <TopNav title="개인 정보 수정" />
+  const renderFooter = () => (
+    <PageFooter zIndex={50}>
+      <button
+        onClick={handleSave}
+        disabled={isSaving} // [임시] 휴대폰 인증 비활성화
+        className="btn-primary"
+      >
+        {isSaving ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <>
+            <Save size={18} />
+            <span>저장하기</span>
+          </>
+        )}
+      </button>
+      <p className="text-center text-[11px] text-[#8B95A1] dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
+    </PageFooter>
+  );
 
-      {/* [수정] TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
-      <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
+  return (
+    <PageLayout title="개인 정보 수정" footer={renderFooter()}>
+      <>
         <PageHeader className="mb-10" icon={<User className="text-[#007AFF] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             내 소중한 <span className="text-[#007AFF] dark:text-blue-400">정보</span>를<br />
             관리해볼까요?
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         {/* 입력 폼 섹션 */}
         <div className="space-y-8">
           {/* 이름 필드 (성/이름 분리) */}
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">이름</label>
+            <label className="block text-caption ml-1">이름</label>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1">
                 <FormInput name="lastName" value={formData.lastName} onChange={handleChange} placeholder="성" />
@@ -244,7 +260,7 @@ const EditUserInfo = () => {
             name="phone"
             type="tel"
             inputMode="numeric"
-            value={formData.phone}
+            value={formatPhone(formData.phone)}
             placeholder="010-0000-0000"
             onChange={handleChange}
             required
@@ -334,7 +350,7 @@ const EditUserInfo = () => {
           <section className="space-y-3">
             {/* [추가] 양력/음력 선택 토글 */}
             <div className="flex items-center justify-between px-1">
-              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500">생년월일</label>
+              <label className="block text-caption">생년월일</label>
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                 <button
                   type="button"
@@ -377,31 +393,8 @@ const EditUserInfo = () => {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* 하단 고정 저장 버튼 */}
-      <PageFooter zIndex={50}>
-        <button
-          onClick={handleSave}
-          disabled={isSaving} // [임시] 휴대폰 인증 비활성화
-          className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
-            isSaving
-              ? 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
-              : 'bg-[#007AFF] text-white shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98]'
-          }`} // [임시] 휴대폰 인증 비활성화: || (formData.phone !== originalPhone && !isVerified)
-        >
-          {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              <Save size={18} />
-              <span>저장하기</span>
-            </>
-          )}
-        </button>
-        <p className="text-center text-[11px] text-[#8B95A1] dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
-      </PageFooter>
-    </div>
+      </>
+    </PageLayout>
   );
 };
 

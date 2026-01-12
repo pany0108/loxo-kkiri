@@ -1,13 +1,16 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Calendar, Users, Send, User } from 'lucide-react';
+import { useUI } from 'contexts';
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isBottomNavVisible } = useUI();
 
   // 로그인 페이지에서는 하단바를 숨깁니다.
   if (location.pathname === '/login' || location.pathname === '/signup') return null;
+  if (!isBottomNavVisible) return null;
 
   const navItems = [
     { icon: <Calendar size={24} />, label: '캘린더', path: '/calendar' },

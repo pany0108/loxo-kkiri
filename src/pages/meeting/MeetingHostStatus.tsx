@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Share2, Hourglass, Trash2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { auth } from '../../firebase';
-import { ConfirmModal, ShareMeetingModal, PageHeader, PageFooter, PageLayout } from 'components';
+import { ConfirmModal, ShareMeetingModal, PageHeader, PageFooter, PageLayout, PageTitle } from 'components';
 import { useMeetingHostStatus } from 'hooks';
 
 const MeetingHostStatus = () => {
@@ -45,7 +45,7 @@ const MeetingHostStatus = () => {
                 <span>{meetingData.location}</span>
               </div>
             )}
-            <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+            <PageTitle>
               {(meetingData as any).isRetry ? (
                 <>
                   재요청에 대한 <br />
@@ -56,11 +56,11 @@ const MeetingHostStatus = () => {
                   친구들의 <span className="text-[#007AFF] dark:text-blue-400">응답을 기다리는 중</span>입니다.
                 </>
               )}
-            </h2>
+            </PageTitle>
           </>
         </PageHeader>
 
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-[24px] p-6 border border-gray-100 dark:border-gray-700/50">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700/50 shadow-card">
           <div className="flex justify-between items-center mb-4">
             <h4 className="font-bold text-[#191F28] dark:text-white">응답 현황</h4>
             <span className="text-sm font-bold text-[#007AFF] dark:text-blue-400">
@@ -163,9 +163,9 @@ const MeetingHostStatus = () => {
               <span>{meetingData.location}</span>
             </div>
           )}
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             현재 <span className="text-[#007AFF] dark:text-blue-400">투표 진행 중</span>입니다.
-          </h2>
+          </PageTitle>
         </>
       </PageHeader>
 
@@ -196,7 +196,7 @@ const MeetingHostStatus = () => {
 
       <div className="space-y-4">
         {statusData.map((slot) => (
-          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-[24px] p-5 border-2 border-gray-50 dark:border-gray-700/50 shadow-sm">
+          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border-2 border-gray-50 dark:border-gray-700/50 shadow-card">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">

@@ -18,7 +18,7 @@ interface NewProposalSlotItemProps {
 const NewProposalSlotItem: React.FC<NewProposalSlotItemProps> = ({ slot, onTimeChange, onToggleAllDay }) => {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="bg-white dark:bg-gray-800 rounded-[24px] p-5 border-2 border-emerald-100 dark:border-emerald-500/30 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 border-2 border-emerald-100 dark:border-emerald-500/30 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <span className="text-[15px] font-black text-[#191F28] dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
           <div onClick={() => onToggleAllDay(slot.date)} className="flex items-center gap-2 cursor-pointer group">

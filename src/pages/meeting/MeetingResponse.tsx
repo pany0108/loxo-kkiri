@@ -6,7 +6,7 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import 'dayjs/locale/ko';
-import { useFirestoreDoc, useAuth, useScrollToTop, useMeetingResponseForm } from 'hooks';
+import { useFirestoreDoc, useAuth, useMeetingResponseForm } from 'hooks';
 import { useCalendar } from 'contexts';
 import toast from 'react-hot-toast';
 import {
@@ -15,11 +15,12 @@ import {
   NewProposalSlotItem,
   MeetingInfoCard,
   EmptyProposalGuide,
-  TopNav,
+  PageLayout,
   PageHeader,
   PageFooter,
   SyncTimeModal,
   LoadingButton,
+  PageTitle,
 } from 'components';
 import { submitMeetingResponse, Meeting as MeetingData } from 'services';
 
@@ -35,7 +36,6 @@ dayjs.locale('ko');
 const MeetingResponse = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
-  const scrollContainerRef = useScrollToTop();
 
   // --- 상태 관리 ---
   const { user, loading: authLoading } = useAuth();
@@ -171,14 +171,23 @@ const MeetingResponse = () => {
     );
   }
 
-  return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title="약속 응답하기" />
+  const renderFooter = () => (
+    <PageFooter>
+      <LoadingButton onClick={handleSubmitResponse} isLoading={isSubmitting} className="btn-primary">
+        <span>제안 제출하기</span>
+        {myNewSlots.length > 0 && (
+          <span className="bg-emerald-500 dark:bg-emerald-400 text-white dark:text-emerald-900 px-2 py-0.5 rounded-lg text-[11px] font-bold">+ 역제안 {myNewSlots.length}건</span>
+        )}
+      </LoadingButton>
+    </PageFooter>
+  );
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+  return (
+    <PageLayout title="약속 응답하기" footer={renderFooter()}>
+      <>
         {/* 헤더 섹션 */}
         <PageHeader className="mb-6" icon={<Sparkles className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             {(meetingData as any).isRetry ? (
               <>
                 {meetingData.hostName}님이 <br />
@@ -191,7 +200,7 @@ const MeetingResponse = () => {
                 <span className="text-[#007AFF] dark:text-blue-400">응답해주세요</span>
               </>
             )}
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         {/* 약속 상세 정보 카드 */}
@@ -273,25 +282,11 @@ const MeetingResponse = () => {
           {/* 역제안이 없을 때 표시되는 가이드 */}
           {myNewSlots.length === 0 && <EmptyProposalGuide />}
         </section>
-      </div>
 
-      {/* [추가] 시간 통일 모달 */}
-      <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
-
-      {/* 하단 고정 제출 버튼 */}
-      <PageFooter>
-        <LoadingButton
-          onClick={handleSubmitResponse}
-          isLoading={isSubmitting}
-          className="w-full h-[62px] bg-[#007AFF] text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-        >
-          <span>제안 제출하기</span>
-          {myNewSlots.length > 0 && (
-            <span className="bg-emerald-500 dark:bg-emerald-400 text-white dark:text-emerald-900 px-2 py-0.5 rounded-lg text-[11px] font-bold">+ 역제안 {myNewSlots.length}건</span>
-          )}
-        </LoadingButton>
-      </PageFooter>
-    </div>
+        {/* [추가] 시간 통일 모달 */}
+        <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
+      </>
+    </PageLayout>
   );
 };
 

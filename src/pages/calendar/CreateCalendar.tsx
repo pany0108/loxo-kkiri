@@ -29,7 +29,7 @@ import toast from 'react-hot-toast';
 import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader, PageFooter } from 'components';
+import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader, PageFooter, PageTitle } from 'components';
 import { notifyCalendarInvite } from 'services';
 
 const CALENDAR_ICONS = [
@@ -377,18 +377,7 @@ const CreateCalendar = () => {
       <div className="mb-3 text-center h-5">
         {finalName && <p className="text-[13px] font-bold text-[#007AFF] animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
       </div>
-      <button
-        disabled={isSubmitDisabled}
-        onClick={handleSubmit}
-        className={`
-            w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${
-              !isSubmitDisabled
-                ? 'bg-[#007AFF] text-white shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-[0.98]'
-                : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
-            }
-          `}
-      >
+      <button disabled={isSubmitDisabled} onClick={handleSubmit} className="btn-primary">
         {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <span>캘린더 생성하기</span>}
       </button>
     </PageFooter>
@@ -398,10 +387,10 @@ const CreateCalendar = () => {
     <>
       <PageLayout title="새 캘린더 만들기" footer={renderFooter()} onBack={() => navigate(-1)}>
         <PageHeader icon={<Sparkles className="text-[#007AFF] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             새로운 <span className="text-[#007AFF]">캘린더</span>를<br />
             만들어볼까요?
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         <div className="space-y-8">

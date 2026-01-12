@@ -39,7 +39,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-2 border-gray-50 dark:border-gray-700/50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card border-2 border-gray-50 dark:border-gray-700/50 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* 일정 정보 및 등록 멤버 표시 */}
       <div className="flex justify-between items-start">
         <div>
@@ -116,7 +116,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
       <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => onVote(slot.id, 'available')}
-          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
+          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all active:scale-95
             ${
               slot.myVote === 'available'
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50'
@@ -131,7 +131,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
 
         <button
           onClick={() => onVote(slot.id, 'maybe')}
-          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
+          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all active:scale-95
             ${
               slot.myVote === 'maybe'
                 ? 'bg-amber-400 border-amber-400 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/50'
@@ -144,7 +144,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
 
         <button
           onClick={() => onVote(slot.id, 'unavailable')}
-          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-[20px] border-2 transition-all active:scale-95
+          className={`flex flex-col items-center justify-center gap-2 py-4 rounded-xl border-2 transition-all active:scale-95
             ${
               slot.myVote === 'unavailable'
                 ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/50'
@@ -158,7 +158,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
 
       {/* 메모 입력 필드 */}
       <div className="group relative">
-        <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-4 py-3 transition-all">
+        <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-lg px-4 py-3 transition-all">
           <MessageSquare size={16} className="text-[#8B95A1] dark:text-gray-500 mr-3 group-focus-within:text-[#007AFF]" />
           <input
             value={slot.myMemo}

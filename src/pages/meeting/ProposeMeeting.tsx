@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Clock, Loader2, CalendarCheck2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useFirestoreQuery } from 'hooks';
-import { NewMeetingButton, MeetingListItem, EmptyMeetingList, PageHeader } from 'components';
+import { NewMeetingButton, MeetingListItem, EmptyMeetingList, PageHeader, PageTitle, PageLayout } from 'components';
 
 /**
  * 약속 데이터 인터페이스
@@ -33,18 +33,6 @@ interface Meeting {
  */
 const ProposeMeeting = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'ongoing' | 'past'>('ongoing');
@@ -168,15 +156,14 @@ const ProposeMeeting = () => {
   const currentList = activeTab === 'ongoing' ? ongoingMeetings : pastMeetings;
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50 dark:bg-gray-950 font-['Pretendard']">
-      {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
+    <PageLayout title="약속" onBack={null}>
+      <div className="space-y-8 pb-24">
         {/* 헤더 섹션 */}
         <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-[#007AFF] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             소중한 사람들과의 <br />
             <span className="text-[#007AFF] dark:text-blue-400">약속을 잡아보세요</span>
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         {/* 새 약속 만들기 버튼 */}
@@ -217,7 +204,7 @@ const ProposeMeeting = () => {
           )}
         </>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

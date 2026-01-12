@@ -29,7 +29,7 @@ import {
   UserProfile,
 } from 'pages';
 import { Loader2 } from 'lucide-react';
-import { AuthProvider, CalendarProvider, ThemeProvider } from 'contexts';
+import { AuthProvider, CalendarProvider, ThemeProvider, UIProvider } from 'contexts';
 import { usePushNotification, useFcmToken, useAuth, useNotificationNavigation, useSystemUI } from 'hooks';
 
 /**
@@ -151,7 +151,9 @@ function App() {
       />
       <ThemeProvider>
         <CalendarProvider>
-          <AppContent />
+          <UIProvider>
+            <AppContent />
+          </UIProvider>
         </CalendarProvider>
       </ThemeProvider>
     </AuthProvider>

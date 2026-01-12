@@ -1,28 +1,16 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 import { doc, writeBatch, collection } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, ConfirmModal, TopNav } from 'components';
+import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, ConfirmModal, PageLayout } from 'components';
 import { useMeetingReport } from 'hooks';
 import { findTargetCalendarForMembers, notifyMeetingConfirmed } from 'services';
 
 const MeetingReport = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   const { state, handlers } = useMeetingReport();
   const { meetingData, loading, reportData, isConfirmOpen, isCancelModalOpen, isRetryModalOpen, selectedSlot } = state;
@@ -135,10 +123,8 @@ const MeetingReport = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title="투표 결과" />
-
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full">
+    <PageLayout title="투표 결과">
+      <>
         {/* 헤더 섹션 */}
         <ReportHeader
           title={meetingData.title}
@@ -150,17 +136,15 @@ const MeetingReport = () => {
           isRetry={(meetingData as any).isRetry}
         />
 
-        <div className="pb-[calc(10rem+env(safe-area-inset-bottom))]">
-          {/* 리포트 카드 리스트 */}
-          <div className="space-y-6">
-            {reportData.map((slot) => (
-              <ReportSlotCard key={slot.id} slot={slot} status={meetingData.status} onConfirmClick={handleConfirmClick} />
-            ))}
-          </div>
-
-          {/* 하단 관리 메뉴 (재요청/취소) */}
-          {meetingData.status !== 'CONFIRMED' && <ReportActions onRetry={handleRequestRetry} onCancel={handleCancel} />}
+        {/* 리포트 카드 리스트 */}
+        <div className="space-y-6">
+          {reportData.map((slot) => (
+            <ReportSlotCard key={slot.id} slot={slot} status={meetingData.status} onConfirmClick={handleConfirmClick} />
+          ))}
         </div>
+
+        {/* 하단 관리 메뉴 (재요청/취소) */}
+        {meetingData.status !== 'CONFIRMED' && <ReportActions onRetry={handleRequestRetry} onCancel={handleCancel} />}
 
         {/* 확정 확인 다이얼로그 */}
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} isLoading={isSubmitting} />
@@ -203,8 +187,8 @@ const MeetingReport = () => {
           cancelText="아니요"
           confirmButtonClassName="bg-red-500"
         />
-      </div>
-    </div>
+      </>
+    </PageLayout>
   );
 };
 

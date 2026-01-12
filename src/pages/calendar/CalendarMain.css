@@ -31,7 +31,7 @@
    ========================================================== */
 .fc-header-toolbar {
   margin: 0 !important;
-  padding: 16px 24px 8px !important;
+  padding: 16px theme('spacing.page') 8px !important;
   display: flex;
   align-items: center;
 }

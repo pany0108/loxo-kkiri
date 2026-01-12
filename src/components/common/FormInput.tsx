@@ -17,9 +17,9 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
   const hasError = !!error;
   const isPassword = props.type === 'password';
 
-  const borderClass = hasError ? 'border-red-400' : success ? 'border-emerald-400' : 'border-transparent focus-within:border-[#007AFF]';
+  const borderClass = hasError ? 'border-red-400' : success ? 'border-emerald-400' : 'border-transparent focus-within:border-primary';
 
-  const iconColorClass = hasError ? 'text-red-400' : success ? 'text-emerald-500' : 'text-[#8B95A1] dark:text-gray-600 group-focus-within:text-[#007AFF]';
+  const iconColorClass = hasError ? 'text-red-400' : success ? 'text-emerald-500' : 'text-sub dark:text-gray-600 group-focus-within:text-primary';
 
   // `type="password"`일 경우, props와 rightContent를 동적으로 설정합니다.
   const inputProps = { ...props };
@@ -35,7 +35,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-400 transition-colors"
+        className="text-sub dark:text-gray-500 hover:text-main dark:hover:text-gray-400 transition-colors"
         aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
       >
         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -48,15 +48,13 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
 
   return (
     <div className={`group relative ${containerClassName || ''}`}>
-      {label && <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">{label}</label>}
-      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-[20px] px-5 transition-all duration-300 ${borderClass}`}>
+      {label && <label className="block text-caption ml-1 mb-2">{label}</label>}
+      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-5 transition-all duration-300 ${borderClass}`}>
         {icon && <div className="mr-4">{React.cloneElement(icon, { className: `${iconColorClass} ${icon.props.className || ''}` })}</div>}
         <input
           ref={inputRef}
           {...inputProps}
-          className={`bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1] dark:placeholder:text-gray-500 ${
-            props.className || ''
-          }`}
+          className={`bg-transparent border-none outline-none w-full h-full text-body placeholder:text-sub dark:placeholder:text-gray-500 ${props.className || ''}`}
         />
         {(showClear || finalRightContent) && (
           <div className="flex items-center gap-2 ml-2">
@@ -64,7 +62,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
               <button
                 type="button"
                 onClick={onClear}
-                className="text-[#8B95A1] hover:text-[#191F28] dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="text-sub hover:text-main dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
                 aria-label="입력 초기화"
                 tabIndex={-1}
               >

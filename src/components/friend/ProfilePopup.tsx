@@ -20,7 +20,7 @@ const ProfilePopup: React.FC<ProfilePopupProps> = ({ friend, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-[32px] p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-4xl p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
         <button onClick={onClose} className="absolute top-4 right-4 p-2 text-[#8B95A1] hover:text-[#191F28] dark:text-gray-500 dark:hover:text-gray-300">
           <X size={20} />
         </button>

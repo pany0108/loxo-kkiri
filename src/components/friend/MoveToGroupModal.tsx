@@ -45,7 +45,7 @@ const MoveToGroupModal: React.FC<MoveToGroupModalProps> = ({ isOpen, onClose, gr
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col"
+            className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col"
             initial={{ y: '100%' }}
             animate={{ y: '0%' }}
             exit={{ y: '100%' }}
@@ -63,7 +63,7 @@ const MoveToGroupModal: React.FC<MoveToGroupModalProps> = ({ isOpen, onClose, gr
             </div>
 
             <div className="px-6 space-y-2 max-h-[50vh] overflow-y-auto">
-              <button onClick={() => onMove(null)} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors">
+              <button onClick={() => onMove(null)} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-2xl transition-colors">
                 <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl flex items-center justify-center">
                   <Folder size={20} />
                 </div>
@@ -73,7 +73,7 @@ const MoveToGroupModal: React.FC<MoveToGroupModalProps> = ({ isOpen, onClose, gr
                 <button
                   key={group.id}
                   onClick={() => onMove(group.id)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-[22px] transition-colors"
+                  className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-2xl transition-colors"
                 >
                   <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl flex items-center justify-center">
                     <Folder size={20} />

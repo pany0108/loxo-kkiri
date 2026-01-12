@@ -99,7 +99,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
             </div>
 
             <div className="px-6 relative mb-4">
-              <div className="flex items-center h-[52px] bg-gray-50 dark:bg-gray-800/50 rounded-[20px] px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white dark:focus-within:bg-gray-800">
+              <div className="flex items-center h-[52px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white dark:focus-within:bg-gray-800">
                 <Search size={18} className="text-gray-400 dark:text-gray-600 mr-3 shrink-0" />
                 <input
                   type="text"
@@ -129,7 +129,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
                             key={friend.uid}
                             type="button"
                             onClick={() => onToggleFriend(friend.uid)}
-                            className={`relative p-4 rounded-[20px] border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98] ${
+                            className={`relative p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 text-left active:scale-[0.98] ${
                               isSelected
                                 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 dark:shadow-blue-900/50'
                                 : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-transparent text-gray-600 dark:text-gray-300 hover:border-blue-100 dark:hover:border-blue-900/30 hover:bg-gray-50 dark:hover:bg-gray-700'

@@ -41,7 +41,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   }, [myCalendars]);
 
   return (
-    <header className="px-6 pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-50">
+    <header className="px-page pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-header">
       <div className="flex items-center justify-between pb-2">
         <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
           <button onClick={onCalListToggle} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useLayoutEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   Plus,
@@ -25,8 +25,7 @@ import {
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { EditCalendarModal, PageHeader, ConfirmModal } from 'components';
-import { TopNav } from 'components';
+import { EditCalendarModal, PageHeader, ConfirmModal, PageTitle, PageLayout } from 'components';
 import { useFirestoreQuery } from 'hooks';
 import { CalendarType } from 'contexts';
 import { deleteCalendar, leaveCalendar } from 'services';
@@ -48,19 +47,6 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const CalendarManager = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
-
   const [user, setUser] = useState<any>(null);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -164,17 +150,13 @@ const CalendarManager = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션 */}
-      <TopNav title="캘린더 관리" />
-
-      {/* TopNav가 fixed이므로 콘텐츠가 가려지지 않도록 pt-[76px]로 상단 패딩 조정 */}
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
+    <PageLayout title="캘린더 관리">
+      <div className="pb-16">
         <PageHeader icon={<CalendarIcon className="text-[#007AFF] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             나의 <span className="text-[#007AFF]">캘린더</span>를 <br />
             관리해보세요
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         <section className="space-y-4">
@@ -236,64 +218,64 @@ const CalendarManager = () => {
             </button>
           </div>
         </section>
+
+        {/* 삭제 확인 모달 */}
+        {calendarToDelete && (
+          <ConfirmModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDeleteConfirm}
+            icon={<AlertCircle size={32} />}
+            iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
+            title="캘린더 삭제"
+            message={
+              <>
+                정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더를 삭제하시겠습니까?
+                <br />
+                <span className="text-red-500 dark:text-red-400 font-bold">포함된 모든 일정이 사라집니다.</span>
+              </>
+            }
+            confirmText="삭제하기"
+            confirmButtonClassName="bg-red-500"
+          />
+        )}
+
+        {/* [추가] 캘린더 나가기 확인 모달 */}
+        {calendarToDelete && (
+          <ConfirmModal
+            isOpen={isLeaveModalOpen}
+            onClose={() => setIsLeaveModalOpen(false)}
+            onConfirm={handleLeaveConfirm}
+            icon={<AlertCircle size={32} />}
+            iconContainerClassName="bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400"
+            title="캘린더 나가기"
+            message={
+              <>
+                정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더에서 나가시겠습니까?
+                <br />
+                <span className="text-yellow-500 dark:text-yellow-400 font-bold">더 이상 이 캘린더의 일정을 볼 수 없습니다.</span>
+              </>
+            }
+            confirmText="나가기"
+            confirmButtonClassName="bg-yellow-500"
+          />
+        )}
+
+        {/* 캘린더 수정 모달 */}
+        <EditCalendarModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          calendar={calendarToEdit}
+          onDelete={() => {
+            setIsEditModalOpen(false);
+            // 모달이 닫히는 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
+            setTimeout(() => {
+              if (calendarToEdit) openDeleteModal(calendarToEdit);
+            }, 150);
+          }}
+        />
       </div>
-
-      {/* 삭제 확인 모달 */}
-      {calendarToDelete && (
-        <ConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={handleDeleteConfirm}
-          icon={<AlertCircle size={32} />}
-          iconContainerClassName="bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400"
-          title="캘린더 삭제"
-          message={
-            <>
-              정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더를 삭제하시겠습니까?
-              <br />
-              <span className="text-red-500 dark:text-red-400 font-bold">포함된 모든 일정이 사라집니다.</span>
-            </>
-          }
-          confirmText="삭제하기"
-          confirmButtonClassName="bg-red-500"
-        />
-      )}
-
-      {/* [추가] 캘린더 나가기 확인 모달 */}
-      {calendarToDelete && (
-        <ConfirmModal
-          isOpen={isLeaveModalOpen}
-          onClose={() => setIsLeaveModalOpen(false)}
-          onConfirm={handleLeaveConfirm}
-          icon={<AlertCircle size={32} />}
-          iconContainerClassName="bg-yellow-50 dark:bg-yellow-500/10 text-yellow-500 dark:text-yellow-400"
-          title="캘린더 나가기"
-          message={
-            <>
-              정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더에서 나가시겠습니까?
-              <br />
-              <span className="text-yellow-500 dark:text-yellow-400 font-bold">더 이상 이 캘린더의 일정을 볼 수 없습니다.</span>
-            </>
-          }
-          confirmText="나가기"
-          confirmButtonClassName="bg-yellow-500"
-        />
-      )}
-
-      {/* 캘린더 수정 모달 */}
-      <EditCalendarModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        calendar={calendarToEdit}
-        onDelete={() => {
-          setIsEditModalOpen(false);
-          // 모달이 닫히는 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
-          setTimeout(() => {
-            if (calendarToEdit) openDeleteModal(calendarToEdit);
-          }, 150);
-        }}
-      />
-    </div>
+    </PageLayout>
   );
 };
 

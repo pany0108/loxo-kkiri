@@ -1,6 +1,6 @@
 import React from 'react';
 import { Send, AlignLeft, MapPin } from 'lucide-react';
-import { FormInput } from 'components';
+import { FormInput, FormTextarea } from 'components';
 
 interface MeetingInfoFormProps {
   title: string;
@@ -16,19 +16,14 @@ const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, l
     <section className="space-y-4">
       <FormInput label="약속 제목" icon={<Send size={20} />} value={title} onChange={(e) => onTitleChange(e.target.value)} placeholder="예: 강남역 저녁 모임" />
 
-      <div className="group relative">
-        <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">메모 (선택)</label>
-        <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-5 transition-all">
-          <AlignLeft size={20} className="text-gray-300 dark:text-gray-600 mr-4 mt-1 group-focus-within:text-blue-600" />
-          <textarea
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder="장소나 준비물 등을 적어주세요"
-            rows={3}
-            className="bg-transparent border-none outline-none w-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-500 resize-none"
-          />
-        </div>
-      </div>
+      <FormTextarea
+        label="메모 (선택)"
+        icon={<AlignLeft size={20} />}
+        value={description}
+        onChange={(e) => onDescriptionChange(e.target.value)}
+        placeholder="장소나 준비물 등을 적어주세요"
+        rows={3}
+      />
 
       <FormInput label="장소 (선택)" icon={<MapPin size={20} />} value={location} onChange={(e) => onLocationChange(e.target.value)} placeholder="예: 강남역 2번 출구" />
     </section>

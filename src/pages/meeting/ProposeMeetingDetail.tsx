@@ -1,11 +1,11 @@
-import { useState, useLayoutEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Sparkles, Clock, CalendarClock } from 'lucide-react';
+import { Clock, CalendarClock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader, PageFooter, LoadingButton } from 'components';
+import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, PageLayout, PageHeader, PageFooter, LoadingButton, PageTitle } from 'components';
 import { notifyMeetingInvite } from 'services';
 
 /**
@@ -46,18 +46,6 @@ interface TimeSlot {
 const ProposeMeetingDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
-  useLayoutEffect(() => {
-    // 페이지 전환 시 브라우저의 스크롤 복원 기능과 관계없이 항상 화면 최상단에서 시작하도록 강제합니다.
-    window.scrollTo(0, 0);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [location.pathname]);
 
   /**
    * 라우터 상태로부터 약속 기본 정보를 불러옵니다.
@@ -290,17 +278,23 @@ const ProposeMeetingDetail = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title="세부 시간 설정" />
+  const renderFooter = () => (
+    <PageFooter>
+      <LoadingButton onClick={handleFinalConfirm} isLoading={isSubmitting} className="btn-primary">
+        <span>약속 제안 발송하기</span>
+        <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[12px] font-bold">{Object.values(timeSlots).flat().length}개 슬롯</span>
+      </LoadingButton>
+    </PageFooter>
+  );
 
-      <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
-        {/* 헤더 섹션 */}
+  return (
+    <PageLayout title="세부 시간 설정" footer={renderFooter()}>
+      <>
         <PageHeader icon={<CalendarClock className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+          <PageTitle>
             선택한 날짜의 <span className="text-[#007AFF] dark:text-blue-400">시간</span>을<br />
             설정해주세요.
-          </h2>
+          </PageTitle>
         </PageHeader>
 
         <MeetingSummaryCard title={title} description={description} location={meetingLocation} invitedFriends={invitedFriends} />
@@ -333,23 +327,11 @@ const ProposeMeetingDetail = () => {
             />
           ))}
         </div>
-      </div>
 
-      {/* [추가] 시간 통일 모달 */}
-      <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
-
-      {/* 하단 고정 제안 발송 버튼 */}
-      <PageFooter>
-        <LoadingButton
-          onClick={handleFinalConfirm}
-          isLoading={isSubmitting}
-          className="w-full h-[62px] bg-[#007AFF] text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-        >
-          <span>약속 제안 발송하기</span>
-          <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[12px] font-bold">{Object.values(timeSlots).flat().length}개 슬롯</span>
-        </LoadingButton>
-      </PageFooter>
-    </div>
+        {/* [추가] 시간 통일 모달 */}
+        <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
+      </>
+    </PageLayout>
   );
 };
 
