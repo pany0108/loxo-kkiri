@@ -251,7 +251,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
             </button>
             <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
-              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4">연락처에서 친구 추가</h3>
+              <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-4">연락처에서 친구 추가</h3>
             </div>
             {!permissionGranted && !isLoading && (
               <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400 px-6">
@@ -265,11 +265,11 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
               <>
                 <div className="mb-4 px-6">
                   <div className="relative flex items-center">
-                    <Search size={18} className="absolute left-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                    <Search size={18} className="absolute left-4 text-[#8B95A1] dark:text-gray-500 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="이름, 전화번호, 이메일로 검색"
-                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-full text-gray-900 dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-full text-[#191F28] dark:text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#007AFF]"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -278,7 +278,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
 
                 {isLoading ? (
                   <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="animate-spin text-blue-500 w-8 h-8" />
+                    <Loader2 className="animate-spin text-[#007AFF] w-8 h-8" />
                   </div>
                 ) : (
                   <div className="flex-1 overflow-y-auto space-y-2 px-6">
@@ -286,24 +286,24 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
                       filteredContacts.map((contact, index) => (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-sm overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-[#007AFF]/20 dark:bg-blue-900/20 flex items-center justify-center text-[#007AFF] dark:text-blue-300 font-bold text-sm overflow-hidden">
                               {contact.name?.display ? contact.name.display[0] : '?'}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-900 dark:text-white">{contact.name?.display || '이름 없음'}</p>
+                              <p className="font-bold text-[#191F28] dark:text-white">{contact.name?.display || '이름 없음'}</p>
                               {contact.phones && contact.phones.length > 0 && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                <p className="text-xs text-[#8B95A1] dark:text-gray-400 flex items-center gap-1">
                                   <Phone size={12} /> {contact.phones[0].number || '번호 없음'}
                                 </p>
                               )}
                               {contact.emails && contact.emails.length > 0 && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                <p className="text-xs text-[#8B95A1] dark:text-gray-400 flex items-center gap-1">
                                   <Mail size={12} /> {contact.emails[0].address || '이메일 없음'}
                                 </p>
                               )}
                             </div>
                           </div>
-                          <button onClick={() => handleAddFriend(contact)} className="p-2 bg-blue-600 text-white rounded-full active:scale-95 transition-transform">
+                          <button onClick={() => handleAddFriend(contact)} className="p-2 bg-[#007AFF] text-white rounded-full active:scale-95 transition-transform">
                             <UserPlus size={18} />
                           </button>
                         </div>

@@ -46,26 +46,26 @@ const MeetingVoting = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <PageHeader icon={<Vote className="text-blue-600 w-6 h-6" />}>
+        <PageHeader icon={<Vote className="text-[#007AFF] w-6 h-6" />}>
           <>
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">{meetingData.title}</h2>
+              <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">{meetingData.title}</h2>
             </div>
             {meetingData.location && (
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium mb-2">
+              <div className="flex items-center gap-2 text-[#8B95A1] dark:text-gray-400 font-medium mb-2">
                 <MapPin size={16} />
                 <span>{meetingData.location}</span>
               </div>
             )}
-            <p className="text-gray-500 dark:text-gray-400 font-medium">
+            <p className="text-[#8B95A1] dark:text-gray-400 font-medium">
               {meetingData.isRetry ? (
                 <>
                   재요청된 일정입니다. <br />
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
+                  <span className="text-[#007AFF] dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
                 </>
               ) : (
                 <>
-                  나의 <span className="text-blue-600 dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+                  나의 <span className="text-[#007AFF] dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
                 </>
               )}
             </p>
@@ -86,7 +86,7 @@ const MeetingVoting = () => {
           {isHost && (
             <button
               onClick={() => navigate(`/meeting/status/${meetingId}`)}
-              className="h-[62px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all flex-1"
+              className="h-[62px] bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all flex-1"
             >
               현황 보기
             </button>
@@ -98,8 +98,8 @@ const MeetingVoting = () => {
             className={`h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${isHost ? 'flex-[2]' : 'w-full'}
             ${
               isAllVoted
-                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+                ? 'bg-[#007AFF] text-white shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
             }`}
           >
             투표 완료하기
@@ -126,7 +126,7 @@ const MeetingVoting = () => {
           </>
         }
         confirmText="제출하기"
-        confirmButtonClassName="bg-blue-600"
+        confirmButtonClassName="bg-[#007AFF]"
       />
     </div>
   );

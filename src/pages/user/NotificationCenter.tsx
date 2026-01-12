@@ -296,12 +296,12 @@ const NotificationCenter = () => {
             }}
           >
             {filteredNotifications.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 pt-4 text-gray-400 dark:text-gray-600">
+              <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20 pt-4 text-[#8B95A1] dark:text-gray-600">
                 <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6 animate-in zoom-in-95 duration-500">
-                  <Bell size={32} className="text-gray-300 dark:text-gray-600" />
+                  <Bell size={32} className="text-[#8B95A1] dark:text-gray-600" />
                 </div>
-                <p className="text-[16px] font-black text-gray-900 dark:text-white mb-2">새로운 알림이 없습니다</p>
-                <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500 text-center leading-relaxed">
+                <p className="text-[16px] font-black text-[#191F28] dark:text-white mb-2">새로운 알림이 없습니다</p>
+                <p className="text-[13px] font-medium text-[#8B95A1] dark:text-gray-500 text-center leading-relaxed">
                   약속 초대나 변경 사항이 생기면
                   <br />
                   이곳에서 알려드릴게요!
@@ -334,17 +334,17 @@ const NotificationCenter = () => {
                           className={`relative p-5 ring-2 ring-inset transition-all cursor-pointer z-10 rounded-[24px]
                             ${
                               isSelected
-                                ? 'bg-white dark:bg-gray-900 border-blue-500 shadow-md shadow-blue-100 dark:shadow-none'
+                                ? 'bg-white dark:bg-gray-900 border-[#007AFF] shadow-md shadow-blue-100 dark:shadow-none'
                                 : noti.isRead
                                 ? 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
-                                : 'bg-blue-50/60 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
+                                : 'bg-[#007AFF]/10 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-sm'
                             }`}
                         >
                           <div className="flex gap-4 items-center">
                             {isSelectionMode && (
                               <div
                                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  isSelected ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                                  isSelected ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                                 }`}
                               >
                                 {isSelected && <Check size={16} className="text-white" />}
@@ -360,14 +360,14 @@ const NotificationCenter = () => {
                             <div className="flex-1 min-w-0">
                               <p
                                 className={`text-[14px] leading-relaxed mb-1 ${
-                                  noti.isRead ? 'text-gray-600 dark:text-gray-400 font-medium' : 'text-gray-900 dark:text-white font-bold'
+                                  noti.isRead ? 'text-[#8B95A1] dark:text-gray-400 font-medium' : 'text-[#191F28] dark:text-white font-bold'
                                 }`}
                               >
                                 {noti.message}
                               </p>
-                              <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">{dayjs(noti.createdAt).fromNow()}</p>
+                              <p className="text-[11px] text-[#8B95A1] dark:text-gray-500 font-medium">{dayjs(noti.createdAt).fromNow()}</p>
                             </div>
-                            {!noti.isRead && !isSelectionMode && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                            {!noti.isRead && !isSelectionMode && <div className="w-2 h-2 rounded-full bg-[#007AFF] shrink-0" />}
                           </div>
                         </motion.div>
                       </motion.div>
@@ -387,8 +387,8 @@ const NotificationCenter = () => {
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 size={32} />
             </div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">모든 알림 삭제</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
+            <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-2">모든 알림 삭제</h3>
+            <p className="text-[#8B95A1] dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed">
               정말 모든 알림을 삭제하시겠습니까?
               <br />이 작업은 되돌릴 수 없습니다.
             </p>
@@ -396,7 +396,7 @@ const NotificationCenter = () => {
               <button onClick={confirmDeleteAll} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
                 모두 삭제
               </button>
-              <button onClick={() => setIsDeleteAllModalOpen(false)} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600">
+              <button onClick={() => setIsDeleteAllModalOpen(false)} className="w-full py-4 text-[#8B95A1] dark:text-gray-500 font-bold hover:text-gray-600">
                 취소
               </button>
             </div>
@@ -406,7 +406,7 @@ const NotificationCenter = () => {
 
       {!isSelectionMode && notifications.length > 0 && (
         <footer className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 text-center border-t border-gray-100 dark:border-gray-800/50">
-          <button onClick={handleDeleteAll} className="text-xs font-bold text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+          <button onClick={handleDeleteAll} className="text-xs font-bold text-[#8B95A1] dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">
             모든 알림 지우기
           </button>
         </footer>

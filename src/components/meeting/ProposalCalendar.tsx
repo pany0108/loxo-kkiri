@@ -13,32 +13,37 @@ interface ProposalCalendarProps {
   votingItems?: string[]; // [추가] 범위 정보를 확인하기 위한 prop
 }
 
-// [추가] 범위별 구분을 위한 색상 팔레트 (파란 계열)
+// [추가] 범위별 구분을 위한 색상 팔레트 (Blue Variations)
 const RANGE_PALETTES = [
+  // 1. Primary (Standard): 메인 컬러 그대로 사용. 가장 눈에 띄어야 하는 범위.
   {
-    main: 'bg-blue-600',
-    strip: 'bg-blue-100 dark:bg-blue-900/30',
-    shadow: 'shadow-blue-200 dark:shadow-blue-900/50',
+    main: 'bg-[#007AFF]',
+    strip: 'bg-[#007AFF]/15 dark:bg-[#007AFF]/30', // 너무 진하지 않게 15% 투명도
+    shadow: 'shadow-[#007AFF]/25 dark:shadow-[#007AFF]/40',
   },
+  // 2. Soft Blue (Light): 부드럽고 산뜻한 느낌. 일반적인 일정에 적합.
   {
-    main: 'bg-blue-300',
-    strip: 'bg-blue-300/60 dark:bg-blue-900/50',
-    shadow: 'shadow-blue-300/30 dark:shadow-blue-900/30',
+    main: 'bg-[#5E9EFF]', // Primary보다 밝고 부드러운 블루
+    strip: 'bg-[#5E9EFF]/15 dark:bg-[#5E9EFF]/30',
+    shadow: 'shadow-[#5E9EFF]/25 dark:shadow-[#5E9EFF]/40',
   },
+  // 3. Ice Blue (Pale): 아주 연한 배경색 느낌. 중요도가 낮거나 긴 기간의 범위.
   {
-    main: 'bg-blue-700',
-    strip: 'bg-blue-300/60 dark:bg-blue-900/50',
-    shadow: 'shadow-blue-300/30 dark:shadow-blue-900/30',
+    main: 'bg-[#9DCFFF]', // 파스텔 톤의 아주 밝은 블루
+    strip: 'bg-[#9DCFFF]/20 dark:bg-[#9DCFFF]/30', // 연한 색이라 투명도를 20%로 살짝 올림
+    shadow: 'shadow-[#9DCFFF]/30 dark:shadow-[#9DCFFF]/40',
   },
+  // 4. Deep Ocean (Dark): 차분하고 진중한 느낌. 업무나 중요 일정.
   {
-    main: 'bg-blue-200',
-    strip: 'bg-blue-300/60 dark:bg-blue-900/50',
-    shadow: 'shadow-blue-300/30 dark:shadow-blue-900/30',
+    main: 'bg-[#0055B3]', // Primary보다 명도를 낮춘 진한 블루
+    strip: 'bg-[#0055B3]/10 dark:bg-[#0055B3]/30', // 진한 색이라 투명도를 10%로 낮춤
+    shadow: 'shadow-[#0055B3]/20 dark:shadow-[#0055B3]/40',
   },
+  // 5. Midnight Navy (Darkest): 폰트 색상(#191F28)과 어우러지는 가장 어두운 블루.
   {
-    main: 'bg-blue-900',
-    strip: 'bg-blue-300/60 dark:bg-blue-900/50',
-    shadow: 'shadow-blue-300/30 dark:shadow-blue-900/30',
+    main: 'bg-[#2B4C7E]', // 남색에 가까운 무게감 있는 블루
+    strip: 'bg-[#2B4C7E]/10 dark:bg-[#2B4C7E]/30',
+    shadow: 'shadow-[#2B4C7E]/20 dark:shadow-[#2B4C7E]/40',
   },
 ];
 
@@ -81,17 +86,17 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     <section className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <CalendarIcon size={18} className="text-gray-400 dark:text-gray-500" />
-          <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">날짜 선택</label>
+          <CalendarIcon size={18} className="text-[#8B95A1] dark:text-gray-500" />
+          <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">날짜 선택</label>
         </div>
         <button
           onClick={onToggleRangeMode}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all active:scale-95 ${
-            isRangeMode ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+            isRangeMode ? 'bg-[#007AFF]/10 dark:bg-blue-900/20 text-[#007AFF] dark:text-blue-400' : 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
           }`}
         >
           <span className="text-[11px] font-bold">연속 선택</span>
-          <div className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${isRangeMode ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+          <div className={`w-8 h-4 rounded-full relative transition-colors duration-200 ${isRangeMode ? 'bg-[#007AFF]' : 'bg-gray-300 dark:bg-gray-600'}`}>
             <div
               className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-transform duration-200 ${isRangeMode ? 'translate-x-4' : 'translate-x-0'}`}
             />
@@ -107,7 +112,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
           >
             <ChevronLeft size={18} />
           </button>
-          <span className="text-[16px] font-black text-gray-900 dark:text-white">{currentMonth.format('YYYY년 MM월')}</span>
+          <span className="text-[16px] font-black text-[#191F28] dark:text-white">{currentMonth.format('YYYY년 MM월')}</span>
           <button
             onClick={() => onMonthChange(currentMonth.add(1, 'month'))}
             className="p-2 bg-white dark:bg-gray-700 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm transition-all active:scale-95"
@@ -118,7 +123,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
 
         <div className="grid grid-cols-7 gap-y-3 gap-x-1 text-center">
           {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
-            <span key={d} className="text-[11px] font-black text-gray-300 dark:text-gray-600 mb-2">
+            <span key={d} className="text-[11px] font-black text-[#8B95A1] dark:text-gray-600 mb-2">
               {d}
             </span>
           ))}
@@ -128,7 +133,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
             const hasMySchedule = dailySchedules.length > 0;
             const isSelected = selectedDates.includes(date);
 
-            let selectionClasses = 'bg-white dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+            let selectionClasses = 'bg-white dark:bg-gray-700/50 text-[#191F28] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
 
             // [추가] 선택된 경우 색상 세트 가져오기
             const colorSet = isSelected ? (isRangeMode ? getRangeColorSet(date) : RANGE_PALETTES[0]) : null;
@@ -183,7 +188,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
                   className={`relative z-10 w-full h-full flex flex-col items-center justify-center rounded-[14px] transition-all duration-200 ${selectionClasses}`}
                 >
                   <span
-                    className={`text-[13px] font-bold relative transition-all ${isSelected ? 'text-white' : 'text-gray-700 dark:text-gray-300'} ${
+                    className={`text-[13px] font-bold relative transition-all ${isSelected ? 'text-white' : 'text-[#191F28] dark:text-gray-300'} ${
                       hasMySchedule && !isSelected ? 'bottom-1' : ''
                     }`}
                   >

@@ -171,7 +171,7 @@ const MeetingReport = () => {
           onClose={() => setIsRetryModalOpen(false)}
           onConfirm={handleRetryConfirm}
           icon={<RefreshCw size={32} />}
-          iconContainerClassName="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+          iconContainerClassName="bg-[#007AFF]/10 text-[#007AFF] dark:bg-blue-500/10 dark:text-blue-400"
           title="일정 재요청"
           message={
             <>
@@ -181,7 +181,7 @@ const MeetingReport = () => {
             </>
           }
           confirmText="재요청하기"
-          confirmButtonClassName="bg-blue-600"
+          confirmButtonClassName="bg-[#007AFF]"
         />
 
         {/* [추가] 약속 취소 확인 모달 */}

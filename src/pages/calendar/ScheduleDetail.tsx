@@ -111,7 +111,7 @@ const ScheduleDetail = () => {
     end: initialState?.end ? dayjs(initialState.end) : dayjs().add(1, 'hour'),
     location: initialState?.location || '',
     content: initialState?.content || '',
-    color: initialState?.color || '#4C82B6',
+    color: initialState?.color || '#007AFF',
     calendarId: initialState?.calendarId || '',
     notification: initialState?.notification || 'none',
     allDay: initialState?.allDay || false,
@@ -184,7 +184,7 @@ const ScheduleDetail = () => {
           end: displayEnd, // 보정된 종료 날짜 사용
           location: dbData.location || '',
           content: dbData.content || '',
-          color: dbData.color || '#4C82B6',
+          color: dbData.color || '#007AFF',
           calendarId: dbData.calendarId,
           notification: dbData.notification || 'none',
           allDay: dbData.isAllDay || false,
@@ -399,7 +399,7 @@ const ScheduleDetail = () => {
         extraNav={
           auth.currentUser?.uid === data.userId && (
             <div className="flex items-center gap-1">
-              <button onClick={handleEdit} className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <button onClick={handleEdit} className="p-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#007AFF] dark:hover:text-blue-400 transition-colors">
                 <Edit2 size={22} />
               </button>
             </div>
@@ -407,15 +407,15 @@ const ScheduleDetail = () => {
         }
       >
         {/* 타이틀 및 상세 정보 */}
-        <PageHeader icon={<Calendar className="text-[#4C82B6] w-6 h-6" />}>
+        <PageHeader icon={<Calendar className="text-[#007AFF] w-6 h-6" />}>
           {data.recurrence && data.recurrence.frequency !== 'none' && (
             <div className="mb-2">
-              <span className="text-[12px] font-bold text-[#4C82B6] bg-[#4C82B6]/20 px-2 py-1 rounded-lg">반복 일정</span>
+              <span className="text-[12px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-lg">반복 일정</span>
             </div>
           )}
           <div className="flex relative pl-4">
             <div className="absolute left-0 top-1 bottom-1 w-[5px] rounded-full" style={{ backgroundColor: data.color }} />
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{data.title}</h1>
+            <h1 className="text-2xl font-black text-[#191F28] dark:text-white leading-tight">{data.title}</h1>
           </div>
         </PageHeader>
 
@@ -425,16 +425,16 @@ const ScheduleDetail = () => {
             {/* 시간 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                <Clock size={20} className="text-gray-500 dark:text-gray-400" />
+                <Clock size={20} className="text-[#8B95A1] dark:text-gray-400" />
               </div>
               <div className="flex-1 py-1">
-                <p className="text-[15px] font-bold text-gray-900 dark:text-white mb-1">
+                <p className="text-[15px] font-bold text-[#191F28] dark:text-white mb-1">
                   {formatDate(data.start, data.allDay)}
                   {data.allDay && (
                     <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded ml-2">종일</span>
                   )}
                 </p>
-                {!data.allDay && <p className="text-[13px] font-medium text-gray-400 dark:text-gray-500">~ {formatDate(data.end, data.allDay)}</p>}
+                {!data.allDay && <p className="text-[13px] font-medium text-[#8B95A1] dark:text-gray-500">~ {formatDate(data.end, data.allDay)}</p>}
               </div>
             </div>
 
@@ -442,7 +442,7 @@ const ScheduleDetail = () => {
             {scheduleCalendar && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <CalendarIcon size={20} className="text-gray-500 dark:text-gray-400" />
+                  <CalendarIcon size={20} className="text-[#8B95A1] dark:text-gray-400" />
                 </div>
                 {/* [수정] 클릭 기능이 제거됨에 따라, 다른 항목과 일관성을 위해 UI를 단순화합니다. */}
                 <div className="flex-1 flex items-center gap-3">
@@ -451,7 +451,7 @@ const ScheduleDetail = () => {
                   ) : (
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
                   )}
-                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">
+                  <span className="text-[15px] font-bold text-[#191F28] dark:text-white">
                     {(scheduleCalendar as any).customNames?.[auth.currentUser?.uid || ''] || scheduleCalendar.name}
                   </span>
                 </div>
@@ -462,10 +462,10 @@ const ScheduleDetail = () => {
             {data.location && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <MapPin size={20} className="text-gray-500 dark:text-gray-400" />
+                  <MapPin size={20} className="text-[#8B95A1] dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[15px] font-bold text-gray-900 dark:text-white">{data.location}</p>
+                  <p className="text-[15px] font-bold text-[#191F28] dark:text-white">{data.location}</p>
                 </div>
               </div>
             )}
@@ -474,10 +474,10 @@ const ScheduleDetail = () => {
             {data.content && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <AlignLeft size={20} className="text-gray-500 dark:text-gray-400" />
+                  <AlignLeft size={20} className="text-[#8B95A1] dark:text-gray-400" />
                 </div>
                 <div className="flex-1 py-2">
-                  <p className="text-[14px] font-medium text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
+                  <p className="text-[14px] font-medium text-[#8B95A1] dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
                 </div>
               </div>
             )}
@@ -485,10 +485,10 @@ const ScheduleDetail = () => {
             {/* 알림 정보 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                <Bell size={20} className="text-gray-500 dark:text-gray-400" />
+                <Bell size={20} className="text-[#8B95A1] dark:text-gray-400" />
               </div>
               <div className="flex-1">
-                <p className="text-[15px] font-bold text-gray-900 dark:text-white">{getNotificationLabel(data.notification)}</p>
+                <p className="text-[15px] font-bold text-[#191F28] dark:text-white">{getNotificationLabel(data.notification)}</p>
               </div>
             </div>
 
@@ -498,7 +498,7 @@ const ScheduleDetail = () => {
                 <div className="flex gap-2 flex-wrap">
                   {data.files.map((file, idx) => (
                     <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-[14px] border border-gray-100">
-                      <Paperclip size={14} className="text-[#4C82B6]" />
+                      <Paperclip size={14} className="text-[#478BCC]" />
                       <span className="text-[12px] font-bold text-gray-700">{file.name}</span>
                     </div>
                   ))}
@@ -513,8 +513,8 @@ const ScheduleDetail = () => {
           {isShared && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <MessageCircle size={18} className="text-[#4C82B6]" /> 공유 멤버 및 채팅
+                <h3 className="text-[14px] font-bold text-[#191F28] dark:text-white flex items-center gap-2">
+                  <MessageCircle size={18} className="text-[#007AFF]" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
                   {/* [수정] attendee 타입 명시 */}
@@ -522,7 +522,7 @@ const ScheduleDetail = () => {
                     <div
                       key={attendee.uid}
                       title={attendee.name}
-                      className="w-8 h-8 rounded-full bg-[#4C82B6]/30 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-[#4C82B6] overflow-hidden"
+                      className="w-8 h-8 rounded-full bg-[#007AFF]/30 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-[#007AFF] overflow-hidden"
                     >
                       {attendee.photoURL ? <img src={attendee.photoURL} alt={attendee.name} className="w-full h-full object-cover" /> : attendee.name[0] || '?'}
                     </div>
@@ -532,14 +532,14 @@ const ScheduleDetail = () => {
 
               <button
                 onClick={() => navigate(`/chat/${id}`)}
-                className="w-full h-[60px] bg-[#4C82B6]/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-[#4C82B6]/30 group"
+                className="w-full h-[60px] bg-[#007AFF]/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-[#007AFF]/30 group"
               >
                 <div className="flex flex-col items-start">
-                  <span className="text-[15px] font-black text-[#4C82B6]">채팅방 입장하기</span>
-                  <span className="text-[11px] font-medium text-[#4C82B6]/80">일정 조율 및 사진 공유</span>
+                  <span className="text-[15px] font-black text-[#007AFF]">채팅방 입장하기</span>
+                  <span className="text-[11px] font-medium text-[#007AFF]/80">일정 조율 및 사진 공유</span>
                 </div>
-                <div className="w-10 h-10 bg-white dark:bg-[#4C82B6]/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <ChevronLeft size={20} className="text-[#4C82B6] rotate-180 ml-0.5" />
+                <div className="w-10 h-10 bg-white dark:bg-[#007AFF]/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <ChevronLeft size={20} className="text-[#007AFF] rotate-180 ml-0.5" />
                 </div>
               </button>
 
@@ -564,7 +564,7 @@ const ScheduleDetail = () => {
                   ))}
                   <button
                     onClick={handleViewAllMedia}
-                    className="w-20 h-20 shrink-0 rounded-[16px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 gap-1 hover:border-[#4C82B6] hover:text-[#4C82B6] transition-colors"
+                    className="w-20 h-20 shrink-0 rounded-[16px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-300 gap-1 hover:border-[#478BCC] hover:text-[#478BCC] transition-colors"
                   >
                     <FileText size={20} />
                     <span className="text-[10px] font-bold">More</span>
@@ -580,7 +580,7 @@ const ScheduleDetail = () => {
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen size={20} className="text-emerald-500" />
-                <h3 className="text-[16px] font-black text-gray-900 dark:text-white">오늘의 기록</h3>
+                <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">오늘의 기록</h3>
               </div>
 
               {data.review ? (
@@ -606,7 +606,7 @@ const ScheduleDetail = () => {
                   onClick={handleEdit}
                   className="py-8 text-center bg-gray-50 dark:bg-gray-800/50 rounded-[24px] border border-gray-100 dark:border-gray-700/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <p className="text-[13px] font-bold text-gray-400 dark:text-gray-500">
+                  <p className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500">
                     작성된 후기가 없습니다.
                     <br />
                     눌러서 후기를 작성해보세요!
@@ -621,7 +621,7 @@ const ScheduleDetail = () => {
           <button
             type="button"
             onClick={handleCopy}
-            className="w-full text-center text-sm font-bold text-[#4C82B6] hover:text-[#4C82B6]/80 transition-colors py-3 flex items-center justify-center gap-2"
+            className="w-full text-center text-sm font-bold text-[#007AFF] hover:text-[#007AFF]/80 transition-colors py-3 flex items-center justify-center gap-2"
           >
             <Copy size={14} /> 이 일정 복사하기
           </button>

@@ -44,10 +44,10 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[15px] font-black text-gray-900 dark:text-white">{dateDisplay}</span>
+            <span className="text-[15px] font-black text-[#191F28] dark:text-white">{dateDisplay}</span>
           </div>
           {!isRange && (
-            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
+            <div className="flex items-center gap-1.5 text-[#007AFF] dark:text-blue-400 font-bold bg-[#007AFF]/10 dark:bg-blue-500/10 px-2 py-1 rounded-lg w-fit">
               <Clock size={14} />
               <span className="text-[13px]">{slot.time}</span>
             </div>
@@ -71,7 +71,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
                   {conflictInfo.conflicts.length > 2 && (
                     <button
                       onClick={() => setIsExpanded(!isExpanded)}
-                      className="text-[11px] font-bold text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 text-left px-1 mt-0.5 w-fit transition-colors"
+                      className="text-[11px] font-bold text-[#8B95A1] hover:text-[#191F28] dark:text-gray-500 dark:hover:text-gray-300 text-left px-1 mt-0.5 w-fit transition-colors"
                     >
                       {isExpanded ? '접기' : `외 ${conflictInfo.conflicts.length - 2}건 더보기`}
                     </button>
@@ -83,7 +83,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
                   className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-bold border ${
                     conflictInfo.isConflict
                       ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20'
-                      : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-500/20'
+                      : 'bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-400 border-[#007AFF]/20 dark:border-blue-500/20'
                   }`}
                 >
                   {conflictInfo.isConflict ? <TriangleAlert size={14} /> : <Calendar size={14} />}
@@ -102,13 +102,13 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
             {slot.registeredMembers.map((m, i) => (
               <div
                 key={i}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[11px] font-black text-gray-500 dark:text-gray-400 shadow-sm"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[11px] font-black text-[#8B95A1] dark:text-gray-400 shadow-sm"
               >
                 {m[0]}
               </div>
             ))}
           </div>
-          {slot.registeredMembers.length > 0 && <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">{slot.registeredMembers.length}명 가능</span>}
+          {slot.registeredMembers.length > 0 && <span className="text-[10px] font-bold text-[#8B95A1] dark:text-gray-500">{slot.registeredMembers.length}명 가능</span>}
         </div>
       </div>
 
@@ -122,7 +122,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50'
                 : conflictInfo?.isConflict
                 ? 'bg-gray-50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-700/50 text-gray-300 dark:text-gray-600 opacity-50 hover:opacity-100 hover:border-emerald-200 hover:text-emerald-500'
-                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-emerald-200 dark:hover:border-emerald-500/50 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/10'
+                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-[#8B95A1] dark:text-gray-500 hover:border-emerald-200 dark:hover:border-emerald-500/50 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/10'
             }`}
         >
           <CheckCircle2 size={24} className={slot.myVote === 'available' ? 'fill-white/20' : ''} />
@@ -135,7 +135,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
             ${
               slot.myVote === 'maybe'
                 ? 'bg-amber-400 border-amber-400 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/50'
-                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-amber-200 dark:hover:border-amber-500/50 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
+                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-[#8B95A1] dark:text-gray-500 hover:border-amber-200 dark:hover:border-amber-500/50 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
             }`}
         >
           <AlertCircle size={24} className={slot.myVote === 'maybe' ? 'fill-white/20' : ''} />
@@ -148,7 +148,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
             ${
               slot.myVote === 'unavailable'
                 ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/50'
-                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-500 hover:border-rose-200 dark:hover:border-rose-500/50 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50/30 dark:hover:bg-rose-500/10'
+                : 'bg-white dark:bg-gray-700/50 border-gray-100 dark:border-gray-700 text-[#8B95A1] dark:text-gray-500 hover:border-rose-200 dark:hover:border-rose-500/50 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50/30 dark:hover:bg-rose-500/10'
             }`}
         >
           <XCircle size={24} className={slot.myVote === 'unavailable' ? 'fill-white/20' : ''} />
@@ -158,13 +158,13 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
 
       {/* 메모 입력 필드 */}
       <div className="group relative">
-        <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-4 py-3 transition-all">
-          <MessageSquare size={16} className="text-gray-300 dark:text-gray-500 mr-3 group-focus-within:text-blue-600" />
+        <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-4 py-3 transition-all">
+          <MessageSquare size={16} className="text-[#8B95A1] dark:text-gray-500 mr-3 group-focus-within:text-[#007AFF]" />
           <input
             value={slot.myMemo}
             onChange={(e) => onMemoChange(slot.id, e.target.value)}
             placeholder="메모 남기기 (선택)"
-            className="bg-transparent border-none outline-none w-full text-[13px] font-bold text-gray-700 dark:text-white placeholder:text-gray-500"
+            className="bg-transparent border-none outline-none w-full text-[13px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1]"
           />
         </div>
       </div>

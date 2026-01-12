@@ -9,7 +9,18 @@ import 'dayjs/locale/ko';
 import { useFirestoreDoc, useAuth, useScrollToTop, useMeetingResponseForm } from 'hooks';
 import { useCalendar } from 'contexts';
 import toast from 'react-hot-toast';
-import { HostSlotItem, DateSelectorCalendar, NewProposalSlotItem, MeetingInfoCard, EmptyProposalGuide, TopNav, PageHeader, PageFooter, SyncTimeModal } from 'components';
+import {
+  HostSlotItem,
+  DateSelectorCalendar,
+  NewProposalSlotItem,
+  MeetingInfoCard,
+  EmptyProposalGuide,
+  TopNav,
+  PageHeader,
+  PageFooter,
+  SyncTimeModal,
+  LoadingButton,
+} from 'components';
 import { submitMeetingResponse, Meeting as MeetingData } from 'services';
 
 dayjs.extend(isSameOrBefore);
@@ -77,6 +88,7 @@ const MeetingResponse = () => {
   // [추가] 시간 통일 모달 상태
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSyncTimes = () => {
     if (myNewSlots.length < 1) {
@@ -127,7 +139,9 @@ const MeetingResponse = () => {
    */
   const handleSubmitResponse = async () => {
     if (!meetingId || !user || !meetingData) return;
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       const result = await submitMeetingResponse(meetingId, user, {
         selectedHostSlots,
@@ -144,6 +158,8 @@ const MeetingResponse = () => {
     } catch (error) {
       console.error('Error submitting response:', error);
       toast.error((error as Error).message || '응답 제출 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -161,18 +177,18 @@ const MeetingResponse = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-6" icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+        <PageHeader className="mb-6" icon={<Sparkles className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
             {(meetingData as any).isRetry ? (
               <>
                 {meetingData.hostName}님이 <br />
-                <span className="text-blue-600 dark:text-blue-400">일정을 재요청했어요</span>
+                <span className="text-[#007AFF] dark:text-blue-400">일정을 재요청했어요</span>
               </>
             ) : (
               <>
                 {meetingData.hostName}님의 제안에
                 <br />
-                <span className="text-blue-600 dark:text-blue-400">응답해주세요</span>
+                <span className="text-[#007AFF] dark:text-blue-400">응답해주세요</span>
               </>
             )}
           </h2>
@@ -184,10 +200,10 @@ const MeetingResponse = () => {
         {/* 주최자 제안 확인 및 선택 영역 */}
         <section className="space-y-4 mb-10">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock size={18} className="text-blue-600 dark:text-blue-400" /> 제안된 시간
+            <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
+              <Clock size={18} className="text-[#007AFF] dark:text-blue-400" /> 제안된 시간
             </h3>
-            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500">가능한 시간을 모두 선택하세요</span>
+            <span className="text-[11px] font-bold text-[#8B95A1] dark:text-gray-500">가능한 시간을 모두 선택하세요</span>
           </div>
 
           <div className="space-y-3">
@@ -206,12 +222,12 @@ const MeetingResponse = () => {
         {/* 내 캘린더 대조 및 역제안 영역 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
               <CalendarIcon size={18} className="text-emerald-500 dark:text-emerald-400" /> 다른 시간 제안하기
             </h3>
 
             <div className="flex gap-2 text-[10px] font-bold">
-              <span className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
+              <span className="flex items-center gap-1 text-[#8B95A1] dark:text-gray-500">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>내 일정
               </span>
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -234,13 +250,13 @@ const MeetingResponse = () => {
           {myNewSlots.length > 0 && (
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between px-1 border-t border-gray-100 dark:border-gray-700/50 pt-6 mt-2">
-                <p className="text-[13px] font-black text-gray-900 dark:text-gray-200 flex items-center gap-2">
-                  <Clock size={16} className="text-blue-600 dark:text-blue-400" />
+                <p className="text-[13px] font-black text-[#191F28] dark:text-gray-200 flex items-center gap-2">
+                  <Clock size={16} className="text-[#007AFF] dark:text-blue-400" />
                   추가된 시간 설정
                 </p>
                 <button
                   onClick={handleSyncTimes}
-                  className="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+                  className="px-3 py-1.5 bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-[#007AFF]/20 dark:hover:bg-blue-500/20 transition-colors"
                 >
                   시간 일괄 설정
                 </button>
@@ -264,15 +280,16 @@ const MeetingResponse = () => {
 
       {/* 하단 고정 제출 버튼 */}
       <PageFooter>
-        <button
+        <LoadingButton
           onClick={handleSubmitResponse}
-          className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          isLoading={isSubmitting}
+          className="w-full h-[62px] bg-[#007AFF] text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           <span>제안 제출하기</span>
           {myNewSlots.length > 0 && (
             <span className="bg-emerald-500 dark:bg-emerald-400 text-white dark:text-emerald-900 px-2 py-0.5 rounded-lg text-[11px] font-bold">+ 역제안 {myNewSlots.length}건</span>
           )}
-        </button>
+        </LoadingButton>
       </PageFooter>
     </div>
   );

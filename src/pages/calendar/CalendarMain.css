@@ -55,7 +55,7 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  color: #111827 !important; /* gray-900 */
+  color: #191f28 !important; /* Main Font */
   visibility: visible;
   font-size: 18px !important;
 }
@@ -78,7 +78,7 @@
 .fc-myPrev-button:hover,
 .fc-myNext-button:hover {
   background-color: #f3f4f6 !important; /* gray-100 */
-  color: #111827 !important;
+  color: #191f28 !important; /* Main Font */
 }
 
 /* [추가] 이전/다음 버튼 다크모드 및 인터랙션(active, focus) 스타일 */
@@ -100,15 +100,15 @@
 
 .fc-myPrev-button:focus-visible,
 .fc-myNext-button:focus-visible {
-  outline: 2px solid #60a5fa !important; /* blue-400 */
+  outline: 2px solid #007aff !important; /* Primary */
   outline-offset: 2px !important;
 }
 
 /* [수정] 커스텀 '오늘' 버튼 스타일 */
 .fc-myToday-button {
-  background-color: #eff6ff !important;
+  background-color: rgba(0, 122, 255, 0.1) !important; /* Primary 10% */
   border: none !important;
-  color: #2563eb !important;
+  color: #007aff !important; /* Primary */
   font-size: 11px !important;
   font-weight: 800 !important;
   padding: 6px 12px !important;
@@ -142,13 +142,13 @@
 .fc .fc-timegrid-slot-label-cushion {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #9ca3af !important;
+  color: #8b95a1 !important; /* Sub Font */
 }
 
 .fc-timegrid .fc-col-header-cell-cushion {
   font-size: 12px !important;
   font-weight: 700 !important;
-  color: #4b5563 !important;
+  color: #8b95a1 !important; /* Sub Font */
   padding: 12px 0 !important;
 }
 
@@ -233,7 +233,7 @@
 .fc-daygrid .fc-col-header-cell-cushion {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #9ca3af !important;
+  color: #8b95a1 !important; /* Sub Font */
   padding-bottom: 12px !important;
 }
 
@@ -245,7 +245,7 @@
 .fc-daygrid-day-number {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #4b5563;
+  color: #8b95a1; /* Sub Font */
   width: 28px;
   height: 28px;
   display: flex;
@@ -255,15 +255,15 @@
 }
 
 .dark .fc-day-today .fc-daygrid-day-number {
-  background-color: #3b82f6 !important; /* blue-500 */
+  background-color: #007aff !important; /* Primary */
   color: #ffffff !important;
 }
 
 /* 선택된 날짜 */
 .selected-day .fc-daygrid-day-number {
-  background-color: #3b82f6 !important;
+  background-color: #007aff !important; /* Primary */
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
 }
 .fc-event-selected::after,
 .fc-event:focus::after {
@@ -371,7 +371,7 @@
   height: 5px !important;
   min-width: 5px !important;
   border-radius: 50% !important;
-  background-color: var(--event-color, #3b82f6) !important;
+  background-color: var(--event-color, #007aff) !important; /* Primary */
   border: none !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -413,7 +413,7 @@
   color: #ef4444 !important;
 }
 .fc-day-sat .fc-col-header-cell-cushion {
-  color: #3b82f6 !important;
+  color: #007aff !important; /* Primary */
 }
 
 /* 일요일 (Sunday) - 빨강 */
@@ -428,7 +428,7 @@
 
 /* 토요일 (Saturday) - 파랑 */
 .fc-day-sat .fc-daygrid-day-number {
-  color: #3b82f6 !important; /* blue-500 */
+  color: #007aff !important; /* Primary */
 }
 
 /* 선택된 날짜 텍스트 가독성 확보 */
@@ -438,22 +438,22 @@
 
 /* 오늘 날짜 셀 배경색 (기본 노란색 제거) */
 .fc-day-today {
-  background-color: #eff6ff !important; /* blue-50 */
+  background-color: rgba(0, 122, 255, 0.05) !important; /* Primary 5% */
 }
 
 /* 오늘 날짜 */
 .fc-day-today .fc-daygrid-day-number {
-  background-color: #111827 !important; /* gray-900 */
+  background-color: #191f28 !important; /* Main Font */
   color: #ffffff !important;
 }
 
 /* [추가] 오늘 날짜 다크모드 스타일 */
 .dark .fc-day-today {
-  background-color: rgba(59, 130, 246, 0.08) !important; /* blue-500 with 8% opacity */
+  background-color: rgba(0, 122, 255, 0.1) !important; /* Primary 10% */
 }
 
 .dark .fc-day-today .fc-daygrid-day-number {
-  border-color: #1e3a8a !important; /* blue-900 */
+  border-color: #007aff !important; /* Primary */
 }
 
 /* ==========================================================

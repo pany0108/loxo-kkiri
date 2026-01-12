@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     },
     SplashScreen: {
       launchShowDuration: 2000, // 2초 동안 보여줌
-      backgroundColor: '#4C82B6', // 예: 노란색 (원하는 색상 코드로 변경!)
+      backgroundColor: '#FFFFFF',
       showSpinner: false, // 로딩 뺑뺑이 없애기 (깔끔하게)
       splashFullScreen: true,
       splashImmersive: true,

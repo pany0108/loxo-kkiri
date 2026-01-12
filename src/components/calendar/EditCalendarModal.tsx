@@ -27,7 +27,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#4C82B6', // primary
+  '#007AFF', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -105,25 +105,25 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] pt-6 pb-8 px-8 shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xl font-black text-gray-900 dark:text-white">캘린더 수정</h3>
+          <h3 className="text-xl font-black text-[#191F28] dark:text-white">캘린더 수정</h3>
           <div className="flex items-center">
             {!calendar.isDefault && (
-              <button onClick={onDelete} className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors" title="캘린더 삭제">
+              <button onClick={onDelete} className="p-2 text-[#8B95A1] hover:text-red-500 rounded-full transition-colors" title="캘린더 삭제">
                 <Trash2 size={20} />
               </button>
             )}
           </div>
         </div>
-        <p className="text-gray-400 dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 아이콘, 색상을 변경합니다.</p>
+        <p className="text-[#8B95A1] dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 아이콘, 색상을 변경합니다.</p>
 
         <div className="space-y-6">
-          <div className="flex items-center h-[58px] bg-[#F7F6F2] dark:bg-gray-700 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-5 transition-all">
-            <PenLine size={18} className="text-gray-400 mr-3" />
-            <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="w-full bg-transparent outline-none font-bold text-gray-800 dark:text-white" />
+          <div className="flex items-center h-[58px] bg-gray-50 dark:bg-gray-700 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-700 rounded-[18px] px-5 transition-all">
+            <PenLine size={18} className="text-[#8B95A1] mr-3" />
+            <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="w-full bg-transparent outline-none font-bold text-[#191F28] dark:text-white" />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="block text-[13px] font-black text-gray-400 ml-1">캘린더 아이콘</label>
+            <label className="block text-[13px] font-black text-[#8B95A1] ml-1">캘린더 아이콘</label>
             <div className="relative" ref={colorDropdownRef}>
               <button
                 type="button"
@@ -131,8 +131,8 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
                 className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 transition-all"
               >
                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: selectedColor }} />
-                <span className="text-[12px] font-bold text-gray-600 dark:text-gray-300"></span>
-                <ChevronDown size={14} className="text-gray-400" />
+                <span className="text-[12px] font-bold text-[#8B95A1] dark:text-gray-300"></span>
+                <ChevronDown size={14} className="text-[#8B95A1]" />
               </button>
               {isColorDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 w-[240px]">
@@ -176,10 +176,10 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
         </div>
 
         <div className="flex gap-3 mt-8">
-          <button onClick={onClose} className="flex-1 py-4 bg-[#F0F0EB] dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold rounded-[20px]">
+          <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold rounded-[20px]">
             취소
           </button>
-          <button onClick={handleSave} className="flex-1 py-4 bg-[#4C82B6] text-gray-900 font-bold rounded-[20px] shadow-lg shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20">
+          <button onClick={handleSave} className="flex-1 py-4 bg-[#007AFF] text-white font-bold rounded-[20px] shadow-lg shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20">
             저장
           </button>
         </div>

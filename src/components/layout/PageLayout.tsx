@@ -19,7 +19,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, onBack, extraN
   const finalOnBack = onBack === null ? undefined : onBack ?? (() => navigate(-1));
 
   return (
-    <div className="flex flex-col min-h-dvh bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
       <TopNav title={title} onBack={finalOnBack} extra={extraNav} />
       <div ref={scrollContainerRef} className={`flex-1 flex flex-col px-6 pt-[calc(76px+env(safe-area-inset-top))] ${footerPadding} overflow-y-auto w-full`}>
         {children}

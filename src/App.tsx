@@ -67,14 +67,14 @@ const AppContent = () => {
   // 인증 상태 확인 중일 때 로딩 화면 표시
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh] bg-[#FDFBF7] dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#4C82B6]" />
+      <div className="flex items-center justify-center min-h-[100dvh] bg-white dark:bg-gray-950 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#007AFF]" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#FDFBF7] dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
+    <div className="flex flex-col h-[100dvh] bg-white dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <div className="flex-1 min-h-0">
         <div className="h-full pb-[calc(4rem+env(safe-area-inset-bottom))]">
           <Routes>

@@ -51,7 +51,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#4C82B6', // primary
+  '#007AFF', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -105,8 +105,8 @@ const AddSchedule = () => {
         className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
                 ${
                   formData.title && !isSubmitting
-                    ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+                    ? 'bg-[#007AFF] text-white shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-[0.98]'
+                    : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
                 }`}
       >
         <span>일정 등록하기</span>
@@ -118,9 +118,9 @@ const AddSchedule = () => {
     // [수정] PageLayout으로 전체 구조 변경
     <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
-        <PageHeader icon={<CalendarPlus className="text-[#4C82B6] w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            새로운 <span className="text-[#4C82B6]">일정</span>을<br />
+        <PageHeader icon={<CalendarPlus className="text-[#007AFF] w-6 h-6" />}>
+          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+            새로운 <span className="text-[#007AFF]">일정</span>을<br />
             등록해볼까요?
           </h2>
         </PageHeader>
@@ -129,15 +129,15 @@ const AddSchedule = () => {
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
             <div ref={titleInputRef} className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-              <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">일정 제목</label>
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                 <input
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                   onFocus={() => formData.title && scheduleSearchResults.length > 0 && setShowSuggestions(true)}
                   placeholder="무엇을 하나요?"
-                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
+                  className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1]"
                   required
                   autoComplete="off"
                 />
@@ -168,11 +168,11 @@ const AddSchedule = () => {
 
             {/* [추가] 캘린더 선택 섹션 */}
             <div className="group relative" ref={dropdownRef}>
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
+              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">캘린더</label>
               <button
                 type="button"
                 onClick={() => setIsCalListOpen(!isCalListOpen)}
-                className="w-full flex items-center justify-between h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+                className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
@@ -182,11 +182,11 @@ const AddSchedule = () => {
                       <CalendarIcon size={14} />
                     )}
                   </div>
-                  <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">
+                  <span className="text-[15px] font-bold text-[#191F28] dark:text-gray-200">
                     {selectedCalendar ? (selectedCalendar as any).customNames?.[currentUser?.uid || ''] || selectedCalendar.name : '캘린더 선택...'}
                   </span>
                 </div>
-                <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-[#8B95A1] dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isCalListOpen && (
@@ -201,17 +201,17 @@ const AddSchedule = () => {
                         onClick={() => handleCalendarSelect(cal)}
                         className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
                           selectedCalendar?.id === cal.id
-                            ? 'bg-[#4C82B6]/20 dark:bg-[#4C82B6]/10 text-[#4C82B6]'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                            ? 'bg-[#007AFF]/20 dark:bg-[#007AFF]/10 text-[#007AFF]'
+                            : 'text-[#8B95A1] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#4C82B6' }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#007AFF' }}>
                             <IconComponent size={16} />
                           </div>
                           <span className="text-[14px] font-bold">{calName}</span>
                         </div>
-                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#4C82B6]" />}
+                        {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#007AFF]" />}
                       </button>
                     );
                   })}
@@ -226,7 +226,7 @@ const AddSchedule = () => {
                         },
                       })
                     }
-                    className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 rounded-[18px] transition-colors"
+                    className="w-full flex items-center gap-3 p-4 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-[18px] transition-colors"
                   >
                     <Plus size={16} /> 새 캘린더 만들기
                   </button>
@@ -236,9 +236,9 @@ const AddSchedule = () => {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
+                <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">시간 설정</label>
                 <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
-                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-gray-400'}`}>종일</span>
+                  <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-[#8B95A1]'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
                     <div
                       className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${
@@ -249,7 +249,7 @@ const AddSchedule = () => {
                 </div>
               </div>
 
-              <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-3">
                   <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
                   <div className="flex-1 flex items-center justify-between gap-3">
@@ -282,7 +282,7 @@ const AddSchedule = () => {
 
             {/* [추가] 색상 선택 섹션 */}
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">색상</label>
+              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">색상</label>
               <div className="flex flex-wrap gap-3 px-1">
                 {COLOR_OPTIONS.map((color) => (
                   <button
@@ -303,14 +303,14 @@ const AddSchedule = () => {
             <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
             <div className="group relative">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">푸시 알림</label>
-              <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-                <Bell size={18} className="text-gray-300 mr-4 group-focus-within:text-[#4C82B6]" />
+              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">푸시 알림</label>
+              <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                <Bell size={18} className="text-[#8B95A1] mr-4 group-focus-within:text-[#007AFF]" />
                 <select
                   name="notification"
                   value={formData.notification}
                   onChange={handleChange}
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-gray-200 appearance-none"
+                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-[#191F28] dark:text-gray-200 appearance-none"
                 >
                   {NOTIFICATION_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -322,28 +322,28 @@ const AddSchedule = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
-              <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
+              <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">상세 정보</label>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1">
                 <div className="flex items-center h-[56px] px-4 gap-4">
-                  <MapPin size={18} className="text-gray-300 dark:text-gray-600 shrink-0" />
+                  <MapPin size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
                   <input
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
                     placeholder="장소 추가"
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1]"
                   />
                 </div>
                 <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
                 <div className="flex items-start p-4 gap-4">
-                  <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-0.5 shrink-0" />
+                  <AlignLeft size={18} className="text-[#8B95A1] dark:text-gray-600 mt-0.5 shrink-0" />
                   <textarea
                     name="content"
                     value={formData.content}
                     onChange={handleChange}
                     placeholder="메모를 입력하세요"
                     rows={3}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 resize-none"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1] resize-none"
                   />
                 </div>
               </div>
@@ -353,7 +353,7 @@ const AddSchedule = () => {
               <button
                 type="button"
                 onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                className="w-full h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-[20px] flex items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed"
               >
                 <Camera size={20} />
                 <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>

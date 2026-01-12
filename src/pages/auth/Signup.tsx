@@ -43,15 +43,15 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       <TopNav title="회원가입" />
 
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-10" icon={<Sparkles className="text-[#4C82B6] w-6 h-6" />}>
+        <PageHeader className="mb-10" icon={<Sparkles className="text-[#478BCC] w-6 h-6" />}>
           <h2 className="text-[28px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
             새로운 시작, <br />
-            <span className="text-[#4C82B6]">회원가입을 시작할까요?</span>
+            <span className="text-[#478BCC]">회원가입을 시작할까요?</span>
           </h2>
         </PageHeader>
 
@@ -180,7 +180,7 @@ const Signup = () => {
                 formData.firstName &&
                 formData.birthDate &&
                 formData.phone
-                  ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
+                  ? 'bg-[#478BCC] text-gray-900 shadow-[#478BCC]/30 dark:shadow-[#478BCC]/20 active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
               }`}
             >

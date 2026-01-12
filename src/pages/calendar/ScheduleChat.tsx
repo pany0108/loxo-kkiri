@@ -106,22 +106,22 @@ const ScheduleChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#FDFBF7] font-['Pretendard'] overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-white font-['Pretendard'] overflow-hidden">
       {/* 상단 헤더: 뒤로가기 및 일정 정보 */}
-      <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-[#FDFBF7]/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
+      <header className="sticky top-0 shrink-0 px-4 py-4 flex items-center justify-between bg-white/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-100">
         <div className="flex items-center gap-2 pt-[env(safe-area-inset-top)]">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1 text-gray-800 hover:bg-gray-100 rounded-full transition-colors" aria-label="뒤로 가기">
             <ChevronLeft size={26} />
           </button>
           <div>
-            <h1 className="text-[16px] font-black text-gray-900 leading-none">가족 연말 모임 👨‍👩‍👧‍👦</h1>
-            <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1 mt-0.5">
+            <h1 className="text-[16px] font-black text-[#191F28] leading-none">가족 연말 모임 👨‍👩‍👧‍👦</h1>
+            <span className="text-[11px] font-bold text-[#8B95A1] flex items-center gap-1 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
               3명 참여중
             </span>
           </div>
         </div>
-        <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors" aria-label="메뉴 더보기">
+        <button className="p-2 text-[#8B95A1] hover:text-[#191F28] transition-colors" aria-label="메뉴 더보기">
           <MoreVertical size={22} />
         </button>
       </header>
@@ -133,7 +133,7 @@ const ScheduleChat = () => {
           if (msg.type === 'system') {
             return (
               <div key={msg.id} className="flex justify-center my-4">
-                <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-gray-500 text-center leading-relaxed max-w-[80%]">{msg.text}</span>
+                <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#8B95A1] text-center leading-relaxed max-w-[80%]">{msg.text}</span>
               </div>
             );
           }
@@ -142,25 +142,25 @@ const ScheduleChat = () => {
           return (
             <div key={msg.id} className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               {!msg.isMe && (
-                <div className={`w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-gray-700 shrink-0 ${msg.profileImg}`}>{msg.sender[0]}</div>
+                <div className={`w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-[#191F28] shrink-0 ${msg.profileImg}`}>{msg.sender[0]}</div>
               )}
 
               <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
-                {!msg.isMe && <span className="text-[11px] text-gray-500 font-bold mb-1 ml-1">{msg.sender}</span>}
+                {!msg.isMe && <span className="text-[11px] text-[#8B95A1] font-bold mb-1 ml-1">{msg.sender}</span>}
 
                 <div className="flex items-end gap-1.5">
-                  {msg.isMe && <span className="text-[10px] text-gray-400 font-medium mb-0.5 min-w-max">{msg.timestamp}</span>}
+                  {msg.isMe && <span className="text-[10px] text-[#8B95A1] font-medium mb-0.5 min-w-max">{msg.timestamp}</span>}
 
                   <div
                     className={`
                       px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm
-                      ${msg.isMe ? 'bg-[#4C82B6] text-gray-900 rounded-[20px] rounded-tr-none' : 'bg-white text-gray-800 rounded-[20px] rounded-tl-none border border-gray-100'}
+                      ${msg.isMe ? 'bg-[#007AFF] text-white rounded-[20px] rounded-tr-none' : 'bg-white text-[#191F28] rounded-[20px] rounded-tl-none border border-gray-100'}
                     `}
                   >
                     {msg.text}
                   </div>
 
-                  {!msg.isMe && <span className="text-[10px] text-gray-400 font-medium mb-0.5 min-w-max">{msg.timestamp}</span>}
+                  {!msg.isMe && <span className="text-[10px] text-[#8B95A1] font-medium mb-0.5 min-w-max">{msg.timestamp}</span>}
                 </div>
               </div>
             </div>
@@ -171,19 +171,19 @@ const ScheduleChat = () => {
       </div>
 
       {/* 입력창 영역 */}
-      <div className="shrink-0 bg-[#FDFBF7] border-t border-gray-100 px-4 pt-3 pb-3 z-20 w-full">
+      <div className="shrink-0 bg-white border-t border-gray-100 px-4 pt-3 pb-3 z-20 w-full">
         <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0">
+          <button type="button" className="p-2 text-[#8B95A1] hover:text-[#191F28] hover:bg-gray-100 rounded-full transition-colors shrink-0">
             <Plus size={24} />
           </button>
 
-          <div className="flex-1 min-w-0 bg-[#F7F6F2] rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-[#4C82B6]/50 focus-within:bg-white transition-all">
+          <div className="flex-1 min-w-0 bg-gray-50 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-[#007AFF]/50 focus-within:bg-white transition-all">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="메시지를 입력하세요"
-              className="flex-1 bg-transparent outline-none text-[15px] font-medium text-gray-900 placeholder:text-gray-400 min-w-0"
+              className="flex-1 bg-transparent outline-none text-[15px] font-medium text-[#191F28] placeholder:text-[#8B95A1] min-w-0"
               style={{ fontSize: '16px' }}
             />
           </div>
@@ -193,7 +193,7 @@ const ScheduleChat = () => {
             disabled={!inputText.trim()}
             className={`
               p-2.5 rounded-full transition-all active:scale-95 shrink-0
-              ${inputText.trim() ? 'bg-[#4C82B6] text-gray-900 shadow-md shadow-[#4C82B6]/50' : 'bg-[#F0F0EB] text-gray-300'}
+              ${inputText.trim() ? 'bg-[#007AFF] text-white shadow-md shadow-[#007AFF]/50' : 'bg-gray-100 text-[#8B95A1]'}
             `}
           >
             <Send size={20} className={inputText.trim() ? 'ml-0.5' : ''} />

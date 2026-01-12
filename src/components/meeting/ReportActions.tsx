@@ -9,11 +9,11 @@ interface ReportActionsProps {
 const ReportActions: React.FC<ReportActionsProps> = ({ onRetry, onCancel }) => {
   return (
     <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-800">
-      <p className="text-center text-[12px] font-bold text-gray-400 dark:text-gray-500 mb-4">마음에 드는 시간이 없으신가요?</p>
+      <p className="text-center text-[12px] font-bold text-[#8B95A1] dark:text-gray-500 mb-4">마음에 드는 시간이 없으신가요?</p>
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onRetry}
-          className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 h-[56px] rounded-[20px] bg-gray-50 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-[0.98] transition-all"
         >
           <RefreshCw size={16} /> 일정 재요청
         </button>

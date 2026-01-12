@@ -9,7 +9,7 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({ icon, children, className = 'mb-8' }) => {
   return (
     <header className={className}>
-      {icon && <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 dark:bg-blue-500/10 rounded-xl mb-6">{icon}</div>}
+      {icon && <div className="inline-flex items-center justify-center w-12 h-12 bg-[#007AFF]/10 dark:bg-blue-500/10 rounded-xl mb-6">{icon}</div>}
       {children}
     </header>
   );

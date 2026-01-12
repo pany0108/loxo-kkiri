@@ -20,9 +20,9 @@ const NewProposalSlotItem: React.FC<NewProposalSlotItemProps> = ({ slot, onTimeC
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="bg-white dark:bg-gray-800 rounded-[24px] p-5 border-2 border-emerald-100 dark:border-emerald-500/30 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-[15px] font-black text-gray-900 dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
+          <span className="text-[15px] font-black text-[#191F28] dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
           <div onClick={() => onToggleAllDay(slot.date)} className="flex items-center gap-2 cursor-pointer group">
-            <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>종일</span>
+            <span className={`text-[11px] font-bold transition-colors ${slot.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B95A1]'}`}>종일</span>
             <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${slot.isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
               <div
                 className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${slot.isAllDay ? 'translate-x-4' : 'translate-x-0'}`}
@@ -43,14 +43,14 @@ const NewProposalSlotItem: React.FC<NewProposalSlotItemProps> = ({ slot, onTimeC
                 type="time"
                 value={slot.startTime}
                 onChange={(e) => onTimeChange(slot.date, 'startTime', e.target.value)}
-                className="bg-transparent border-none outline-none w-full text-[14px] font-bold text-gray-900 dark:text-white text-center"
+                className="bg-transparent border-none outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-white text-center"
               />
-              <span className="text-gray-300 dark:text-gray-600">-</span>
+              <span className="text-[#8B95A1] dark:text-gray-600">-</span>
               <input
                 type="time"
                 value={slot.endTime}
                 onChange={(e) => onTimeChange(slot.date, 'endTime', e.target.value)}
-                className="bg-transparent border-none outline-none w-full text-[14px] font-bold text-gray-900 dark:text-white text-center"
+                className="bg-transparent border-none outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-white text-center"
               />
             </div>
           </div>

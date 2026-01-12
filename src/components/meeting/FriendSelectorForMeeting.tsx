@@ -65,23 +65,23 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
     <>
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
-          <Users size={18} className="text-gray-400 dark:text-gray-500" />
-          <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">누구와 함께하나요?</label>
+          <Users size={18} className="text-[#8B95A1] dark:text-gray-500" />
+          <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">누구와 함께하나요?</label>
         </div>
 
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">
           <div className="relative">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                  <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
+                <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-[#007AFF]/50 transition-all">
+                  <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddFriendByName()}
                     placeholder="친구 이름 검색 후 추가"
-                    className="w-full bg-transparent outline-none text-gray-900 dark:text-white text-[14px] font-bold placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    className="w-full bg-transparent outline-none text-[#191F28] dark:text-white text-[14px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-500"
                   />
                 </div>
                 {searchTerm && searchResults.length > 0 && (
@@ -93,7 +93,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
                           onToggleFriend(friend);
                           setSearchTerm('');
                         }}
-                        className="w-full text-left px-4 py-3 text-sm font-bold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                        className="w-full text-left px-4 py-3 text-sm font-bold text-[#191F28] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                       >
                         {friend.name}
                       </button>
@@ -103,7 +103,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
               </div>
               <button
                 onClick={() => setIsAddFriendModalOpen(true)}
-                className="w-[52px] h-[52px] bg-blue-600 text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-blue-100 dark:shadow-blue-900/50 active:scale-95 transition-all"
+                className="w-[52px] h-[52px] bg-[#007AFF] text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-95 transition-all"
               >
                 <Plus size={20} strokeWidth={3} />
               </button>
@@ -111,13 +111,13 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
           </div>
           {invitedFriends.length > 0 && (
             <div className="px-1">
-              <h5 className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2">선택된 친구 ({invitedFriends.length}명)</h5>
+              <h5 className="text-xs font-bold text-[#8B95A1] dark:text-gray-500 mb-2">선택된 친구 ({invitedFriends.length}명)</h5>
               <div className="flex flex-wrap gap-2">
                 {invitedFriends.map((friend) => (
                   <button
                     key={`invited-${friend.uid}`}
                     onClick={() => onToggleFriend(friend)}
-                    className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-600 text-white"
+                    className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-[#007AFF] text-white"
                   >
                     {friend.name}
                     <X size={14} className="bg-white/20 rounded-full p-0.5" />
@@ -129,7 +129,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
 
           <button
             onClick={() => setIsPopupOpen(true)}
-            className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"
+            className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:border-[#007AFF] hover:text-[#007AFF] hover:bg-[#007AFF]/20 transition-all active:scale-[0.99]"
           >
             <UserPlus size={16} strokeWidth={2.5} />
             친구 목록에서 선택하기

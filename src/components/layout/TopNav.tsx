@@ -17,13 +17,13 @@ const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, classNa
   // TopNav의 높이를 Safe Area를 포함하여 60px + safe-area-inset-top으로 설정합니다.
   // 내부 콘텐츠는 이 높이 내에서 중앙 정렬됩니다.
   const defaultClassName =
-    'fixed top-0 right-0 left-0 h-[calc(60px+env(safe-area-inset-top))] px-6 pt-[env(safe-area-inset-top)] flex items-center justify-between bg-[#FDFBF7]/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-gray-100 dark:border-gray-800';
+    'fixed top-0 right-0 left-0 h-[calc(60px+env(safe-area-inset-top))] px-6 pt-[env(safe-area-inset-top)] flex items-center justify-between bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-gray-100 dark:border-gray-800';
 
   return (
     <nav className={`${defaultClassName} ${className || ''}`}>
       <button
         onClick={handleBack}
-        className="p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors active:scale-90"
+        className="p-2 -ml-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-white transition-colors active:scale-90"
         aria-label="뒤로 가기"
       >
         <ChevronLeft size={28} />
@@ -31,7 +31,7 @@ const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, classNa
       {children ? (
         <div className="flex-1 flex items-center gap-3">{children}</div>
       ) : (
-        title && <h1 className="flex-1 text-[17px] font-black text-gray-900 dark:text-white truncate">{title}</h1>
+        title && <h1 className="flex-1 text-[17px] font-black text-[#191F28] dark:text-white truncate">{title}</h1>
       )}
       {extra && <div className="flex items-center gap-1">{extra}</div>}
     </nav>

@@ -24,12 +24,12 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <CalendarIcon size={18} className="text-blue-600 dark:text-blue-400" />
-          <h3 className="text-[16px] font-black text-gray-900 dark:text-white">{dayjs(dateStr).format('MM월 DD일 (ddd)')}</h3>
+          <CalendarIcon size={18} className="text-[#007AFF] dark:text-blue-400" />
+          <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">{dayjs(dateStr).format('MM월 DD일 (ddd)')}</h3>
         </div>
 
         <div onClick={() => onToggleAllDay(dateStr)} className="flex items-center gap-2 cursor-pointer group py-1">
-          <span className={`text-[11px] font-bold transition-colors ${isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>종일</span>
+          <span className={`text-[11px] font-bold transition-colors ${isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B95A1]'}`}>종일</span>
           <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${isAllDay ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ${isAllDay ? 'translate-x-4' : 'translate-x-0'}`} />
           </div>
@@ -47,27 +47,27 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
             {slots.map((slot, index) => (
               <div
                 key={index}
-                className="relative flex items-center h-[60px] bg-white dark:bg-gray-800 rounded-[20px] shadow-sm border border-gray-200 dark:border-gray-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 transition-all overflow-hidden"
+                className="relative flex items-center h-[60px] bg-white dark:bg-gray-800 rounded-[20px] shadow-sm border border-gray-200 dark:border-gray-700 focus-within:border-[#007AFF] focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all overflow-hidden"
               >
                 <div className="flex-1 flex items-center justify-center gap-2 pr-10 pl-4">
                   <input
                     type="time"
                     value={slot.start}
                     onChange={(e) => onTimeChange(dateStr, index, 'start', e.target.value)}
-                    className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 dark:text-white text-center w-full min-w-[70px] p-0"
+                    className="bg-transparent border-none outline-none text-[14px] font-bold text-[#191F28] dark:text-white text-center w-full min-w-[70px] p-0"
                   />
-                  <span className="text-gray-300 dark:text-gray-600 font-bold shrink-0">-</span>
+                  <span className="text-[#8B95A1] dark:text-gray-600 font-bold shrink-0">-</span>
                   <input
                     type="time"
                     value={slot.end}
                     onChange={(e) => onTimeChange(dateStr, index, 'end', e.target.value)}
-                    className="bg-transparent border-none outline-none text-[14px] font-bold text-gray-900 dark:text-white text-center w-full min-w-[70px] p-0"
+                    className="bg-transparent border-none outline-none text-[14px] font-bold text-[#191F28] dark:text-white text-center w-full min-w-[70px] p-0"
                   />
                 </div>
                 {slots.length > 1 && (
                   <button
                     onClick={() => onDeleteSlot(dateStr, index)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-300 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-full transition-colors z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-[#8B95A1] dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-full transition-colors z-10"
                     aria-label="시간대 삭제"
                   >
                     <X size={18} />
@@ -77,7 +77,7 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
             ))}
             <button
               onClick={() => onAddSlot(dateStr)}
-              className="w-full h-[52px] border border-dashed border-gray-300 dark:border-gray-600 rounded-[20px] flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 font-bold text-[13px] hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"
+              className="w-full h-[52px] border border-dashed border-gray-300 dark:border-gray-600 rounded-[20px] flex items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-500 font-bold text-[13px] hover:border-[#007AFF] dark:hover:border-blue-500 hover:text-[#007AFF] dark:hover:text-blue-400 hover:bg-[#007AFF]/10 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"
             >
               <Plus size={16} strokeWidth={2.5} />
               시간대 추가

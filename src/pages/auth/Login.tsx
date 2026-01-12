@@ -173,19 +173,19 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen pb-[calc(4rem+env(safe-area-inset-bottom))] bg-white dark:bg-gray-950 font-['Pretendard']">
       <div className="flex flex-1 flex-col justify-center px-6 max-w-md mx-auto w-full">
         {/* 상단 브랜딩 영역 */}
         <div className="mb-10 text-left">
           <LogoImage className="mb-8" />
-          <h2 className="text-[30px] font-black text-gray-900 dark:text-white leading-[1.2] tracking-tight">
+          <h2 className="text-[30px] font-black text-[#191F28] dark:text-white leading-[1.2] tracking-tight">
             아무도 모르게, <br />
-            <span className="text-[#4C82B6]">우리 끼리</span>
+            <span className="text-[#007AFF]">우리 끼리</span>
           </h2>
-          <p className="mt-3 text-gray-400 font-medium text-[15px]">
+          <p className="mt-3 text-[#8B95A1] font-medium text-[15px]">
             우리만의 비밀스러운 약속 아지트,
             <br />
-            끼리(Kkiri)에 오신 것을 환영합니다.
+            끼리에 오신 것을 환영합니다.
           </p>
         </div>
 
@@ -221,7 +221,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => navigate('/change-password', { state: { from: 'login' } })}
-              className="text-xs font-bold text-gray-300 dark:text-gray-600 hover:text-[#4C82B6] transition-colors"
+              className="text-xs font-bold text-[#8B95A1] dark:text-gray-600 hover:text-[#007AFF] transition-colors"
             >
               비밀번호 재설정
             </button>
@@ -233,7 +233,7 @@ const Login = () => {
               type="submit"
               isLoading={isEmailLoading}
               disabled={isEmailLoading || isGoogleLoading || isPageLoading}
-              className="w-full h-[60px] bg-[#4C82B6] text-white rounded-[20px] font-black text-[17px] shadow-lg flex items-center justify-center"
+              className="w-full h-[60px] bg-[#007AFF] text-white rounded-[20px] font-black text-[17px] shadow-lg shadow-[#007AFF]/20 flex items-center justify-center"
             >
               로그인
             </LoadingButton>
@@ -244,7 +244,7 @@ const Login = () => {
               onClick={handleGoogleLogin}
               isLoading={isGoogleLoading}
               disabled={isEmailLoading || isGoogleLoading || isPageLoading}
-              className="w-full h-[60px] bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center gap-3"
+              className="w-full h-[60px] bg-white dark:bg-gray-800 text-[#191F28] dark:text-gray-200 rounded-[20px] font-bold text-[15px] border-2 border-gray-100 dark:border-gray-700 flex items-center justify-center gap-3"
             >
               <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="google" className="w-5 h-5" />
               구글로 계속하기
@@ -254,7 +254,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="w-full h-[50px] bg-transparent text-gray-400 dark:text-gray-500 font-bold text-[14px] hover:text-gray-600 dark:hover:text-gray-300 transition-all"
+              className="w-full h-[50px] bg-transparent text-[#8B95A1] dark:text-gray-500 font-bold text-[14px] hover:text-[#191F28] dark:hover:text-gray-300 transition-all"
             >
               회원가입 하기
             </button>

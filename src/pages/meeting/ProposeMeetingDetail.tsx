@@ -5,7 +5,7 @@ import { Sparkles, Clock, CalendarClock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { collection, addDoc, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader, PageFooter } from 'components';
+import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, TopNav, PageHeader, PageFooter, LoadingButton } from 'components';
 import { notifyMeetingInvite } from 'services';
 
 /**
@@ -92,6 +92,7 @@ const ProposeMeetingDetail = () => {
   // [추가] 시간 통일 모달 상태
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
    * 특정 날짜에 새로운 시간 슬롯을 추가합니다.
@@ -246,7 +247,9 @@ const ProposeMeetingDetail = () => {
    */
   const handleFinalConfirm = async () => {
     if (!auth.currentUser) return;
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       const meetingRef = await addDoc(collection(db, 'meetings'), {
         title,
@@ -282,6 +285,8 @@ const ProposeMeetingDetail = () => {
     } catch (error) {
       console.error('Error creating meeting:', error);
       toast.error('약속 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -291,9 +296,9 @@ const ProposeMeetingDetail = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <PageHeader icon={<CalendarClock className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            선택한 날짜의 <span className="text-blue-600 dark:text-blue-400">시간</span>을<br />
+        <PageHeader icon={<CalendarClock className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+            선택한 날짜의 <span className="text-[#007AFF] dark:text-blue-400">시간</span>을<br />
             설정해주세요.
           </h2>
         </PageHeader>
@@ -302,13 +307,13 @@ const ProposeMeetingDetail = () => {
 
         {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
         <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-          <h3 className="text-[15px] font-black text-gray-900 dark:text-white flex items-center gap-2">
-            <Clock size={18} className="text-blue-600 dark:text-blue-400" />
+          <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
+            <Clock size={18} className="text-[#007AFF] dark:text-blue-400" />
             시간대 설정
           </h3>
           <button
             onClick={handleSyncTimes}
-            className="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+            className="px-3 py-1.5 bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-[#007AFF]/20 dark:hover:bg-blue-500/20 transition-colors"
           >
             시간 일괄 설정
           </button>
@@ -335,13 +340,14 @@ const ProposeMeetingDetail = () => {
 
       {/* 하단 고정 제안 발송 버튼 */}
       <PageFooter>
-        <button
+        <LoadingButton
           onClick={handleFinalConfirm}
-          className="w-full h-[62px] bg-blue-600 text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          isLoading={isSubmitting}
+          className="w-full h-[62px] bg-[#007AFF] text-white rounded-[24px] font-black text-[17px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           <span>약속 제안 발송하기</span>
           <span className="bg-white/20 px-2.5 py-0.5 rounded-lg text-[12px] font-bold">{Object.values(timeSlots).flat().length}개 슬롯</span>
-        </button>
+        </LoadingButton>
       </PageFooter>
     </div>
   );

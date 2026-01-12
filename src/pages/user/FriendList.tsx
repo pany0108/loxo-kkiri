@@ -424,12 +424,12 @@ const FriendList = () => {
                 setIsSelectionMode(false);
                 setSelectedFriendUids(new Set());
               }}
-              className="absolute left-0 p-2 -ml-2 text-gray-500"
+              className="absolute left-0 p-2 -ml-2 text-[#8B95A1]"
             >
               <X size={24} />
             </button>
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">{selectedFriendUids.size}명 선택됨</h3>
-            <button onClick={handleSelectAll} className="absolute right-0 text-sm font-bold text-blue-600 p-2">
+            <h3 className="text-lg font-black text-[#191F28] dark:text-white">{selectedFriendUids.size}명 선택됨</h3>
+            <button onClick={handleSelectAll} className="absolute right-0 text-sm font-bold text-[#007AFF] p-2">
               {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
             </button>
           </div>
@@ -438,7 +438,7 @@ const FriendList = () => {
         // Normal mode header
         <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-4 bg-gray-50/95 dark:bg-gray-950/95 border-b border-gray-100 dark:border-gray-800 z-40 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-gray-900 dark:text-white">친구</h3>
+            <h3 className="text-lg font-black text-[#191F28] dark:text-white">친구</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsAddModalOpen(true)}
@@ -451,12 +451,12 @@ const FriendList = () => {
           </div>
           <div className="relative">
             <div className="flex items-center bg-white dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-              <Search size={18} className="text-gray-400 dark:text-gray-500 mr-3 shrink-0" />
+              <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
               <input
                 type="text"
                 value={searchTerm}
                 placeholder="친구 이름 검색"
-                className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white text-[15px] font-bold placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
@@ -466,7 +466,7 @@ const FriendList = () => {
             <button
               onClick={() => setViewMode('default')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'default' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+                viewMode === 'default' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
               }`}
             >
               <Users size={16} /> 전체
@@ -474,7 +474,7 @@ const FriendList = () => {
             <button
               onClick={() => setViewMode('group')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+                viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
               }`}
             >
               <Folder size={16} /> 그룹
@@ -496,9 +496,9 @@ const FriendList = () => {
               <section key={group.id} className="pt-4 space-y-2">
                 {viewMode === 'group' &&
                   group.id !== 'all' && ( // '모든 친구' 그룹일 때는 그룹 헤더 숨김
-                    <h2 className="text-[12px] font-bold text-gray-400 dark:text-gray-500 flex items-center gap-2">
+                    <h2 className="text-[12px] font-bold text-[#8B95A1] dark:text-gray-500 flex items-center gap-2">
                       <Folder size={14} /> {group.name}
-                      <span className="text-blue-600">{group.friends.length}</span>
+                      <span className="text-[#007AFF]">{group.friends.length}</span>
                     </h2>
                   )}
                 <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
@@ -507,7 +507,7 @@ const FriendList = () => {
                       <div
                         key={friend.uid}
                         className={`group flex items-center justify-between py-4 pl-5 pr-2 transition-colors cursor-pointer touch-pan-y ${
-                          selectedFriendUids.has(friend.uid) ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                          selectedFriendUids.has(friend.uid) ? 'bg-[#007AFF]/10 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                         }`}
                         onPointerDown={() => handlePointerDown(friend.uid)}
                         onPointerUp={handlePointerUp}
@@ -518,7 +518,7 @@ const FriendList = () => {
                           <div className="mr-4">
                             <div
                               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                selectedFriendUids.has(friend.uid) ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+                                selectedFriendUids.has(friend.uid) ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
                               }`}
                             >
                               {selectedFriendUids.has(friend.uid) && <Check size={16} className="text-white" />}
@@ -536,14 +536,14 @@ const FriendList = () => {
                             {friend.photoURL ? (
                               <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
                             ) : (
-                              <div className="w-full h-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
+                              <div className="w-full h-full bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
                                 {friend.name[0]}
                               </div>
                             )}
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-[16px] font-bold text-gray-900 dark:text-white truncate">{friend.name}</span>
-                            <p className="text-[12px] font-medium truncate text-gray-500 dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
+                            <span className="text-[16px] font-bold text-[#191F28] dark:text-white truncate">{friend.name}</span>
+                            <p className="text-[12px] font-medium truncate text-[#8B95A1] dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
                           </div>
                         </div>
                         {!isSelectionMode && (
@@ -553,7 +553,7 @@ const FriendList = () => {
                               setSelectedFriend(friend);
                               setIsMenuOpen(true);
                             }}
-                            className="p-4 text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
+                            className="p-4 text-[#8B95A1] dark:text-gray-600 hover:text-[#191F28] dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
                           >
                             <MoreVertical size={20} />
                           </button>
@@ -566,14 +566,14 @@ const FriendList = () => {
             ))
           ) : (
             <div className="py-20 text-center">
-              <p className="text-gray-400 dark:text-gray-500 text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
+              <p className="text-[#8B95A1] dark:text-gray-500 text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
             </div>
           )}
           {viewMode === 'group' && (
             <section className="pt-4">
               <button
                 onClick={() => setIsGroupManagerOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[32px] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[32px] text-[#8B95A1] dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <FolderPlus size={16} />
                 <span className="text-sm font-bold">그룹 추가 / 관리</span>
@@ -588,7 +588,7 @@ const FriendList = () => {
         <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-bottom duration-300">
           <button
             onClick={() => setIsMoveToGroupOpen(true)}
-            className="w-full h-[52px] bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+            className="w-full h-[52px] bg-[#007AFF] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50"
           >
             <FolderPlus size={20} />
             그룹 변경

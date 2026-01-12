@@ -189,14 +189,14 @@ const CalendarMain = () => {
     const dateStr = dayjs(args.date).format('YYYY-MM-DD');
     const isHoliday = allDisplayedEvents.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
 
-    let dateColor = 'text-gray-900 dark:text-gray-200';
-    let dayNameColor = 'text-gray-400 dark:text-gray-500';
+    let dateColor = 'text-[#191F28] dark:text-gray-200';
+    let dayNameColor = 'text-[#8B95A1] dark:text-gray-500';
     if (dayOfWeek === 0 || isHoliday) {
       dateColor = 'text-red-500';
       dayNameColor = 'text-red-400';
     } else if (dayOfWeek === 6) {
-      dateColor = 'text-[#4C82B6]';
-      dayNameColor = 'text-[#4C82B6]/80';
+      dateColor = 'text-[#007AFF]';
+      dayNameColor = 'text-[#007AFF]/80';
     }
     return (
       <div className="flex flex-col items-center justify-center gap-0.5 pb-2">
@@ -233,11 +233,11 @@ const CalendarMain = () => {
       return (
         <div
           className="flex items-center h-full w-full overflow-hidden"
-          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#4C82B6'}, transparent 90%)` }}
+          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#007AFF'}, transparent 90%)` }}
         >
-          <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#4C82B6' }} />
-          {IconComponent && <IconComponent size={10} className="mr-1 text-gray-500 dark:text-gray-400 shrink-0" />}
-          <div className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate">{eventInfo.event.title}</div>
+          <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#007AFF' }} />
+          {IconComponent && <IconComponent size={10} className="mr-1 text-[#8B95A1] dark:text-gray-400 shrink-0" />}
+          <div className="text-[10px] font-bold text-[#191F28] dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );
     }
@@ -277,14 +277,14 @@ const CalendarMain = () => {
   // [추가] 소셜 로그인 처리 중 전체 화면 로더 표시
   if (isInitialAuthChecking) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-[#FDFBF7] dark:bg-gray-950">
-        <Loader2 className="h-8 w-8 animate-spin text-[#4C82B6]" />
+      <div className="flex h-full w-full items-center justify-center bg-white dark:bg-gray-950">
+        <Loader2 className="h-8 w-8 animate-spin text-[#007AFF]" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative pt-[env(safe-area-inset-top)]">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-950 font-['Pretendard'] overflow-hidden relative pt-[env(safe-area-inset-top)]">
       <CalendarHeader
         activeCalendar={activeCalendar}
         myCalendars={myCalendars}
@@ -306,7 +306,7 @@ const CalendarMain = () => {
         onViewChange={handleViewChange}
       />
 
-      <main className="flex-1 flex flex-col bg-[#FDFBF7] dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
+      <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         {/* [추가] 연/월 선택 팝업 */}
         <DatePickerPopup
           isOpen={isDatePickerOpen}

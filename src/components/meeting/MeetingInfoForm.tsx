@@ -17,7 +17,7 @@ const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, l
       <FormInput label="약속 제목" icon={<Send size={20} />} value={title} onChange={(e) => onTitleChange(e.target.value)} placeholder="예: 강남역 저녁 모임" />
 
       <div className="group relative">
-        <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">메모 (선택)</label>
+        <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">메모 (선택)</label>
         <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-5 transition-all">
           <AlignLeft size={20} className="text-gray-300 dark:text-gray-600 mr-4 mt-1 group-focus-within:text-blue-600" />
           <textarea

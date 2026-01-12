@@ -19,8 +19,8 @@ const SignupSocial = () => {
   // 필수 데이터가 로딩되지 않았을 때 로딩 화면 표시
   if (!userData) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-[#FDFBF7] dark:bg-gray-950">
-        <Loader2 className="w-10 h-10 animate-spin text-[#4C82B6]" />
+      <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
+        <Loader2 className="w-10 h-10 animate-spin text-[#478BCC]" />
       </div>
     );
   }
@@ -28,14 +28,14 @@ const SignupSocial = () => {
   const { lastName, firstName } = userData;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FDFBF7] dark:bg-gray-950 font-['Pretendard']">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
       <TopNav title="추가 정보 입력" onBack={handleBack} />
 
       <div className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] pb-32 overflow-y-auto w-full">
-        <PageHeader className="mb-12" icon={<Sparkles className="text-[#4C82B6] w-6 h-6" />}>
+        <PageHeader className="mb-12" icon={<Sparkles className="text-[#478BCC] w-6 h-6" />}>
           <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
             반가워요,
-            <span className="text-[#4C82B6]">
+            <span className="text-[#478BCC]">
               {lastName}
               {firstName}님!
             </span>
@@ -75,7 +75,7 @@ const SignupSocial = () => {
               disabled={isLoading || !state.isVerified}
               className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2 ${
                 state.isVerified
-                  ? 'bg-[#4C82B6] text-gray-900 shadow-[#4C82B6]/50 dark:shadow-[#4C82B6]/20 active:scale-[0.98]'
+                  ? 'bg-[#478BCC] text-gray-900 shadow-[#478BCC]/30 dark:shadow-[#478BCC]/20 active:scale-[0.98]'
                   : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-not-allowed shadow-none'
               }`}
             >

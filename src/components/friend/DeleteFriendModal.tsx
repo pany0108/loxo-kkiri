@@ -20,17 +20,17 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
         <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <AlertCircle size={32} />
         </div>
-        <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">친구 삭제</h3>
-        <p className="text-gray-400 dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed break-keep">
+        <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-2">친구 삭제</h3>
+        <p className="text-[#8B95A1] dark:text-gray-400 text-[14px] mb-8 font-medium leading-relaxed break-keep">
           {sharedCalendarName ? (
             <>
-              <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님과 함께 사용하는
+              <span className="text-[#191F28] dark:text-gray-200 font-bold">'{friendName}'</span>님과 함께 사용하는
               <br />
-              <span className="text-blue-600 font-bold">'{sharedCalendarName}'</span> 캘린더{sharedCalendarActionText || '도 함께 삭제됩니다.'}
+              <span className="text-[#007AFF] font-bold">'{sharedCalendarName}'</span> 캘린더{sharedCalendarActionText || '도 함께 삭제됩니다.'}
             </>
           ) : (
             <>
-              정말 <span className="text-gray-900 dark:text-gray-200 font-bold">'{friendName}'</span>님을
+              정말 <span className="text-[#191F28] dark:text-gray-200 font-bold">'{friendName}'</span>님을
               <br />
               친구 목록에서 삭제할까요?
             </>
@@ -40,7 +40,7 @@ const DeleteFriendModal: React.FC<DeleteFriendModalProps> = ({ isOpen, onClose, 
           <button onClick={onConfirm} className="w-full py-4 bg-red-500 text-white font-bold rounded-[20px] active:scale-95 transition-all">
             삭제하기
           </button>
-          <button onClick={onClose} className="w-full py-4 text-gray-400 dark:text-gray-500 font-bold hover:text-gray-600 dark:hover:text-gray-300">
+          <button onClick={onClose} className="w-full py-4 text-[#8B95A1] dark:text-gray-500 font-bold hover:text-[#191F28] dark:hover:text-gray-300">
             취소
           </button>
         </div>

@@ -36,8 +36,8 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="relative w-full max-w-md h-[80vh] bg-white dark:bg-gray-800 rounded-[32px] px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col">
         <div className="flex justify-between items-center mb-4 shrink-0">
-          <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">친구 목록</h3>
-          <button onClick={onClose} className="p-2 -mr-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-colors">
+          <h3 className="text-lg font-black text-[#191F28] dark:text-white flex items-center gap-2">친구 목록</h3>
+          <button onClick={onClose} className="p-2 -mr-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-300 rounded-full transition-colors">
             <X size={24} />
           </button>
         </div>
@@ -47,7 +47,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
             <button
               onClick={() => setViewMode('alphabetical')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-lg transition-all ${
-                viewMode === 'alphabetical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'
+                viewMode === 'alphabetical' ? 'bg-white dark:bg-gray-700 text-[#007AFF] dark:text-blue-300 shadow-sm' : 'text-[#8B95A1] dark:text-gray-400'
               }`}
             >
               <Users size={16} /> 전체
@@ -55,7 +55,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
             <button
               onClick={() => setViewMode('group')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-bold rounded-lg transition-all ${
-                viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-300 shadow-sm' : 'text-gray-500 dark:text-gray-400'
+                viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-[#007AFF] dark:text-blue-300 shadow-sm' : 'text-[#8B95A1] dark:text-gray-400'
               }`}
             >
               <Folder size={16} /> 그룹
@@ -76,13 +76,13 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
                   >
                     <div
                       className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        allSelected ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500'
+                        allSelected ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500'
                       }`}
                     >
                       {allSelected && <Check size={12} className="text-white" strokeWidth={3} />}
-                      {someSelected && <div className="w-2 h-2 bg-blue-600 rounded-sm" />}
+                      {someSelected && <div className="w-2 h-2 bg-[#007AFF] rounded-sm" />}
                     </div>
-                    <h5 className="text-sm font-bold text-gray-600 dark:text-gray-400">{group.name}</h5>
+                    <h5 className="text-sm font-bold text-[#8B95A1] dark:text-gray-400">{group.name}</h5>
                   </div>
                   <div className="pl-8 space-y-1">
                     {group.friends.map((friend) => {
@@ -92,13 +92,13 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
                           key={friend.id}
                           onClick={() => onToggleFriend(friend)}
                           className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl transition-all ${
-                            isSelected ? 'bg-blue-50 dark:bg-blue-500/10' : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                            isSelected ? 'bg-[#007AFF]/10 dark:bg-blue-500/10' : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}
                         >
-                          <span className={`font-bold text-sm ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>{friend.name}</span>
+                          <span className={`font-bold text-sm ${isSelected ? 'text-[#007AFF] dark:text-blue-300' : 'text-[#191F28] dark:text-gray-200'}`}>{friend.name}</span>
                           <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                              isSelected ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 dark:bg-gray-600 border-gray-200 dark:border-gray-600'
+                              isSelected ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-gray-200 dark:bg-gray-600 border-gray-200 dark:border-gray-600'
                             }`}
                           >
                             {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
@@ -118,13 +118,13 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
                   key={friend.id}
                   onClick={() => onToggleFriend(friend)}
                   className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl transition-all ${
-                    isSelected ? 'bg-blue-50 dark:bg-blue-500/10' : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                    isSelected ? 'bg-[#007AFF]/10 dark:bg-blue-500/10' : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <span className={`font-bold text-sm ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>{friend.name}</span>
+                  <span className={`font-bold text-sm ${isSelected ? 'text-[#007AFF] dark:text-blue-300' : 'text-[#191F28] dark:text-gray-200'}`}>{friend.name}</span>
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      isSelected ? 'bg-blue-600 border-blue-600' : 'bg-gray-200 dark:bg-gray-600 border-gray-200 dark:border-gray-600'
+                      isSelected ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-gray-200 dark:bg-gray-600 border-gray-200 dark:border-gray-600'
                     }`}
                   >
                     {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
@@ -137,7 +137,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
         <div className="mt-4 shrink-0">
           <button
             onClick={onClose}
-            className="w-full h-[56px] bg-blue-600 text-white rounded-[20px] font-black text-base shadow-lg shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98] transition-all"
+            className="w-full h-[56px] bg-[#007AFF] text-white rounded-[20px] font-black text-base shadow-lg shadow-[#007AFF]/30 dark:shadow-blue-900/50 active:scale-[0.98] transition-all"
           >
             선택 완료 ({invitedFriends.length}명)
           </button>

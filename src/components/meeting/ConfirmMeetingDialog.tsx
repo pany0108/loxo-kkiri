@@ -49,20 +49,20 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
       <div className="relative bg-white dark:bg-gray-800 w-full max-w-sm rounded-[32px] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-300 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+          className="absolute top-4 right-4 p-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-300 transition-colors"
           aria-label="닫기"
         >
           <X size={20} />
         </button>
 
         <div className="text-center space-y-4 pt-2">
-          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 mb-2">
+          <div className="w-16 h-16 bg-[#007AFF]/10 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto text-[#007AFF] dark:text-blue-400 mb-2">
             <CalendarCheck size={32} />
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-gray-900 dark:text-white mb-2">이 시간으로 확정할까요?</h3>
-            <p className="text-[14px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
+            <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-2">이 시간으로 확정할까요?</h3>
+            <p className="text-[14px] text-[#8B95A1] dark:text-gray-400 font-medium leading-relaxed">
               확정하면 모든 멤버에게 알림이 전송되고
               <br />
               약속 채팅방이 생성됩니다.
@@ -70,22 +70,22 @@ const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading 
           </div>
 
           {/* 선택된 시간 정보 표시 영역 */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-[20px] p-4 border border-gray-100 dark:border-gray-600">
-            <p className="text-[15px] font-black text-gray-800 dark:text-gray-200 mb-1">{dateDisplay}</p>
-            <p className="text-[13px] font-bold text-blue-600 dark:text-blue-400">{slotData.time}</p>
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-[20px] p-4 border border-gray-200 dark:border-gray-600">
+            <p className="text-[15px] font-black text-[#191F28] dark:text-gray-200 mb-1">{dateDisplay}</p>
+            <p className="text-[13px] font-bold text-[#007AFF] dark:text-blue-400">{slotData.time}</p>
           </div>
 
           <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 h-[52px] rounded-[20px] bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold text-[14px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="flex-1 h-[52px] rounded-[20px] bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold text-[14px] hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               취소
             </button>
             <LoadingButton
               onClick={onConfirm}
               isLoading={isLoading}
-              className="flex-1 h-[52px] rounded-[20px] bg-blue-600 text-white font-black text-[14px] shadow-lg shadow-blue-200 dark:shadow-blue-900/50 active:scale-95 transition-all"
+              className="flex-1 h-[52px] rounded-[20px] bg-[#007AFF] text-white font-black text-[14px] shadow-lg shadow-[#007AFF]/30 dark:shadow-blue-900/50 active:scale-95 transition-all flex items-center justify-center"
             >
               확정하기
             </LoadingButton>

@@ -172,10 +172,10 @@ const ProposeMeeting = () => {
       {/* [수정] 뒤로가기 버튼을 제거하고, 상단 여백을 pt-6으로 조정합니다. */}
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-8 overflow-y-auto pb-24">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-blue-600 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
+        <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-[#007AFF] w-6 h-6" />}>
+          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
             소중한 사람들과의 <br />
-            <span className="text-blue-600 dark:text-blue-400">약속을 잡아보세요</span>
+            <span className="text-[#007AFF] dark:text-blue-400">약속을 잡아보세요</span>
           </h2>
         </PageHeader>
 
@@ -187,7 +187,7 @@ const ProposeMeeting = () => {
           <button
             onClick={() => setActiveTab('ongoing')}
             className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-              activeTab === 'ongoing' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+              activeTab === 'ongoing' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
             }`}
           >
             진행 중 ({ongoingMeetings.length})
@@ -195,7 +195,7 @@ const ProposeMeeting = () => {
           <button
             onClick={() => setActiveTab('past')}
             className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-              activeTab === 'past' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400'
+              activeTab === 'past' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
             }`}
           >
             지난 약속 ({pastMeetings.length})
@@ -213,7 +213,7 @@ const ProposeMeeting = () => {
           ) : activeTab === 'ongoing' ? (
             <EmptyMeetingList />
           ) : (
-            <div className="py-12 text-center text-gray-400 dark:text-gray-500 text-[13px] font-bold">지난 약속이 없습니다.</div>
+            <div className="py-12 text-center text-[#8B95A1] dark:text-gray-500 text-[13px] font-bold">지난 약속이 없습니다.</div>
           )}
         </>
       </div>

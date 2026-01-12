@@ -146,9 +146,9 @@ const ProposeMeetingCreate = () => {
 
       <div ref={scrollContainerRef} className="flex-1 px-6 pt-[calc(76px+env(safe-area-inset-top))] overflow-y-auto w-full pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {/* 헤더 섹션 */}
-        <PageHeader icon={<Sparkles className="text-blue-600 dark:text-blue-400 w-6 h-6" />}>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-            어떤 <span className="text-blue-600 dark:text-blue-400">약속</span>을<br />
+        <PageHeader icon={<Sparkles className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+          <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+            어떤 <span className="text-[#007AFF] dark:text-blue-400">약속</span>을<br />
             만들어볼까요?
           </h2>
         </PageHeader>
@@ -190,11 +190,11 @@ const ProposeMeetingCreate = () => {
             <div className="flex justify-end gap-3 px-1">
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
-                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">내 일정</span>
+                <span className="text-[10px] font-bold text-[#8B95A1] dark:text-gray-500">내 일정</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
-                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">선택됨</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF]"></div>
+                <span className="text-[10px] font-bold text-[#007AFF] dark:text-blue-400">선택됨</span>
               </div>
             </div>
           </div>
@@ -226,8 +226,8 @@ const ProposeMeetingCreate = () => {
             w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center
             ${
               isValid
-                ? 'bg-blue-600 text-white shadow-blue-100 dark:shadow-blue-900/50 active:scale-[0.98]'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed shadow-none'
+                ? 'bg-[#007AFF] text-white shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98]'
+                : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1] dark:text-gray-500 cursor-not-allowed shadow-none'
             }
           `}
         >

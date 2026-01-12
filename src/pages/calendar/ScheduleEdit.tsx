@@ -59,7 +59,7 @@ const COLOR_OPTIONS = [
   '#10b981', // emerald
   '#06b6d4', // cyan
   '#0ea5e9', // sky
-  '#4C82B6', // primary
+  '#007AFF', // primary
   '#6366f1', // indigo
   '#8b5cf6', // violet
   '#d946ef', // fuchsia
@@ -144,7 +144,7 @@ const ScheduleEdit = () => {
     notification: eventData?.notification || 'none',
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
-    color: eventData?.color || '#4C82B6',
+    color: eventData?.color || '#007AFF',
   });
 
   const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
@@ -192,7 +192,7 @@ const ScheduleEdit = () => {
     setFormData((prev) => ({
       ...prev,
       calendarId: calendar.id,
-      color: calendar.color || '#4C82B6',
+      color: calendar.color || '#007AFF',
     }));
     setIsCalListOpen(false);
   };
@@ -370,40 +370,40 @@ const ScheduleEdit = () => {
         title="일정 수정"
         onBack={() => navigate(-1)}
         extraNav={
-          <LoadingButton onClick={handleSave} isLoading={isSubmitting} className="p-2 text-[#4C82B6] hover:text-[#4C82B6]/80 transition-colors">
+          <LoadingButton onClick={handleSave} isLoading={isSubmitting} className="p-2 text-[#007AFF] hover:text-[#007AFF]/80 transition-colors">
             <Check size={28} strokeWidth={3} />
           </LoadingButton>
         }
       >
         <>
-          <PageHeader icon={<Sparkles className="text-[#4C82B6] w-6 h-6" />}>
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-[1.3] tracking-tight">
-              일정을 <span className="text-[#4C82B6]">수정</span>해볼까요?
+          <PageHeader icon={<Sparkles className="text-[#007AFF] w-6 h-6" />}>
+            <h2 className="text-2xl font-black text-[#191F28] dark:text-white leading-[1.3] tracking-tight">
+              일정을 <span className="text-[#007AFF]">수정</span>해볼까요?
             </h2>
           </PageHeader>
 
           <form className="space-y-6">
             <section className="space-y-4">
               <div className="group relative">
-                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">일정 제목</label>
-                <div className="flex items-center h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">일정 제목</label>
+                <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
                   <input
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
                     placeholder="무엇을 하나요?"
-                    className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                    className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
                   />
                 </div>
               </div>
 
               {/* [추가] 캘린더 선택 드롭다운 */}
               <div className="group relative" ref={dropdownRef}>
-                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1 mb-2">캘린더</label>
+                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1 mb-2">캘린더</label>
                 <button
                   type="button"
                   onClick={() => setIsCalListOpen(!isCalListOpen)}
-                  className="w-full flex items-center justify-between h-[60px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+                  className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
@@ -413,11 +413,11 @@ const ScheduleEdit = () => {
                         <CalendarIcon size={14} />
                       )}
                     </div>
-                    <span className="text-[15px] font-bold text-gray-800 dark:text-gray-200">
+                    <span className="text-[15px] font-bold text-[#191F28] dark:text-gray-200">
                       {selectedCalendar ? (selectedCalendar as any).customNames?.[user?.uid] || selectedCalendar.name : '캘린더 선택...'}
                     </span>
                   </div>
-                  <ChevronDown size={20} className={`text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={20} className={`text-[#8B95A1] dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isCalListOpen && (
@@ -431,16 +431,16 @@ const ScheduleEdit = () => {
                           type="button"
                           onClick={() => handleCalendarSelect(cal)}
                           className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                            selectedCalendar?.id === cal.id ? 'bg-[#4C82B6]/20 text-[#4C82B6]' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                            selectedCalendar?.id === cal.id ? 'bg-[#007AFF]/20 text-[#007AFF]' : 'text-[#8B95A1] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#4C82B6' }}>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: cal.color || '#007AFF' }}>
                               <IconComponent size={16} />
                             </div>
                             <span className="text-[14px] font-bold">{calName}</span>
                           </div>
-                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#4C82B6]" />}
+                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#007AFF]" />}
                         </button>
                       );
                     })}
@@ -455,7 +455,7 @@ const ScheduleEdit = () => {
                           },
                         })
                       }
-                      className="w-full flex items-center gap-3 p-4 text-gray-500 dark:text-gray-400 font-bold text-[13px] hover:text-[#4C82B6] hover:bg-[#4C82B6]/20 rounded-[18px] transition-colors"
+                      className="w-full flex items-center gap-3 p-4 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-[18px] transition-colors"
                     >
                       <Plus size={16} /> 새 캘린더 만들기
                     </button>
@@ -465,10 +465,10 @@ const ScheduleEdit = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">시간 설정</label>
+                  <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">시간 설정</label>
                   <div onClick={handleToggleAllDay} className="flex items-center gap-2 cursor-pointer group">
                     <span
-                      className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
+                      className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#8B95A1] dark:text-gray-500'}`}
                     >
                       종일
                     </span>
@@ -484,31 +484,31 @@ const ScheduleEdit = () => {
                   </div>
                 </div>
 
-                <div className="bg-[#F7F6F2] dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
                   <div className="flex items-center h-[56px] px-4 gap-4">
-                    <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                    <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
                     <div className="flex-1 flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
+                      <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">시작</span>
                       <input
                         type={formData.isAllDay ? 'date' : 'datetime-local'}
                         name="start"
                         value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                         onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
+                        className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
                   </div>
                   <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
                   <div className="flex items-center h-[56px] px-4 gap-4">
-                    <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                    <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
                     <div className="flex-1 flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
+                      <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">종료</span>
                       <input
                         type={formData.isAllDay ? 'date' : 'datetime-local'}
                         name="end"
                         value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                         onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                        className="bg-transparent text-[14px] font-bold text-gray-800 dark:text-white outline-none text-right font-mono w-full"
+                        className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
                   </div>
@@ -517,7 +517,7 @@ const ScheduleEdit = () => {
 
               {/* [추가] 색상 선택 섹션 */}
               <div className="space-y-3">
-                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">색상</label>
+                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">색상</label>
                 <div className="flex flex-wrap gap-3 px-1">
                   {COLOR_OPTIONS.map((color) => (
                     <button
@@ -539,26 +539,26 @@ const ScheduleEdit = () => {
               {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
 
               <div className="space-y-3">
-                <label className="block text-[13px] font-black text-gray-400 dark:text-gray-500 ml-1">상세 정보</label>
+                <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">상세 정보</label>
 
-                <div className="flex items-center h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
-                  <MapPin size={18} className="text-gray-300 dark:text-gray-600" />
+                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all">
+                  <MapPin size={18} className="text-[#8B95A1] dark:text-gray-600" />
                   <input
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
                     placeholder="장소"
                   />
                 </div>
 
-                <div className="flex items-center h-[56px] bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
-                  <Bell size={18} className="text-gray-300 dark:text-gray-600" />
+                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                  <Bell size={18} className="text-[#8B95A1] dark:text-gray-600" />
                   <select
                     name="notification"
                     value={formData.notification}
                     onChange={handleChange}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-gray-800 dark:text-gray-200 appearance-none z-10"
+                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 appearance-none z-10"
                   >
                     {NOTIFICATION_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -568,14 +568,14 @@ const ScheduleEdit = () => {
                   </select>
                 </div>
 
-                <div className="flex items-start bg-[#F7F6F2] dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#4C82B6] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
-                  <AlignLeft size={18} className="text-gray-300 dark:text-gray-600 mt-1" />
+                <div className="flex items-start bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[24px] p-4 gap-4 transition-all">
+                  <AlignLeft size={18} className="text-[#8B95A1] dark:text-gray-600 mt-1" />
                   <textarea
                     name="content"
                     value={formData.content}
                     onChange={handleChange}
                     rows={3}
-                    className="bg-transparent outline-none w-full text-[14px] font-medium text-gray-800 dark:text-gray-200 resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
+                    className="bg-transparent outline-none w-full text-[14px] font-medium text-[#191F28] dark:text-gray-200 resize-none placeholder:text-[#8B95A1] dark:placeholder:text-gray-600 leading-relaxed"
                     placeholder="메모"
                   />
                 </div>
@@ -583,11 +583,11 @@ const ScheduleEdit = () => {
 
               <div>
                 <div className="flex items-center justify-between px-1 mb-2 ">
-                  <label className="text-[13px] font-black text-gray-400 dark:text-gray-500">첨부파일</label>
+                  <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">첨부파일</label>
                   <button
                     type="button"
                     onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                    className="text-[11px] font-bold text-[#4C82B6] bg-[#4C82B6]/20 px-2 py-1 rounded-md hover:bg-[#4C82B6]/30 transition-colors"
+                    className="text-[11px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-md hover:bg-[#007AFF]/30 transition-colors"
                   >
                     + 추가
                   </button>
@@ -596,13 +596,13 @@ const ScheduleEdit = () => {
                   {attachments.map((file, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-[#F7F6F2] dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                      className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
-                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#4C82B6]" />}
-                        <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300 truncate">{file.name}</span>
+                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#007AFF]" />}
+                        <span className="text-[13px] font-bold text-[#191F28] dark:text-gray-300 truncate">{file.name}</span>
                       </div>
-                      <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-gray-300 hover:text-red-500">
+                      <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-[#8B95A1] hover:text-red-500">
                         <X size={16} />
                       </button>
                     </div>
@@ -614,12 +614,12 @@ const ScheduleEdit = () => {
                 <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-2">
                     <BookOpen size={20} className="text-emerald-500" />
-                    <h3 className="text-[16px] font-black text-gray-900 dark:text-white">후기 작성</h3>
+                    <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">후기 작성</h3>
                   </div>
                   <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-[28px] p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
                     <textarea
                       placeholder="후기를 작성해주세요."
-                      className="w-full text-[14px] font-medium text-gray-700 dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed"
+                      className="w-full text-[14px] font-medium text-[#191F28] dark:text-gray-300 outline-none min-h-[100px] bg-transparent resize-none placeholder:text-[#8B95A1] dark:placeholder:text-gray-600 leading-relaxed"
                       value={formData.review}
                       onChange={(e) => setFormData({ ...formData, review: e.target.value })}
                     />

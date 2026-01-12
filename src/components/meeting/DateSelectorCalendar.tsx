@@ -30,7 +30,7 @@ const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMont
         >
           <ChevronLeft size={18} />
         </button>
-        <span className="text-[16px] font-black text-gray-900 dark:text-white">{currentMonth.format('YYYY년 MM월')}</span>
+        <span className="text-[16px] font-black text-[#191F28] dark:text-white">{currentMonth.format('YYYY년 MM월')}</span>
         <button
           onClick={() => onMonthChange(currentMonth.add(1, 'month'))}
           className="p-2 bg-white dark:bg-gray-700 rounded-xl text-gray-400 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white shadow-sm transition-all active:scale-95"
@@ -41,7 +41,7 @@ const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMont
 
       <div className="grid grid-cols-7 gap-y-3 gap-x-1 text-center">
         {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
-          <span key={d} className="text-[11px] font-black text-gray-300 dark:text-gray-600 mb-2">
+          <span key={d} className="text-[11px] font-black text-[#8B95A1] dark:text-gray-600 mb-2">
             {d}
           </span>
         ))}
@@ -64,10 +64,10 @@ const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMont
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/50 scale-105 z-10'
                     : 'bg-white dark:bg-gray-700/50 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }
-                ${isHostProposed ? 'opacity-50 cursor-not-allowed ring-2 ring-blue-100 dark:ring-blue-500/30' : ''}
+                ${isHostProposed ? 'opacity-50 cursor-not-allowed ring-2 ring-[#007AFF]/20 dark:ring-blue-500/30' : ''}
               `}
             >
-              <span className={`text-[13px] font-bold ${isMyNewProposal ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{dayjs(date).date()}</span>
+              <span className={`text-[13px] font-bold ${isMyNewProposal ? 'text-white' : 'text-[#191F28] dark:text-gray-300'}`}>{dayjs(date).date()}</span>
               {hasMySchedule && !isMyNewProposal && <div className="absolute bottom-2 w-1 h-1 rounded-full bg-red-400 ring-2 ring-white dark:ring-gray-800" />}
             </button>
           );
