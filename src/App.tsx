@@ -45,50 +45,51 @@ const AppContent = () => {
   const navigate = useNavigate();
   const originalHandleNavigation = useNotificationNavigation();
 
-  // [추가] DB 확인 중인지 여부를 저장하는 상태
   const [isCheckingDb, setIsCheckingDb] = useState(false);
+  // [추가] 유저 검증 완료 여부 (세션 동안 유지)
+  // 한 번 DB 확인에 성공하면 true가 되어, 이후 페이지 이동 시에는 DB를 조회하지 않습니다.
+  const [isUserVerified, setIsUserVerified] = useState(false);
 
   // [수정] 로그인 후 DB 정보 확인 및 라우팅 처리
   useEffect(() => {
     const checkUserAndRedirect = async () => {
-      // 1. 로그인이 안 된 상태거나, 로딩 중이면 패스
-      if (!user || loading) return;
+      // 1. 이미 검증이 끝난 유저라면(isUserVerified) 로직을 아예 실행하지 않음 (핵심!)
+      //    로그인이 안 된 상태거나, 로딩 중이면 패스
+      if (isUserVerified || !user || loading) return;
 
       // 2. 현재 이미 회원가입 관련 페이지라면 검사 중단
       if (location.pathname === '/signup' || location.pathname === '/signup-social') return;
 
-      // 이미 체크 중이라면 중복 실행 방지 (선택 사항)
-      // setIsCheckingDb(true);
-
       try {
-        setIsCheckingDb(true); // 로딩 시작
+        setIsCheckingDb(true);
 
-        // 3. Firestore에서 유저 정보 조회
         const userDocRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userDocRef);
 
-        // [수정] 유저 정보가 없거나 필수 정보(전화번호, 생년월일)가 없는 경우 회원가입 페이지로 이동
+        // 유저 정보가 없거나 필수 정보(전화번호, 생년월일)가 없는 경우
         if (!userSnap.exists() || !userSnap.data()?.phone || !userSnap.data()?.birthDate) {
-          // [추가] 이름 분리 로직 (한국 이름 기준: 첫 글자 성, 나머지 이름)
           const displayName = user.displayName || '';
           const lastName = displayName.charAt(0) || '';
           const firstName = displayName.slice(1) || '';
 
-          // 4. 정보 없음 -> 소셜 가입 페이지로 납치
+          // 정보 없음 -> 소셜 가입 페이지로 납치
           navigate('/signup-social', {
             replace: true,
             state: {
               email: user.email,
               name: user.displayName,
-              lastName, // [추가] 성
-              firstName, // [추가] 이름
+              lastName,
+              firstName,
               photoURL: user.photoURL,
               uid: user.uid,
               providerId: 'google.com',
             },
           });
         } else {
-          // 5. 정보 있음 -> 로그인 페이지에 갇혀있다면 캘린더로 이동
+          // [핵심] 정보가 확인되면 '검증 완료' 상태로 변경
+          // 이제 앱을 끄기 전까지는 다시 DB를 확인하지 않습니다.
+          setIsUserVerified(true);
+
           if (location.pathname === '/' || location.pathname === '/login') {
             navigate('/calendar', { replace: true });
           }
@@ -96,12 +97,12 @@ const AppContent = () => {
       } catch (error) {
         console.error('유저 정보 확인 중 오류:', error);
       } finally {
-        setIsCheckingDb(false); // 로딩 끝
+        setIsCheckingDb(false);
       }
     };
 
     checkUserAndRedirect();
-  }, [user, loading, navigate, location.pathname]);
+  }, [user, loading, navigate, location.pathname, isUserVerified]); // isUserVerified 의존성 추가
 
   // 푸시 알림 클릭 시 내비게이션을 처리하는 핸들러를 확장합니다.
   // 채팅 알림처럼 'url' 속성이 있는 경우, 우선적으로 해당 URL로 이동시킵니다.
