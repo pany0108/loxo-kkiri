@@ -8,6 +8,7 @@ import {
   Camera,
   Bell,
   ChevronDown,
+  Sparkles,
   Plus,
   Check,
   History,
@@ -28,7 +29,7 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, RecurrenceOptions, PageHeader, PageFooter, PageTitle, FormInput, FormTextarea } from 'components';
+import { PageLayout, RecurrenceOptions, PageHeader, PageFooter, PageTitle, FormInput, FormTextarea, FormCheckbox } from 'components';
 import { useAddSchedule } from 'hooks';
 import { auth } from '../../firebase';
 import LoadingButton from '../../components/ui/LoadingButton';
@@ -83,6 +84,10 @@ const AddSchedule = () => {
   const { dropdownRef, titleInputRef } = refs;
   const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleCalendarSelect, handleSuggestionClick, handleToggle, handleSubmit } = handlers;
 
+  const isAnniversary = (formData as any).isAnniversary;
+  const isLunar = (formData as any).isLunar;
+  const isLeapMonth = (formData as any).isLeapMonth;
+
   const currentUser = auth.currentUser;
 
   const sortedCalendars = React.useMemo(() => {
@@ -94,6 +99,25 @@ const AddSchedule = () => {
       return 0;
     });
   }, [myCalendars, selectedCalendar]);
+
+  const handleAnniversaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    handleChange({ target: { name: 'isAnniversary', value: checked } } as any);
+
+    if (checked) {
+      // 기념일 선택 시 무조건 종일 일정으로 설정
+      if (!formData.isAllDay) {
+        handleToggle();
+      }
+      // 초기값 설정
+      handleChange({ target: { name: 'isLunar', value: false } } as any);
+      handleChange({ target: { name: 'isLeapMonth', value: false } } as any);
+    }
+  };
+
+  const handleLunarChange = (isLunarValue: boolean) => {
+    handleChange({ target: { name: 'isLunar', value: isLunarValue } } as any);
+  };
 
   const renderFooter = () => (
     <PageFooter>
@@ -123,6 +147,38 @@ const AddSchedule = () => {
         {/* [수정] form에 id 추가 */}
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
+            {/* [추가] 기념일 설정 */}
+            <div className="flex items-center justify-between px-1">
+              <FormCheckbox label="기념일" checked={isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
+              {isAnniversary && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
+                  {isLunar && (
+                    <FormCheckbox label="윤달" checked={isLeapMonth || false} onChange={(e) => handleChange({ target: { name: 'isLeapMonth', value: e.target.checked } } as any)} />
+                  )}
+                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleLunarChange(false)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        !isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                      }`}
+                    >
+                      양력
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLunarChange(true)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                      }`}
+                    >
+                      음력
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div ref={titleInputRef} className="group relative">
               <FormInput
                 label="일정 제목"
@@ -223,7 +279,10 @@ const AddSchedule = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-caption">시간 설정</label>
-                <div onClick={handleToggle} className="flex items-center gap-2 cursor-pointer group">
+                <div
+                  onClick={isAnniversary ? undefined : handleToggle}
+                  className={`flex items-center gap-2 group ${isAnniversary ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                >
                   <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-caption'}`}>종일</span>
                   <div className={`relative w-10 h-6 rounded-full transition-colors duration-200 shrink-0 ${formData.isAllDay ? 'bg-emerald-500' : 'bg-gray-200'}`}>
                     <div
@@ -236,33 +295,42 @@ const AddSchedule = () => {
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-2 space-y-1">
-                <div className="flex items-center h-[56px] px-4 gap-3">
-                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between gap-3">
-                    <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
-                    <input
-                      type={formData.isAllDay ? 'date' : 'datetime-local'}
-                      name="start"
-                      value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
-                      onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
-                    />
+                {isAnniversary ? (
+                  <div className="flex items-center justify-center h-[56px] gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-[14px]">
+                    <Sparkles size={16} />
+                    <span>하루 종일 기념해요!</span>
                   </div>
-                </div>
-                <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
-                <div className="flex items-center h-[56px] px-4 gap-3">
-                  <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
-                  <div className="flex-1 flex items-center justify-between gap-3">
-                    <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
-                    <input
-                      type={formData.isAllDay ? 'date' : 'datetime-local'}
-                      name="end"
-                      value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
-                      onChange={handleChange}
-                      className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
-                    />
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center h-[56px] px-4 gap-3">
+                      <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                      <div className="flex-1 flex items-center justify-between gap-3">
+                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
+                        <input
+                          type={formData.isAllDay ? 'date' : 'datetime-local'}
+                          name="start"
+                          value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
+                          onChange={handleChange}
+                          className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
+                        />
+                      </div>
+                    </div>
+                    <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
+                    <div className="flex items-center h-[56px] px-4 gap-3">
+                      <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                      <div className="flex-1 flex items-center justify-between gap-3">
+                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
+                        <input
+                          type={formData.isAllDay ? 'date' : 'datetime-local'}
+                          name="end"
+                          value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
+                          onChange={handleChange}
+                          className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -307,22 +375,26 @@ const AddSchedule = () => {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-caption ml-1">상세 정보</label>
-              <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소 추가" />
-              <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} placeholder="메모를 입력하세요" rows={3} />
-            </div>
+            {!isAnniversary && (
+              <div className="space-y-3">
+                <label className="block text-caption ml-1">상세 정보</label>
+                <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소 추가" />
+                <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} placeholder="메모를 입력하세요" rows={3} />
+              </div>
+            )}
 
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-xl flex items-center justify-center gap-2 text-sub dark:text-gray-500 cursor-not-allowed"
-              >
-                <Camera size={20} />
-                <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>
-              </button>
-            </div>
+            {!isAnniversary && (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
+                  className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-xl flex items-center justify-center gap-2 text-sub dark:text-gray-500 cursor-not-allowed"
+                >
+                  <Camera size={20} />
+                  <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>
+                </button>
+              </div>
+            )}
           </section>
         </form>
       </>
