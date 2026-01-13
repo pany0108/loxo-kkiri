@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "831596904912-bcg4b01rafqr4dia3esk4lf3g4n5io77.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.loxo.kkiri",
+            "certificate_hash": "207383675398929c3764d97e3cf753d4199abea9"
+          }
+        },
+        {
           "client_id": "831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com",
           "client_type": 3
         }

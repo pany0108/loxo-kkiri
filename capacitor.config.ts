@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.loxo.kkiri',
-  appName: 'Kkiri',
+  appName: '끼리',
   webDir: 'build',
   server: {
     androidScheme: 'https',
