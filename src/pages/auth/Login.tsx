@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
-import { auth, db, googleProvider } from '../../firebase';
+import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
-import { doc, getDoc } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { signInWithEmail, signInWithGoogle, checkUserRegistration } from 'services/authService';
+import { signInWithEmail, signInWithGoogle } from 'services/authService';
 import { FormInput, FormCheckbox, LogoImage, LoadingButton } from 'components';
 
 /**
@@ -38,38 +37,13 @@ const Login = () => {
    * 컴포넌트 마운트 시 인증 상태 및 리다이렉트 결과를 확인합니다.
    */
   useEffect(() => {
-    const handleRedirectResult = async (user: FirebaseUser) => {
-      // [추가] DB에 유저 정보가 있는지 확실하게 확인
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
-
-      if (userSnap.exists()) {
-        return;
-      }
-
-      const registrationStatus = await checkUserRegistration(user);
-      if (registrationStatus.isNewUser) {
-        localStorage.setItem('pendingSignup', JSON.stringify(registrationStatus.state));
-        navigate('/signup-social', {
-          replace: true,
-          state: registrationStatus.state,
-        });
-      }
-      // 기존 유저는 onAuthStateChanged가 /calendar로 리디렉션합니다.
-    };
-
     // 1. 소셜 로그인 리다이렉트 결과 처리 (모바일 환경 대응)
     getRedirectResult(auth)
       .then(async (result: UserCredential | null) => {
         if (result?.user) {
           sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 리다이렉트 후 캘린더 플래시 방지
-          try {
-            await handleRedirectResult(result.user);
-          } catch (e) {
-            console.error('Redirect registration check failed', e);
-            toast.error('사용자 정보를 확인하는 중 오류가 발생했습니다.');
-            setIsPageLoading(false);
-          }
+          // App.tsx에서 인증 상태 변경을 감지하여 라우팅을 처리하므로
+          // 여기서는 별도의 로직이 필요 없습니다.
         } else {
           setIsPageLoading(false);
         }
@@ -78,7 +52,7 @@ const Login = () => {
         toast.error(`로그인 정보를 가져오는 중 오류가 발생했습니다. (${error.code || error.message})`);
         setIsPageLoading(false);
       });
-  }, [navigate]);
+  }, []);
 
   /**
    * 저장된 이메일 정보를 불러옵니다.
@@ -119,26 +93,9 @@ const Login = () => {
     sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 캘린더 플래시 방지를 위한 플래그 설정
 
     try {
-      const user = await signInWithGoogle();
-
-      // [추가] DB에 유저 정보가 있는지 확실하게 확인
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
-
-      if (userSnap.exists()) {
-        return;
-      }
-
-      const registrationStatus = await checkUserRegistration(user);
-
-      if (registrationStatus.isNewUser) {
-        localStorage.setItem('pendingSignup', JSON.stringify(registrationStatus.state));
-        navigate('/signup-social', {
-          replace: true,
-          state: registrationStatus.state,
-        });
-      }
-      // 기존 유저는 onAuthStateChanged가 /calendar로 리디렉션합니다.
+      await signInWithGoogle();
+      // App.tsx에서 인증 상태 변경을 감지하여 라우팅을 처리하므로
+      // 여기서는 별도의 로직이 필요 없습니다.
     } catch (error: any) {
       console.error('Google Login Error:', error);
       sessionStorage.removeItem('isAuthChecking'); // [추가] 에러 발생 시 플래그 제거

@@ -34,7 +34,7 @@ import { Loader2 } from 'lucide-react';
 import { AuthProvider, CalendarProvider, ThemeProvider, UIProvider } from 'contexts';
 import { usePushNotification, useFcmToken, useAuth, useNotificationNavigation, useSystemUI } from 'hooks';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from 'firebase';
+import { db } from './firebase';
 
 /**
  * 인증 상태에 따라 앱의 콘텐츠를 렌더링하는 내부 컴포넌트입니다.
