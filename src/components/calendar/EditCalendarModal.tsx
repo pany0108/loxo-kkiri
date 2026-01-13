@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { PenLine, Trash2, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2, ChevronDown, Check } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 
 const CALENDAR_ICONS = [
   { id: 'home', component: Home, label: '집' },
@@ -43,6 +43,7 @@ interface CalendarData {
   color?: string;
   icon?: string;
   isDefault?: boolean;
+  customNames?: Record<string, string>;
 }
 
 interface EditCalendarModalProps {
@@ -61,7 +62,9 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
 
   useEffect(() => {
     if (calendar) {
-      setName(calendar.name);
+      const userId = auth.currentUser?.uid;
+      const displayName = (userId && calendar.customNames?.[userId]) || calendar.name;
+      setName(displayName);
       if (calendar.icon) {
         setSelectedIcon(calendar.icon);
       }
@@ -90,8 +93,17 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
       return;
     }
     try {
+      const userId = auth.currentUser?.uid;
       const calendarRef = doc(db, 'calendars', calendar.id);
-      await updateDoc(calendarRef, { name, icon: selectedIcon, color: selectedColor });
+
+      const updateData: any = { icon: selectedIcon, color: selectedColor };
+      if (userId) {
+        updateData[`customNames.${userId}`] = name;
+      } else {
+        updateData.name = name;
+      }
+
+      await updateDoc(calendarRef, updateData);
       toast.success('캘린더가 수정되었습니다.');
       onClose();
     } catch (error) {

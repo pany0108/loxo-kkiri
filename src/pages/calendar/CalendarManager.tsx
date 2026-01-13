@@ -121,11 +121,14 @@ const CalendarManager = () => {
     try {
       await leaveCalendar(calendarToDelete as any, user);
 
+      // [수정] 커스텀 이름 반영
+      const displayName = (calendarToDelete as any).customNames?.[user.uid] || calendarToDelete.name;
+
       // 사용자가 마지막 멤버인 경우, 캘린더를 삭제합니다.
       if (calendarToDelete.members.length <= 1) {
-        toast.success(`'${calendarToDelete.name}' 캘린더가 삭제되었습니다.`);
+        toast.success(`'${displayName}' 캘린더가 삭제되었습니다.`);
       } else {
-        toast.success(`'${calendarToDelete.name}' 캘린더에서 나갔습니다.`);
+        toast.success(`'${displayName}' 캘린더에서 나갔습니다.`);
       }
     } catch (error) {
       console.error('캘린더 나가기 실패:', error);
@@ -230,7 +233,8 @@ const CalendarManager = () => {
             title="캘린더 삭제"
             message={
               <>
-                정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더를 삭제하시겠습니까?
+                정말 <span className="text-[#191F28] dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더를
+                삭제하시겠습니까?
                 <br />
                 <span className="text-red-500 dark:text-red-400 font-bold">포함된 모든 일정이 사라집니다.</span>
               </>
@@ -251,7 +255,8 @@ const CalendarManager = () => {
             title="캘린더 나가기"
             message={
               <>
-                정말 <span className="text-[#191F28] dark:text-white font-bold">'{calendarToDelete.name}'</span> 캘린더에서 나가시겠습니까?
+                정말 <span className="text-[#191F28] dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더에서
+                나가시겠습니까?
                 <br />
                 <span className="text-yellow-500 dark:text-yellow-400 font-bold">더 이상 이 캘린더의 일정을 볼 수 없습니다.</span>
               </>

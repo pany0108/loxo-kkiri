@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, ChevronDown, Check, Settings, Bell } from 'lucide-react';
 import { CalendarType } from 'contexts';
+import { auth } from '../../firebase';
 
 interface CalendarHeaderProps {
   activeCalendar: CalendarType | null;
@@ -40,12 +41,19 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     });
   }, [myCalendars]);
 
+  const getCalendarName = (cal: CalendarType) => {
+    const userId = auth.currentUser?.uid;
+    return (userId && (cal as any).customNames?.[userId]) || cal.name;
+  };
+
   return (
     <header className="px-page pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-header">
       <div className="flex items-center justify-between pb-2">
         <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
           <button onClick={onCalListToggle} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
-            <h1 className="text-xl sm:text-2xl font-black text-[#191F28] dark:text-white tracking-tight truncate text-left">{activeCalendar?.name || '캘린더 선택'}</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-[#191F28] dark:text-white tracking-tight truncate text-left">
+              {activeCalendar ? getCalendarName(activeCalendar) : '캘린더 선택'}
+            </h1>
             <ChevronDown size={20} className={`text-[#8B95A1] transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
           </button>
           <p className="text-[12px] text-[#8B95A1] font-bold mt-1 ml-0.5 truncate">
@@ -63,7 +71,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                   }`}
                 >
                   <div className="flex flex-col items-start">
-                    <span className="text-[14px] font-bold ">{cal.name}</span>
+                    <span className="text-[14px] font-bold ">{getCalendarName(cal)}</span>
                     {cal.members.length > 1 && <span className="text-[10px] opacity-70 dark:opacity-50 mt-0.5">멤버: {cal.members.length}명</span>}
                   </div>
                   {activeCalendar?.id === cal.id && <Check size={16} />}
