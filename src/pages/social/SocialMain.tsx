@@ -1,5 +1,6 @@
 // src/pages/social/SocialMain.tsx
 import React, { useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PageLayout } from 'components';
 import ChatList from './ChatList';
 import FriendList from './FriendList';
@@ -7,7 +8,8 @@ import { MessageCircle, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const SocialMain = () => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'friend'>('chat');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'chat' | 'friend'>(location.state?.initialTab || 'chat');
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
   // 스와이프 감지를 위한 Refs

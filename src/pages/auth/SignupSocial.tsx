@@ -35,7 +35,7 @@ const SignupSocial = () => {
       footer={
         <PageFooter zIndex={50}>
           <LoadingButton type="submit" form="social-signup-form" isLoading={isLoading} disabled={isLoading || !formData.birthDate || !formData.phone} className="btn-primary">
-            슈퍼 스케줄러 시작하기
+            끼리 시작하기
           </LoadingButton>
         </PageFooter>
       }

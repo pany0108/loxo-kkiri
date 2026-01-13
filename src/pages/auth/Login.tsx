@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
 import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
-import { auth, googleProvider } from '../../firebase';
+import { auth, db, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
+import { doc, getDoc } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { signInWithEmail, signInWithGoogle, checkUserRegistration } from 'services/authService';
@@ -38,6 +39,14 @@ const Login = () => {
    */
   useEffect(() => {
     const handleRedirectResult = async (user: FirebaseUser) => {
+      // [추가] DB에 유저 정보가 있는지 확실하게 확인
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        return;
+      }
+
       const registrationStatus = await checkUserRegistration(user);
       if (registrationStatus.isNewUser) {
         localStorage.setItem('pendingSignup', JSON.stringify(registrationStatus.state));
@@ -111,6 +120,15 @@ const Login = () => {
 
     try {
       const user = await signInWithGoogle();
+
+      // [추가] DB에 유저 정보가 있는지 확실하게 확인
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        return;
+      }
+
       const registrationStatus = await checkUserRegistration(user);
 
       if (registrationStatus.isNewUser) {

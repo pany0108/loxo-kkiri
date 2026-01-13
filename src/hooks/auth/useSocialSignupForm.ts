@@ -86,24 +86,31 @@ export const useSocialSignupForm = () => {
   // Check user status and redirect if already completed or if data is missing
   useEffect(() => {
     const checkUserStatus = async () => {
-      if (userData?.uid) {
-        const userRef = doc(db, 'users', userData.uid);
+      // Use the currently authenticated user as the primary source of truth.
+      const currentUser = auth.currentUser;
+
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists() && userSnap.data()?.phone && userSnap.data()?.birthDate) {
+          // This user is fully registered. They should not be on this page.
+          localStorage.removeItem('pendingSignup'); // Clean up just in case
           navigate('/calendar', { replace: true });
+          return; // Exit early
         }
-      } else {
-        const timer = setTimeout(() => {
-          if (!localStorage.getItem('pendingSignup')) {
-            toast.error('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
-            navigate('/login', { replace: true });
-          }
-        }, 500);
-        return () => clearTimeout(timer);
+        // If profile is not complete, we stay on this page to let the user fill it.
+        return;
+      }
+
+      // If there's no currentUser, check for pending signup data.
+      // If that's also missing, it's an invalid state.
+      if (!localStorage.getItem('pendingSignup')) {
+        toast.error('인증 정보가 만료되었습니다. 다시 로그인해주세요.');
+        navigate('/login', { replace: true });
       }
     };
     checkUserStatus();
-  }, [userData, navigate]);
+  }, [navigate]);
 
   // Cleanup effects
   useEffect(() => {

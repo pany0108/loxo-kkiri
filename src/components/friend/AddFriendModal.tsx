@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Loader2, Check, Users } from 'lucide-react';
+import { Loader2, Check, Users, AlertCircle } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, addDoc } from 'firebase/firestore';
 import { sendPushNotificationToUser } from 'utils';
 import { auth, db } from '../../firebase';
+import { Contacts } from '@capacitor-community/contacts';
+import { Capacitor } from '@capacitor/core';
+import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
+import { ConfirmModal } from 'components';
 
 interface Friend {
   uid: string;
@@ -20,6 +24,8 @@ interface AddFriendModalProps {
 const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo, friends, onOpenContacts }) => {
   const [newFriendInput, setNewFriendInput] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [isCheckingContacts, setIsCheckingContacts] = useState(false);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
   const [addFriendMethod, setAddFriendMethod] = useState<'email' | 'phone'>('email');
   const addFriendInputRef = useRef<HTMLInputElement>(null);
 
@@ -127,6 +133,52 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   };
 
+  const handleContactsClick = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      toast.error('이 기능은 모바일 기기에서만 지원됩니다.');
+      return;
+    }
+
+    setIsCheckingContacts(true);
+    try {
+      const permission = await Contacts.checkPermissions();
+
+      if (permission.contacts === 'granted') {
+        onOpenContacts();
+      } else if (permission.contacts === 'denied') {
+        // 이미 권한이 거부된 경우, 설정으로 이동하도록 유도
+        setIsPermissionModalOpen(true);
+      } else {
+        // 'prompt' 또는 'prompt-with-rationale' 상태에서 권한 요청
+        const result = await Contacts.requestPermissions();
+        if (result.contacts === 'granted') {
+          onOpenContacts();
+        } else {
+          // 사용자가 권한 요청을 거부한 경우
+          setIsPermissionModalOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error('Permission check failed', error);
+      toast.error('권한 확인 중 오류가 발생했습니다.');
+    } finally {
+      setIsCheckingContacts(false);
+    }
+  };
+
+  const openSettings = async () => {
+    try {
+      await NativeSettings.open({
+        optionAndroid: AndroidSettings.ApplicationDetails,
+        optionIOS: IOSSettings.App,
+      });
+    } catch (e) {
+      console.error('Open settings failed', e);
+      toast.error('설정을 열 수 없습니다. 직접 설정에서 권한을 허용해주세요.');
+    }
+    setIsPermissionModalOpen(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -189,13 +241,26 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
         </div>
         <button
           type="button"
-          onClick={onOpenContacts}
-          className="w-full flex items-center justify-center gap-2 mt-3 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-[#8B95A1] dark:text-gray-400 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          onClick={handleContactsClick}
+          disabled={isCheckingContacts}
+          className="w-full flex items-center justify-center gap-2 mt-3 py-3.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-[#8B95A1] dark:text-gray-400 font-bold text-[14px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
         >
-          <Users size={16} />
+          {isCheckingContacts ? <Loader2 size={16} className="animate-spin" /> : <Users size={16} />}
           연락처에서 친구 추가
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={isPermissionModalOpen}
+        onClose={() => setIsPermissionModalOpen(false)}
+        onConfirm={openSettings}
+        title="권한 설정 필요"
+        message="연락처에서 친구를 찾기 위해 연락처 접근 권한이 필요합니다. 설정에서 권한을 허용해주세요."
+        confirmText="설정으로 이동"
+        icon={<AlertCircle size={32} />}
+        iconContainerClassName="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+        confirmButtonClassName="bg-[#007AFF]"
+      />
     </div>
   );
 };

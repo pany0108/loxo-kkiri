@@ -433,20 +433,29 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   const content = (
     <>
-      <div className="space-y-4 p-4 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] flex-1" onScroll={cancelLongPress}>
+      <div className="space-y-4 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] flex-1" onScroll={cancelLongPress}>
         {!isSelectionMode && (
           <>
-            <div className="relative">
-              <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  placeholder="친구 이름 검색"
-                  className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                  <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    placeholder="친구 이름 검색"
+                    className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="w-[52px] h-[52px] bg-white dark:bg-gray-800 text-[#007AFF] dark:text-blue-400 rounded-[20px] flex items-center justify-center shrink-0 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition-all"
+                aria-label="친구 추가"
+              >
+                <UserPlus size={20} strokeWidth={2.5} />
+              </button>
             </div>
             {/* [추가] 보기 모드 선택 버튼 */}
             <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px]">
@@ -672,11 +681,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
           <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF] p-2">
             {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
           </button>
-        ) : (
-          <button onClick={() => setIsAddModalOpen(true)} className="p-2 text-[#191F28] dark:text-white transition-opacity hover:opacity-70" aria-label="친구 추가">
-            <UserPlus size={24} />
-          </button>
-        )
+        ) : null
       }
       footer={renderFooter()}
     >

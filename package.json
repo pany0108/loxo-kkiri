@@ -25,6 +25,7 @@
     "@types/react": "~18.2.0",
     "@types/react-dom": "~18.2.0",
     "antd-mobile": "^5.36.1",
+    "capacitor-native-settings": "^6.0.6",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.12",
     "firebase": "^10.12.2",

@@ -59,9 +59,9 @@ const UserProfile = () => {
           photoURL: userData.photoURL || '',
         }),
       });
-      toast.success(`${userData.name}님을 친구로 추가했습니다!`);
+      toast.success(`${userData.name}님을 친구로 추가했습니다!`, { duration: 2000, id: 'friend-add-success' });
       // 친구 목록으로 이동하며 새로 추가된 친구 ID 전달
-      navigate('/friend-list', { state: { newFriendId: userData.uid }, replace: true });
+      navigate('/social', { state: { initialTab: 'friend', newFriendId: userData.uid }, replace: true });
     } catch (error) {
       toast.error('친구 추가 중 오류가 발생했습니다.');
       console.error(error);
