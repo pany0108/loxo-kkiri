@@ -67,13 +67,21 @@ const AppContent = () => {
         const userDocRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userDocRef);
 
-        if (!userSnap.exists()) {
+        // [수정] 유저 정보가 없거나 필수 정보(전화번호, 생년월일)가 없는 경우 회원가입 페이지로 이동
+        if (!userSnap.exists() || !userSnap.data()?.phone || !userSnap.data()?.birthDate) {
+          // [추가] 이름 분리 로직 (한국 이름 기준: 첫 글자 성, 나머지 이름)
+          const displayName = user.displayName || '';
+          const lastName = displayName.charAt(0) || '';
+          const firstName = displayName.slice(1) || '';
+
           // 4. 정보 없음 -> 소셜 가입 페이지로 납치
           navigate('/signup-social', {
             replace: true,
             state: {
               email: user.email,
               name: user.displayName,
+              lastName, // [추가] 성
+              firstName, // [추가] 이름
               photoURL: user.photoURL,
               uid: user.uid,
               providerId: 'google.com',
