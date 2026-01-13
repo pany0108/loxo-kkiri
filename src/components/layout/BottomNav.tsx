@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Users, Send, User } from 'lucide-react';
+import { Calendar, Users, Send, User, Handshake } from 'lucide-react';
 import { useUI } from 'contexts';
 
 const BottomNav = () => {
@@ -13,10 +13,10 @@ const BottomNav = () => {
   if (!isBottomNavVisible) return null;
 
   const navItems = [
-    { icon: <Calendar size={24} />, label: '캘린더', path: '/calendar' },
-    { icon: <Users size={24} />, label: '친구', path: '/friend-list' },
-    { icon: <Send size={24} />, label: '약속', path: '/propose' },
-    { icon: <User size={24} />, label: '내정보', path: '/profile' },
+    { icon: <Calendar size={24} />, path: '/calendar' },
+    { icon: <Users size={24} />, path: '/social' },
+    { icon: <Handshake size={24} />, path: '/propose' },
+    { icon: <User size={24} />, path: '/profile' },
   ];
 
   return (
@@ -33,7 +33,6 @@ const BottomNav = () => {
               }`}
             >
               <div className={isActive ? 'drop-shadow-[0_0_8px_rgba(0,122,255,0.3)]' : ''}>{item.icon}</div>
-              <span className={`text-[10px] mt-1 font-bold ${isActive ? 'text-[#007AFF]' : 'text-[#8B95A1] dark:text-gray-500'}`}>{item.label}</span>
             </button>
           );
         })}

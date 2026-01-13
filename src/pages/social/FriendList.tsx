@@ -29,7 +29,11 @@ import { deleteCalendar, leaveCalendar } from 'services';
  * - 친구 별명 수정 및 목록 삭제 기능 제공
  * * @returns {JSX.Element} 친구 목록 관리 화면
  */
-const FriendList = () => {
+interface FriendListProps {
+  isEmbedded?: boolean;
+}
+
+const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -427,31 +431,9 @@ const FriendList = () => {
     return null;
   };
 
-  return (
-    <PageLayout
-      title={isSelectionMode ? `${selectedFriendUids.size}명 선택됨` : '친구'}
-      onBack={
-        isSelectionMode
-          ? () => {
-              setIsSelectionMode(false);
-              setSelectedFriendUids(new Set());
-            }
-          : null
-      }
-      extraNav={
-        isSelectionMode ? (
-          <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF] p-2">
-            {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
-          </button>
-        ) : (
-          <button onClick={() => setIsAddModalOpen(true)} className="p-2 text-[#191F28] dark:text-white transition-opacity hover:opacity-70" aria-label="친구 추가">
-            <UserPlus size={24} />
-          </button>
-        )
-      }
-      footer={renderFooter()}
-    >
-      <div className="space-y-4 pb-24" onScroll={cancelLongPress}>
+  const content = (
+    <>
+      <div className="space-y-4 p-4 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] flex-1" onScroll={cancelLongPress}>
         {!isSelectionMode && (
           <>
             <div className="relative">
@@ -581,19 +563,6 @@ const FriendList = () => {
         </>
       </div>
 
-      {/* [추가] 다중 선택 시 하단 액션 바
-      {isSelectionMode && selectedFriendUids.size > 0 && (
-        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 z-40 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 animate-in slide-in-from-bottom duration-300">
-          <button
-            onClick={() => setIsMoveToGroupOpen(true)}
-            className="w-full h-[52px] bg-[#007AFF] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50"
-          >
-            <FolderPlus size={20} />
-            그룹 변경
-          </button>
-        </div>
-      )} */}
-
       <FriendActionMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
@@ -653,6 +622,65 @@ const FriendList = () => {
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} onOpenContacts={handleOpenContactsModal} />
+    </>
+  );
+
+  if (isEmbedded) {
+    return (
+      <div className="h-full flex flex-col relative">
+        {/* Embedded 모드에서는 상단 헤더(검색창 등)와 리스트를 포함한 content만 렌더링 */}
+        {/* 선택 모드일 때의 상단 헤더는 SocialMain에서 처리하거나 여기서 조건부로 렌더링 */}
+        {isSelectionMode && (
+          <div className="flex items-center justify-between px-1 py-2 mb-2 bg-white dark:bg-gray-950 z-10">
+            <span className="text-lg font-black text-[#191F28] dark:text-white">{selectedFriendUids.size}명 선택됨</span>
+            <div className="flex gap-3">
+              <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF]">
+                {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedFriendUids(new Set());
+                }}
+                className="text-sm font-bold text-[#8B95A1]"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+        {content}
+        {/* Footer for selection mode */}
+        {renderFooter()}
+      </div>
+    );
+  }
+
+  return (
+    <PageLayout
+      title={isSelectionMode ? `${selectedFriendUids.size}명 선택됨` : '친구'}
+      onBack={
+        isSelectionMode
+          ? () => {
+              setIsSelectionMode(false);
+              setSelectedFriendUids(new Set());
+            }
+          : null
+      }
+      extraNav={
+        isSelectionMode ? (
+          <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF] p-2">
+            {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
+          </button>
+        ) : (
+          <button onClick={() => setIsAddModalOpen(true)} className="p-2 text-[#191F28] dark:text-white transition-opacity hover:opacity-70" aria-label="친구 추가">
+            <UserPlus size={24} />
+          </button>
+        )
+      }
+      footer={renderFooter()}
+    >
+      {content}
     </PageLayout>
   );
 };

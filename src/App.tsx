@@ -1,4 +1,5 @@
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useCallback } from 'react';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { BottomNav } from 'components';
 import {
@@ -27,6 +28,7 @@ import {
   SharedMediaList,
   NotificationCenter,
   UserProfile,
+  SocialMain,
 } from 'pages';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider, CalendarProvider, ThemeProvider, UIProvider } from 'contexts';
@@ -38,10 +40,30 @@ import { usePushNotification, useFcmToken, useAuth, useNotificationNavigation, u
 const AppContent = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const handleNavigation = useNotificationNavigation();
+  const navigate = useNavigate();
+  const originalHandleNavigation = useNotificationNavigation();
+
+  // 푸시 알림 클릭 시 내비게이션을 처리하는 핸들러를 확장합니다.
+  // 채팅 알림처럼 'url' 속성이 있는 경우, 우선적으로 해당 URL로 이동시킵니다.
+  const handlePushNotificationNavigation = useCallback(
+    async (notification: any) => {
+      // Capacitor의 PushNotificationActionPerformed 리스너는 action.notification 객체를 전달합니다.
+      // 이 객체의 data 속성에 페이로드가 담겨 있습니다.
+      const data = notification.data || notification;
+      if (data.type === 'CHAT' && data.scheduleId) {
+        navigate(`/chat/${data.scheduleId}`);
+      } else if (data.url) {
+        navigate(data.url);
+      } else {
+        // url이 없는 기존 알림들은 원래 핸들러로 처리
+        await originalHandleNavigation(notification);
+      }
+    },
+    [navigate, originalHandleNavigation],
+  );
 
   // 사용자 상태에 의존하는 훅들
-  usePushNotification(user, handleNavigation);
+  usePushNotification(user, handlePushNotificationNavigation);
   useFcmToken(user?.uid || null);
 
   const hideNavPaths = [
@@ -88,6 +110,7 @@ const AppContent = () => {
             <Route path="/profile/:userId" element={user ? <UserProfile /> : <Navigate to="/" />} />
             <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
             <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
+            <Route path="/social" element={user ? <SocialMain /> : <Navigate to="/" />} />
             {/* --- 03. 캘린더 핵심 기능 --- */}
             <Route path="/calendar" element={user ? <CalendarMain /> : <Navigate to="/" />} />
             <Route path="/calendar-manager" element={user ? <CalendarManager /> : <Navigate to="/" />} />

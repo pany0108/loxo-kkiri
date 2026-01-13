@@ -4,3 +4,4 @@ export * from './common';
 export * from './meeting';
 export * from './notification';
 export * from './ui';
+export * from './user';
