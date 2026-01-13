@@ -179,7 +179,6 @@ const Login = () => {
             break;
           case '10': // Google Sign-In error code for DEVELOPER_ERROR
             errorMessage = '앱 설정에 오류가 있습니다. SHA-1 지문 또는 패키지 이름이 올바르게 등록되었는지 확인해주세요. (에러 코드: 10)';
-            errorMessage = '구글 로그인 설정 오류(10): Firebase 콘솔에 앱의 SHA-1 지문(디버그/릴리즈)이 올바르게 등록되었는지 확인해주세요.';
             break;
           default:
             errorMessage = `로그인 중 오류가 발생했습니다. (${errorCode})`;
