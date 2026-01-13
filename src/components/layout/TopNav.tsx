@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 interface TopNavProps {
   title?: string;
-  onBack?: () => void;
+  onBack?: (() => void) | null;
   extra?: React.ReactNode; // For right-aligned content
   children?: React.ReactNode; // For custom title/content area
   className?: string; // Optional prop to override default styles
@@ -12,6 +12,7 @@ interface TopNavProps {
 
 const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, className }) => {
   const navigate = useNavigate();
+  const showBackButton = onBack !== null;
   const handleBack = onBack || (() => navigate(-1));
 
   // TopNav의 높이를 Safe Area를 포함하여 60px + safe-area-inset-top으로 설정합니다.
@@ -21,13 +22,17 @@ const TopNav: React.FC<TopNavProps> = ({ title, onBack, extra, children, classNa
 
   return (
     <nav className={`${defaultClassName} ${className || ''}`}>
-      <button
-        onClick={handleBack}
-        className="p-2 -ml-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-white transition-colors active:scale-90"
-        aria-label="뒤로 가기"
-      >
-        <ChevronLeft size={28} />
-      </button>
+      {showBackButton ? (
+        <button
+          onClick={handleBack}
+          className="p-2 -ml-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-white transition-colors active:scale-90"
+          aria-label="뒤로 가기"
+        >
+          <ChevronLeft size={28} />
+        </button>
+      ) : (
+        ''
+      )}
       {children ? (
         <div className="flex-1 flex items-center gap-3">{children}</div>
       ) : (

@@ -16,7 +16,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, onBack, extraN
   const scrollContainerRef = useScrollToTop();
 
   const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[env(safe-area-inset-bottom)]';
-  const finalOnBack = onBack === null ? undefined : onBack ?? (() => navigate(-1));
+  const finalOnBack = onBack === null ? null : onBack ?? (() => navigate(-1));
 
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
