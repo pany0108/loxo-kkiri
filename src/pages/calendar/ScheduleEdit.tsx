@@ -32,7 +32,7 @@ import {
   ShoppingCart,
   Gamepad2,
 } from 'lucide-react';
-import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader, PageTitle, FormInput, FormTextarea } from 'components';
+import { PageLayout, RecurrenceOptions, RecurrenceSettings, DeleteRecurringModal, ConfirmModal, PageHeader, PageTitle, FormInput, FormTextarea, FormCheckbox } from 'components';
 import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useCalendar } from 'contexts';
@@ -108,6 +108,9 @@ interface EventDataState {
   recurrence?: RecurrenceSettings;
   attendees?: string[]; // 이 페이지에서는 직접 사용하지 않지만, 타입 정의에 포함
   color?: string;
+  isAnniversary?: boolean;
+  isLunar?: boolean;
+  isLeapMonth?: boolean;
 }
 
 const ScheduleEdit = () => {
@@ -145,6 +148,9 @@ const ScheduleEdit = () => {
     review: eventData?.review || '',
     reviewImages: eventData?.reviewImages || [],
     color: eventData?.color || '#007AFF',
+    isAnniversary: eventData?.isAnniversary || false,
+    isLunar: eventData?.isLunar || false,
+    isLeapMonth: eventData?.isLeapMonth || false,
   });
 
   const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
@@ -305,6 +311,23 @@ const ScheduleEdit = () => {
     });
   };
 
+  const handleAnniversaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setFormData((prev) => {
+      const newData = { ...prev, isAnniversary: checked };
+      if (checked) {
+        newData.isLunar = false;
+        newData.isLeapMonth = false;
+        if (!prev.isAllDay) {
+          newData.isAllDay = true;
+          newData.start = dayjs(prev.start).startOf('day').format('YYYY-MM-DDTHH:mm');
+          newData.end = dayjs(prev.start).endOf('day').format('YYYY-MM-DDTHH:mm');
+        }
+      }
+      return newData;
+    });
+  };
+
   const handleSave = async () => {
     if (isSubmitting) return;
     try {
@@ -454,6 +477,38 @@ const ScheduleEdit = () => {
                 )}
               </div>
 
+              {/* [추가] 기념일 설정 */}
+              <div className="flex items-center justify-between px-1">
+                <FormCheckbox label="기념일" checked={formData.isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
+                {formData.isAnniversary && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
+                    {formData.isLunar && (
+                      <FormCheckbox label="윤달" checked={formData.isLeapMonth || false} onChange={(e) => setFormData((prev) => ({ ...prev, isLeapMonth: e.target.checked }))} />
+                    )}
+                    <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, isLunar: false }))}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                          !formData.isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                        }`}
+                      >
+                        양력
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, isLunar: true }))}
+                        className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                          formData.isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                        }`}
+                      >
+                        음력
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-caption">시간 설정</label>
@@ -472,33 +527,54 @@ const ScheduleEdit = () => {
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-2 space-y-1 border border-gray-100 dark:border-gray-700/50">
-                  <div className="flex items-center h-[56px] px-4 gap-4">
-                    <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
-                    <div className="flex-1 flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">시작</span>
+                  {formData.isAnniversary ? (
+                    <div className="flex items-center h-[56px] px-4 gap-3">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <Sparkles size={18} />
+                        <span className="text-[14px] font-bold">날짜</span>
+                      </div>
                       <input
-                        type={formData.isAllDay ? 'date' : 'datetime-local'}
+                        type="date"
                         name="start"
-                        value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
-                        onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                        value={formData.start.split('T')[0]}
+                        onChange={(e) => {
+                          handleChange(e);
+                          setFormData((prev) => ({ ...prev, end: e.target.value }));
+                        }}
                         className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
-                  </div>
-                  <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
-                  <div className="flex items-center h-[56px] px-4 gap-4">
-                    <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
-                    <div className="flex-1 flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">종료</span>
-                      <input
-                        type={formData.isAllDay ? 'date' : 'datetime-local'}
-                        name="end"
-                        value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
-                        onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                        className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center h-[56px] px-4 gap-4">
+                        <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
+                        <div className="flex-1 flex items-center justify-between gap-3">
+                          <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">시작</span>
+                          <input
+                            type={formData.isAllDay ? 'date' : 'datetime-local'}
+                            name="start"
+                            value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
+                            onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                            className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                          />
+                        </div>
+                      </div>
+                      <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
+                      <div className="flex items-center h-[56px] px-4 gap-4">
+                        <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
+                        <div className="flex-1 flex items-center justify-between gap-3">
+                          <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">종료</span>
+                          <input
+                            type={formData.isAllDay ? 'date' : 'datetime-local'}
+                            name="end"
+                            value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
+                            onChange={handleChange} // dark:text-gray-200 -> dark:text-white
+                            className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -525,58 +601,62 @@ const ScheduleEdit = () => {
               {/* [추가] 약속 잡기로 생성된 일정(recurrence 필드가 없음)은 반복 설정 옵션을 숨깁니다. */}
               {eventData?.recurrence && <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />}
 
-              <div className="space-y-3">
-                <label className="block text-caption ml-1">상세 정보</label>
+              {!formData.isAnniversary && (
+                <div className="space-y-3">
+                  <label className="block text-caption ml-1">상세 정보</label>
 
-                <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소" />
+                  <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소" />
 
-                <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
-                  <Bell size={18} className="text-[#8B95A1] dark:text-gray-600" />
-                  <select
-                    name="notification"
-                    value={formData.notification}
-                    onChange={handleChange}
-                    className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 appearance-none z-10"
-                  >
-                    {NOTIFICATION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} rows={3} placeholder="메모" />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between px-1 mb-2 ">
-                  <label className="text-caption">첨부파일</label>
-                  <button
-                    type="button"
-                    onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                    className="text-[11px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-md hover:bg-[#007AFF]/30 transition-colors"
-                  >
-                    + 추가
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {attachments.map((file, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                  <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                    <Bell size={18} className="text-[#8B95A1] dark:text-gray-600" />
+                    <select
+                      name="notification"
+                      value={formData.notification}
+                      onChange={handleChange}
+                      className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 appearance-none z-10"
                     >
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#007AFF]" />}
-                        <span className="text-[13px] font-bold text-[#191F28] dark:text-gray-300 truncate">{file.name}</span>
-                      </div>
-                      <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-[#8B95A1] hover:text-red-500">
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
+                      {NOTIFICATION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} rows={3} placeholder="메모" />
                 </div>
-              </div>
+              )}
+
+              {!formData.isAnniversary && (
+                <div>
+                  <div className="flex items-center justify-between px-1 mb-2 ">
+                    <label className="text-caption">첨부파일</label>
+                    <button
+                      type="button"
+                      onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
+                      className="text-[11px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-md hover:bg-[#007AFF]/30 transition-colors"
+                    >
+                      + 추가
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {attachments.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#007AFF]" />}
+                          <span className="text-[13px] font-bold text-[#191F28] dark:text-gray-300 truncate">{file.name}</span>
+                        </div>
+                        <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-[#8B95A1] hover:text-red-500">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {!isShared && isPastEvent && (
                 <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">

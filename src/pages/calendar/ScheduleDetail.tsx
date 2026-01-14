@@ -52,6 +52,9 @@ interface LocationState {
   review?: string;
   reviewImages?: string[];
   files?: { name: string; type: string; url?: string }[];
+  isAnniversary?: boolean;
+  isLunar?: boolean;
+  isLeapMonth?: boolean;
   fromView?: string; // [추가] 캘린더에서 어떤 뷰에서 왔는지 식별
 }
 
@@ -72,6 +75,9 @@ interface ScheduleDetailData {
   userId?: string;
   review: string;
   reviewImages: string[];
+  isAnniversary?: boolean;
+  isLunar?: boolean;
+  isLeapMonth?: boolean;
 }
 
 // [추가] 참석자 프로필 타입 정의
@@ -121,6 +127,9 @@ const ScheduleDetail = () => {
     userId: undefined, // [추가] userId 초기값 설정
     review: initialState?.review || '',
     reviewImages: initialState?.reviewImages || [],
+    isAnniversary: initialState?.isAnniversary || false,
+    isLunar: initialState?.isLunar || false,
+    isLeapMonth: initialState?.isLeapMonth || false,
   });
 
   const [previewState, setPreviewState] = useState<{
@@ -194,6 +203,9 @@ const ScheduleDetail = () => {
           files: dbData.files || [],
           review: dbData.review || '',
           reviewImages: dbData.reviewImages || [],
+          isAnniversary: dbData.isAnniversary || false,
+          isLunar: dbData.isLunar || false,
+          isLeapMonth: dbData.isLeapMonth || false,
         });
       } else {
         navigate('/calendar');

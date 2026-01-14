@@ -147,38 +147,6 @@ const AddSchedule = () => {
         {/* [수정] form에 id 추가 */}
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <section className="space-y-4">
-            {/* [추가] 기념일 설정 */}
-            <div className="flex items-center justify-between px-1">
-              <FormCheckbox label="기념일" checked={isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
-              {isAnniversary && (
-                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
-                  {isLunar && (
-                    <FormCheckbox label="윤달" checked={isLeapMonth || false} onChange={(e) => handleChange({ target: { name: 'isLeapMonth', value: e.target.checked } } as any)} />
-                  )}
-                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => handleLunarChange(false)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        !isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
-                      }`}
-                    >
-                      양력
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleLunarChange(true)}
-                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
-                      }`}
-                    >
-                      음력
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div ref={titleInputRef} className="group relative">
               <FormInput
                 label="일정 제목"
@@ -276,6 +244,38 @@ const AddSchedule = () => {
               )}
             </div>
 
+            {/* [이동] 기념일 설정 */}
+            <div className="flex items-center justify-between px-1">
+              <FormCheckbox label="기념일" checked={isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
+              {isAnniversary && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
+                  {isLunar && (
+                    <FormCheckbox label="윤달" checked={isLeapMonth || false} onChange={(e) => handleChange({ target: { name: 'isLeapMonth', value: e.target.checked } } as any)} />
+                  )}
+                  <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleLunarChange(false)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        !isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                      }`}
+                    >
+                      양력
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleLunarChange(true)}
+                      className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
+                        isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                      }`}
+                    >
+                      음력
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <label className="text-caption">시간 설정</label>
@@ -296,9 +296,22 @@ const AddSchedule = () => {
 
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-2 space-y-1">
                 {isAnniversary ? (
-                  <div className="flex items-center justify-center h-[56px] gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-[14px]">
-                    <Sparkles size={16} />
-                    <span>하루 종일 기념해요!</span>
+                  <div className="flex items-center h-[56px] px-4 gap-3">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <Sparkles size={18} />
+                      <span className="text-[14px] font-bold">날짜</span>
+                    </div>
+                    <input
+                      type="date"
+                      name="start"
+                      value={formData.start.split('T')[0]}
+                      onChange={(e) => {
+                        handleChange(e);
+                        // 기념일은 보통 하루 종일이므로 종료일도 시작일과 같게 설정
+                        handleChange({ target: { name: 'end', value: e.target.value } } as any);
+                      }}
+                      className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                    />
                   </div>
                 ) : (
                   <>
