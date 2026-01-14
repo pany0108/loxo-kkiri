@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
-import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential } from 'firebase/auth';
+import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
@@ -28,9 +28,15 @@ const Login = () => {
   useEffect(() => {
     // Native는 자동 초기화되지만, Web 환경에서는 명시적 초기화가 필수입니다.
     // 플랫폼 구분 없이 호출하여 Web 지원을 추가하고, Native에서의 중복 호출은 플러그인이 처리합니다.
-    GoogleAuth.initialize().catch((error) => {
-      console.error('GoogleAuth initialization failed:', error);
-    });
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize({
+        clientId: '831596904912-r3icrrjova3r2ur4210bggg0q68n7fgj.apps.googleusercontent.com', // 아까 복사한 웹 클라이언트 ID
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      }).catch((error) => {
+        console.error('GoogleAuth initialization failed:', error);
+      });
+    }
   }, []);
 
   /**
@@ -90,12 +96,19 @@ const Login = () => {
    */
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 캘린더 플래시 방지를 위한 플래그 설정
+    sessionStorage.setItem('isAuthChecking', 'true');
 
     try {
-      await signInWithGoogle();
-      // App.tsx에서 인증 상태 변경을 감지하여 라우팅을 처리하므로
-      // 여기서는 별도의 로직이 필요 없습니다.
+      // ★★★ [수정] 플랫폼에 따라 로그인 방식 분기 ★★★
+      if (Capacitor.isNativePlatform()) {
+        // 1. 앱(Native) 환경: 기존에 만드신 서비스 함수 사용 (Plugin 사용)
+        await signInWithGoogle();
+      } else {
+        // 2. 웹(Web) 환경: Firebase 표준 팝업 로그인 사용 (Plugin 안 씀 -> 에러 없음)
+        await signInWithPopup(auth, googleProvider);
+      }
+
+      // 성공 시 로직 (App.tsx에서 감지하므로 비워둠)
     } catch (error: any) {
       console.error('Google Login Error:', error);
       sessionStorage.removeItem('isAuthChecking'); // [추가] 에러 발생 시 플래그 제거
