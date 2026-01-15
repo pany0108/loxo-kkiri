@@ -29,7 +29,7 @@ const BottomNav = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`flex flex-col items-center justify-center w-full h-full transition-all duration-200 ${
-                isActive ? 'text-[#007AFF] scale-110' : 'text-[#8B95A1] dark:text-gray-500'
+                isActive ? 'text-primary scale-110' : 'text-sub dark:text-gray-500'
               }`}
             >
               <div className={isActive ? 'drop-shadow-[0_0_8px_rgba(0,122,255,0.3)]' : ''}>{item.icon}</div>

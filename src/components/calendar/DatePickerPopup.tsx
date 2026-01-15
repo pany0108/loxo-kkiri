@@ -17,13 +17,13 @@ const DatePickerPopup: React.FC<DatePickerPopupProps> = ({ isOpen, datePickerRef
   return (
     <div
       ref={datePickerRef}
-      className="absolute top-[72px] left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200"
+      className="absolute top-[72px] left-1/2 -translate-x-1/2 sm:left-6 sm:translate-x-0 z-50 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200"
     >
       <div className="flex items-center justify-between mb-4 px-2">
         <button onClick={() => onYearChange(pickerYear - 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
           <ChevronLeft size={20} />
         </button>
-        <span className="text-lg font-bold text-[#191F28] dark:text-white">{pickerYear}년</span>
+        <span className="text-lg font-bold text-main dark:text-white">{pickerYear}년</span>
         <button onClick={() => onYearChange(pickerYear + 1)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
           <ChevronRight size={20} />
         </button>
@@ -36,7 +36,7 @@ const DatePickerPopup: React.FC<DatePickerPopupProps> = ({ isOpen, datePickerRef
               key={i}
               onClick={() => onMonthSelect(i)}
               className={`p-3 rounded-lg text-sm font-bold transition-colors ${
-                isCurrentSelection ? 'bg-[#007AFF] text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-[#8B95A1] dark:text-gray-300 hover:bg-[#007AFF]/20'
+                isCurrentSelection ? 'bg-primary text-white' : 'bg-gray-50 dark:bg-gray-700/50 text-sub dark:text-gray-300 hover:bg-primary/20'
               }`}
             >
               {i + 1}월

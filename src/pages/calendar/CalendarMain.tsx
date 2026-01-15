@@ -195,8 +195,8 @@ const CalendarMain = () => {
       dateColor = 'text-red-500';
       dayNameColor = 'text-red-400';
     } else if (dayOfWeek === 6) {
-      dateColor = 'text-[#007AFF]';
-      dayNameColor = 'text-[#007AFF]/80';
+      dateColor = 'text-primary';
+      dayNameColor = 'text-primary/80';
     }
     return (
       <div className="flex flex-col items-center justify-center gap-0.5 pb-2">
@@ -233,11 +233,11 @@ const CalendarMain = () => {
       return (
         <div
           className="flex items-center h-full w-full overflow-hidden"
-          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || '#007AFF'}, transparent 90%)` }}
+          style={{ backgroundColor: `color-mix(in srgb, ${eventInfo.backgroundColor || 'var(--color-primary)'}, transparent 90%)` }}
         >
-          <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || '#007AFF' }} />
-          {IconComponent && <IconComponent size={10} className="mr-1 text-[#8B95A1] dark:text-gray-400 shrink-0" />}
-          <div className="text-[10px] font-bold text-[#191F28] dark:text-gray-200 truncate">{eventInfo.event.title}</div>
+          <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || 'var(--color-primary)' }} />
+          {IconComponent && <IconComponent size={10} className="mr-1 text-sub dark:text-gray-400 shrink-0" />}
+          <div className="text-[10px] font-bold text-main dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );
     }
@@ -278,7 +278,7 @@ const CalendarMain = () => {
   if (isInitialAuthChecking) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white dark:bg-gray-950">
-        <Loader2 className="h-8 w-8 animate-spin text-[#007AFF]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }

@@ -198,7 +198,7 @@ const AddSchedule = () => {
                     {selectedCalendar ? (selectedCalendar as any).customNames?.[currentUser?.uid || ''] || selectedCalendar.name : '캘린더 선택...'}
                   </span>
                 </div>
-                <ChevronDown size={20} className={`text-sub dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-sub dark:text-gray-400 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isCalListOpen && (
@@ -212,7 +212,7 @@ const AddSchedule = () => {
                         type="button"
                         onClick={() => handleCalendarSelect(cal)}
                         className={`w-full flex items-center justify-between p-4 rounded-lg transition-all ${
-                          selectedCalendar?.id === cal.id ? 'bg-primary/20 dark:bg-primary/10 text-primary' : 'text-sub dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                          selectedCalendar?.id === cal.id ? 'bg-primary/20 dark:bg-primary/10 text-primary' : 'text-sub dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -246,7 +246,7 @@ const AddSchedule = () => {
 
             {/* [이동] 기념일 설정 */}
             <div className="flex items-center justify-between px-1">
-              <FormCheckbox label="기념일" checked={isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
+              <FormCheckbox label="기념일" checked={isAnniversary || false} onChange={handleAnniversaryChange} className="text-primary" />
               {isAnniversary && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
                   {isLunar && (
@@ -257,7 +257,7 @@ const AddSchedule = () => {
                       type="button"
                       onClick={() => handleLunarChange(false)}
                       className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        !isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                        !isLunar ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-sub dark:text-gray-400'
                       }`}
                     >
                       양력
@@ -266,7 +266,7 @@ const AddSchedule = () => {
                       type="button"
                       onClick={() => handleLunarChange(true)}
                       className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                        isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                        isLunar ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-sub dark:text-gray-400'
                       }`}
                     >
                       음력
@@ -310,15 +310,15 @@ const AddSchedule = () => {
                         // 기념일은 보통 하루 종일이므로 종료일도 시작일과 같게 설정
                         handleChange({ target: { name: 'end', value: e.target.value } } as any);
                       }}
-                      className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                      className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                     />
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center h-[56px] px-4 gap-3">
-                      <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                      <Clock size={18} className="text-gray-400 dark:text-gray-400 shrink-0" />
                       <div className="flex-1 flex items-center justify-between gap-3">
-                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">시작</span>
+                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-400 shrink-0">시작</span>
                         <input
                           type={formData.isAllDay ? 'date' : 'datetime-local'}
                           name="start"
@@ -330,9 +330,9 @@ const AddSchedule = () => {
                     </div>
                     <div className="h-[1px] bg-gray-100 dark:bg-gray-700/50 mx-4" />
                     <div className="flex items-center h-[56px] px-4 gap-3">
-                      <Clock size={18} className="text-gray-400 dark:text-gray-600 shrink-0" />
+                      <Clock size={18} className="text-gray-400 dark:text-gray-400 shrink-0" />
                       <div className="flex-1 flex items-center justify-between gap-3">
-                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-500 shrink-0">종료</span>
+                        <span className="text-[14px] font-bold text-gray-400 dark:text-gray-400 shrink-0">종료</span>
                         <input
                           type={formData.isAllDay ? 'date' : 'datetime-local'}
                           name="end"
@@ -372,7 +372,7 @@ const AddSchedule = () => {
             <div className="group relative">
               <label className="block text-caption ml-1 mb-2">푸시 알림</label>
               <div className="input-field rounded-xl">
-                <Bell size={18} className="text-sub mr-4 group-focus-within:text-primary" />
+                <Bell size={18} className="text-sub dark:text-gray-400 mr-4 group-focus-within:text-primary" />
                 <select
                   name="notification"
                   value={formData.notification}
@@ -401,7 +401,7 @@ const AddSchedule = () => {
                 <button
                   type="button"
                   onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                  className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-xl flex items-center justify-center gap-2 text-sub dark:text-gray-500 cursor-not-allowed"
+                  className="w-full h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-gray-100 dark:border-gray-700/50 rounded-xl flex items-center justify-center gap-2 text-sub dark:text-gray-400 cursor-not-allowed"
                 >
                   <Camera size={20} />
                   <span className="text-[14px] font-bold">파일 첨부 (준비중)</span>

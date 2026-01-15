@@ -94,18 +94,16 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-between h-[60px] px-5 rounded-[20px] border-2 transition-all cursor-pointer
-          ${
-            value.frequency !== 'none' ? 'bg-[#478BCC]/20 border-[#478BCC]/50 text-[#478BCC]' : 'bg-gray-50 dark:bg-gray-800/50 border-transparent text-gray-800 dark:text-gray-200'
-          }
+          ${value.frequency !== 'none' ? 'bg-primary/20 border-primary/50 text-primary' : 'bg-gray-50 dark:bg-gray-800/50 border-transparent text-gray-800 dark:text-gray-200'}
         `}
       >
         <div className="flex items-center gap-3">
-          <Repeat size={18} className={value.frequency !== 'none' ? 'text-[#478BCC]' : 'text-gray-400'} />
+          <Repeat size={18} className={value.frequency !== 'none' ? 'text-primary' : 'text-gray-400'} />
           <span className="text-[14px] font-bold">{getSummaryText()}</span>
         </div>
         <ChevronDown
           size={18}
-          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${value.frequency !== 'none' ? 'text-[#478BCC]' : 'text-gray-300 dark:text-gray-600'}`}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${value.frequency !== 'none' ? 'text-primary' : 'text-gray-300 dark:text-gray-600'}`}
         />
       </div>
 
@@ -125,7 +123,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                   onChange(newSettings);
                 }}
                 className={`flex-1 py-2 rounded-lg text-[12px] font-bold whitespace-nowrap px-3 transition-all
-                  ${value.frequency === freq ? 'bg-white dark:bg-gray-700 text-[#478BCC] shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}
+                  ${value.frequency === freq ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}
                 `} // prettier-ignore
               >
                 {{ none: '없음', daily: '매일', weekly: '매주', monthly: '매월', yearly: '매년' }[freq]}
@@ -138,7 +136,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
               {/* 간격 설정 */}
               <div className="flex items-center gap-3">
                 <span className="text-[13px] font-bold text-gray-500 dark:text-gray-400">반복 간격</span>
-                <div className="flex items-center bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-1.5 border border-gray-200 dark:border-gray-600 focus-within:border-[#478BCC] focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
+                <div className="flex items-center bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-1.5 border border-gray-200 dark:border-gray-600 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
                   <input
                     type="text"
                     inputMode="numeric"
@@ -164,7 +162,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                         type="button"
                         onClick={() => toggleDayOfWeek(idx)}
                         className={`w-9 h-9 rounded-full text-[12px] font-bold transition-all
-                          ${value.daysOfWeek.includes(idx) ? 'bg-[#478BCC] text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}
+                          ${value.daysOfWeek.includes(idx) ? 'bg-primary text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'}
                         `}
                       >
                         {day}
@@ -180,12 +178,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                   <span className="text-[13px] font-bold text-gray-500 dark:text-gray-400">반복 기준</span>
                   <div className="flex flex-col gap-2">
                     <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg">
-                      <input
-                        type="radio"
-                        checked={value.monthlyType === 'date'}
-                        onChange={() => handleChange('monthlyType', 'date')}
-                        className="text-[#478BCC] focus:ring-[#478BCC]"
-                      />
+                      <input type="radio" checked={value.monthlyType === 'date'} onChange={() => handleChange('monthlyType', 'date')} className="text-primary focus:ring-primary" />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
                         {value.frequency === 'monthly' ? `매월 ${currentDay}일` : `매년 ${currentMonth}월 ${currentDay}일`}
                       </span>
@@ -196,7 +189,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                         type="radio"
                         checked={value.monthlyType === 'nth_day'}
                         onChange={() => handleChange('monthlyType', 'nth_day')}
-                        className="text-[#478BCC] focus:ring-[#478BCC]"
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
                         {value.frequency === 'monthly'
@@ -210,7 +203,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                         type="radio"
                         checked={value.monthlyType === 'last_day'}
                         onChange={() => handleChange('monthlyType', 'last_day')}
-                        className="text-[#478BCC] focus:ring-[#478BCC]"
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">
                         {value.frequency === 'monthly' ? '매월 마지막 날' : `매년 ${currentMonth}월 마지막 날`}
@@ -229,14 +222,14 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                 <div className="space-y-2">
                   <label className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <input type="radio" name="endType" checked={value.endType === 'none'} onChange={() => handleChange('endType', 'none')} className="text-[#478BCC]" />
+                      <input type="radio" name="endType" checked={value.endType === 'none'} onChange={() => handleChange('endType', 'none')} className="text-primary" />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">없음 (계속 반복)</span>
                     </div>
                   </label>
 
                   <label className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <input type="radio" name="endType" checked={value.endType === 'date'} onChange={() => handleChange('endType', 'date')} className="text-[#478BCC]" />
+                      <input type="radio" name="endType" checked={value.endType === 'date'} onChange={() => handleChange('endType', 'date')} className="text-primary" />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">날짜</span>
                     </div>
                     <input
@@ -244,18 +237,18 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
                       value={value.endDate}
                       disabled={value.endType !== 'date'}
                       onChange={(e) => handleChange('endDate', e.target.value)}
-                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 text-[12px] outline-none focus:border-[#478BCC] disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:text-gray-400 transition-colors"
+                      className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 text-[12px] outline-none focus:border-primary disabled:bg-gray-100 dark:disabled:bg-gray-700/50 disabled:text-gray-400 transition-colors"
                     />
                   </label>
 
                   <label className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <input type="radio" name="endType" checked={value.endType === 'count'} onChange={() => handleChange('endType', 'count')} className="text-[#478BCC]" />
+                      <input type="radio" name="endType" checked={value.endType === 'count'} onChange={() => handleChange('endType', 'count')} className="text-primary" />
                       <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300">횟수</span>
                     </div>
                     <div
                       className={`flex items-center gap-2 bg-white border rounded-md px-2 py-1 transition-all ${
-                        value.endType === 'count' ? 'border-gray-200 focus-within:border-[#478BCC]' : 'bg-gray-100 border-gray-200'
+                        value.endType === 'count' ? 'border-gray-200 focus-within:border-primary' : 'bg-gray-100 border-gray-200'
                       }`}
                     >
                       <input

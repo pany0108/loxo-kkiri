@@ -86,7 +86,7 @@ const SocialMain = () => {
     <PageLayout headerContent={headerContent} onBack={null} className="px-0">
       <div
         key={activeTab}
-        className={`flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 animate-in fade-in duration-300 ${
+        className={`flex-1 flex flex-col h-full bg-gray-50 dark:bg-gray-950 animate-in fade-in duration-300 ${
           slideDirection === 'left' ? 'slide-in-from-right-4' : slideDirection === 'right' ? 'slide-in-from-left-4' : ''
         }`}
         onTouchStart={onTouchStart}

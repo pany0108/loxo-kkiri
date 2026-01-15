@@ -151,7 +151,7 @@ const MyProfile = () => {
       <div className="space-y-8 pb-24">
         <PageHeader className="mb-2">
           <PageTitle>
-            <span className="text-[#007AFF] dark:text-blue-400">{userData?.name || '사용자'}</span>님,
+            <span className="text-primary dark:text-blue-400">{userData?.name || '사용자'}</span>님,
             <br />
             안녕하세요!
           </PageTitle>
@@ -161,7 +161,7 @@ const MyProfile = () => {
         <section className="bg-white dark:bg-gray-800 p-6 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center gap-5 shadow-sm">
           <div className="relative shrink-0">
             <div className="w-[88px] h-[88px] bg-gray-100 rounded-[32px] flex items-center justify-center text-white shadow-lg border-4 border-white dark:border-gray-800 overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-[#007AFF] to-[#0062cc] flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-primary to-[#0062cc] flex items-center justify-center">
                 <User size={40} strokeWidth={2.5} />
               </div>
             </div>
@@ -169,30 +169,30 @@ const MyProfile = () => {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-black text-[#191F28] dark:text-white truncate">{userData?.name || '사용자'}</h2>
-            <p className="text-[14px] font-medium text-[#8B95A1] dark:text-gray-500 mb-3 truncate">{userData?.email}</p>
+            <h2 className="text-xl font-black text-main dark:text-white truncate">{userData?.name || '사용자'}</h2>
+            <p className="text-[14px] font-medium text-sub dark:text-gray-500 mb-3 truncate">{userData?.email}</p>
 
             {/* 상태 메시지 표시 및 수정 트리거 */}
             <div
               onClick={() => openStatusModal(userData?.statusMessage || '')}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 rounded-full text-[#8B95A1] dark:text-gray-300 text-[13px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 rounded-full text-sub dark:text-gray-300 text-[13px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               <span>{userData?.statusMessage || '상태 메시지를 입력해주세요'}</span>
-              <Edit2 size={12} className="text-[#8B95A1]" />
+              <Edit2 size={12} className="text-sub" />
             </div>
           </div>
         </section>
 
         {/* 메뉴 리스트 섹션 */}
         <section className="space-y-6">
-          <h3 className="px-1 text-[13px] font-bold text-[#8B95A1] dark:text-gray-500">계정 관리</h3>
+          <h3 className="px-1 text-[13px] font-bold text-sub dark:text-gray-500">계정 관리</h3>
           <div className="bg-white dark:bg-gray-800 rounded-[28px] border border-gray-100 dark:border-gray-700 overflow-hidden p-2 space-y-1">
             <MenuBtn icon={<ClipboardList size={20} />} iconBg="bg-emerald-50 text-emerald-600" label="개인 정보 관리" onClick={() => navigate('/edit-info')} />
-            <MenuBtn icon={<Users size={20} />} iconBg="bg-[#007AFF]/10 text-[#007AFF]" label="친구 목록 편집" onClick={() => navigate('/friend-list')} />
+            <MenuBtn icon={<Users size={20} />} iconBg="bg-primary/10 text-primary" label="친구 목록 편집" onClick={() => navigate('/friend-list')} />
             <MenuBtn icon={<ShieldCheck size={20} />} iconBg="bg-orange-50 text-orange-500" label="비밀번호 변경" onClick={() => navigate('/change-password')} />
           </div>
 
-          <h3 className="px-1 text-[13px] font-bold text-[#8B95A1] dark:text-gray-500">설정</h3>
+          <h3 className="px-1 text-[13px] font-bold text-sub dark:text-gray-500">설정</h3>
           <div className="bg-white dark:bg-gray-800 rounded-[28px] border border-gray-100 dark:border-gray-700 overflow-hidden p-2 space-y-1">
             <MenuBtn
               icon={themeMode === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
@@ -234,8 +234,8 @@ const MyProfile = () => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-5 ">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsStatusModalOpen(false)} />
           <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-[32px] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-[#191F28] dark:text-white mb-2">상태 메시지 수정</h3>
-            <p className="text-[#8B95A1] dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">나를 표현하는 멋진 메시지를 남겨보세요.</p>
+            <h3 className="text-xl font-black text-main dark:text-white mb-2">상태 메시지 수정</h3>
+            <p className="text-sub dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">나를 표현하는 멋진 메시지를 남겨보세요.</p>
             <input
               value={tempStatus}
               onChange={(e) => setTempStatus(e.target.value)}
@@ -243,19 +243,19 @@ const MyProfile = () => {
               maxLength={60}
               enterKeyHint="done"
               onKeyDown={(e) => e.key === 'Enter' && handleSaveStatus()}
-              className="w-full h-[58px] bg-gray-50 dark:bg-gray-700 dark:text-white border-2 border-transparent focus:border-[#007AFF] focus:bg-white dark:focus:bg-gray-700 rounded-[18px] px-5 font-bold text-[#191F28] outline-none mb-6 transition-all"
+              className="w-full h-[58px] bg-gray-50 dark:bg-gray-700 dark:text-white border-2 border-transparent focus:border-primary focus:bg-white dark:focus:bg-gray-700 rounded-[18px] px-5 font-bold text-main outline-none mb-6 transition-all"
               autoFocus
             />
             <div className="flex gap-3">
               <button
                 onClick={() => setIsStatusModalOpen(false)}
-                className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 font-bold rounded-[20px] active:scale-95 transition-transform"
+                className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-sub dark:text-gray-300 font-bold rounded-[20px] active:scale-95 transition-transform"
               >
                 취소
               </button>
               <button
                 onClick={handleSaveStatus}
-                className="flex-1 py-4 bg-[#007AFF] text-white font-bold rounded-[20px] shadow-lg shadow-[#007AFF]/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                className="flex-1 py-4 bg-primary text-white font-bold rounded-[20px] shadow-lg shadow-primary/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
                 <Check size={18} strokeWidth={3} />
                 저장
@@ -289,7 +289,7 @@ interface MenuBtnProps {
  * 설정 메뉴의 각 항목을 렌더링하는 재사용 버튼 컴포넌트
  * - 일반 이동 버튼 또는 토글 스위치 형태를 지원합니다.
  */
-const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle, color = 'text-[#191F28]', hideArrow }: MenuBtnProps) => (
+const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle, color = 'text-main', hideArrow }: MenuBtnProps) => (
   <button
     onClick={isToggle ? onToggle : onClick}
     role={isToggle ? 'switch' : 'button'}
@@ -305,7 +305,7 @@ const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle
       {isToggle ? (
         // iOS 스타일 토글 스위치
         <div
-          className={`w-[48px] h-[28px] flex items-center rounded-full px-1 transition-colors duration-300 ${toggleValue ? 'bg-[#007AFF]' : 'bg-gray-200 dark:bg-gray-600'}`}
+          className={`w-[48px] h-[28px] flex items-center rounded-full px-1 transition-colors duration-300 ${toggleValue ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'}`}
           aria-hidden="true"
         >
           <div
@@ -313,7 +313,7 @@ const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle
           />
         </div>
       ) : (
-        !hideArrow && <ChevronRight size={18} className="text-[#8B95A1] dark:text-gray-600 group-hover:text-[#8B95A1] dark:group-hover:text-gray-400 transition-colors" />
+        !hideArrow && <ChevronRight size={18} className="text-sub dark:text-gray-600 group-hover:text-sub dark:group-hover:text-gray-400 transition-colors" />
       )}
     </div>
   </button>

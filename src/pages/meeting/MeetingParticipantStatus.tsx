@@ -13,7 +13,7 @@ const MeetingParticipantStatus = () => {
   if (loading || !meetingData) {
     return (
       <div className="flex items-center justify-center min-h-dvh bg-white dark:bg-gray-950">
-        <Loader2 className="animate-spin text-[#007AFF] w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -25,23 +25,23 @@ const MeetingParticipantStatus = () => {
         <PageFooter>
           <button
             onClick={() => navigate('/propose')}
-            className="w-full h-[56px] bg-[#007AFF] text-white rounded-[20px] font-black text-[16px] shadow-lg shadow-[#007AFF]/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="w-full h-[56px] bg-primary text-white rounded-[20px] font-black text-[16px] shadow-lg shadow-primary/20 dark:shadow-blue-900/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             목록으로 돌아가기
           </button>
         </PageFooter>
       }
     >
-      <PageHeader icon={<Sparkles className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+      <PageHeader icon={<Sparkles className="text-primary dark:text-blue-400 w-6 h-6" />}>
         <>
           <div className="flex items-center gap-2 mb-2">
             {meetingData.isRetry && (
               <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[11px] font-bold px-2 py-1 rounded-md">재요청</span>
             )}
-            <h3 className="text-lg font-bold text-[#8B95A1] dark:text-gray-400">{meetingData.title}</h3>
+            <h3 className="text-lg font-bold text-sub dark:text-gray-400">{meetingData.title}</h3>
           </div>
           {meetingData.location && (
-            <div className="flex items-center gap-2 text-[#8B95A1] dark:text-gray-400 font-medium mb-2">
+            <div className="flex items-center gap-2 text-sub dark:text-gray-400 font-medium mb-2">
               <MapPin size={16} />
               <span>{meetingData.location}</span>
             </div>
@@ -49,12 +49,12 @@ const MeetingParticipantStatus = () => {
           <PageTitle>
             투표가 완료되었습니다.
             <br />
-            <span className="text-[#007AFF] dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
+            <span className="text-primary dark:text-blue-400">주최자의 확정을 기다려주세요.</span>
           </PageTitle>
         </>
       </PageHeader>
       <div className="mb-8">
-        <div className="mt-4 flex items-center gap-2 text-[13px] font-bold text-[#8B95A1] dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg w-fit">
+        <div className="mt-4 flex items-center gap-2 text-[13px] font-bold text-sub dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg w-fit">
           <Users size={16} />
           <span>
             참여 현황: {votedCount} / {totalMembers}명
@@ -68,7 +68,7 @@ const MeetingParticipantStatus = () => {
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
                 votedUids.has(p.uid)
                   ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-gray-50 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-500'
+                  : 'bg-gray-50 dark:bg-gray-700 text-sub dark:text-gray-500'
               }`}
             >
               {votedUids.has(p.uid) && <CheckCircle2 size={12} />}
@@ -80,13 +80,13 @@ const MeetingParticipantStatus = () => {
 
       <div className="space-y-4">
         {statusData.map((slot) => (
-          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border-2 border-gray-50 dark:border-gray-700/50 shadow-sm">
+          <div key={slot.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 border-2 border-gray-100 dark:border-gray-700/50 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[16px] font-black text-[#191F28] dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
+                  <span className="text-[16px] font-black text-main dark:text-white">{dayjs(slot.date).format('MM월 DD일 (ddd)')}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#8B95A1] dark:text-gray-400 font-bold">
+                <div className="flex items-center gap-1.5 text-sub dark:text-gray-400 font-bold">
                   <Clock size={14} />
                   <span className="text-[13px]">{slot.time}</span>
                 </div>
@@ -101,8 +101,8 @@ const MeetingParticipantStatus = () => {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between text-[11px] font-bold mb-1">
-                    <span className="text-[#8B95A1] dark:text-gray-300">가능 ({slot.counts.available}명)</span>
-                    <span className="text-[#8B95A1] dark:text-gray-500">{slot.voters.available.join(', ')}</span>
+                    <span className="text-sub dark:text-gray-300">가능 ({slot.counts.available}명)</span>
+                    <span className="text-sub dark:text-gray-500">{slot.voters.available.join(', ')}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${(slot.counts.available / (totalMembers || 1)) * 100}%` }} />
@@ -116,8 +116,8 @@ const MeetingParticipantStatus = () => {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between text-[11px] font-bold mb-1">
-                    <span className="text-[#8B95A1] dark:text-gray-300">미정 ({slot.counts.maybe}명)</span>
-                    <span className="text-[#8B95A1] dark:text-gray-500">{slot.voters.maybe.join(', ')}</span>
+                    <span className="text-sub dark:text-gray-300">미정 ({slot.counts.maybe}명)</span>
+                    <span className="text-sub dark:text-gray-500">{slot.voters.maybe.join(', ')}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div className="h-full bg-amber-400 rounded-full transition-all duration-500" style={{ width: `${(slot.counts.maybe / (totalMembers || 1)) * 100}%` }} />
@@ -131,8 +131,8 @@ const MeetingParticipantStatus = () => {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between text-[11px] font-bold mb-1">
-                    <span className="text-[#8B95A1] dark:text-gray-300">불가능 ({slot.counts.unavailable}명)</span>
-                    <span className="text-[#8B95A1] dark:text-gray-500">{slot.voters.unavailable.join(', ')}</span>
+                    <span className="text-sub dark:text-gray-300">불가능 ({slot.counts.unavailable}명)</span>
+                    <span className="text-sub dark:text-gray-500">{slot.voters.unavailable.join(', ')}</span>
                   </div>
                   <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${(slot.counts.unavailable / (totalMembers || 1)) * 100}%` }} />

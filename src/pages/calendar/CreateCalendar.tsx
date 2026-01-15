@@ -375,7 +375,7 @@ const CreateCalendar = () => {
   const renderFooter = () => (
     <PageFooter>
       <div className="mb-3 text-center h-5">
-        {finalName && <p className="text-[13px] font-bold text-[#007AFF] animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
+        {finalName && <p className="text-[13px] font-bold text-primary animate-in fade-in slide-in-from-bottom-1">✨ "{finalName}" 생성 예정</p>}
       </div>
       <button disabled={isSubmitDisabled} onClick={handleSubmit} className="btn-primary">
         {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <span>캘린더 생성하기</span>}
@@ -386,30 +386,30 @@ const CreateCalendar = () => {
   return (
     <>
       <PageLayout title="새 캘린더 만들기" footer={renderFooter()} onBack={() => navigate(-1)}>
-        <PageHeader icon={<Sparkles className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader icon={<Sparkles className="text-primary w-6 h-6" />}>
           <PageTitle>
-            새로운 <span className="text-[#007AFF]">캘린더</span>를<br />
+            새로운 <span className="text-primary">캘린더</span>를<br />
             만들어볼까요?
           </PageTitle>
         </PageHeader>
 
         <div className="space-y-8">
           <section className="space-y-3">
-            <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">캘린더 이름</label>
-            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
-              <PenLine size={20} className="text-[#8B95A1] dark:text-gray-600 mr-4" />
+            <label className="block text-[13px] font-black text-sub dark:text-gray-400 ml-1">캘린더 이름</label>
+            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
+              <PenLine size={20} className="text-sub dark:text-gray-400 mr-4" />
               <input
                 value={calName}
                 onChange={(e) => setCalName(e.target.value)}
                 placeholder="캘린더 이름을 입력해주세요"
-                className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1]/80 dark:placeholder:text-gray-500"
+                className="bg-transparent border-none outline-none w-full h-full text-[16px] font-bold text-main dark:text-white placeholder:text-sub/80 dark:placeholder:text-gray-400"
               />
             </div>
           </section>
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="block text-[13px] font-black text-[#8B95A1] ml-1">캘린더 아이콘</label>
+              <label className="block text-[13px] font-black text-sub ml-1">캘린더 아이콘</label>
               <div className="relative" ref={colorDropdownRef}>
                 <button
                   type="button"
@@ -417,8 +417,8 @@ const CreateCalendar = () => {
                   className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 transition-all"
                 >
                   <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: selectedColor }} />
-                  <span className="text-[12px] font-bold text-gray-600 dark:text-gray-300"></span>
-                  <ChevronDown size={14} className="text-[#8B95A1]" />
+                  <span className="text-[12px] font-bold text-sub dark:text-gray-300"></span>
+                  <ChevronDown size={14} className="text-sub" />
                 </button>
                 {isColorDropdownOpen && (
                   <div className="absolute top-full right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 w-[240px]">
@@ -469,25 +469,25 @@ const CreateCalendar = () => {
           <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <Users size={18} className="text-[#8B95A1] dark:text-gray-500" />
-                <label className="text-[13px] font-black text-[#8B95A1] dark:text-gray-500">공유할 친구 선택</label>
+                <Users size={18} className="text-sub dark:text-gray-400" />
+                <label className="text-[13px] font-black text-sub dark:text-gray-400">공유할 친구 선택</label>
               </div>
-              <span className="text-[11px] font-bold px-2 py-1 rounded-lg transition-colors bg-[#007AFF]/10 text-[#007AFF]">{selectedFriendUids.length}명</span>
+              <span className="text-[11px] font-bold px-2 py-1 rounded-lg transition-colors bg-primary/10 text-primary">{selectedFriendUids.length}명</span>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">
               <div className="relative">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-[#007AFF]/50 transition-all">
-                      <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
+                    <div className="flex items-center bg-white dark:bg-gray-800 rounded-[16px] px-4 h-[52px] shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                      <Search size={18} className="text-sub dark:text-gray-400 mr-3 shrink-0" />
                       <input
                         type="text"
                         value={friendSearchTerm}
                         onChange={(e) => setFriendSearchTerm(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddFriendByName()}
                         placeholder="친구 이름 검색 후 추가"
-                        className="w-full bg-transparent outline-none text-[#191F28] dark:text-white text-[14px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-500"
+                        className="w-full bg-transparent outline-none text-main dark:text-white text-[14px] font-bold placeholder:text-sub dark:placeholder:text-gray-400"
                       />
                     </div>
                     {friendSearchTerm && searchResults.length > 0 && (
@@ -500,7 +500,7 @@ const CreateCalendar = () => {
                               setFriendSearchTerm('');
                               setSearchResults([]);
                             }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-[#191F28] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                            className="w-full text-left px-4 py-3 text-sm font-bold text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                           >
                             {friend.name}
                           </button>
@@ -511,7 +511,7 @@ const CreateCalendar = () => {
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="w-[52px] h-[52px] bg-[#007AFF] text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-[#007AFF]/30 dark:shadow-[#007AFF]/20 active:scale-95 transition-all"
+                    className="w-[52px] h-[52px] bg-primary text-white rounded-[16px] flex items-center justify-center shrink-0 shadow-md shadow-primary/30 dark:shadow-primary/20 active:scale-95 transition-all"
                   >
                     <Plus size={20} strokeWidth={3} />
                   </button>
@@ -520,7 +520,7 @@ const CreateCalendar = () => {
 
               {selectedFriendUids.length > 0 && (
                 <div className="px-1">
-                  <h5 className="text-xs font-bold text-[#8B95A1] dark:text-gray-500 mb-2">선택된 친구 ({selectedFriendUids.length}명)</h5>
+                  <h5 className="text-xs font-bold text-sub dark:text-gray-400 mb-2">선택된 친구 ({selectedFriendUids.length}명)</h5>
                   <div className="flex flex-wrap gap-2">
                     {friends
                       .filter((f) => selectedFriendUids.includes(f.uid))
@@ -529,7 +529,7 @@ const CreateCalendar = () => {
                           key={`invited-${friend.uid}`}
                           type="button"
                           onClick={() => toggleFriend(friend.uid)}
-                          className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-[#007AFF] text-white"
+                          className="flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-bold transition-all bg-primary text-white"
                         >
                           {friend.name}
                           <X size={14} className="bg-white/20 rounded-full p-0.5" />
@@ -542,7 +542,7 @@ const CreateCalendar = () => {
               <button
                 type="button"
                 onClick={() => setIsFriendSelectionPopupOpen(true)}
-                className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:border-[#007AFF] hover:text-[#007AFF] hover:bg-[#007AFF]/20 transition-all active:scale-[0.99]"
+                className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-sub dark:text-gray-400 font-bold text-[13px] hover:border-primary hover:text-primary hover:bg-primary/20 transition-all active:scale-[0.99]"
               >
                 <UserPlus size={16} strokeWidth={2.5} />
                 친구 목록에서 선택하기

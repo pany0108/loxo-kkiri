@@ -14,7 +14,7 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
 
   return (
     <div
-      className={`inline-flex items-center justify-center bg-white shadow-xl shadow-[#007AFF]/20 dark:shadow-[#007AFF]/10 ring-[#007AFF]/10 dark:ring-blue-500/10 ${containerStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center bg-white shadow-xl shadow-primary/20 dark:shadow-primary/10 ring-primary/10 dark:ring-blue-500/10 ${containerStyles[size]} ${className}`}
     >
       {/* public 폴더에 logo.png 파일을 넣어주세요. */}
       <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />

@@ -186,18 +186,18 @@ const MeetingResponse = () => {
     <PageLayout title="약속 응답하기" footer={renderFooter()}>
       <>
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-6" icon={<Sparkles className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader className="mb-6" icon={<Sparkles className="text-primary dark:text-blue-400 w-6 h-6" />}>
           <PageTitle>
             {(meetingData as any).isRetry ? (
               <>
                 {meetingData.hostName}님이 <br />
-                <span className="text-[#007AFF] dark:text-blue-400">일정을 재요청했어요</span>
+                <span className="text-primary dark:text-blue-400">일정을 재요청했어요</span>
               </>
             ) : (
               <>
                 {meetingData.hostName}님의 제안에
                 <br />
-                <span className="text-[#007AFF] dark:text-blue-400">응답해주세요</span>
+                <span className="text-primary dark:text-blue-400">응답해주세요</span>
               </>
             )}
           </PageTitle>
@@ -209,10 +209,10 @@ const MeetingResponse = () => {
         {/* 주최자 제안 확인 및 선택 영역 */}
         <section className="space-y-4 mb-10">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
-              <Clock size={18} className="text-[#007AFF] dark:text-blue-400" /> 제안된 시간
+            <h3 className="text-[15px] font-black text-main dark:text-white flex items-center gap-2">
+              <Clock size={18} className="text-primary dark:text-blue-400" /> 제안된 시간
             </h3>
-            <span className="text-[11px] font-bold text-[#8B95A1] dark:text-gray-500">가능한 시간을 모두 선택하세요</span>
+            <span className="text-[11px] font-bold text-sub dark:text-gray-500">가능한 시간을 모두 선택하세요</span>
           </div>
 
           <div className="space-y-3">
@@ -231,12 +231,12 @@ const MeetingResponse = () => {
         {/* 내 캘린더 대조 및 역제안 영역 */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
+            <h3 className="text-[15px] font-black text-main dark:text-white flex items-center gap-2">
               <CalendarIcon size={18} className="text-emerald-500 dark:text-emerald-400" /> 다른 시간 제안하기
             </h3>
 
             <div className="flex gap-2 text-[10px] font-bold">
-              <span className="flex items-center gap-1 text-[#8B95A1] dark:text-gray-500">
+              <span className="flex items-center gap-1 text-sub dark:text-gray-500">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>내 일정
               </span>
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -259,13 +259,13 @@ const MeetingResponse = () => {
           {myNewSlots.length > 0 && (
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between px-1 border-t border-gray-100 dark:border-gray-700/50 pt-6 mt-2">
-                <p className="text-[13px] font-black text-[#191F28] dark:text-gray-200 flex items-center gap-2">
-                  <Clock size={16} className="text-[#007AFF] dark:text-blue-400" />
+                <p className="text-[13px] font-black text-main dark:text-gray-200 flex items-center gap-2">
+                  <Clock size={16} className="text-primary dark:text-blue-400" />
                   추가된 시간 설정
                 </p>
                 <button
                   onClick={handleSyncTimes}
-                  className="px-3 py-1.5 bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-[#007AFF]/20 dark:hover:bg-blue-500/20 transition-colors"
+                  className="px-3 py-1.5 bg-primary/10 dark:bg-blue-500/10 text-primary dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-primary/20 dark:hover:bg-blue-500/20 transition-colors"
                 >
                   시간 일괄 설정
                 </button>

@@ -116,9 +116,9 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
 
       <div className="flex items-center justify-between px-6 pt-2 pb-4 bg-white dark:bg-gray-900">
         <div className="flex items-center gap-2">
-          <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
+          <h3 className="text-[16px] font-black text-main dark:text-white">{selectedDate ? `${parseInt(selectedDate.split('-')[2])}일의 일정` : '일정'}</h3>
         </div>
-        <button onClick={onClose} className="p-2 -mr-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-300 transition-colors">
+        <button onClick={onClose} className="p-2 -mr-2 text-sub dark:text-gray-500 hover:text-main dark:hover:text-gray-300 transition-colors">
           <X size={20} />
         </button>
       </div>
@@ -188,26 +188,26 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                       <Trash2 size={16} />
                     </button>
                   )}
-                  <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || '#007AFF' }} />
+                  <div className="absolute left-0 top-0 bottom-0 w-[6px]" style={{ backgroundColor: event.color || 'var(--color-primary)' }} />
                   <div className="pl-2">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700/50 text-[10px] font-bold text-[#8B95A1] dark:text-gray-400 rounded-[8px]">{timeDisplay}</span>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-[#8B95A1] dark:text-gray-500">
+                      <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700/50 text-[10px] font-bold text-sub dark:text-gray-400 rounded-[8px]">{timeDisplay}</span>
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-sub dark:text-gray-400">
                         {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
                         <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
                       </div>
                     </div>
-                    <h4 className="text-[15px] font-black text-[#191F28] dark:text-white mb-1 transition-colors truncate">{event.title}</h4>
+                    <h4 className="text-[15px] font-black text-main dark:text-white mb-1 transition-colors truncate">{event.title}</h4>
                     <div className="flex items-center justify-between">
                       {event.location ? (
-                        <p className="text-[12px] font-medium text-[#8B95A1] dark:text-gray-500 flex items-center gap-1 truncate flex-1 mr-2">{event.location}</p>
+                        <p className="text-[12px] font-medium text-sub dark:text-gray-400 flex items-center gap-1 truncate flex-1 mr-2">{event.location}</p>
                       ) : (
                         <div />
                       )}
                       {IconComponent && (
                         <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md shrink-0" title={eventCalendar?.name}>
-                          <IconComponent size={12} className="text-[#8B95A1] dark:text-gray-400" />
-                          <span className="text-[10px] font-bold text-[#8B95A1] dark:text-gray-400 truncate max-w-[60px]">{eventCalendar?.name}</span>
+                          <IconComponent size={12} className="text-sub dark:text-gray-400" />
+                          <span className="text-[10px] font-bold text-sub dark:text-gray-400 truncate max-w-[60px]">{eventCalendar?.name}</span>
                         </div>
                       )}
                     </div>
@@ -215,7 +215,7 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                 </div>
               );
             })}
-            {filteredEvents.length === 0 && <div className="py-10 text-center text-[#8B95A1] dark:text-gray-500 text-[13px] font-medium">일정이 없습니다.</div>}
+            {filteredEvents.length === 0 && <div className="py-10 text-center text-sub dark:text-gray-400 text-[13px] font-medium">일정이 없습니다.</div>}
           </motion.div>
         </AnimatePresence>
       </div>

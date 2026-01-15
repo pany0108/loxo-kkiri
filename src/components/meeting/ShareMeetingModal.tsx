@@ -79,7 +79,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+          <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
             className="relative bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl"
             initial={{ y: '100%' }}
@@ -90,8 +90,8 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
             <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-black text-[#191F28] dark:text-white">약속 공유하기</h3>
-                <button onClick={onClose} className="p-2 -mr-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-gray-300 rounded-full transition-colors">
+                <h3 className="text-lg font-black text-main dark:text-white">약속 공유하기</h3>
+                <button onClick={onClose} className="p-2 -mr-2 text-sub dark:text-gray-500 hover:text-main dark:hover:text-gray-300 rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
@@ -102,24 +102,24 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
                 onClick={handleShare}
                 className="w-full flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="w-10 h-10 flex items-center justify-center bg-[#007AFF] text-white rounded-xl">
+                <div className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl">
                   <Share2 size={20} />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-[#191F28] dark:text-gray-200">다른 앱으로 공유</p>
-                  <p className="text-xs text-[#8B95A1] dark:text-gray-400">카카오톡, 메시지 등으로 초대 링크를 보냅니다.</p>
+                  <p className="font-bold text-main dark:text-gray-200">다른 앱으로 공유</p>
+                  <p className="text-xs text-sub dark:text-gray-400">카카오톡, 메시지 등으로 초대 링크를 보냅니다.</p>
                 </div>
               </button>
               <button
                 onClick={handleCopyLink}
                 className="w-full flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                <div className="w-10 h-10 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-[#8B95A1] dark:text-gray-300 rounded-xl">
+                <div className="w-10 h-10 flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-sub dark:text-gray-300 rounded-xl">
                   <Link size={20} />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-[#191F28] dark:text-gray-200">링크 복사</p>
-                  <p className="text-xs text-[#8B95A1] dark:text-gray-400">초대 링크를 클립보드에 복사합니다.</p>
+                  <p className="font-bold text-main dark:text-gray-200">링크 복사</p>
+                  <p className="text-xs text-sub dark:text-gray-400">초대 링크를 클립보드에 복사합니다.</p>
                 </div>
               </button>
             </div>

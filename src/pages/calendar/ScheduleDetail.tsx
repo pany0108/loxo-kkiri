@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
 import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal, PageHeader } from 'components';
-import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc, collection, query, orderBy, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase'; // Corrected import path for db
 import { useCalendar } from 'contexts';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
@@ -87,6 +87,14 @@ interface AttendeeProfile {
   photoURL?: string;
 }
 
+// [추가] 공유 후기 데이터 타입 정의
+interface ReviewData {
+  uid: string;
+  content: string;
+  createdAt: any;
+  updatedAt?: any;
+}
+
 const ICON_MAP: Record<string, React.ElementType> = {
   home: Home,
   work: Briefcase,
@@ -140,6 +148,11 @@ const ScheduleDetail = () => {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
+
+  // [추가] 공유 후기 관련 상태
+  const [sharedReviews, setSharedReviews] = useState<ReviewData[]>([]);
+  const [myReviewText, setMyReviewText] = useState('');
+
   const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
 
   // DB 실시간 구독
@@ -221,6 +234,49 @@ const ScheduleDetail = () => {
   // 종일 일정의 경우, 해당 날짜가 완전히 지나야 '지난 일정'으로 판단합니다.
   // 예를 들어 1월 8일 일정은 1월 9일 00:00부터 후기 작성이 가능합니다.
   const isPastEvent = dayjs().startOf('day').isAfter(data.end);
+
+  // [추가] 공유 기념일인 경우 리뷰 서브컬렉션 구독
+  useEffect(() => {
+    if (!id || !data.isAnniversary || !isShared) return;
+
+    const q = query(collection(db, 'schedules', id, 'reviews'), orderBy('createdAt', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reviews = snapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...doc.data(),
+      })) as ReviewData[];
+      setSharedReviews(reviews);
+
+      // 내 리뷰가 있으면 입력창에 세팅 (수정 편의성)
+      const myReview = reviews.find((r) => r.uid === auth.currentUser?.uid);
+      if (myReview) {
+        setMyReviewText(myReview.content);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [id, data.isAnniversary, isShared]);
+
+  // [추가] 공유 후기 저장 핸들러
+  const handleSharedReviewSubmit = async () => {
+    if (!id || !auth.currentUser || !myReviewText.trim()) return;
+    try {
+      await setDoc(
+        doc(db, 'schedules', id, 'reviews', auth.currentUser.uid),
+        {
+          content: myReviewText,
+          uid: auth.currentUser.uid,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      toast.success('후기가 저장되었습니다.');
+    } catch (error) {
+      console.error('후기 저장 실패:', error);
+      toast.error('후기 저장 중 오류가 발생했습니다.');
+    }
+  };
 
   // [추가] 뒤로가기 핸들러. 일정의 월로 캘린더를 이동시킵니다.
   const handleBack = useCallback(() => {
@@ -411,7 +467,7 @@ const ScheduleDetail = () => {
         extraNav={
           auth.currentUser?.uid === data.userId && (
             <div className="flex items-center gap-1">
-              <button onClick={handleEdit} className="p-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#007AFF] dark:hover:text-blue-400 transition-colors">
+              <button onClick={handleEdit} className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors">
                 <Edit2 size={22} />
               </button>
             </div>
@@ -419,15 +475,15 @@ const ScheduleDetail = () => {
         }
       >
         {/* 타이틀 및 상세 정보 */}
-        <PageHeader icon={<Calendar className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader icon={<Calendar className="text-primary w-6 h-6" />}>
           {data.recurrence && data.recurrence.frequency !== 'none' && (
             <div className="mb-2">
-              <span className="text-[12px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-lg">반복 일정</span>
+              <span className="text-[12px] font-bold text-primary bg-primary/20 px-2 py-1 rounded-lg">반복 일정</span>
             </div>
           )}
           <div className="flex relative pl-4">
             <div className="absolute left-0 top-1 bottom-1 w-[5px] rounded-full" style={{ backgroundColor: data.color }} />
-            <h1 className="text-2xl font-black text-[#191F28] dark:text-white leading-tight">{data.title}</h1>
+            <h1 className="text-2xl font-black text-main dark:text-white leading-tight">{data.title}</h1>
           </div>
         </PageHeader>
 
@@ -437,16 +493,16 @@ const ScheduleDetail = () => {
             {/* 시간 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                <Clock size={20} className="text-[#8B95A1] dark:text-gray-400" />
+                <Clock size={20} className="text-sub dark:text-gray-400" />
               </div>
               <div className="flex-1 py-1">
-                <p className="text-[15px] font-bold text-[#191F28] dark:text-white mb-1">
+                <p className="text-[15px] font-bold text-main dark:text-white mb-1">
                   {formatDate(data.start, data.allDay)}
                   {data.allDay && (
                     <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded ml-2">종일</span>
                   )}
                 </p>
-                {!data.allDay && <p className="text-[13px] font-medium text-[#8B95A1] dark:text-gray-500">~ {formatDate(data.end, data.allDay)}</p>}
+                {!data.allDay && <p className="text-[13px] font-medium text-sub dark:text-gray-500">~ {formatDate(data.end, data.allDay)}</p>}
               </div>
             </div>
 
@@ -454,7 +510,7 @@ const ScheduleDetail = () => {
             {scheduleCalendar && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <CalendarIcon size={20} className="text-[#8B95A1] dark:text-gray-400" />
+                  <CalendarIcon size={20} className="text-sub dark:text-gray-400" />
                 </div>
                 {/* [수정] 클릭 기능이 제거됨에 따라, 다른 항목과 일관성을 위해 UI를 단순화합니다. */}
                 <div className="flex-1 flex items-center gap-3">
@@ -463,7 +519,7 @@ const ScheduleDetail = () => {
                   ) : (
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
                   )}
-                  <span className="text-[15px] font-bold text-[#191F28] dark:text-white">
+                  <span className="text-[15px] font-bold text-main dark:text-white">
                     {(scheduleCalendar as any).customNames?.[auth.currentUser?.uid || ''] || scheduleCalendar.name}
                   </span>
                 </div>
@@ -474,10 +530,10 @@ const ScheduleDetail = () => {
             {data.location && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <MapPin size={20} className="text-[#8B95A1] dark:text-gray-400" />
+                  <MapPin size={20} className="text-sub dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[15px] font-bold text-[#191F28] dark:text-white">{data.location}</p>
+                  <p className="text-[15px] font-bold text-main dark:text-white">{data.location}</p>
                 </div>
               </div>
             )}
@@ -486,10 +542,10 @@ const ScheduleDetail = () => {
             {data.content && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <AlignLeft size={20} className="text-[#8B95A1] dark:text-gray-400" />
+                  <AlignLeft size={20} className="text-sub dark:text-gray-400" />
                 </div>
                 <div className="flex-1 py-2">
-                  <p className="text-[14px] font-medium text-[#8B95A1] dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
+                  <p className="text-[14px] font-medium text-sub dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.content}</p>
                 </div>
               </div>
             )}
@@ -497,10 +553,10 @@ const ScheduleDetail = () => {
             {/* 알림 정보 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                <Bell size={20} className="text-[#8B95A1] dark:text-gray-400" />
+                <Bell size={20} className="text-sub dark:text-gray-400" />
               </div>
               <div className="flex-1">
-                <p className="text-[15px] font-bold text-[#191F28] dark:text-white">{getNotificationLabel(data.notification)}</p>
+                <p className="text-[15px] font-bold text-main dark:text-white">{getNotificationLabel(data.notification)}</p>
               </div>
             </div>
 
@@ -521,12 +577,12 @@ const ScheduleDetail = () => {
 
           <div className="h-[1px] bg-gray-100 dark:bg-gray-800" />
 
-          {/* 공유 일정 채팅/미디어 */}
-          {isShared && (
+          {/* 공유 일정 채팅/미디어 - 기념일이 아닐 때만 표시 */}
+          {isShared && !data.isAnniversary && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[14px] font-bold text-[#191F28] dark:text-white flex items-center gap-2">
-                  <MessageCircle size={18} className="text-[#007AFF]" /> 공유 멤버 및 채팅
+                <h3 className="text-[14px] font-bold text-main dark:text-white flex items-center gap-2">
+                  <MessageCircle size={18} className="text-primary" /> 공유 멤버 및 채팅
                 </h3>
                 <div className="flex -space-x-2">
                   {/* [수정] attendee 타입 명시 */}
@@ -534,7 +590,7 @@ const ScheduleDetail = () => {
                     <div
                       key={attendee.uid}
                       title={attendee.name}
-                      className="w-8 h-8 rounded-full bg-[#007AFF]/30 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-[#007AFF] overflow-hidden"
+                      className="w-8 h-8 rounded-full bg-primary/30 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden"
                     >
                       {attendee.photoURL ? <img src={attendee.photoURL} alt={attendee.name} className="w-full h-full object-cover" /> : attendee.name[0] || '?'}
                     </div>
@@ -544,14 +600,14 @@ const ScheduleDetail = () => {
 
               <button
                 onClick={() => navigate(`/chat/${id}`)}
-                className="w-full h-[60px] bg-[#007AFF]/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-[#007AFF]/30 group"
+                className="w-full h-[60px] bg-primary/10 rounded-[20px] flex items-center justify-between px-6 active:scale-[0.98] transition-all border border-primary/30 group"
               >
                 <div className="flex flex-col items-start">
-                  <span className="text-[15px] font-black text-[#007AFF]">채팅방 입장하기</span>
-                  <span className="text-[11px] font-medium text-[#007AFF]/80">일정 조율 및 사진 공유</span>
+                  <span className="text-[15px] font-black text-primary">채팅방 입장하기</span>
+                  <span className="text-[11px] font-medium text-primary/80">일정 조율 및 사진 공유</span>
                 </div>
-                <div className="w-10 h-10 bg-white dark:bg-[#007AFF]/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <ChevronLeft size={20} className="text-[#007AFF] rotate-180 ml-0.5" />
+                <div className="w-10 h-10 bg-white dark:bg-primary/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <ChevronLeft size={20} className="text-primary rotate-180 ml-0.5" />
                 </div>
               </button>
 
@@ -587,15 +643,63 @@ const ScheduleDetail = () => {
             </div>
           )}
 
-          {/* 개인 일정 후기 */}
-          {!isShared && isPastEvent && (
+          {/* 후기 섹션 (개인 일정 또는 공유 기념일) */}
+          {isPastEvent && (!isShared || data.isAnniversary) && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen size={20} className="text-emerald-500" />
-                <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">오늘의 기록</h3>
+                <h3 className="text-[16px] font-black text-main dark:text-white">{isShared && data.isAnniversary ? '우리의 추억' : '오늘의 기록'}</h3>
               </div>
 
-              {data.review ? (
+              {isShared && data.isAnniversary ? (
+                // 공유 기념일 후기 UI
+                <div className="space-y-4">
+                  {/* 리뷰 목록 */}
+                  <div className="space-y-3">
+                    {sharedReviews.map((review) => {
+                      const author = data.attendees.find((a) => a.uid === review.uid);
+                      const isMe = review.uid === auth.currentUser?.uid;
+                      return (
+                        <div key={review.uid} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                          <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
+                            {author?.photoURL ? (
+                              <img src={author.photoURL} alt={author.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs font-bold text-gray-500">{author?.name?.[0]}</div>
+                            )}
+                          </div>
+                          <div
+                            className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                              isMe ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none'
+                            }`}
+                          >
+                            <p className="font-bold text-xs mb-1 opacity-70">{author?.name}</p>
+                            <p className="whitespace-pre-wrap leading-relaxed">{review.content}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 내 후기 작성 폼 */}
+                  <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[20px] p-4 shadow-sm">
+                    <textarea
+                      value={myReviewText}
+                      onChange={(e) => setMyReviewText(e.target.value)}
+                      maxLength={500}
+                      placeholder="이번 기념일은 어떠셨나요? 후기를 남겨보세요."
+                      className="w-full h-24 resize-none bg-transparent border-none focus:ring-0 p-0 text-sm text-main dark:text-white placeholder:text-gray-400"
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-gray-400 font-medium">{myReviewText.length} / 500</span>
+                      <button onClick={handleSharedReviewSubmit} className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-colors">
+                        {sharedReviews.some((r) => r.uid === auth.currentUser?.uid) ? '수정하기' : '등록하기'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : // 기존 개인 후기 UI
+              data.review ? (
                 <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[24px] p-5 shadow-sm space-y-4">
                   <p className="text-[14px] font-medium text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{data.review}</p>
                   {/* [주석 처리] 후기 사진 (기능 준비중) */}
@@ -618,7 +722,7 @@ const ScheduleDetail = () => {
                   onClick={handleEdit}
                   className="py-8 text-center bg-gray-50 dark:bg-gray-800/50 rounded-[24px] border border-gray-100 dark:border-gray-700/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <p className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500">
+                  <p className="text-[13px] font-bold text-sub dark:text-gray-500">
                     작성된 후기가 없습니다.
                     <br />
                     눌러서 후기를 작성해보세요!
@@ -633,7 +737,7 @@ const ScheduleDetail = () => {
           <button
             type="button"
             onClick={handleCopy}
-            className="w-full text-center text-sm font-bold text-[#007AFF] hover:text-[#007AFF]/80 transition-colors py-3 flex items-center justify-center gap-2"
+            className="w-full text-center text-sm font-bold text-primary hover:text-primary/80 transition-colors py-3 flex items-center justify-center gap-2"
           >
             <Copy size={14} /> 이 일정 복사하기
           </button>

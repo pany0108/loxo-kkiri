@@ -237,8 +237,8 @@ const ScheduleChat = () => {
 
   const headerContent = (
     <div>
-      <h1 className="text-[16px] font-black text-[#191F28] dark:text-white leading-none">{scheduleTitle || '로딩 중...'}</h1>
-      <span className="text-[11px] font-bold text-[#8B95A1] flex items-center gap-1 mt-0.5">
+      <h1 className="text-[16px] font-black text-main dark:text-white leading-none">{scheduleTitle || '로딩 중...'}</h1>
+      <span className="text-[11px] font-bold text-sub flex items-center gap-1 mt-0.5">
         <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
         {participantCount}명 참여중
       </span>
@@ -248,13 +248,13 @@ const ScheduleChat = () => {
   const footerContent = (
     <PageFooter className="!pt-3 !pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
-        <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-[#007AFF]/50 focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
+        <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-primary/50 focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="메시지를 입력하세요"
-            className="flex-1 bg-transparent outline-none text-[15px] font-medium text-[#191F28] dark:text-white placeholder:text-[#8B95A1] min-w-0"
+            className="flex-1 bg-transparent outline-none text-[15px] font-medium text-main dark:text-white placeholder:text-sub min-w-0"
             style={{ fontSize: '16px' }}
           />
         </div>
@@ -265,7 +265,7 @@ const ScheduleChat = () => {
           disabled={!inputText.trim()}
           className={`
             p-2.5 rounded-full transition-all active:scale-95 shrink-0 flex items-center justify-center
-            ${inputText.trim() ? 'bg-[#007AFF] text-white shadow-md shadow-[#007AFF]/50' : 'bg-gray-100 dark:bg-gray-800 text-[#8B95A1]'}
+            ${inputText.trim() ? 'bg-primary text-white shadow-md shadow-primary/50' : 'bg-gray-100 dark:bg-gray-800 text-sub'}
           `}
         >
           {!isSending && <Send size={20} className={inputText.trim() ? 'ml-0.5' : ''} />}
@@ -282,7 +282,7 @@ const ScheduleChat = () => {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 text-[#8B95A1] hover:text-[#191F28] dark:text-gray-400 dark:hover:text-white transition-colors"
+            className="p-2 text-sub hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors"
             aria-label="메뉴 더보기"
           >
             <MoreVertical size={22} />
@@ -291,13 +291,13 @@ const ScheduleChat = () => {
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               <button
                 onClick={() => navigate(`/schedule/${id}`)}
-                className="w-full px-4 py-3 text-left text-[14px] font-medium text-[#191F28] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
               >
                 <Calendar size={16} /> 일정 상세
               </button>
               <button
                 onClick={() => navigate(`/schedule/${id}/media`, { state: { media: [], title: scheduleTitle } })}
-                className="w-full px-4 py-3 text-left text-[14px] font-medium text-[#191F28] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
               >
                 <ImageIcon size={16} /> 사진 모아보기
               </button>
@@ -322,7 +322,7 @@ const ScheduleChat = () => {
           if (msg.type === 'system') {
             return (
               <div key={msg.id} className="flex justify-center my-4">
-                <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#8B95A1] text-center leading-relaxed max-w-[80%]">{msg.text}</span>
+                <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-sub text-center leading-relaxed max-w-[80%]">{msg.text}</span>
               </div>
             );
           }
@@ -334,13 +334,13 @@ const ScheduleChat = () => {
           return (
             <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
               {!msg.isMe && (
-                <div className="w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-[#191F28] shrink-0 bg-gray-200 overflow-hidden">
+                <div className="w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-main shrink-0 bg-gray-200 overflow-hidden">
                   {msg.profileImg ? <img src={msg.profileImg} alt={msg.sender} className="w-full h-full object-cover" /> : msg.sender[0]}
                 </div>
               )}
 
               <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
-                {!msg.isMe && <span className="text-[11px] text-[#8B95A1] font-bold mb-1 ml-1">{msg.sender}</span>}
+                {!msg.isMe && <span className="text-[11px] text-sub font-bold mb-1 ml-1">{msg.sender}</span>}
 
                 <div className="flex items-end gap-1.5">
                   {msg.isMe && (
@@ -353,7 +353,7 @@ const ScheduleChat = () => {
                   <div
                     className={`
                       px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm
-                      ${msg.isMe ? 'bg-[#007AFF] text-white rounded-[20px] rounded-tr-none' : 'bg-white text-[#191F28] rounded-[20px] rounded-tl-none border border-gray-100'}
+                      ${msg.isMe ? 'bg-primary text-white rounded-[20px] rounded-tr-none' : 'bg-white text-main rounded-[20px] rounded-tl-none border border-gray-100'}
                     `}
                   >
                     {msg.text}

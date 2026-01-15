@@ -73,8 +73,8 @@ const UserProfile = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin text-[#007AFF] dark:text-blue-400 mb-2" />
-        <p className="text-[#8B95A1] font-bold">프로필을 불러오는 중...</p>
+        <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400 mb-2" />
+        <p className="text-sub font-bold">프로필을 불러오는 중...</p>
       </div>
     );
   }
@@ -83,7 +83,7 @@ const UserProfile = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-950">
         <p>사용자를 찾을 수 없습니다.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 bg-[#007AFF] text-white rounded-lg">
+        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg">
           뒤로가기
         </button>
       </div>
@@ -96,7 +96,7 @@ const UserProfile = () => {
         onClick={handleAddFriend}
         disabled={isAdding || isAlreadyFriend}
         className={`w-full h-[62px] rounded-[24px] font-black text-[17px] shadow-lg transition-all flex items-center justify-center gap-2
-            ${isAlreadyFriend ? 'bg-gray-100 text-[#8B95A1] cursor-not-allowed shadow-none' : 'bg-[#007AFF] text-white shadow-[#007AFF]/20 active:scale-[0.98]'}
+            ${isAlreadyFriend ? 'bg-gray-100 text-sub cursor-not-allowed shadow-none' : 'bg-primary text-white shadow-primary/20 active:scale-[0.98]'}
           `}
       >
         {isAdding ? (
@@ -121,16 +121,16 @@ const UserProfile = () => {
           {userData.photoURL ? (
             <img src={userData.photoURL} alt={userData.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#007AFF] to-[#0062cc] flex items-center justify-center text-white">
+            <div className="w-full h-full bg-gradient-to-br from-primary to-[#0062cc] flex items-center justify-center text-white">
               <User size={60} strokeWidth={2} />
             </div>
           )}
         </div>
         <div className="flex flex-col items-center">
           <PageTitle className="text-3xl">{userData.name}</PageTitle>
-          <p className="text-base font-medium text-[#8B95A1] dark:text-gray-500 mt-2">{userData.email}</p>
-          <div className="mt-6 max-w-sm w-full bg-[#007AFF]/10 dark:bg-blue-900/50 rounded-2xl px-5 py-4 border border-[#007AFF]/20 dark:border-blue-500/20">
-            <p className={`text-base font-semibold ${userData.statusMessage ? 'text-[#007AFF] dark:text-blue-200' : 'text-[#007AFF] dark:text-blue-500'}`}>
+          <p className="text-base font-medium text-sub dark:text-gray-500 mt-2">{userData.email}</p>
+          <div className="mt-6 max-w-sm w-full bg-primary/10 dark:bg-blue-900/50 rounded-2xl px-5 py-4 border border-primary/20 dark:border-blue-500/20">
+            <p className={`text-base font-semibold ${userData.statusMessage ? 'text-primary dark:text-blue-200' : 'text-primary dark:text-blue-500'}`}>
               {userData.statusMessage || '상태 메시지가 없습니다.'}
             </p>
           </div>

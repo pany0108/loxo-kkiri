@@ -51,12 +51,12 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       <div className="flex items-center justify-between pb-2">
         <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
           <button onClick={onCalListToggle} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
-            <h1 className="text-xl sm:text-2xl font-black text-[#191F28] dark:text-white tracking-tight truncate text-left">
+            <h1 className="text-xl sm:text-2xl font-black text-main dark:text-white tracking-tight truncate text-left">
               {activeCalendar ? getCalendarName(activeCalendar) : '캘린더 선택'}
             </h1>
-            <ChevronDown size={20} className={`text-[#8B95A1] transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={20} className={`text-sub transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
           </button>
-          <p className="text-[12px] text-[#8B95A1] font-bold mt-1 ml-0.5 truncate">
+          <p className="text-[12px] text-sub font-bold mt-1 ml-0.5 truncate">
             {activeCalendar ? (activeCalendar.members.length === 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
           </p>
 
@@ -67,7 +67,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                   key={cal.id}
                   onClick={() => onCalendarChange(cal)}
                   className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                    activeCalendar?.id === cal.id ? 'bg-[#007AFF]/20 text-[#007AFF]' : 'text-[#8B95A1] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                    activeCalendar?.id === cal.id ? 'bg-primary/20 text-primary' : 'text-sub dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="flex flex-col items-start">
@@ -80,13 +80,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               <div className="h-[1px] bg-gray-50 dark:bg-gray-700 my-2 mx-2" />
               <button
                 onClick={onManageClick}
-                className="w-full flex items-center gap-2 p-3.5 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#191F28] dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-[18px] transition-colors"
+                className="w-full flex items-center gap-2 p-3.5 text-sub dark:text-gray-400 font-bold text-[13px] hover:text-main dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 rounded-[18px] transition-colors"
               >
                 <Settings size={16} /> 캘린더 관리
               </button>
               <button
                 onClick={onCreateClick}
-                className="w-full flex items-center gap-2 p-4 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-[18px] transition-colors"
+                className="w-full flex items-center gap-2 p-4 text-sub dark:text-gray-400 font-bold text-[13px] hover:text-primary hover:bg-primary/20 rounded-[18px] transition-colors"
               >
                 <Plus size={16} /> 새 캘린더 만들기
               </button>
@@ -95,12 +95,12 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-3">
-          <button onClick={onNotificationsClick} className="relative p-2 text-[#8B95A1] hover:text-[#191F28] dark:hover:text-gray-300 transition-colors rounded-full">
+          <button onClick={onNotificationsClick} className="relative p-2 text-sub hover:text-main dark:hover:text-gray-300 transition-colors rounded-full">
             <Bell size={22} />
             {hasUnreadNotifications && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950" />}
           </button>
 
-          <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[14px]">
+          <div className="flex p-1 bg-gray-50 dark:bg-gray-800 rounded-[14px]">
             {[
               { id: 'dayGridMonth', label: '월' },
               { id: 'timeGridWeek', label: '주' },
@@ -110,7 +110,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                 key={view.id}
                 onClick={() => onViewChange(view.id)}
                 className={`px-3 py-1.5 text-[12px] font-bold rounded-[10px] transition-all duration-200 ${
-                  currentView === view.id ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1] hover:text-[#191F28] dark:hover:text-gray-300'
+                  currentView === view.id ? 'bg-white dark:bg-gray-700 text-main dark:text-white shadow-sm' : 'text-sub hover:text-main dark:hover:text-gray-300'
                 }`}
               >
                 {view.label}

@@ -230,9 +230,9 @@ const EditUserInfo = () => {
   return (
     <PageLayout title="개인 정보 수정" footer={renderFooter()}>
       <>
-        <PageHeader className="mb-10" icon={<User className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader className="mb-10" icon={<User className="text-primary w-6 h-6" />}>
           <PageTitle>
-            내 소중한 <span className="text-[#007AFF] dark:text-blue-400">정보</span>를<br />
+            내 소중한 <span className="text-primary dark:text-blue-400">정보</span>를<br />
             관리해볼까요?
           </PageTitle>
         </PageHeader>
@@ -266,16 +266,16 @@ const EditUserInfo = () => {
             required
           />
           {/* <section className="space-y-3"> // 기존 인증 UI 주석
-            <label className="block text-[13px] font-black text-[#8B95A1] dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
+            <label className="block text-[13px] font-black text-sub dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
             <div className="flex gap-2">
               <div
                 className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
                   isVerified
-                    ? 'bg-[#007AFF]/10 dark:bg-blue-500/10 border-[#007AFF]/20 dark:border-blue-500/20'
-                    : 'focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800'
+                    ? 'bg-primary/10 dark:bg-blue-500/10 border-primary/20 dark:border-blue-500/20'
+                    : 'focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800'
                 }`}
               >
-                <Smartphone size={20} className={isVerified ? 'text-[#007AFF] dark:text-blue-400 mr-4' : 'text-[#8B95A1] dark:text-gray-600 mr-4'} />
+                <Smartphone size={20} className={isVerified ? 'text-primary dark:text-blue-400 mr-4' : 'text-sub dark:text-gray-600 mr-4'} />
                 <input
                   name="phone"
                   type="tel"
@@ -294,7 +294,7 @@ const EditUserInfo = () => {
                   readOnly={!isPhoneEditing}
                   required
                 />
-                {isVerified && !isPhoneEditing && <CheckCircle2 size={20} className="text-[#007AFF] ml-2" />}
+                {isVerified && !isPhoneEditing && <CheckCircle2 size={20} className="text-primary ml-2" />}
               </div>
               {isPhoneEditing ? (
                 <button
@@ -318,8 +318,8 @@ const EditUserInfo = () => {
 
             {isPhoneEditing && isAuthSent && !isVerified && (
               <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800 border-2 border-[#007AFF] rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
-                  <ShieldCheck size={20} className="text-[#007AFF] mr-4" />
+                <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800 border-2 border-primary rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
+                  <ShieldCheck size={20} className="text-primary mr-4" />
                   <input
                     ref={authCodeRef}
                     name="authCode"
@@ -339,7 +339,7 @@ const EditUserInfo = () => {
                     }}
                   />
                 </div>
-                <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-[#007AFF] text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
+                <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-primary text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
                   확인
                 </button>
               </div>
@@ -356,7 +356,7 @@ const EditUserInfo = () => {
                   type="button"
                   onClick={() => setIsLunar(false)}
                   className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                    !isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] dark:text-blue-400 shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                    !isLunar ? 'bg-white dark:bg-gray-700 text-primary dark:text-blue-400 shadow-sm' : 'text-sub dark:text-gray-500'
                   }`}
                 >
                   양력
@@ -365,29 +365,29 @@ const EditUserInfo = () => {
                   type="button"
                   onClick={() => setIsLunar(true)}
                   className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                    isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] dark:text-blue-400 shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                    isLunar ? 'bg-white dark:bg-gray-700 text-primary dark:text-blue-400 shadow-sm' : 'text-sub dark:text-gray-500'
                   }`}
                 >
                   음력
                 </button>
               </div>
             </div>
-            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
-              <Calendar size={18} className="text-[#8B95A1] mr-4" />
+            <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all">
+              <Calendar size={18} className="text-sub mr-4" />
               <input
                 name="birthDate"
                 value={formData.birthDate}
                 onChange={handleChange}
                 placeholder="YYYY/MM/DD"
-                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-[#191F28] dark:text-white placeholder:text-[#8B95A1]"
+                className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-main dark:text-white placeholder:text-sub"
               />
             </div>
           </section>
 
           {/* 안내 메시지 카드 */}
-          <div className="bg-[#007AFF]/10 dark:bg-blue-500/10 rounded-[24px] p-5 border border-[#007AFF]/20 dark:border-blue-500/20 flex gap-3 animate-in fade-in zoom-in-95 duration-500">
-            <CheckCircle2 className="text-[#007AFF] dark:text-blue-400 shrink-0 mt-0.5" size={18} />
-            <p className="text-[13px] text-[#007AFF] dark:text-blue-300 font-bold leading-relaxed">
+          <div className="bg-primary/10 dark:bg-blue-500/10 rounded-[24px] p-5 border border-primary/20 dark:border-blue-500/20 flex gap-3 animate-in fade-in zoom-in-95 duration-500">
+            <CheckCircle2 className="text-primary dark:text-blue-400 shrink-0 mt-0.5" size={18} />
+            <p className="text-[13px] text-primary dark:text-blue-300 font-bold leading-relaxed">
               변경하신 정보는 실명 인증이 필요한 서비스나 <br />
               일정 공유 시 본인 확인용으로 사용됩니다.
             </p>

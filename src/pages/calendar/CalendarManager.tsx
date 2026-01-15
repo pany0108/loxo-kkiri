@@ -147,7 +147,7 @@ const CalendarManager = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
-        <Loader2 className="animate-spin text-[#007AFF] w-8 h-8" />
+        <Loader2 className="animate-spin text-primary w-8 h-8" />
       </div>
     );
   }
@@ -155,19 +155,19 @@ const CalendarManager = () => {
   return (
     <PageLayout title="캘린더 관리">
       <div className="pb-16">
-        <PageHeader icon={<CalendarIcon className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader icon={<CalendarIcon className="text-primary w-6 h-6" />}>
           <PageTitle>
-            나의 <span className="text-[#007AFF]">캘린더</span>를 <br />
+            나의 <span className="text-primary">캘린더</span>를 <br />
             관리해보세요
           </PageTitle>
         </PageHeader>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
-              <Users size={18} className="text-[#8B95A1] dark:text-gray-500" /> 참여 중인 캘린더
+            <h3 className="text-[15px] font-black text-main dark:text-white flex items-center gap-2">
+              <Users size={18} className="text-sub dark:text-gray-500" /> 참여 중인 캘린더
             </h3>
-            <span className="text-[11px] font-bold text-[#8B95A1] dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">{sortedCalendars.length}개</span>
+            <span className="text-[11px] font-bold text-sub dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">{sortedCalendars.length}개</span>
           </div>
 
           <div className="space-y-3">
@@ -179,7 +179,7 @@ const CalendarManager = () => {
                 <div
                   key={cal.id}
                   onClick={() => handleSwitch(cal.id)}
-                  className="group relative w-full bg-white dark:bg-gray-800 p-5 pr-3 rounded-[24px] border-2 border-gray-50 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-[#007AFF]/50 dark:hover:border-[#007AFF]/20 hover:shadow-lg hover:shadow-[#007AFF]/20 cursor-pointer"
+                  className="group relative w-full bg-white dark:bg-gray-800 p-5 pr-3 rounded-[24px] border-2 border-gray-100 dark:border-gray-700/50 flex items-center justify-between active:scale-[0.98] transition-all hover:border-primary/50 dark:hover:border-primary/20 hover:shadow-lg hover:shadow-primary/20 cursor-pointer"
                 >
                   <div className="flex gap-4">
                     <div className="w-12 h-12 rounded-[18px] flex items-center justify-center shadow-sm text-white" style={{ backgroundColor: cal.color || '#007AFF' }}>
@@ -188,10 +188,10 @@ const CalendarManager = () => {
 
                     <div className="flex flex-col justify-center pt-0.5 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-[16px] font-black text-[#191F28] dark:text-white leading-none truncate">{displayName}</h4>
-                        {cal.isDefault && <span className="text-[9px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-1.5 py-0.5 rounded-md shrink-0">기본</span>}
+                        <h4 className="text-[16px] font-black text-main dark:text-white leading-none truncate">{displayName}</h4>
+                        {cal.isDefault && <span className="text-[9px] font-bold text-primary bg-primary/20 px-1.5 py-0.5 rounded-md shrink-0">기본</span>}
                       </div>
-                      <p className="text-[13px] font-medium text-[#8B95A1] dark:text-gray-500 flex items-center gap-1 min-w-0">{formatMembers(cal.members)}</p>
+                      <p className="text-[13px] font-medium text-sub dark:text-gray-500 flex items-center gap-1 min-w-0">{formatMembers(cal.members)}</p>
                     </div>
                   </div>
 
@@ -201,7 +201,7 @@ const CalendarManager = () => {
                       setCalendarToEdit(cal);
                       setIsEditModalOpen(true);
                     }}
-                    className="p-4 text-[#8B95A1] dark:text-gray-600 hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-xl transition-all"
+                    className="p-4 text-sub dark:text-gray-600 hover:text-primary hover:bg-primary/20 rounded-xl transition-all"
                     title="수정"
                   >
                     <Settings size={18} />
@@ -212,7 +212,7 @@ const CalendarManager = () => {
 
             <button
               onClick={() => navigate('/create-calendar')}
-              className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[24px] flex flex-col items-center justify-center gap-2 text-[#8B95A1] dark:text-gray-500 hover:border-[#007AFF] hover:text-[#007AFF] hover:bg-[#007AFF]/20 transition-all active:scale-[0.98]"
+              className="w-full py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[24px] flex flex-col items-center justify-center gap-2 text-sub dark:text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/20 transition-all active:scale-[0.98]"
             >
               <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center transition-colors">
                 <Plus size={18} />
@@ -233,7 +233,7 @@ const CalendarManager = () => {
             title="캘린더 삭제"
             message={
               <>
-                정말 <span className="text-[#191F28] dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더를
+                정말 <span className="text-main dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더를
                 삭제하시겠습니까?
                 <br />
                 <span className="text-red-500 dark:text-red-400 font-bold">포함된 모든 일정이 사라집니다.</span>
@@ -255,7 +255,7 @@ const CalendarManager = () => {
             title="캘린더 나가기"
             message={
               <>
-                정말 <span className="text-[#191F28] dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더에서
+                정말 <span className="text-main dark:text-white font-bold">'{(calendarToDelete as any).customNames?.[user?.uid] || calendarToDelete.name}'</span> 캘린더에서
                 나가시겠습니까?
                 <br />
                 <span className="text-yellow-500 dark:text-yellow-400 font-bold">더 이상 이 캘린더의 일정을 볼 수 없습니다.</span>

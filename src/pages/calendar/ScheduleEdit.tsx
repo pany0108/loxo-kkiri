@@ -393,15 +393,15 @@ const ScheduleEdit = () => {
         title="일정 수정"
         onBack={() => navigate(-1)}
         extraNav={
-          <LoadingButton onClick={handleSave} isLoading={isSubmitting} className="p-2 text-[#007AFF] hover:text-[#007AFF]/80 transition-colors">
+          <LoadingButton onClick={handleSave} isLoading={isSubmitting} className="p-2 text-primary hover:text-primary/80 transition-colors">
             <Check size={28} strokeWidth={3} />
           </LoadingButton>
         }
       >
         <>
-          <PageHeader icon={<Sparkles className="text-[#007AFF] w-6 h-6" />}>
+          <PageHeader icon={<Sparkles className="text-primary w-6 h-6" />}>
             <PageTitle>
-              일정을 <span className="text-[#007AFF]">수정</span>해볼까요?
+              일정을 <span className="text-primary">수정</span>해볼까요?
             </PageTitle>
           </PageHeader>
 
@@ -417,7 +417,7 @@ const ScheduleEdit = () => {
                 <button
                   type="button"
                   onClick={() => setIsCalListOpen(!isCalListOpen)}
-                  className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
+                  className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
@@ -427,11 +427,11 @@ const ScheduleEdit = () => {
                         <CalendarIcon size={14} />
                       )}
                     </div>
-                    <span className="text-[15px] font-bold text-[#191F28] dark:text-gray-200">
+                    <span className="text-[15px] font-bold text-main dark:text-gray-200">
                       {selectedCalendar ? (selectedCalendar as any).customNames?.[user?.uid] || selectedCalendar.name : '캘린더 선택...'}
                     </span>
                   </div>
-                  <ChevronDown size={20} className={`text-[#8B95A1] dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={20} className={`text-sub dark:text-gray-500 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isCalListOpen && (
@@ -445,7 +445,7 @@ const ScheduleEdit = () => {
                           type="button"
                           onClick={() => handleCalendarSelect(cal)}
                           className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                            selectedCalendar?.id === cal.id ? 'bg-[#007AFF]/20 text-[#007AFF]' : 'text-[#8B95A1] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
+                            selectedCalendar?.id === cal.id ? 'bg-primary/20 text-primary' : 'text-sub dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -454,7 +454,7 @@ const ScheduleEdit = () => {
                             </div>
                             <span className="text-[14px] font-bold">{calName}</span>
                           </div>
-                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-[#007AFF]" />}
+                          {selectedCalendar?.id === cal.id && <Check size={16} className="text-primary" />}
                         </button>
                       );
                     })}
@@ -469,7 +469,7 @@ const ScheduleEdit = () => {
                           },
                         })
                       }
-                      className="w-full flex items-center gap-3 p-4 text-[#8B95A1] dark:text-gray-400 font-bold text-[13px] hover:text-[#007AFF] hover:bg-[#007AFF]/20 rounded-[18px] transition-colors"
+                      className="w-full flex items-center gap-3 p-4 text-sub dark:text-gray-400 font-bold text-[13px] hover:text-primary hover:bg-primary/20 rounded-[18px] transition-colors"
                     >
                       <Plus size={16} /> 새 캘린더 만들기
                     </button>
@@ -479,7 +479,7 @@ const ScheduleEdit = () => {
 
               {/* [추가] 기념일 설정 */}
               <div className="flex items-center justify-between px-1">
-                <FormCheckbox label="기념일" checked={formData.isAnniversary || false} onChange={handleAnniversaryChange} className="text-[#007AFF]" />
+                <FormCheckbox label="기념일" checked={formData.isAnniversary || false} onChange={handleAnniversaryChange} className="text-primary" />
                 {formData.isAnniversary && (
                   <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
                     {formData.isLunar && (
@@ -490,7 +490,7 @@ const ScheduleEdit = () => {
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, isLunar: false }))}
                         className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                          !formData.isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                          !formData.isLunar ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-sub dark:text-gray-500'
                         }`}
                       >
                         양력
@@ -499,7 +499,7 @@ const ScheduleEdit = () => {
                         type="button"
                         onClick={() => setFormData((prev) => ({ ...prev, isLunar: true }))}
                         className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${
-                          formData.isLunar ? 'bg-white dark:bg-gray-700 text-[#007AFF] shadow-sm' : 'text-[#8B95A1] dark:text-gray-500'
+                          formData.isLunar ? 'bg-white dark:bg-gray-700 text-primary shadow-sm' : 'text-sub dark:text-gray-500'
                         }`}
                       >
                         음력
@@ -541,35 +541,35 @@ const ScheduleEdit = () => {
                           handleChange(e);
                           setFormData((prev) => ({ ...prev, end: e.target.value }));
                         }}
-                        className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                        className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                       />
                     </div>
                   ) : (
                     <>
                       <div className="flex items-center h-[56px] px-4 gap-4">
-                        <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
+                        <Clock size={18} className="text-sub dark:text-gray-400 shrink-0" />
                         <div className="flex-1 flex items-center justify-between gap-3">
-                          <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">시작</span>
+                          <span className="text-[13px] font-bold text-sub dark:text-gray-400 shrink-0">시작</span>
                           <input
                             type={formData.isAllDay ? 'date' : 'datetime-local'}
                             name="start"
                             value={formData.isAllDay ? formData.start.split('T')[0] : formData.start}
                             onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                            className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                            className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                           />
                         </div>
                       </div>
                       <div className="h-[1px] bg-gray-200 dark:bg-gray-700/50 mx-4" />
                       <div className="flex items-center h-[56px] px-4 gap-4">
-                        <Clock size={18} className="text-[#8B95A1] dark:text-gray-600 shrink-0" />
+                        <Clock size={18} className="text-sub dark:text-gray-400 shrink-0" />
                         <div className="flex-1 flex items-center justify-between gap-3">
-                          <span className="text-[13px] font-bold text-[#8B95A1] dark:text-gray-500 shrink-0">종료</span>
+                          <span className="text-[13px] font-bold text-sub dark:text-gray-400 shrink-0">종료</span>
                           <input
                             type={formData.isAllDay ? 'date' : 'datetime-local'}
                             name="end"
                             value={formData.isAllDay ? formData.end.split('T')[0] : formData.end}
                             onChange={handleChange} // dark:text-gray-200 -> dark:text-white
-                            className="bg-transparent text-[14px] font-bold text-[#191F28] dark:text-white outline-none text-right font-mono w-full"
+                            className="bg-transparent text-[14px] font-bold text-main dark:text-white outline-none text-right font-mono w-full"
                           />
                         </div>
                       </div>
@@ -607,13 +607,13 @@ const ScheduleEdit = () => {
 
                   <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소" />
 
-                  <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-[#007AFF] focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
-                    <Bell size={18} className="text-[#8B95A1] dark:text-gray-600" />
+                  <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
+                    <Bell size={18} className="text-sub dark:text-gray-400" />
                     <select
                       name="notification"
                       value={formData.notification}
                       onChange={handleChange}
-                      className="bg-transparent outline-none w-full text-[14px] font-bold text-[#191F28] dark:text-gray-200 appearance-none z-10"
+                      className="bg-transparent outline-none w-full text-[14px] font-bold text-main dark:text-gray-200 appearance-none z-10"
                     >
                       {NOTIFICATION_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -634,7 +634,7 @@ const ScheduleEdit = () => {
                     <button
                       type="button"
                       onClick={() => toast('파일 첨부 기능은 준비중입니다.')}
-                      className="text-[11px] font-bold text-[#007AFF] bg-[#007AFF]/20 px-2 py-1 rounded-md hover:bg-[#007AFF]/30 transition-colors"
+                      className="text-[11px] font-bold text-primary bg-primary/20 px-2 py-1 rounded-md hover:bg-primary/30 transition-colors"
                     >
                       + 추가
                     </button>
@@ -646,10 +646,10 @@ const ScheduleEdit = () => {
                         className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 px-4 py-3 rounded-[16px] border border-gray-100 dark:border-gray-700/50"
                       >
                         <div className="flex items-center gap-3 overflow-hidden">
-                          {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-[#007AFF]" />}
-                          <span className="text-[13px] font-bold text-[#191F28] dark:text-gray-300 truncate">{file.name}</span>
+                          {file.type === 'image' ? <ImageIcon size={16} className="text-purple-500" /> : <Paperclip size={16} className="text-primary" />}
+                          <span className="text-[13px] font-bold text-main dark:text-gray-300 truncate">{file.name}</span>
                         </div>
-                        <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-[#8B95A1] hover:text-red-500">
+                        <button type="button" onClick={() => toast('파일 삭제 기능은 준비중입니다.')} className="text-sub hover:text-red-500">
                           <X size={16} />
                         </button>
                       </div>
@@ -662,7 +662,7 @@ const ScheduleEdit = () => {
                 <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-2">
                     <BookOpen size={20} className="text-emerald-500" />
-                    <h3 className="text-[16px] font-black text-[#191F28] dark:text-white">후기 작성</h3>
+                    <h3 className="text-[16px] font-black text-main dark:text-white">후기 작성</h3>
                   </div>
                   <div className="bg-white dark:bg-gray-800/50 border-2 border-dashed border-emerald-100 dark:border-emerald-900/50 rounded-3xl p-5 space-y-4 focus-within:border-emerald-400 dark:focus-within:border-emerald-600 transition-colors">
                     <FormTextarea

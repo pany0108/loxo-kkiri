@@ -414,163 +414,184 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     );
   }
 
-  const renderFooter = () => {
-    if (isSelectionMode && selectedFriendUids.size > 0) {
-      return (
-        <PageFooter>
+  return (
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-black">
+      {/* 헤더 영역 */}
+      {!isEmbedded && !isSelectionMode && (
+        <div className="px-5 pt-6 pb-2 shrink-0">
+          <h1 className="text-2xl font-bold text-main dark:text-white">친구</h1>
+        </div>
+      )}
+
+      {/* 선택 모드 헤더 */}
+      {isSelectionMode && (
+        <div className="px-5 pt-6 pb-2 shrink-0 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-main dark:text-white">{selectedFriendUids.size}명 선택됨</h1>
+          <div className="flex gap-3">
+            <button onClick={handleSelectAll} className="text-sm font-bold text-primary">
+              {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
+            </button>
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedFriendUids(new Set());
+              }}
+              className="text-sm font-bold text-sub"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 검색 및 액션 버튼 */}
+      {!isSelectionMode && (
+        <div className="px-5 py-2 flex gap-3 shrink-0 mb-2">
+          <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-900 rounded-[18px] px-4 py-3 transition-all">
+            <Search size={18} className="text-sub dark:text-gray-400 mr-2 shrink-0" />
+            <input
+              type="text"
+              value={searchTerm}
+              placeholder="친구 이름 검색"
+              className="flex-1 bg-transparent outline-none text-main dark:text-white text-[15px] font-medium placeholder:text-sub dark:placeholder:text-gray-500"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-[18px] bg-gray-100 dark:bg-gray-900 text-primary dark:text-blue-400 transition-all active:scale-95"
+            aria-label="친구 추가"
+          >
+            <UserPlus size={20} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
+
+      {/* 보기 모드 토글 */}
+      {!isSelectionMode && (
+        <div className="px-5 pb-2 shrink-0">
+          <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-[16px]">
+            <button
+              onClick={() => setViewMode('default')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-[12px] text-[13px] font-bold transition-all ${
+                viewMode === 'default' ? 'bg-white dark:bg-gray-800 text-main dark:text-white shadow-sm' : 'text-sub'
+              }`}
+            >
+              <Users size={16} /> 전체
+            </button>
+            <button
+              onClick={() => setViewMode('group')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-[12px] text-[13px] font-bold transition-all ${
+                viewMode === 'group' ? 'bg-white dark:bg-gray-800 text-main dark:text-white shadow-sm' : 'text-sub'
+              }`}
+            >
+              <Folder size={16} /> 그룹
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 친구 목록 리스트 */}
+      <div className="flex-1 overflow-y-auto px-5 pb-[calc(6rem+env(safe-area-inset-bottom))]" onScroll={cancelLongPress}>
+        {groupedFriends.length > 0 ? (
+          groupedFriends.map((group) => (
+            <div key={group.id} className="mb-4">
+              {viewMode === 'group' && group.id !== 'all' && (
+                <h2 className="text-[13px] font-bold text-sub dark:text-gray-400 flex items-center gap-2 mb-2 px-1 mt-2">
+                  <Folder size={14} /> {group.name}
+                  <span className="text-primary">{group.friends.length}</span>
+                </h2>
+              )}
+              <div className="space-y-1">
+                {group.friends.map((friend) => (
+                  <div
+                    key={friend.uid}
+                    className={`w-full py-3 flex items-center gap-4 active:bg-gray-50 dark:active:bg-gray-900/50 rounded-2xl transition-colors cursor-pointer touch-pan-y ${
+                      selectedFriendUids.has(friend.uid) ? 'bg-primary/10 dark:bg-blue-900/50' : ''
+                    }`}
+                    onPointerDown={() => handlePointerDown(friend.uid)}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    onClick={() => handleFriendClick(friend)}
+                  >
+                    {isSelectionMode && (
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          selectedFriendUids.has(friend.uid) ? 'bg-primary border-primary' : 'border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        {selectedFriendUids.has(friend.uid) && <Check size={12} className="text-white" />}
+                      </div>
+                    )}
+                    <div
+                      className="w-[52px] h-[52px] rounded-[20px] shrink-0 bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center"
+                      onClick={(e) => {
+                        if (!isSelectionMode) {
+                          e.stopPropagation();
+                          if (friend.photoURL) setPreviewImage(friend.photoURL);
+                        }
+                      }}
+                    >
+                      {friend.photoURL ? (
+                        <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-xl text-gray-400">{friend.name[0]}</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <h4 className="font-semibold text-main dark:text-white text-[16px] truncate">{friend.name}</h4>
+                      </div>
+                      <p className="text-[14px] text-gray-600 dark:text-gray-400 truncate font-normal leading-snug">{friend.statusMessage || '상태 메시지 없음'}</p>
+                    </div>
+                    {!isSelectionMode && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFriend(friend);
+                          setIsMenuOpen(true);
+                        }}
+                        className="p-2 text-sub dark:text-gray-600 hover:text-main dark:hover:text-gray-300"
+                      >
+                        <MoreVertical size={20} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 text-sub dark:text-gray-400">
+            <Users size={48} className="mb-4 opacity-20" />
+            <p className="text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
+          </div>
+        )}
+        {viewMode === 'group' && (
+          <div className="pt-2 pb-8">
+            <button
+              onClick={() => setIsGroupManagerOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-[24px] text-sub dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+            >
+              <FolderPlus size={16} />
+              <span className="text-sm font-bold">그룹 추가 / 관리</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 선택 모드 하단 액션 바 */}
+      {isSelectionMode && selectedFriendUids.size > 0 && (
+        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-black pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <button
             onClick={() => setIsMoveToGroupOpen(true)}
-            className="w-full h-[52px] bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-100 dark:shadow-blue-900/50"
+            className="w-full h-[52px] bg-primary text-white rounded-[16px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
           >
             <FolderPlus size={20} />
             그룹 변경
           </button>
-        </PageFooter>
-      );
-    }
-    return null;
-  };
-
-  const content = (
-    <>
-      <div className="space-y-4 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] flex-1" onScroll={cancelLongPress}>
-        {!isSelectionMode && (
-          <>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-[20px] px-4 py-3.5 shadow-sm border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                  <Search size={18} className="text-[#8B95A1] dark:text-gray-500 mr-3 shrink-0" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    placeholder="친구 이름 검색"
-                    className="flex-1 bg-transparent outline-none text-[#191F28] dark:text-white text-[15px] font-bold placeholder:text-[#8B95A1] dark:placeholder:text-gray-600"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="w-[52px] h-[52px] bg-white dark:bg-gray-800 text-[#007AFF] dark:text-blue-400 rounded-[20px] flex items-center justify-center shrink-0 shadow-sm border border-gray-100 dark:border-gray-700 active:scale-95 transition-all"
-                aria-label="친구 추가"
-              >
-                <UserPlus size={20} strokeWidth={2.5} />
-              </button>
-            </div>
-            {/* [추가] 보기 모드 선택 버튼 */}
-            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px]">
-              <button
-                onClick={() => setViewMode('default')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                  viewMode === 'default' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
-                }`}
-              >
-                <Users size={16} /> 전체
-              </button>
-              <button
-                onClick={() => setViewMode('group')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-                  viewMode === 'group' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
-                }`}
-              >
-                <Folder size={16} /> 그룹
-              </button>
-            </div>
-          </>
-        )}
-
-        <>
-          {groupedFriends.length > 0 ? (
-            groupedFriends.map((group) => (
-              <section key={group.id} className="pt-4 space-y-2">
-                {viewMode === 'group' &&
-                  group.id !== 'all' && ( // '모든 친구' 그룹일 때는 그룹 헤더 숨김
-                    <h2 className="text-[12px] font-bold text-[#8B95A1] dark:text-gray-500 flex items-center gap-2">
-                      <Folder size={14} /> {group.name}
-                      <span className="text-[#007AFF]">{group.friends.length}</span>
-                    </h2>
-                  )}
-                <div className="bg-white dark:bg-gray-800 rounded-[32px] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                  <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
-                    {group.friends.map((friend) => (
-                      <div
-                        key={friend.uid}
-                        className={`group flex items-center justify-between py-4 pl-5 pr-2 transition-colors cursor-pointer touch-pan-y ${
-                          selectedFriendUids.has(friend.uid) ? 'bg-[#007AFF]/10 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                        }`}
-                        onPointerDown={() => handlePointerDown(friend.uid)}
-                        onPointerUp={handlePointerUp}
-                        onPointerLeave={handlePointerUp}
-                        onClick={() => handleFriendClick(friend)}
-                      >
-                        {isSelectionMode && (
-                          <div className="mr-4">
-                            <div
-                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                selectedFriendUids.has(friend.uid) ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
-                              }`}
-                            >
-                              {selectedFriendUids.has(friend.uid) && <Check size={16} className="text-white" />}
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-4 overflow-hidden flex-1">
-                          <div
-                            className="w-[48px] h-[48px] rounded-[18px] shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (friend.photoURL) setPreviewImage(friend.photoURL);
-                            }}
-                          >
-                            {friend.photoURL ? (
-                              <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover rounded-[18px]" />
-                            ) : (
-                              <div className="w-full h-full bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-300 flex items-center justify-center font-bold text-lg rounded-[18px]">
-                                {friend.name[0]}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-[16px] font-bold text-[#191F28] dark:text-white truncate">{friend.name}</span>
-                            <p className="text-[12px] font-medium truncate text-[#8B95A1] dark:text-gray-400">{friend.statusMessage || '상태 메시지 없음'}</p>
-                          </div>
-                        </div>
-                        {!isSelectionMode && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedFriend(friend);
-                              setIsMenuOpen(true);
-                            }}
-                            className="p-4 text-[#8B95A1] dark:text-gray-600 hover:text-[#191F28] dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-full transition-all"
-                          >
-                            <MoreVertical size={20} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-            ))
-          ) : (
-            <div className="py-20 text-center">
-              <p className="text-[#8B95A1] dark:text-gray-500 text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
-            </div>
-          )}
-          {viewMode === 'group' && (
-            <section className="pt-4">
-              <button
-                onClick={() => setIsGroupManagerOpen(true)}
-                className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[32px] text-[#8B95A1] dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <FolderPlus size={16} />
-                <span className="text-sm font-bold">그룹 추가 / 관리</span>
-              </button>
-            </section>
-          )}
-        </>
-      </div>
+        </div>
+      )}
 
       <FriendActionMenu
         isOpen={isMenuOpen}
@@ -631,62 +652,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} onOpenContacts={handleOpenContactsModal} />
-    </>
-  );
-
-  if (isEmbedded) {
-    return (
-      <div className="h-full flex flex-col relative">
-        {/* Embedded 모드에서는 상단 헤더(검색창 등)와 리스트를 포함한 content만 렌더링 */}
-        {/* 선택 모드일 때의 상단 헤더는 SocialMain에서 처리하거나 여기서 조건부로 렌더링 */}
-        {isSelectionMode && (
-          <div className="flex items-center justify-between px-1 py-2 mb-2 bg-white dark:bg-gray-950 z-10">
-            <span className="text-lg font-black text-[#191F28] dark:text-white">{selectedFriendUids.size}명 선택됨</span>
-            <div className="flex gap-3">
-              <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF]">
-                {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
-              </button>
-              <button
-                onClick={() => {
-                  setIsSelectionMode(false);
-                  setSelectedFriendUids(new Set());
-                }}
-                className="text-sm font-bold text-[#8B95A1]"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        )}
-        {content}
-        {/* Footer for selection mode */}
-        {renderFooter()}
-      </div>
-    );
-  }
-
-  return (
-    <PageLayout
-      title={isSelectionMode ? `${selectedFriendUids.size}명 선택됨` : '친구'}
-      onBack={
-        isSelectionMode
-          ? () => {
-              setIsSelectionMode(false);
-              setSelectedFriendUids(new Set());
-            }
-          : null
-      }
-      extraNav={
-        isSelectionMode ? (
-          <button onClick={handleSelectAll} className="text-sm font-bold text-[#007AFF] p-2">
-            {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
-          </button>
-        ) : null
-      }
-      footer={renderFooter()}
-    >
-      {content}
-    </PageLayout>
+    </div>
   );
 };
 

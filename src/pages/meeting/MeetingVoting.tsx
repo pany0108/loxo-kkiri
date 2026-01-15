@@ -33,7 +33,7 @@ const MeetingVoting = () => {
         {isHost && (
           <button
             onClick={() => navigate(`/meeting/status/${meetingId}`)}
-            className="h-[62px] bg-gray-100 dark:bg-gray-700 text-[#8B95A1] dark:text-gray-300 rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all flex-1"
+            className="h-[62px] bg-gray-100 dark:bg-gray-700 text-sub dark:text-gray-300 rounded-[24px] font-black text-[17px] shadow-lg active:scale-[0.98] transition-all flex-1"
           >
             현황 보기
           </button>
@@ -48,26 +48,26 @@ const MeetingVoting = () => {
   return (
     <PageLayout title="투표하기" footer={renderFooter()}>
       <>
-        <PageHeader icon={<Vote className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader icon={<Vote className="text-primary w-6 h-6" />}>
           <>
             <div className="flex items-center gap-2 mb-2">
               <PageTitle>{meetingData.title}</PageTitle>
             </div>
             {meetingData.location && (
-              <div className="flex items-center gap-2 text-[#8B95A1] dark:text-gray-400 font-medium mb-2">
+              <div className="flex items-center gap-2 text-sub dark:text-gray-400 font-medium mb-2">
                 <MapPin size={16} />
                 <span>{meetingData.location}</span>
               </div>
             )}
-            <p className="text-[#8B95A1] dark:text-gray-400 font-medium">
+            <p className="text-sub dark:text-gray-400 font-medium">
               {meetingData.isRetry ? (
                 <>
                   재요청된 일정입니다. <br />
-                  <span className="text-[#007AFF] dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
+                  <span className="text-primary dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
                 </>
               ) : (
                 <>
-                  나의 <span className="text-[#007AFF] dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
+                  나의 <span className="text-primary dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
                 </>
               )}
             </p>
@@ -100,7 +100,7 @@ const MeetingVoting = () => {
             </>
           }
           confirmText="제출하기"
-          confirmButtonClassName="bg-[#007AFF]"
+          confirmButtonClassName="bg-primary"
         />
       </>
     </PageLayout>

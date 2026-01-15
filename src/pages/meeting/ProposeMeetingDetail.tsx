@@ -290,9 +290,9 @@ const ProposeMeetingDetail = () => {
   return (
     <PageLayout title="세부 시간 설정" footer={renderFooter()}>
       <>
-        <PageHeader icon={<CalendarClock className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader icon={<CalendarClock className="text-primary dark:text-blue-400 w-6 h-6" />}>
           <PageTitle>
-            선택한 날짜의 <span className="text-[#007AFF] dark:text-blue-400">시간</span>을<br />
+            선택한 날짜의 <span className="text-primary dark:text-blue-400">시간</span>을<br />
             설정해주세요.
           </PageTitle>
         </PageHeader>
@@ -301,13 +301,13 @@ const ProposeMeetingDetail = () => {
 
         {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
         <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-700/50">
-          <h3 className="text-[15px] font-black text-[#191F28] dark:text-white flex items-center gap-2">
-            <Clock size={18} className="text-[#007AFF] dark:text-blue-400" />
+          <h3 className="text-[15px] font-black text-main dark:text-white flex items-center gap-2">
+            <Clock size={18} className="text-primary dark:text-blue-400" />
             시간대 설정
           </h3>
           <button
             onClick={handleSyncTimes}
-            className="px-3 py-1.5 bg-[#007AFF]/10 dark:bg-blue-500/10 text-[#007AFF] dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-[#007AFF]/20 dark:hover:bg-blue-500/20 transition-colors"
+            className="px-3 py-1.5 bg-primary/10 dark:bg-blue-500/10 text-primary dark:text-blue-400 text-xs font-bold rounded-lg hover:bg-primary/20 dark:hover:bg-blue-500/20 transition-colors"
           >
             시간 일괄 설정
           </button>

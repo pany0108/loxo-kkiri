@@ -159,10 +159,10 @@ const ProposeMeeting = () => {
     <PageLayout title="약속" onBack={null}>
       <div className="space-y-8 pb-24">
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-[#007AFF] w-6 h-6" />}>
+        <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-primary w-6 h-6" />}>
           <PageTitle>
             소중한 사람들과의 <br />
-            <span className="text-[#007AFF] dark:text-blue-400">약속을 잡아보세요</span>
+            <span className="text-primary dark:text-blue-400">약속을 잡아보세요</span>
           </PageTitle>
         </PageHeader>
 
@@ -170,19 +170,19 @@ const ProposeMeeting = () => {
         <NewMeetingButton />
 
         {/* [추가] 탭 버튼 */}
-        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px] mb-6">
+        <div className="flex p-1 bg-gray-50 dark:bg-gray-800 rounded-lg mb-6">
           <button
             onClick={() => setActiveTab('ongoing')}
-            className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-              activeTab === 'ongoing' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
+            className={`flex-1 py-2.5 rounded-md text-caption transition-all ${
+              activeTab === 'ongoing' ? 'bg-white dark:bg-gray-700 text-main dark:text-white shadow-sm' : 'text-sub'
             }`}
           >
             진행 중 ({ongoingMeetings.length})
           </button>
           <button
             onClick={() => setActiveTab('past')}
-            className={`flex-1 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
-              activeTab === 'past' ? 'bg-white dark:bg-gray-700 text-[#191F28] dark:text-white shadow-sm' : 'text-[#8B95A1]'
+            className={`flex-1 py-2.5 rounded-md text-caption transition-all ${
+              activeTab === 'past' ? 'bg-white dark:bg-gray-700 text-main dark:text-white shadow-sm' : 'text-sub'
             }`}
           >
             지난 약속 ({pastMeetings.length})
@@ -200,7 +200,7 @@ const ProposeMeeting = () => {
           ) : activeTab === 'ongoing' ? (
             <EmptyMeetingList />
           ) : (
-            <div className="py-12 text-center text-[#8B95A1] dark:text-gray-500 text-[13px] font-bold">지난 약속이 없습니다.</div>
+            <div className="py-12 text-center text-caption">지난 약속이 없습니다.</div>
           )}
         </>
       </div>

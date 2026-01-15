@@ -137,9 +137,9 @@ const ProposeMeetingCreate = () => {
   return (
     <PageLayout title="약속 제안하기" footer={renderFooter()}>
       <>
-        <PageHeader icon={<CalendarPlus className="text-[#007AFF] dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader icon={<CalendarPlus className="text-primary dark:text-blue-400 w-6 h-6" />}>
           <PageTitle>
-            어떤 <span className="text-[#007AFF] dark:text-blue-400">약속</span>을<br />
+            어떤 <span className="text-primary dark:text-blue-400">약속</span>을<br />
             만들어볼까요?
           </PageTitle>
         </PageHeader>
@@ -181,11 +181,11 @@ const ProposeMeetingCreate = () => {
             <div className="flex justify-end gap-3 px-1">
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
-                <span className="text-[10px] font-bold text-[#8B95A1] dark:text-gray-500">내 일정</span>
+                <span className="text-[10px] font-bold text-sub dark:text-gray-500">내 일정</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF]"></div>
-                <span className="text-[10px] font-bold text-[#007AFF] dark:text-blue-400">선택됨</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                <span className="text-[10px] font-bold text-primary dark:text-blue-400">선택됨</span>
               </div>
             </div>
           </div>
