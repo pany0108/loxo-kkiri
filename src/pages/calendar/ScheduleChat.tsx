@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { PageLayout, PageFooter, LoadingButton } from 'components';
+import { PageLayout, PageFooter, LoadingButton, ScheduleDetailModal } from 'components';
 import toast from 'react-hot-toast';
 import { sendPushNotificationToUser } from 'utils';
 
@@ -64,6 +64,8 @@ const ScheduleChat = () => {
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [participantCount, setParticipantCount] = useState(0);
   const [participants, setParticipants] = useState<string[]>([]);
+  const [scheduleData, setScheduleData] = useState<any>(null); // [추가] 일정 상세 데이터
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // [추가] 상세 모달 상태
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -99,6 +101,7 @@ const ScheduleChat = () => {
     const scheduleUnsubscribe = onSnapshot(doc(db, 'schedules', id), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        setScheduleData(data); // [추가] 전체 데이터 저장
         setScheduleTitle(data.title || '일정 채팅');
         setParticipantCount(data.attendees ? data.attendees.length : 0);
         setParticipants(data.attendees || []);
@@ -290,17 +293,20 @@ const ScheduleChat = () => {
           {isMenuOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               <button
-                onClick={() => navigate(`/schedule/${id}`)}
+                onClick={() => {
+                  setIsDetailModalOpen(true);
+                  setIsMenuOpen(false);
+                }}
                 className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
               >
                 <Calendar size={16} /> 일정 상세
               </button>
-              <button
+              {/* <button
                 onClick={() => navigate(`/schedule/${id}/media`, { state: { media: [], title: scheduleTitle } })}
                 className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
               >
                 <ImageIcon size={16} /> 사진 모아보기
-              </button>
+              </button> */}
               <div className="h-[1px] bg-gray-100 dark:bg-gray-700 my-1 mx-2" />
               <button
                 onClick={() => toast('채팅방 나가기 기능은 준비중입니다.', { icon: '👋' })}
@@ -371,6 +377,7 @@ const ScheduleChat = () => {
           );
         })}
         <div ref={scrollRef} className="h-1" />
+        <ScheduleDetailModal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} schedule={scheduleData} scheduleId={id || ''} />
       </div>
     </PageLayout>
   );
