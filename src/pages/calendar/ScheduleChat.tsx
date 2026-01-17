@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment } from 'firebase/firestore';
+import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut, Copy, Trash2, Reply, X } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { PageLayout, PageFooter, LoadingButton, ScheduleDetailModal } from 'components';
 import toast from 'react-hot-toast';
@@ -28,6 +28,12 @@ interface Message {
   isMe: boolean;
   profileImg?: string;
   readBy: string[];
+  isDeleted?: boolean;
+  replyTo?: {
+    id: string;
+    text: string;
+    sender: string;
+  };
 }
 
 /**
@@ -68,11 +74,21 @@ const ScheduleChat = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // [추가] 상세 모달 상태
 
   const [inputText, setInputText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null); // [추가] 답장 상태
   const [isSending, setIsSending] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isInitialLoad = useRef(true);
   const prevMessagesLength = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // [추가] 컨텍스트 메뉴 상태
+  const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; x: number; y: number; message: Message | null }>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    message: null,
+  });
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   // 메뉴 외부 클릭 시 닫기
   useEffect(() => {
@@ -122,6 +138,8 @@ const ScheduleChat = () => {
           isMe: auth.currentUser?.uid === data.senderId,
           profileImg: data.photoURL,
           readBy: data.readBy || [],
+          isDeleted: data.isDeleted || false,
+          replyTo: data.replyTo || null,
         } as Message;
       });
       setMessages(newMessages);
@@ -202,6 +220,13 @@ const ScheduleChat = () => {
         type: 'text',
         photoURL: auth.currentUser.photoURL,
         readBy: [auth.currentUser.uid], // 보낸 사람은 읽은 것으로 처리
+        replyTo: replyingTo
+          ? {
+              id: replyingTo.id,
+              text: replyingTo.text,
+              sender: replyingTo.sender,
+            }
+          : null,
       });
 
       // [수정] 일정 문서 업데이트 (마지막 메시지, 시간, 안 읽은 개수)
@@ -231,11 +256,78 @@ const ScheduleChat = () => {
       });
 
       setInputText('');
+      setReplyingTo(null); // 답장 상태 초기화
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
       setIsSending(false);
     }
+  };
+
+  // [추가] 롱프레스 핸들러
+  const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent, msg: Message) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    longPressTimer.current = setTimeout(() => {
+      setContextMenu({
+        isOpen: true,
+        x: clientX,
+        y: clientY,
+        message: msg,
+      });
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleCopyMessage = async () => {
+    if (contextMenu.message?.text) {
+      try {
+        await navigator.clipboard.writeText(contextMenu.message.text);
+        toast.success('메시지가 복사되었습니다.');
+      } catch (err) {
+        toast.error('복사에 실패했습니다.');
+      }
+    }
+    setContextMenu({ ...contextMenu, isOpen: false });
+  };
+
+  // [추가] 답장 핸들러
+  const handleReplyMessage = () => {
+    if (contextMenu.message) {
+      setReplyingTo(contextMenu.message);
+      setContextMenu({ ...contextMenu, isOpen: false });
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!contextMenu.message || !id) return;
+
+    if (!contextMenu.message.isMe) {
+      toast.error('본인의 메시지만 삭제할 수 있습니다.');
+      setContextMenu({ ...contextMenu, isOpen: false });
+      return;
+    }
+
+    if (window.confirm('이 메시지를 삭제하시겠습니까?')) {
+      try {
+        await updateDoc(doc(db, 'schedules', id, 'messages', contextMenu.message.id), {
+          isDeleted: true,
+          text: '삭제된 메시지입니다.',
+        });
+        toast.success('메시지가 삭제되었습니다.');
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        toast.error('메시지 삭제 중 오류가 발생했습니다.');
+      }
+    }
+    setContextMenu({ ...contextMenu, isOpen: false });
   };
 
   const headerContent = (
@@ -249,31 +341,44 @@ const ScheduleChat = () => {
   );
 
   const footerContent = (
-    <PageFooter className="!pt-3 !pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
-        <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-primary/50 focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="메시지를 입력하세요"
-            className="flex-1 bg-transparent outline-none text-[15px] font-medium text-main dark:text-white placeholder:text-sub min-w-0"
-            style={{ fontSize: '16px' }}
-          />
+    <PageFooter className="!pt-0 !pb-[calc(1rem+env(safe-area-inset-bottom))] !px-0">
+      {replyingTo && (
+        <div className="flex items-center justify-between px-6 py-2.5 bg-gray-50 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700 backdrop-blur-sm animate-in slide-in-from-bottom-2">
+          <div className="flex flex-col min-w-0 border-l-2 border-primary pl-3">
+            <span className="text-[11px] font-bold text-primary mb-0.5">{replyingTo.sender}님에게 답장</span>
+            <span className="text-[12px] text-sub dark:text-gray-400 truncate">{replyingTo.text}</span>
+          </div>
+          <button onClick={() => setReplyingTo(null)} className="p-2 text-sub hover:text-main dark:text-gray-500 dark:hover:text-gray-300">
+            <X size={18} />
+          </button>
         </div>
+      )}
+      <div className="px-4 pt-3">
+        <form onSubmit={handleSend} className="flex items-center gap-2 w-full">
+          <div className="flex-1 min-w-0 bg-gray-50 dark:bg-gray-800 rounded-[24px] flex items-center px-4 py-2 border border-transparent focus-within:border-primary/50 focus-within:bg-white dark:focus-within:bg-gray-700 transition-all">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="메시지를 입력하세요"
+              className="flex-1 bg-transparent outline-none text-[15px] font-medium text-main dark:text-white placeholder:text-sub min-w-0"
+              style={{ fontSize: '16px' }}
+            />
+          </div>
 
-        <LoadingButton
-          type="submit"
-          isLoading={isSending}
-          disabled={!inputText.trim()}
-          className={`
+          <LoadingButton
+            type="submit"
+            isLoading={isSending}
+            disabled={!inputText.trim()}
+            className={`
             p-2.5 rounded-full transition-all active:scale-95 shrink-0 flex items-center justify-center
             ${inputText.trim() ? 'bg-primary text-white shadow-md shadow-primary/50' : 'bg-gray-100 dark:bg-gray-800 text-sub'}
           `}
-        >
-          {!isSending && <Send size={20} className={inputText.trim() ? 'ml-0.5' : ''} />}
-        </LoadingButton>
-      </form>
+          >
+            {!isSending && <Send size={20} className={inputText.trim() ? 'ml-0.5' : ''} />}
+          </LoadingButton>
+        </form>
+      </div>
     </PageFooter>
   );
 
@@ -357,11 +462,27 @@ const ScheduleChat = () => {
                   )}
 
                   <div
+                    onMouseDown={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
+                    onTouchEnd={handleLongPressEnd}
                     className={`
-                      px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm
-                      ${msg.isMe ? 'bg-primary text-white rounded-[20px] rounded-tr-none' : 'bg-white text-main rounded-[20px] rounded-tl-none border border-gray-100'}
+                      px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm cursor-pointer select-none
+                      ${
+                        msg.isMe
+                          ? 'bg-[#007AFF] text-white rounded-[20px] rounded-tr-none'
+                          : 'bg-white text-[#191F28] dark:text-white rounded-[20px] rounded-tl-none border border-gray-100 dark:border-gray-700 dark:bg-gray-800'
+                      }
+                      ${msg.isDeleted ? 'opacity-60 italic' : ''}
                     `}
                   >
+                    {msg.replyTo && (
+                      <div className={`mb-1.5 pl-2 border-l-2 ${msg.isMe ? 'border-white/40' : 'border-gray-300 dark:border-gray-600'} text-xs opacity-80`}>
+                        <p className="font-bold mb-0.5">{msg.replyTo.sender}</p>
+                        <p className="truncate line-clamp-1">{msg.replyTo.text}</p>
+                      </div>
+                    )}
                     {msg.text}
                   </div>
 
@@ -378,6 +499,46 @@ const ScheduleChat = () => {
         })}
         <div ref={scrollRef} className="h-1" />
         <ScheduleDetailModal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} schedule={scheduleData} scheduleId={id || ''} />
+
+        {/* [추가] 컨텍스트 메뉴 */}
+        {contextMenu.isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setContextMenu({ ...contextMenu, isOpen: false })}>
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+            <div
+              className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden min-w-[160px] animate-in zoom-in-95 duration-200"
+              style={{
+                position: 'absolute',
+                left: Math.min(contextMenu.x, window.innerWidth - 170), // 화면 밖으로 나가지 않게 조정
+                top: Math.min(contextMenu.y, window.innerHeight - 100),
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleCopyMessage}
+                className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+              >
+                <Copy size={16} /> 복사
+              </button>
+              <button
+                onClick={handleReplyMessage}
+                className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+              >
+                <Reply size={16} /> 답장
+              </button>
+              {contextMenu.message?.isMe && (
+                <>
+                  <div className="h-[1px] bg-gray-100 dark:bg-gray-700 mx-2" />
+                  <button
+                    onClick={handleDeleteMessage}
+                    className="w-full px-4 py-3 text-left text-[14px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Trash2 size={16} /> 삭제
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </PageLayout>
   );
