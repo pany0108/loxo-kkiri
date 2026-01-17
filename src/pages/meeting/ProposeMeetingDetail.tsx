@@ -251,6 +251,7 @@ const ProposeMeetingDetail = () => {
         timeSlots,
         status: 'PENDING', // [수정] 생성 시 기본 상태는 조율 중(PENDING)
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       // [추가] 초대된 친구들에게 알림 전송

@@ -94,6 +94,7 @@ const MeetingReport = () => {
         status: 'CONFIRMED',
         confirmedSlot: selectedSlot,
         scheduleId: scheduleRef.id,
+        updatedAt: new Date().toISOString(),
       });
 
       // 5. 알림 전송

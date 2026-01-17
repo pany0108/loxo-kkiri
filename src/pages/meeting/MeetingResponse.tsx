@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import 'dayjs/locale/ko';
 import { useFirestoreDoc, useAuth, useMeetingResponseForm } from 'hooks';
@@ -146,6 +146,11 @@ const MeetingResponse = () => {
       const result = await submitMeetingResponse(meetingId, user, {
         selectedHostSlots,
         myNewSlots,
+      });
+
+      // [추가] 응답 제출 및 상태 변경 시 updatedAt 필드 업데이트
+      await updateDoc(doc(db, 'meetings', meetingId), {
+        updatedAt: new Date().toISOString(),
       });
 
       if (result.escalatedToVoting) {

@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useFirestoreQuery } from 'hooks';
+import { useFirestoreQuery, useUserProfiles } from 'hooks';
 import { NewMeetingButton, MeetingListItem, EmptyMeetingList, PageHeader, PageTitle, PageLayout } from 'components';
 
 /**
@@ -21,7 +21,11 @@ interface Meeting {
   isRetry?: boolean; // [추가] 재요청 여부
   isVotingCompleted?: boolean; // [추가] 투표 완료 여부
   createdAt?: string;
+  updatedAt?: string;
   confirmedSlot?: { date: string; time: string };
+  isRecentlyUpdated?: boolean;
+  participants?: { uid: string; name?: string; photoURL?: string }[];
+  hasVoted?: boolean;
 }
 
 /**
@@ -52,12 +56,28 @@ const ProposeMeeting = () => {
 
   const { data: meetingsData, loading } = useFirestoreQuery<any>(meetingsQuery);
 
+  // [추가] 모든 약속의 참여자 UID 수집
+  const allParticipantUids = useMemo(() => {
+    if (!meetingsData) return [];
+    const uids = new Set<string>();
+    meetingsData.forEach((m: any) => {
+      if (m.participants && Array.isArray(m.participants)) {
+        m.participants.forEach((uid: string) => uids.add(uid));
+      }
+    });
+    return Array.from(uids);
+  }, [meetingsData]);
+
+  const { profiles: userProfiles } = useUserProfiles(allParticipantUids);
+
   const { ongoingMeetings, pastMeetings } = useMemo(() => {
     if (!meetingsData) return { ongoingMeetings: [], pastMeetings: [] };
 
-    // [수정] 최신순(createdAt 내림차순) 정렬
+    // [수정] 최신순(updatedAt 또는 createdAt 내림차순) 정렬
     const sortedData = [...meetingsData].sort((a: any, b: any) => {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return timeB - timeA;
     });
 
     const ongoing: Meeting[] = [];
@@ -66,6 +86,8 @@ const ProposeMeeting = () => {
     sortedData.forEach((m: any) => {
       // [추가] 투표 완료 여부 계산
       let isVotingCompleted = false;
+      let hasVoted = false; // [추가] 내 투표/응답 여부
+
       if (m.status === 'VOTING') {
         const totalParticipants = m.participants?.length || 0;
         const votedUserIds = new Set<string>();
@@ -77,7 +99,30 @@ const ProposeMeeting = () => {
         if (totalParticipants > 0 && votedUserIds.size >= totalParticipants) {
           isVotingCompleted = true;
         }
+        // [추가] VOTING 상태일 때 내 투표 여부 확인
+        if (user && votedUserIds.has(user.uid)) {
+          hasVoted = true;
+        }
+      } else if (m.status === 'PENDING') {
+        // [추가] PENDING 상태일 때 내 응답 여부 확인 (responses 필드)
+        if (m.responses && user && m.responses[user.uid]) {
+          hasVoted = true;
+        }
+      } else {
+        // CONFIRMED 등 다른 상태는 투표/응답 필요 없음으로 간주
+        hasVoted = true;
       }
+
+      // [추가] 최근 업데이트 여부 확인 (1시간 이내 업데이트 된 경우)
+      const lastUpdateTime = m.updatedAt ? dayjs(m.updatedAt) : null;
+      const isRecentlyUpdated = lastUpdateTime ? lastUpdateTime.isAfter(dayjs().subtract(1, 'hour')) : false;
+
+      // [추가] 참여자 프로필 매핑
+      const participants = (m.participants || []).map((uid: string) => ({
+        uid,
+        name: userProfiles[uid]?.name,
+        photoURL: userProfiles[uid]?.photoURL,
+      }));
 
       const meetingObj: Meeting = {
         id: m.id,
@@ -89,7 +134,11 @@ const ProposeMeeting = () => {
         isRetry: m.isRetry,
         isVotingCompleted, // [추가]
         createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
         confirmedSlot: m.confirmedSlot,
+        isRecentlyUpdated,
+        participants,
+        hasVoted,
       };
 
       // [추가] 지난 약속 분리 로직 (확정된 약속 중 날짜가 지난 경우)
@@ -107,8 +156,16 @@ const ProposeMeeting = () => {
         ongoing.push(meetingObj);
       }
     });
+
+    // [추가] 최근 업데이트된 항목을 최상단으로 정렬
+    ongoing.sort((a, b) => {
+      if (a.isRecentlyUpdated && !b.isRecentlyUpdated) return -1;
+      if (!a.isRecentlyUpdated && b.isRecentlyUpdated) return 1;
+      return 0;
+    });
+
     return { ongoingMeetings: ongoing, pastMeetings: past };
-  }, [meetingsData]);
+  }, [meetingsData, userProfiles]);
 
   /**
    * 약속 아이템 클릭 시 현재 상태에 따라 적절한 페이지로 이동합니다.
