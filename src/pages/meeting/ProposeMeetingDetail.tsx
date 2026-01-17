@@ -66,20 +66,34 @@ const ProposeMeetingDetail = () => {
     calendarName: '',
   };
 
+  // [추가] 현재 시간 기준 기본값 계산
+  const now = dayjs();
+  const minute = now.minute();
+  let startObj = now;
+
+  if (minute >= 30) {
+    startObj = now.add(1, 'hour').startOf('hour');
+  } else {
+    startObj = now.startOf('hour');
+  }
+
+  const defaultStartStr = startObj.format('HH:mm');
+  const defaultEndStr = startObj.add(1, 'hour').format('HH:mm');
+
   /**
    * 날짜별 시간 슬롯 상태 관리
-   * 초기값: 선택된 모든 날짜에 대해 기본적으로 19:00~21:00 슬롯 하나를 생성합니다.
+   * 초기값: 선택된 모든 날짜에 대해 기본적으로 현재 시간 기준 1시간 슬롯 하나를 생성합니다.
    */
   const [timeSlots, setTimeSlots] = useState<Record<string, TimeSlot[]>>(
     selectedDates.reduce((acc: any, dateStr: string) => {
-      acc[dateStr] = [{ start: '19:00', end: '21:00', isAllDay: false }];
+      acc[dateStr] = [{ start: defaultStartStr, end: defaultEndStr, isAllDay: false }];
       return acc;
     }, {}),
   );
 
   // [추가] 시간 통일 모달 상태
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
-  const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
+  const [syncTime, setSyncTime] = useState({ start: defaultStartStr, end: defaultEndStr });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
