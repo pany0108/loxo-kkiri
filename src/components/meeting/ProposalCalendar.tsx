@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProposalCalendarProps {
   currentMonth: dayjs.Dayjs;
@@ -59,6 +60,8 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
   votingItems,
   holidaysByDate,
 }) => {
+  const [direction, setDirection] = useState(0);
+
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
@@ -66,6 +69,36 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     for (let i = 0; i < startOfMonth.day(); i++) dates.push(null);
     for (let i = 1; i <= endOfMonth.date(); i++) dates.push(startOfMonth.date(i).format('YYYY-MM-DD'));
     return dates;
+  };
+
+  // [추가] 스와이프 핸들러
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setDirection(1);
+      onMonthChange(currentMonth.add(1, 'month'));
+    }
+    if (isRightSwipe) {
+      setDirection(-1);
+      onMonthChange(currentMonth.subtract(1, 'month'));
+    }
   };
 
   // [추가] 날짜가 속한 범위의 인덱스를 찾아 색상 세트를 반환하는 함수
@@ -82,6 +115,21 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
 
     if (index === -1) return RANGE_PALETTES[0];
     return RANGE_PALETTES[index % RANGE_PALETTES.length];
+  };
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 20 : -20,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      x: direction > 0 ? -20 : 20,
+      opacity: 0,
+    }),
   };
 
   return (
@@ -106,115 +154,139 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
         </button>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[32px] p-6 border-2 border-transparent">
+      <div
+        className="bg-gray-50 dark:bg-gray-800/50 rounded-[32px] p-6 border-2 border-transparent overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="flex items-center justify-between mb-6 px-2">
           <button
-            onClick={() => onMonthChange(currentMonth.subtract(1, 'month'))}
+            onClick={() => {
+              setDirection(-1);
+              onMonthChange(currentMonth.subtract(1, 'month'));
+            }}
             className="p-2 bg-white dark:bg-gray-700 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm transition-all active:scale-95"
           >
             <ChevronLeft size={18} />
           </button>
           <span className="text-[16px] font-black text-main dark:text-white">{currentMonth.format('YYYY년 MM월')}</span>
           <button
-            onClick={() => onMonthChange(currentMonth.add(1, 'month'))}
+            onClick={() => {
+              setDirection(1);
+              onMonthChange(currentMonth.add(1, 'month'));
+            }}
             className="p-2 bg-white dark:bg-gray-700 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white shadow-sm transition-all active:scale-95"
           >
             <ChevronRight size={18} />
           </button>
         </div>
-
-        <div className="grid grid-cols-7 gap-y-3 gap-x-1 text-center">
+        <div className="grid grid-cols-7 gap-x-1 text-center mb-3">
           {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
-            <span key={d} className="text-[11px] font-black text-sub dark:text-gray-400 mb-2">
+            <span key={d} className="text-[11px] font-black text-sub dark:text-gray-400">
               {d}
             </span>
           ))}
-          {generateDates().map((date, idx) => {
-            if (!date) return <div key={`empty-${idx}`} />;
-            const dailySchedules = schedulesByDate.get(date) || [];
-            const hasMySchedule = dailySchedules.length > 0;
-            const isSelected = selectedDates.includes(date);
-            const isHoliday = holidaysByDate?.has(date);
-            const holidayTitle = holidaysByDate?.get(date);
-
-            let selectionClasses = 'bg-white dark:bg-gray-700/50 text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
-
-            // [추가] 선택된 경우 색상 세트 가져오기
-            const colorSet = isSelected ? (isRangeMode ? getRangeColorSet(date) : RANGE_PALETTES[0]) : null;
-
-            // [수정] 날짜 계산 및 인접 선택 여부 확인 (공통 로직)
-            const dayObj = dayjs(date);
-            const prevDateStr = dayObj.subtract(1, 'day').format('YYYY-MM-DD');
-            const nextDateStr = dayObj.add(1, 'day').format('YYYY-MM-DD');
-
-            // [추가] 두 날짜가 같은 범위에 속해있는지 확인하는 함수
-            const checkConnection = (d1: string, d2: string) => {
-              if (!selectedDates.includes(d1) || !selectedDates.includes(d2)) return false;
-              if (!votingItems) return true; // votingItems가 없으면 기존처럼 연결
-              return votingItems.some((item) => {
-                if (item.includes(':')) {
-                  const [s, e] = item.split(':');
-                  return d1 >= s && d1 <= e && d2 >= s && d2 <= e;
-                }
-                return false; // 단일 날짜 아이템끼리는 연결하지 않음
-              });
-            };
-
-            const isPrevConnected = checkConnection(prevDateStr, date);
-            const isNextConnected = checkConnection(date, nextDateStr);
-
-            if (isSelected && colorSet) {
-              if (isPrevConnected && isNextConnected) {
-                selectionClasses = `${colorSet.main} text-white shadow-sm`;
-              } else {
-                selectionClasses = `${colorSet.main} text-white shadow-lg ${colorSet.shadow} scale-105 z-10`;
-              }
-            }
-
-            // [추가] 배경 연결 스트립 로직
-            const isStartOfWeek = dayObj.day() === 0;
-            const isEndOfWeek = dayObj.day() === 6;
-            const connectLeft = isPrevConnected && !isStartOfWeek;
-            const connectRight = isNextConnected && !isEndOfWeek;
-
-            // [추가] 날짜 텍스트 색상 결정 (공휴일/일요일: 빨강, 토요일: 파랑)
-            let dateTextColor = isSelected ? 'text-white' : 'text-main dark:text-gray-300';
-            if (!isSelected) {
-              if (dayObj.day() === 0 || isHoliday) dateTextColor = 'text-red-500 dark:text-red-400';
-              else if (dayObj.day() === 6) dateTextColor = 'text-blue-500 dark:text-blue-400';
-            }
-
-            return (
-              <div key={date} className="relative w-full aspect-square flex items-center justify-center">
-                {isSelected && colorSet && (
-                  <div
-                    className={`absolute top-[12%] bottom-[12%] ${colorSet.strip} z-0 
-                      ${connectLeft ? '-left-[3px]' : 'left-1 rounded-l-[12px]'}
-                      ${connectRight ? '-right-[3px]' : 'right-1 rounded-r-[12px]'}
-                    `}
-                  />
-                )}
-                <button
-                  onClick={() => onDateClick(date)}
-                  className={`relative z-10 w-full h-full flex flex-col items-center justify-center rounded-[14px] transition-all duration-200 ${selectionClasses}`}
-                >
-                  <span className={`text-[13px] font-bold relative transition-all ${dateTextColor} ${(hasMySchedule || isHoliday) && !isSelected ? 'bottom-1' : ''}`}>
-                    {dayjs(date).date()}
-                  </span>
-                  {hasMySchedule && !isSelected && (
-                    <div className="absolute bottom-1.5 left-1 right-1 px-1 text-white bg-red-400/90 text-[9px] font-bold rounded-sm truncate leading-tight flex items-center justify-center">
-                      <span className="truncate">{dailySchedules[0].title}</span>
-                      {dailySchedules.length > 1 && <span className="ml-0.5 shrink-0">+{dailySchedules.length - 1}</span>}
-                    </div>
-                  )}
-                  {isHoliday && !hasMySchedule && !isSelected && (
-                    <div className="absolute bottom-1.5 left-0 right-0 text-[8px] text-red-500 dark:text-red-400 font-bold truncate px-1">{holidayTitle}</div>
-                  )}
-                </button>
-              </div>
-            );
-          })}
         </div>
+
+        <AnimatePresence mode="wait" custom={direction} initial={false}>
+          <motion.div
+            key={currentMonth.format('YYYY-MM')}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ type: 'tween', ease: 'easeInOut', duration: 0.2 }}
+            className="grid grid-cols-7 gap-y-3 gap-x-1 text-center"
+          >
+            {generateDates().map((date, idx) => {
+              if (!date) return <div key={`empty-${idx}`} />;
+              const dailySchedules = schedulesByDate.get(date) || [];
+              const hasMySchedule = dailySchedules.length > 0;
+              const isSelected = selectedDates.includes(date);
+              const isHoliday = holidaysByDate?.has(date);
+              const holidayTitle = holidaysByDate?.get(date);
+
+              let selectionClasses = 'bg-white dark:bg-gray-700/50 text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+
+              // [추가] 선택된 경우 색상 세트 가져오기
+              const colorSet = isSelected ? (isRangeMode ? getRangeColorSet(date) : RANGE_PALETTES[0]) : null;
+
+              // [수정] 날짜 계산 및 인접 선택 여부 확인 (공통 로직)
+              const dayObj = dayjs(date);
+              const prevDateStr = dayObj.subtract(1, 'day').format('YYYY-MM-DD');
+              const nextDateStr = dayObj.add(1, 'day').format('YYYY-MM-DD');
+
+              // [추가] 두 날짜가 같은 범위에 속해있는지 확인하는 함수
+              const checkConnection = (d1: string, d2: string) => {
+                if (!selectedDates.includes(d1) || !selectedDates.includes(d2)) return false;
+                if (!votingItems) return true; // votingItems가 없으면 기존처럼 연결
+                return votingItems.some((item) => {
+                  if (item.includes(':')) {
+                    const [s, e] = item.split(':');
+                    return d1 >= s && d1 <= e && d2 >= s && d2 <= e;
+                  }
+                  return false; // 단일 날짜 아이템끼리는 연결하지 않음
+                });
+              };
+
+              const isPrevConnected = checkConnection(prevDateStr, date);
+              const isNextConnected = checkConnection(date, nextDateStr);
+
+              if (isSelected && colorSet) {
+                if (isPrevConnected && isNextConnected) {
+                  selectionClasses = `${colorSet.main} text-white shadow-sm`;
+                } else {
+                  selectionClasses = `${colorSet.main} text-white shadow-lg ${colorSet.shadow} scale-105 z-10`;
+                }
+              }
+
+              // [추가] 배경 연결 스트립 로직
+              const isStartOfWeek = dayObj.day() === 0;
+              const isEndOfWeek = dayObj.day() === 6;
+              const connectLeft = isPrevConnected && !isStartOfWeek;
+              const connectRight = isNextConnected && !isEndOfWeek;
+
+              // [추가] 날짜 텍스트 색상 결정 (공휴일/일요일: 빨강, 토요일: 파랑)
+              let dateTextColor = isSelected ? 'text-white' : 'text-main dark:text-gray-300';
+              if (!isSelected) {
+                if (dayObj.day() === 0 || isHoliday) dateTextColor = 'text-red-500 dark:text-red-400';
+                else if (dayObj.day() === 6) dateTextColor = 'text-blue-500 dark:text-blue-400';
+              }
+
+              return (
+                <div key={date} className="relative w-full aspect-square flex items-center justify-center">
+                  {isSelected && colorSet && (
+                    <div
+                      className={`absolute top-[12%] bottom-[12%] ${colorSet.strip} z-0 
+                        ${connectLeft ? '-left-[3px]' : 'left-1 rounded-l-[12px]'}
+                        ${connectRight ? '-right-[3px]' : 'right-1 rounded-r-[12px]'}
+                      `}
+                    />
+                  )}
+                  <button
+                    onClick={() => onDateClick(date)}
+                    className={`relative z-10 w-full h-full flex flex-col items-center justify-center rounded-[14px] transition-all duration-200 ${selectionClasses}`}
+                  >
+                    <span className={`text-[13px] font-bold relative transition-all ${dateTextColor} ${(hasMySchedule || isHoliday) && !isSelected ? 'bottom-1' : ''}`}>
+                      {dayjs(date).date()}
+                    </span>
+                    {hasMySchedule && !isSelected && (
+                      <div className="absolute bottom-1.5 left-1 right-1 px-1 text-white bg-red-400/90 text-[9px] font-bold rounded-sm truncate leading-tight flex items-center justify-center">
+                        <span className="truncate">{dailySchedules[0].title}</span>
+                        {dailySchedules.length > 1 && <span className="ml-0.5 shrink-0">+{dailySchedules.length - 1}</span>}
+                      </div>
+                    )}
+                    {isHoliday && !hasMySchedule && !isSelected && (
+                      <div className="absolute bottom-1.5 left-0 right-0 text-[8px] text-red-500 dark:text-red-400 font-bold truncate px-1">{holidayTitle}</div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );
