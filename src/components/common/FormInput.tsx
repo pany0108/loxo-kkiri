@@ -49,7 +49,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
   return (
     <div className={`group relative ${containerClassName || ''}`}>
       {label && <label className="block text-caption ml-1 mb-2">{label}</label>}
-      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-5 transition-all duration-300 ${borderClass}`}>
+      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-5 transition-all duration-300 border-2 ${borderClass}`}>
         {icon && <div className="mr-4">{React.cloneElement(icon, { className: `${iconColorClass} ${icon.props.className || ''}` })}</div>}
         <input
           ref={inputRef}
