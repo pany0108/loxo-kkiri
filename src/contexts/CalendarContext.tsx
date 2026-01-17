@@ -65,7 +65,7 @@ const expandRecurringEvents = (events: any[]) => {
       return;
     }
 
-    const { frequency, endType, daysOfWeek } = event.recurrence;
+    const { frequency, endType, daysOfWeek, monthlyType } = event.recurrence;
     const interval = Math.max(1, parseInt(event.recurrence.interval || '1', 10));
     const endDate = event.recurrence.endDate;
     const endCount = event.recurrence.endCount ? parseInt(event.recurrence.endCount, 10) : 0;
@@ -169,8 +169,54 @@ const expandRecurringEvents = (events: any[]) => {
         }
       } else if (frequency === 'monthly') {
         currentStart = currentStart.add(interval, 'month');
+        // [추가] 매월 마지막 날 옵션 처리 (날짜 밀림 방지)
+        if (monthlyType === 'last_day') {
+          currentStart = currentStart.endOf('month');
+        } else if (monthlyType === 'nth_day') {
+          // [추가] 매월 n번째 요일 처리
+          const originalWeekday = initialStart.day();
+          const originalDate = initialStart.date();
+          const nth = Math.ceil(originalDate / 7);
+
+          const monthStart = currentStart.startOf('month');
+          let firstOccurrence = monthStart.day(originalWeekday);
+          if (firstOccurrence.month() !== monthStart.month()) {
+            firstOccurrence = firstOccurrence.add(7, 'day');
+          }
+          const nthOccurrence = firstOccurrence.add(nth - 1, 'week');
+
+          if (nthOccurrence.month() === currentStart.month()) {
+            currentStart = nthOccurrence;
+          } else {
+            // 해당 월에 n번째 요일이 존재하지 않는 경우 (예: 5번째 수요일)
+            // 이벤트를 추가하지 않음
+            shouldAdd = false;
+          }
+        }
       } else if (frequency === 'yearly') {
         currentStart = currentStart.add(interval, 'year');
+        // [추가] 매년 마지막 날 옵션 처리
+        if (monthlyType === 'last_day') {
+          currentStart = currentStart.endOf('month');
+        } else if (monthlyType === 'nth_day') {
+          // [추가] 매년 n번째 요일 처리
+          const originalWeekday = initialStart.day();
+          const originalDate = initialStart.date();
+          const nth = Math.ceil(originalDate / 7);
+
+          const monthStart = currentStart.startOf('month');
+          let firstOccurrence = monthStart.day(originalWeekday);
+          if (firstOccurrence.month() !== monthStart.month()) {
+            firstOccurrence = firstOccurrence.add(7, 'day');
+          }
+          const nthOccurrence = firstOccurrence.add(nth - 1, 'week');
+
+          if (nthOccurrence.month() === currentStart.month()) {
+            currentStart = nthOccurrence;
+          } else {
+            shouldAdd = false;
+          }
+        }
       } else {
         break;
       }

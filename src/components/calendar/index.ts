@@ -8,4 +8,6 @@ export { default as DatePickerPopup } from './DatePickerPopup';
 export { default as EventListSheet } from './EventListSheet';
 export { default as LocationSelectModal } from './LocationSelectModal';
 export { default as ScheduleDetailModal } from './ScheduleDetailModal';
+export { default as ScheduleForm } from './ScheduleForm';
+export { default as EditRecurringModal } from './EditRecurringModal';
 export type { RecurrenceSettings } from './RecurrenceOptions';

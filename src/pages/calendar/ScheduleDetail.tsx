@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
@@ -27,6 +27,7 @@ import {
   Coffee,
   ShoppingCart,
   Gamepad2,
+  MoreVertical,
 } from 'lucide-react';
 import { auth } from '../../firebase'; // Import auth to check current user
 import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal, PageHeader } from 'components';
@@ -148,6 +149,21 @@ const ScheduleDetail = () => {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
+
+  // [추가] 메뉴 상태 관리
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // [추가] 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // [추가] 공유 후기 관련 상태
   const [sharedReviews, setSharedReviews] = useState<ReviewData[]>([]);
@@ -465,13 +481,49 @@ const ScheduleDetail = () => {
         title="일정 상세"
         onBack={handleBack}
         extraNav={
-          auth.currentUser?.uid === data.userId && (
-            <div className="flex items-center gap-1">
-              <button onClick={handleEdit} className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors">
-                <Edit2 size={22} />
-              </button>
-            </div>
-          )
+          <div className="relative" ref={menuRef}>
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-[#8B95A1] dark:text-gray-500 hover:text-[#191F28] dark:hover:text-white transition-colors">
+              <MoreVertical size={24} />
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                {auth.currentUser?.uid === data.userId && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleEdit();
+                    }}
+                    className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Edit2 size={16} /> 일정 수정
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleCopy();
+                  }}
+                  className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                >
+                  <Copy size={16} /> 일정 복사
+                </button>
+                {auth.currentUser?.uid === data.userId && (
+                  <>
+                    <div className="h-[1px] bg-gray-100 dark:bg-gray-700 my-1 mx-2" />
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleDeleteClick();
+                      }}
+                      className="w-full px-4 py-3 text-left text-[14px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors rounded-b-xl"
+                    >
+                      <Trash2 size={16} /> 일정 삭제
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         }
       >
         {/* 타이틀 및 상세 정보 */}
@@ -732,26 +784,6 @@ const ScheduleDetail = () => {
             </div>
           )}
         </div>
-
-        <footer className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="w-full text-center text-sm font-bold text-primary hover:text-primary/80 transition-colors py-3 flex items-center justify-center gap-2"
-          >
-            <Copy size={14} /> 이 일정 복사하기
-          </button>
-          {/* [추가] 일정 소유자만 삭제 버튼이 보이도록 수정 */}
-          {auth.currentUser?.uid === data.userId && (
-            <button
-              type="button"
-              onClick={handleDeleteClick}
-              className="w-full text-center text-sm font-bold text-red-500 dark:text-red-500/80 hover:text-red-700 dark:hover:text-red-400 transition-colors py-3 flex items-center justify-center gap-2"
-            >
-              <Trash2 size={14} /> 이 일정 삭제하기
-            </button>
-          )}
-        </footer>
       </PageLayout>
 
       {/* [추가] 반복 일정 삭제 모달 */}
