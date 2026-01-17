@@ -19,6 +19,7 @@ import {
   Camera,
   Trash2,
   Calendar as CalendarIcon,
+  Map,
   Home,
   Briefcase,
   GraduationCap,
@@ -39,6 +40,7 @@ import { useCalendar } from 'contexts';
 import { onAuthStateChanged } from 'firebase/auth';
 import { notifyScheduleUpdated } from 'services';
 import LoadingButton from '../../components/ui/LoadingButton';
+import LocationSelectModal from '../../components/calendar/LocationSelectModal';
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 const NOTIFICATION_OPTIONS = [
@@ -127,6 +129,7 @@ const ScheduleEdit = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -605,7 +608,23 @@ const ScheduleEdit = () => {
                 <div className="space-y-3">
                   <label className="block text-caption ml-1">상세 정보</label>
 
-                  <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소" />
+                  <FormInput
+                    icon={<MapPin size={18} />}
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="장소"
+                    rightContent={
+                      <button
+                        type="button"
+                        onClick={() => setIsMapModalOpen(true)}
+                        className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors"
+                        title="지도에서 선택"
+                      >
+                        <Map size={18} />
+                      </button>
+                    }
+                  />
 
                   <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
                     <Bell size={18} className="text-sub dark:text-gray-400" />
@@ -729,6 +748,16 @@ const ScheduleEdit = () => {
         }
         confirmText="삭제하기"
         confirmButtonClassName="bg-red-500"
+      />
+
+      <LocationSelectModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        onSelect={(loc) => {
+          setFormData((prev) => ({ ...prev, location: loc }));
+          setIsMapModalOpen(false);
+        }}
+        initialLocation={formData.location}
       />
     </>
   );

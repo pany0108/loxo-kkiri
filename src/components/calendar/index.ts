@@ -6,4 +6,5 @@ export { default as AddScheduleFAB } from './AddScheduleFAB';
 export { default as CalendarHeader } from './CalendarHeader';
 export { default as DatePickerPopup } from './DatePickerPopup';
 export { default as EventListSheet } from './EventListSheet';
+export { default as LocationSelectModal } from './LocationSelectModal';
 export type { RecurrenceSettings } from './RecurrenceOptions';

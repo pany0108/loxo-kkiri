@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   MapPin,
@@ -27,12 +27,12 @@ import {
   ShoppingCart,
   Gamepad2,
   Calendar as CalendarIcon,
+  Map,
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, RecurrenceOptions, PageHeader, PageFooter, PageTitle, FormInput, FormTextarea, FormCheckbox } from 'components';
+import { PageLayout, RecurrenceOptions, PageHeader, PageFooter, PageTitle, FormInput, FormTextarea, FormCheckbox, LoadingButton, LocationSelectModal } from 'components';
 import { useAddSchedule } from 'hooks';
 import { auth } from '../../firebase';
-import LoadingButton from '../../components/ui/LoadingButton';
 
 const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
@@ -79,6 +79,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const AddSchedule = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, refs, handlers } = useAddSchedule();
   const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
   const { dropdownRef, titleInputRef } = refs;
@@ -89,6 +90,47 @@ const AddSchedule = () => {
   const isLeapMonth = (formData as any).isLeapMonth;
 
   const currentUser = auth.currentUser;
+
+  const [isMapModalOpen, setIsMapModalOpen] = React.useState(false);
+
+  // [추가] 초기 진입 시 현재 시간으로 설정
+  React.useEffect(() => {
+    const now = dayjs();
+    const minute = now.minute();
+    let startObj = now;
+
+    if (minute >= 30) {
+      startObj = now.add(1, 'hour').startOf('hour');
+    } else {
+      startObj = now.startOf('hour');
+    }
+
+    if (!location.state) {
+      const newStart = startObj.format('YYYY-MM-DDTHH:mm');
+      const newEnd = startObj.add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+
+      handleChange({ target: { name: 'start', value: newStart } } as any);
+      // [수정] 상태 업데이트 충돌 방지를 위해 지연 처리
+      setTimeout(() => {
+        handleChange({ target: { name: 'end', value: newEnd } } as any);
+        handleChange({ target: { name: 'isAllDay', value: false } } as any);
+      }, 0);
+    } else {
+      const state = location.state as any;
+      // 캘린더에서 날짜만 선택해서 들어온 경우 (YYYY-MM-DD), 시간은 현재 시간으로 설정
+      if (state.start && typeof state.start === 'string' && state.start.length === 10) {
+        const targetDate = dayjs(state.start);
+        const newStart = targetDate.hour(startObj.hour()).minute(startObj.minute()).format('YYYY-MM-DDTHH:mm');
+        const newEnd = targetDate.hour(startObj.hour()).minute(startObj.minute()).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+
+        handleChange({ target: { name: 'start', value: newStart } } as any);
+        // [수정] 상태 업데이트 충돌 방지를 위해 지연 처리
+        setTimeout(() => {
+          handleChange({ target: { name: 'end', value: newEnd } } as any);
+        }, 0);
+      }
+    }
+  }, []);
 
   const sortedCalendars = React.useMemo(() => {
     return [...myCalendars].sort((a, b) => {
@@ -117,6 +159,43 @@ const AddSchedule = () => {
 
   const handleLunarChange = (isLunarValue: boolean) => {
     handleChange({ target: { name: 'isLunar', value: isLunarValue } } as any);
+  };
+
+  // [추가] 시간 설정 토글 핸들러 (현재 시간 기준 자동 설정)
+  const handleTimeToggle = () => {
+    const nextIsAllDay = !formData.isAllDay;
+
+    // 시간 설정으로 변경되는 경우에만 현재 시간 기준으로 시간값 업데이트
+    if (!nextIsAllDay) {
+      const now = dayjs();
+      const minute = now.minute();
+      let startObj = now;
+
+      if (minute >= 30) {
+        // 30분 이상이면 다음 시간 정각 (예: 6:30 -> 7:00)
+        startObj = now.add(1, 'hour').startOf('hour');
+      } else {
+        // 30분 미만이면 현재 시간 정각 (예: 6:10 -> 6:00)
+        startObj = now.startOf('hour');
+      }
+
+      // 현재 선택된 날짜 유지
+      const currentDate = dayjs(formData.start);
+      const newStart = currentDate.hour(startObj.hour()).minute(startObj.minute()).second(0);
+      const newEnd = newStart.add(1, 'hour');
+
+      // [수정] handleToggle() 대신 직접 isAllDay를 false로 설정하여 9시 초기화 방지
+      handleChange({ target: { name: 'isAllDay', value: false } } as any);
+
+      // [수정] 상태 업데이트 충돌 방지를 위해 시간 설정은 지연 처리
+      setTimeout(() => {
+        handleChange({ target: { name: 'start', value: newStart.format('YYYY-MM-DDTHH:mm') } } as any);
+        handleChange({ target: { name: 'end', value: newEnd.format('YYYY-MM-DDTHH:mm') } } as any);
+      }, 0);
+    } else {
+      // 종일로 변경 시에는 기존 핸들러 사용
+      handleToggle();
+    }
   };
 
   const renderFooter = () => (
@@ -280,7 +359,7 @@ const AddSchedule = () => {
               <div className="flex items-center justify-between px-1">
                 <label className="text-caption">시간 설정</label>
                 <div
-                  onClick={isAnniversary ? undefined : handleToggle}
+                  onClick={isAnniversary ? undefined : handleTimeToggle}
                   className={`flex items-center gap-2 group ${isAnniversary ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                 >
                   <span className={`text-[12px] font-bold transition-colors ${formData.isAllDay ? 'text-emerald-600' : 'text-caption'}`}>종일</span>
@@ -391,7 +470,23 @@ const AddSchedule = () => {
             {!isAnniversary && (
               <div className="space-y-3">
                 <label className="block text-caption ml-1">상세 정보</label>
-                <FormInput icon={<MapPin size={18} />} name="location" value={formData.location} onChange={handleChange} placeholder="장소 추가" />
+                <FormInput
+                  icon={<MapPin size={18} />}
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="장소 추가"
+                  rightContent={
+                    <button
+                      type="button"
+                      onClick={() => setIsMapModalOpen(true)}
+                      className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors"
+                      title="지도에서 선택"
+                    >
+                      <Map size={18} />
+                    </button>
+                  }
+                />
                 <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} placeholder="메모를 입력하세요" rows={3} />
               </div>
             )}
@@ -410,6 +505,16 @@ const AddSchedule = () => {
             )}
           </section>
         </form>
+
+        <LocationSelectModal
+          isOpen={isMapModalOpen}
+          onClose={() => setIsMapModalOpen(false)}
+          onSelect={(loc) => {
+            handleChange({ target: { name: 'location', value: loc } } as any);
+            setIsMapModalOpen(false);
+          }}
+          initialLocation={formData.location}
+        />
       </>
     </PageLayout>
   );
