@@ -23,6 +23,7 @@ import {
   Coffee,
   ShoppingCart,
   Gamepad2,
+  CalendarPlus2,
 } from 'lucide-react';
 // Firebase 관련 import
 import toast from 'react-hot-toast';
@@ -386,7 +387,7 @@ const CreateCalendar = () => {
   return (
     <>
       <PageLayout title="새 캘린더 만들기" footer={renderFooter()} onBack={() => navigate(-1)}>
-        <PageHeader icon={<Sparkles className="text-primary w-6 h-6" />}>
+        <PageHeader icon={<CalendarPlus2 className="text-primary w-6 h-6" />}>
           <PageTitle>
             새로운 <span className="text-primary">캘린더</span>를<br />
             만들어볼까요?
