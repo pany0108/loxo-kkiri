@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import 'dayjs/locale/ko';
 import toast from 'react-hot-toast';
-import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, PageLayout, PageHeader, PageFooter, PageTitle } from 'components';
+import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, PageLayout, PageHeader, PageFooter, PageTitle, LocationSelectModal } from 'components';
 import { useProposeMeetingCreate } from 'hooks';
 import LoadingButton from '../../components/ui/LoadingButton';
 
@@ -24,6 +24,7 @@ const ProposeMeetingCreate = () => {
     selectedDates,
     currentMonth,
     schedulesByDate,
+    holidaysByDate,
     schedulePopup,
     isValid,
     votingItems,
@@ -47,6 +48,7 @@ const ProposeMeetingCreate = () => {
   const [isRangeMode, setIsRangeMode] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [isRangeRemoving, setIsRangeRemoving] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // [추가] 날짜 클릭 핸들러 래퍼 (연속 선택 로직 처리)
   const handleDateClickWrapper = (date: string) => {
@@ -152,6 +154,7 @@ const ProposeMeetingCreate = () => {
             onTitleChange={setTitle}
             onDescriptionChange={setDescription}
             onLocationChange={setMeetingLocation}
+            onMapClick={() => setIsMapModalOpen(true)}
           />
           <FriendSelectorForMeeting
             groupedFriends={groupedFriends}
@@ -177,6 +180,7 @@ const ProposeMeetingCreate = () => {
                 setVotingItems([]); // [추가] 모드 변경 시 아이템 초기화
               }}
               votingItems={votingItems} // [추가] 범위 정보 전달
+              holidaysByDate={holidaysByDate}
             />
             <div className="flex justify-end gap-3 px-1">
               <div className="flex items-center gap-1.5">
@@ -205,6 +209,16 @@ const ProposeMeetingCreate = () => {
             }}
           />
         )}
+
+        <LocationSelectModal
+          isOpen={isMapModalOpen}
+          onClose={() => setIsMapModalOpen(false)}
+          onSelect={(loc) => {
+            setMeetingLocation(loc);
+            setIsMapModalOpen(false);
+          }}
+          initialLocation={meetingLocation}
+        />
       </>
     </PageLayout>
   );

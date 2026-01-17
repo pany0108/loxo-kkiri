@@ -121,6 +121,36 @@ export const useProposeMeetingCreate = () => {
   }, [user]);
   const { data: mySchedulesData } = useFirestoreQuery<any>(schedulesQuery);
 
+  // [수정] 공휴일 데이터 관리 (API 사용)
+  const [holidaysByDate, setHolidaysByDate] = useState<Map<string, string>>(new Map());
+  const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const year = currentMonth.year();
+    if (fetchedYears.has(year)) return;
+
+    const fetchHolidays = async () => {
+      try {
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        setHolidaysByDate((prev) => {
+          const newMap = new Map(prev);
+          data.forEach((h: any) => {
+            newMap.set(h.date, h.localName);
+          });
+          return newMap;
+        });
+        setFetchedYears((prev) => new Set(prev).add(year));
+      } catch (error) {
+        console.error('Failed to fetch holidays', error);
+      }
+    };
+
+    fetchHolidays();
+  }, [currentMonth, fetchedYears]);
+
   // 날짜별로 일정 그룹화
   const schedulesByDate = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -269,6 +299,7 @@ export const useProposeMeetingCreate = () => {
       currentMonth,
       schedulesByDate,
       schedulePopup,
+      holidaysByDate,
       isValid,
       votingItems,
       isSubmitting,

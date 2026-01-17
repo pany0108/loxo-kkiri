@@ -11,6 +11,7 @@ interface ProposalCalendarProps {
   isRangeMode: boolean;
   onToggleRangeMode: () => void;
   votingItems?: string[]; // [추가] 범위 정보를 확인하기 위한 prop
+  holidaysByDate?: Map<string, string>;
 }
 
 // [추가] 범위별 구분을 위한 색상 팔레트 (Blue Variations)
@@ -56,6 +57,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
   isRangeMode,
   onToggleRangeMode,
   votingItems,
+  holidaysByDate,
 }) => {
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
@@ -132,6 +134,8 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
             const dailySchedules = schedulesByDate.get(date) || [];
             const hasMySchedule = dailySchedules.length > 0;
             const isSelected = selectedDates.includes(date);
+            const isHoliday = holidaysByDate?.has(date);
+            const holidayTitle = holidaysByDate?.get(date);
 
             let selectionClasses = 'bg-white dark:bg-gray-700/50 text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
 
@@ -173,6 +177,13 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
             const connectLeft = isPrevConnected && !isStartOfWeek;
             const connectRight = isNextConnected && !isEndOfWeek;
 
+            // [추가] 날짜 텍스트 색상 결정 (공휴일/일요일: 빨강, 토요일: 파랑)
+            let dateTextColor = isSelected ? 'text-white' : 'text-main dark:text-gray-300';
+            if (!isSelected) {
+              if (dayObj.day() === 0 || isHoliday) dateTextColor = 'text-red-500 dark:text-red-400';
+              else if (dayObj.day() === 6) dateTextColor = 'text-blue-500 dark:text-blue-400';
+            }
+
             return (
               <div key={date} className="relative w-full aspect-square flex items-center justify-center">
                 {isSelected && colorSet && (
@@ -187,11 +198,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
                   onClick={() => onDateClick(date)}
                   className={`relative z-10 w-full h-full flex flex-col items-center justify-center rounded-[14px] transition-all duration-200 ${selectionClasses}`}
                 >
-                  <span
-                    className={`text-[13px] font-bold relative transition-all ${isSelected ? 'text-white' : 'text-main dark:text-gray-300'} ${
-                      hasMySchedule && !isSelected ? 'bottom-1' : ''
-                    }`}
-                  >
+                  <span className={`text-[13px] font-bold relative transition-all ${dateTextColor} ${(hasMySchedule || isHoliday) && !isSelected ? 'bottom-1' : ''}`}>
                     {dayjs(date).date()}
                   </span>
                   {hasMySchedule && !isSelected && (
@@ -199,6 +206,9 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
                       <span className="truncate">{dailySchedules[0].title}</span>
                       {dailySchedules.length > 1 && <span className="ml-0.5 shrink-0">+{dailySchedules.length - 1}</span>}
                     </div>
+                  )}
+                  {isHoliday && !hasMySchedule && !isSelected && (
+                    <div className="absolute bottom-1.5 left-0 right-0 text-[8px] text-red-500 dark:text-red-400 font-bold truncate px-1">{holidayTitle}</div>
                   )}
                 </button>
               </div>
