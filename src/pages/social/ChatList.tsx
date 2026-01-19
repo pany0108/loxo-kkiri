@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { useFirestoreQuery, useUserProfiles } from 'hooks';
-import { MessageCircle, Search, Bell } from 'lucide-react';
+import { MessageCircle, Search, Bell, MessageSquareDot } from 'lucide-react';
 import dayjs from 'dayjs';
 import { UserProfile } from 'types';
 import { FormInput } from 'components';
@@ -92,7 +92,7 @@ const ChatList = () => {
           }`}
           aria-label="안 읽은 메시지만 보기"
         >
-          <Bell size={24} className={showOnlyUnread ? 'fill-current' : ''} />
+          <MessageSquareDot size={24} className={showOnlyUnread ? 'fill-current' : ''} />
         </button>
       </div>
 
