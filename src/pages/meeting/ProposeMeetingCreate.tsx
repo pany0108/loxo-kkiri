@@ -137,7 +137,7 @@ const ProposeMeetingCreate = () => {
   );
 
   return (
-    <PageLayout title="약속 제안하기" footer={renderFooter()}>
+    <PageLayout footer={renderFooter()}>
       <>
         <PageHeader icon={<CalendarPlus className="text-primary dark:text-blue-400 w-6 h-6" />}>
           <PageTitle>

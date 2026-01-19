@@ -130,7 +130,7 @@ const AddSchedule = () => {
 
   return (
     // [수정] PageLayout으로 전체 구조 변경
-    <PageLayout title="새 일정 등록" onBack={() => navigate(-1)} footer={renderFooter()}>
+    <PageLayout onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
         <PageHeader icon={<CalendarPlus className="text-primary w-6 h-6" />}>
           <PageTitle>

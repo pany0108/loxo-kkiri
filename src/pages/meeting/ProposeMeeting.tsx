@@ -213,7 +213,7 @@ const ProposeMeeting = () => {
   const currentList = activeTab === 'ongoing' ? ongoingMeetings : pastMeetings;
 
   return (
-    <PageLayout title="약속" onBack={null}>
+    <PageLayout onBack={null}>
       <div className="space-y-8 pb-24">
         {/* 헤더 섹션 */}
         <PageHeader className="mb-2" icon={<CalendarCheck2 className="text-primary w-6 h-6" />}>
