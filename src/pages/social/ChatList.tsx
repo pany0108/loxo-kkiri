@@ -35,7 +35,12 @@ const ChatList = () => {
   const { profiles: userProfiles, loading: profilesLoading } = useUserProfiles(allAttendeeUids);
 
   const validSchedules = useMemo(() => {
-    return (schedules || []).filter((schedule: any) => schedule.attendees && schedule.attendees.length > 1 && !schedule.isAnniversary);
+    return (schedules || []).filter((schedule: any) => {
+      if (!schedule.attendees || schedule.isAnniversary) return false;
+
+      // 참여자가 2명 이상이거나, 1명이더라도 대화 내역(lastMessage)이 있는 경우 표시 (상대방이 나간 경우)
+      return schedule.attendees.length > 1 || (schedule.attendees.length === 1 && schedule.lastMessage);
+    });
   }, [schedules]);
 
   const filteredSchedules = useMemo(() => {

@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut, Copy, Trash2, Reply, X } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment, deleteDoc } from 'firebase/firestore';
+import 'dayjs/locale/ko';
+import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut, Copy, Trash2, Reply, X, Users } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment, deleteDoc, arrayRemove } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
-import { PageLayout, PageFooter, LoadingButton, ScheduleDetailModal } from 'components';
+import { PageLayout, PageFooter, LoadingButton, ScheduleDetailModal, ConfirmModal } from 'components';
 import toast from 'react-hot-toast';
 import { sendPushNotificationToUser } from 'utils';
+import { useUserProfiles } from 'hooks';
+
+dayjs.locale('ko');
 
 /**
  * 채팅 메시지 데이터 인터페이스
@@ -15,6 +19,7 @@ import { sendPushNotificationToUser } from 'utils';
  * @property {string} text - 메시지 내용
  * @property {string} sender - 보낸 사람 이름
  * @property {string} timestamp - 전송 시간 문자열
+ * @property {Date} createdAt - 전송 시간 Date 객체 (날짜 비교용)
  * @property {boolean} isMe - 본인이 보낸 메시지 여부 (UI 배치 결정)
  * @property {string} [profileImg] - 프로필 이미지 스타일 클래스 (선택적)
  * @property {string[]} readBy - 메시지를 읽은 사용자 ID 목록
@@ -25,6 +30,7 @@ interface Message {
   text: string;
   sender: string;
   timestamp: string;
+  createdAt: Date;
   isMe: boolean;
   profileImg?: string;
   readBy: string[];
@@ -72,6 +78,7 @@ const ScheduleChat = () => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [scheduleData, setScheduleData] = useState<any>(null); // [추가] 일정 상세 데이터
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // [추가] 상세 모달 상태
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
   const [inputText, setInputText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null); // [추가] 답장 상태
@@ -89,6 +96,8 @@ const ScheduleChat = () => {
     message: null,
   });
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const { profiles } = useUserProfiles(participants);
 
   // 메뉴 외부 클릭 시 닫기
   useEffect(() => {
@@ -135,6 +144,7 @@ const ScheduleChat = () => {
           text: data.text,
           sender: data.senderName || '알 수 없음',
           timestamp: data.createdAt ? dayjs(data.createdAt.toDate()).format('A h:mm').replace('AM', '오전').replace('PM', '오후') : '',
+          createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
           isMe: auth.currentUser?.uid === data.senderId,
           profileImg: data.photoURL,
           readBy: data.readBy || [],
@@ -330,13 +340,64 @@ const ScheduleChat = () => {
     setContextMenu({ ...contextMenu, isOpen: false });
   };
 
+  // [추가] 채팅방 나가기 핸들러
+  const handleLeaveChat = () => {
+    setIsMenuOpen(false);
+    setIsLeaveModalOpen(true);
+  };
+
+  const confirmLeaveChat = async () => {
+    if (!id || !auth.currentUser) return;
+
+    try {
+      const leaveMessage = `${auth.currentUser.displayName || '알 수 없음'}님이 채팅방을 나갔습니다.`;
+
+      // 1. 시스템 메시지 추가 (권한 유지를 위해 먼저 실행)
+      await addDoc(collection(db, 'schedules', id, 'messages'), {
+        text: leaveMessage,
+        createdAt: serverTimestamp(),
+        type: 'system',
+        readBy: [],
+      });
+
+      // 2. 참여자 목록에서 제거 및 마지막 메시지 업데이트
+      await updateDoc(doc(db, 'schedules', id), {
+        attendees: arrayRemove(auth.currentUser.uid),
+        lastMessage: leaveMessage,
+        lastMessageTime: serverTimestamp(),
+      });
+
+      toast.success('채팅방에서 나갔습니다.');
+      navigate('/social', { replace: true });
+    } catch (error) {
+      console.error('Error leaving chat:', error);
+      toast.error('채팅방 나가기 중 오류가 발생했습니다.');
+    } finally {
+      setIsLeaveModalOpen(false);
+    }
+  };
+
   const headerContent = (
-    <div>
-      <h1 className="text-[16px] font-black text-main dark:text-white leading-none">{scheduleTitle || '로딩 중...'}</h1>
-      <span className="text-[11px] font-bold text-sub flex items-center gap-1 mt-0.5">
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-        {participantCount}명 참여중
-      </span>
+    <div className="flex flex-col items-start">
+      <h1 className="text-[16px] font-black text-main dark:text-white leading-tight truncate max-w-[220px]">{scheduleTitle || '로딩 중...'}</h1>
+      {scheduleData ? (
+        <div className="flex items-center gap-2 text-[11px] font-medium text-sub dark:text-gray-400 mt-0.5">
+          <span>
+            {dayjs(scheduleData.start).format('M월 D일 (ddd)')}
+            {!scheduleData.isAllDay && ` ${dayjs(scheduleData.start).format('A h:mm')}`}
+          </span>
+          <span className="w-[1px] h-2.5 bg-gray-300 dark:bg-gray-600" />
+          <span className="flex items-center gap-1">
+            <Users size={11} />
+            {participantCount}명
+          </span>
+        </div>
+      ) : (
+        <span className="text-[11px] font-bold text-sub flex items-center gap-1 mt-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          {participantCount}명 참여중
+        </span>
+      )}
     </div>
   );
 
@@ -396,7 +457,7 @@ const ScheduleChat = () => {
             <MoreVertical size={22} />
           </button>
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
               <button
                 onClick={() => {
                   setIsDetailModalOpen(true);
@@ -413,8 +474,29 @@ const ScheduleChat = () => {
                 <ImageIcon size={16} /> 사진 모아보기
               </button> */}
               <div className="h-[1px] bg-gray-100 dark:bg-gray-700 my-1 mx-2" />
+              <div className="px-4 py-2">
+                <p className="text-[11px] font-bold text-sub dark:text-gray-500 mb-2">대화상대 ({participantCount})</p>
+                <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                  {participants.map((uid) => {
+                    const profile = profiles[uid];
+                    return (
+                      <div key={uid} className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center shrink-0">
+                          {profile?.photoURL ? (
+                            <img src={profile.photoURL} alt={profile.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[9px] font-bold text-gray-400">{profile?.name?.[0]}</span>
+                          )}
+                        </div>
+                        <span className="text-[13px] font-medium text-main dark:text-gray-200 truncate">{profile?.name || '알 수 없음'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="h-[1px] bg-gray-100 dark:bg-gray-700 my-1 mx-2" />
               <button
-                onClick={() => toast('채팅방 나가기 기능은 준비중입니다.', { icon: '👋' })}
+                onClick={handleLeaveChat}
                 className="w-full px-4 py-3 text-left text-[14px] font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 transition-colors rounded-b-xl"
               >
                 <LogOut size={16} /> 나가기
@@ -428,46 +510,53 @@ const ScheduleChat = () => {
       className="px-4 pb-4"
     >
       <div className="space-y-4">
-        {messages.map((msg) => {
-          // 시스템 메시지 (입장/퇴장, 일정 변경 등)
-          if (msg.type === 'system') {
-            return (
-              <div key={msg.id} className="flex justify-center my-4">
-                <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-sub text-center leading-relaxed max-w-[80%]">{msg.text}</span>
-              </div>
-            );
-          }
+        {messages.map((msg, index) => {
+          // 날짜 구분선 표시 여부 확인 (첫 메시지이거나 이전 메시지와 날짜가 다를 때)
+          const showDateSeparator = index === 0 || !dayjs(msg.createdAt).isSame(dayjs(messages[index - 1].createdAt), 'day');
 
-          // 읽지 않은 사람 수 계산 (전체 참여자 - 읽은 사람 수)
-          const unreadCount = Math.max(0, participantCount - (msg.readBy?.length || 0));
-
-          // 일반 대화 메시지
           return (
-            <div key={msg.id} id={`msg-${msg.id}`} className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-              {!msg.isMe && (
-                <div className="w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-main shrink-0 bg-gray-200 overflow-hidden">
-                  {msg.profileImg ? <img src={msg.profileImg} alt={msg.sender} className="w-full h-full object-cover" /> : msg.sender[0]}
+            <React.Fragment key={msg.id}>
+              {showDateSeparator && (
+                <div className="flex justify-center my-6">
+                  <span className="bg-gray-100 dark:bg-gray-800 text-sub dark:text-gray-400 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
+                    {dayjs(msg.createdAt).format('YYYY년 M월 D일 dddd')}
+                  </span>
                 </div>
               )}
 
-              <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
-                {!msg.isMe && <span className="text-[11px] text-sub font-bold mb-1 ml-1">{msg.sender}</span>}
+              {msg.type === 'system' ? (
+                <div className="flex justify-center my-4">
+                  <span className="bg-black/5 px-3 py-1.5 rounded-full text-[11px] font-bold text-sub text-center leading-relaxed max-w-[80%]">{msg.text}</span>
+                </div>
+              ) : (
+                (() => {
+                  const unreadCount = Math.max(0, participantCount - (msg.readBy?.length || 0));
+                  return (
+                    <div id={`msg-${msg.id}`} className={`flex gap-2 ${msg.isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      {!msg.isMe && (
+                        <div className="w-9 h-9 rounded-[14px] flex items-center justify-center text-[12px] font-black text-main shrink-0 bg-gray-200 overflow-hidden">
+                          {msg.profileImg ? <img src={msg.profileImg} alt={msg.sender} className="w-full h-full object-cover" /> : msg.sender[0]}
+                        </div>
+                      )}
 
-                <div className="flex items-end gap-1.5">
-                  {msg.isMe && (
-                    <div className="flex flex-col items-end gap-0.5 mb-0.5">
-                      {unreadCount > 0 && <span className="text-[10px] font-bold text-yellow-500 leading-none">{unreadCount}</span>}
-                      <span className="text-[10px] text-gray-400 font-medium leading-none min-w-max">{msg.timestamp}</span>
-                    </div>
-                  )}
+                      <div className={`flex flex-col ${msg.isMe ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                        {!msg.isMe && <span className="text-[11px] text-sub font-bold mb-1 ml-1">{msg.sender}</span>}
 
-                  <div
-                    onMouseDown={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
-                    onMouseUp={handleLongPressEnd}
-                    onMouseLeave={handleLongPressEnd}
-                    onTouchStart={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
-                    onTouchEnd={handleLongPressEnd}
-                    className={`
+                        <div className="flex items-end gap-1.5">
+                          {msg.isMe && (
+                            <div className="flex flex-col items-end gap-0.5 mb-0.5">
+                              {unreadCount > 0 && <span className="text-[10px] font-bold text-yellow-500 leading-none">{unreadCount}</span>}
+                              <span className="text-[10px] text-gray-400 font-medium leading-none min-w-max">{msg.timestamp}</span>
+                            </div>
+                          )}
+
+                          <div
+                            onMouseDown={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
+                            onMouseUp={handleLongPressEnd}
+                            onMouseLeave={handleLongPressEnd}
+                            onTouchStart={(e) => !msg.isDeleted && handleLongPressStart(e, msg)}
+                            onTouchEnd={handleLongPressEnd}
+                            className={`
                       px-4 py-2.5 text-[14px] leading-relaxed break-words font-medium shadow-sm cursor-pointer select-none
                       ${
                         msg.isMe
@@ -476,29 +565,51 @@ const ScheduleChat = () => {
                       }
                       ${msg.isDeleted ? 'opacity-60 italic' : ''}
                     `}
-                  >
-                    {msg.replyTo && (
-                      <div className={`mb-1.5 pl-2 border-l-2 ${msg.isMe ? 'border-white/40' : 'border-gray-300 dark:border-gray-600'} text-xs opacity-80`}>
-                        <p className="font-bold mb-0.5">{msg.replyTo.sender}</p>
-                        <p className="truncate line-clamp-1">{msg.replyTo.text}</p>
-                      </div>
-                    )}
-                    {msg.text}
-                  </div>
+                          >
+                            {msg.replyTo && (
+                              <div className={`mb-1.5 pl-2 border-l-2 ${msg.isMe ? 'border-white/40' : 'border-gray-300 dark:border-gray-600'} text-xs opacity-80`}>
+                                <p className="font-bold mb-0.5">{msg.replyTo.sender}</p>
+                                <p className="truncate line-clamp-1">{msg.replyTo.text}</p>
+                              </div>
+                            )}
+                            {msg.text}
+                          </div>
 
-                  {!msg.isMe && (
-                    <div className="flex flex-col items-start gap-0.5 mb-0.5">
-                      {unreadCount > 0 && <span className="text-[10px] font-bold text-yellow-500 leading-none">{unreadCount}</span>}
-                      <span className="text-[10px] text-gray-400 font-medium leading-none min-w-max">{msg.timestamp}</span>
+                          {!msg.isMe && (
+                            <div className="flex flex-col items-start gap-0.5 mb-0.5">
+                              {unreadCount > 0 && <span className="text-[10px] font-bold text-yellow-500 leading-none">{unreadCount}</span>}
+                              <span className="text-[10px] text-gray-400 font-medium leading-none min-w-max">{msg.timestamp}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
+                  );
+                })()
+              )}
+            </React.Fragment>
           );
         })}
         <div ref={scrollRef} className="h-1" />
         <ScheduleDetailModal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} schedule={scheduleData} scheduleId={id || ''} />
+
+        <ConfirmModal
+          isOpen={isLeaveModalOpen}
+          onClose={() => setIsLeaveModalOpen(false)}
+          onConfirm={confirmLeaveChat}
+          icon={<LogOut size={32} />}
+          iconContainerClassName="bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400"
+          title="채팅방 나가기"
+          message={
+            <>
+              정말 채팅방을 나가시겠습니까?
+              <br />
+              나가면 대화 내용이 더 이상 보이지 않습니다.
+            </>
+          }
+          confirmText="나가기"
+          confirmButtonClassName="bg-red-500"
+        />
 
         {/* [추가] 컨텍스트 메뉴 */}
         {contextMenu.isOpen && (
