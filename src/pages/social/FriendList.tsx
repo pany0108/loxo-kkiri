@@ -1,8 +1,9 @@
+// src/pages/social/FriendList.tsx
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Search, UserPlus, Check, Loader2, MoreVertical, Folder, FolderPlus, Users } from 'lucide-react';
-import { auth, db, app as firebaseApp } from '../../firebase'; // firebaseApp 추가
+import { auth, db } from '../../firebase';
 import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import {
   ImagePreviewModal,
@@ -14,21 +15,13 @@ import {
   GroupManagerModal,
   MoveToGroupModal,
   AddFromContactsModal,
-  PageLayout,
-  PageFooter,
+  FormInput,
 } from 'components';
 import { useFirestoreDoc, useAuth } from 'hooks';
-import { useCalendar, useUI } from 'contexts'; // useUI 훅 추가
+import { useCalendar, useUI } from 'contexts';
 import { Friend, FriendGroup } from 'types';
 import { deleteCalendar, leaveCalendar } from 'services';
 
-/**
- * 친구 목록 관리 컴포넌트입니다.
- * - Firestore 실시간 리스너를 통해 친구 목록 동기화
- * - 이메일 검색을 통한 친구 추가
- * - 친구 별명 수정 및 목록 삭제 기능 제공
- * * @returns {JSX.Element} 친구 목록 관리 화면
- */
 interface FriendListProps {
   isEmbedded?: boolean;
 }
@@ -37,10 +30,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // --- 상태 관리 ---
   const [searchTerm, setSearchTerm] = useState('');
-
-  // 더보기 메뉴 및 수정/삭제 팝업 상태
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -50,40 +40,33 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const [profilePopupFriend, setProfilePopupFriend] = useState<Friend | null>(null);
   const [newFriendId, setNewFriendId] = useState<string | null>(location.state?.newFriendId || null);
 
-  // [수정] 친구 추가 모달 상태
-  const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false); // [추가] 연락처에서 친구 추가 모달 상태
+  const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // [추가] 다중 선택 상태
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedFriendUids, setSelectedFriendUids] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // [추가] 그룹 관리 상태
   const [isGroupManagerOpen, setIsGroupManagerOpen] = useState(false);
   const [isMoveToGroupOpen, setIsMoveToGroupOpen] = useState(false);
   const [groups, setGroups] = useState<FriendGroup[]>([]);
 
-  // [추가] 친구 목록 보기 모드 ('default': 가나다순, 'group': 그룹별)
   const [viewMode, setViewMode] = useState<'default' | 'group'>('default');
 
   const { user } = useAuth();
-  const { setIsBottomNavVisible } = useUI(); // UI 컨텍스트 사용
+  const { setIsBottomNavVisible } = useUI();
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
   const { myCalendars } = useCalendar();
 
-  // myInfo 데이터가 변경될 때마다 friends 목록을 파생시킵니다.
   const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
 
-  // [추가] 그룹 목록 상태 초기화
   useEffect(() => {
     if (myInfo?.friendGroups) {
       setGroups(myInfo.friendGroups);
     }
   }, [myInfo]);
 
-  // [추가] 다른 페이지에서 친구 추가 후 돌아왔을 때, 해당 친구를 목록 상단에 표시하기 위해 state를 관리합니다.
   useEffect(() => {
     if (location.state?.newFriendId) {
       setNewFriendId(location.state.newFriendId);
@@ -91,11 +74,8 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   }, [location.state, navigate, location.pathname]);
 
-  // [추가] 다중 선택 모드에 따라 하단 네비게이션 바 표시 여부 제어
   useEffect(() => {
     setIsBottomNavVisible(!isSelectionMode);
-
-    // 컴포넌트 언마운트 시 다시 보이도록 정리
     return () => {
       setIsBottomNavVisible(true);
     };
@@ -106,11 +86,10 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   }, [viewMode]);
 
   const handleOpenContactsModal = () => {
-    setIsAddModalOpen(false); // Close the current modal
-    setIsAddFromContactsModalOpen(true); // Open the contacts modal
+    setIsAddModalOpen(false);
+    setIsAddFromContactsModalOpen(true);
   };
 
-  // --- [추가] 다중 선택 로직 ---
   const handlePointerDown = (friendUid: string) => {
     if (isSelectionMode) return;
     longPressTimer.current = setTimeout(() => {
@@ -153,22 +132,15 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     setSelectedFriendUids(selectedFriendUids.size === friends.length ? new Set() : allFriendUids);
   };
 
-  // [추가] 삭제할 친구와 단독으로 공유 중인 캘린더 목록 조회
   const sharedCalendarsToDelete = useMemo(() => {
     if (!selectedFriend || !user || !myCalendars) return [];
     return myCalendars.filter((cal) => {
       const members = cal.members || [];
-      // 1:1 캘린더인지 확인 (나와 친구만 있는 경우)
       const isTwoMembers = members.length === 2;
       const hasMe = members.includes(user.uid);
       const hasFriend = members.includes(selectedFriend.uid);
-
       if (!isTwoMembers || !hasMe || !hasFriend) return false;
-
-      // 내가 주인인 경우: 기본 캘린더가 아니면 삭제 대상
       if (cal.ownerId === user.uid) return !cal.isDefault;
-
-      // 내가 주인이 아닌 경우: 무조건 나가기 대상 (기본 캘린더 여부 상관없음)
       return true;
     });
   }, [selectedFriend, user, myCalendars]);
@@ -194,18 +166,11 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     return '가 정리됩니다.';
   }, [sharedCalendarsToDelete, user]);
 
-  /**
-   * 선택한 친구의 표시 이름(별명)을 수정합니다.
-   * Firestore의 배열 데이터를 업데이트합니다.
-   */
   const handleEditSave = async () => {
     if (!selectedFriend || !editName.trim()) return;
     try {
       const myRef = doc(db, 'users', auth.currentUser!.uid);
-
-      // 배열 내 특정 객체만 수정하여 전체 리스트 교체
       const updatedList = friends.map((f) => (f.uid === selectedFriend.uid ? { ...f, name: editName.trim() } : f));
-
       await updateDoc(myRef, { friendsList: updatedList });
       toast.success('이름이 수정되었습니다.');
       setIsEditModalOpen(false);
@@ -216,9 +181,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
-  /**
-   * 친구 목록에서 선택한 대상을 삭제합니다.
-   */
   const handleDeleteConfirm = async () => {
     if (!selectedFriend || !user) return;
     try {
@@ -228,7 +190,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
       let deletedCount = 0;
       let leftCount = 0;
 
-      // [추가] 공유 캘린더 삭제 또는 나가기
       if (sharedCalendarsToDelete.length > 0) {
         await Promise.all(
           sharedCalendarsToDelete.map((cal) => {
@@ -260,17 +221,12 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
-  // --- 그룹 관리 로직 ---
-
   const handleSaveGroups = async (newGroups: FriendGroup[]) => {
     if (!user) return;
-
-    // [추가] 그룹 이름 유효성 검사
     if (newGroups.some((g) => g.name.trim() === '')) {
       toast.error('그룹 이름은 비워둘 수 없습니다.');
       return;
     }
-
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { friendGroups: newGroups });
@@ -285,10 +241,8 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   const handleMoveFriendToGroup = async (groupId: string | null) => {
     if (!selectedFriend || !user) return;
-
     const updatedFriendsList = friends.map((f) => {
       if (f.uid === selectedFriend.uid) {
-        // groupId가 null이면 group 속성을 제거 (미분류로 이동)
         if (groupId === null) {
           const { group, ...rest } = f;
           return rest;
@@ -297,7 +251,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
       }
       return f;
     });
-
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { friendsList: updatedFriendsList });
@@ -312,7 +265,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   const handleMoveMultipleFriendsToGroup = async (groupId: string | null) => {
     if (selectedFriendUids.size === 0 || !user) return;
-
     const updatedFriendsList = friends.map((f) => {
       if (selectedFriendUids.has(f.uid)) {
         if (groupId === null) {
@@ -323,7 +275,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
       }
       return f;
     });
-
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { friendsList: updatedFriendsList });
@@ -337,19 +288,11 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
-  // ---------------------------------
-
-  /**
-   * 검색어에 따라 친구 목록을 필터링하고 이름순으로 정렬합니다.
-   */
   const groupedFriends = useMemo(() => {
-    // 1. 검색어로 친구 필터링
     const filteredBySearch = friends.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (viewMode === 'default') {
-      // 기본 보기: 모든 친구를 가나다순으로 정렬
       const sortedFriends = [...filteredBySearch].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-      // 새 친구가 있다면 최상단으로 이동
       if (newFriendId) {
         const newFriendIndex = sortedFriends.findIndex((f) => f.uid === newFriendId);
         if (newFriendIndex > -1) {
@@ -357,34 +300,24 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
           sortedFriends.unshift(newFriend);
         }
       }
-      // [수정] 친구가 없거나 검색 결과가 없을 때 빈 배열을 반환하여 "친구가 없음" UI가 표시되도록 함
-      if (sortedFriends.length === 0) {
-        return [];
-      }
+      if (sortedFriends.length === 0) return [];
       return [{ id: 'all', name: '모든 친구', friends: sortedFriends }];
     } else {
-      // 그룹별 보기: 기존 그룹화 및 정렬 로직
       const groupMap = new Map<string, { name: string; friends: Friend[] }>();
-
-      // 그룹 목록 초기화 (사용자 정의 그룹 + 기본 그룹)
       groups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
       groupMap.set('uncategorized', { name: '미분류', friends: [] });
 
-      // 필터링된 친구들을 그룹에 할당
       filteredBySearch.forEach((friend) => {
         const groupId = friend.group || 'uncategorized';
         if (groupMap.has(groupId)) {
           groupMap.get(groupId)!.friends.push(friend);
         } else {
-          // 정의되지 않은 그룹에 속한 친구는 '미분류'로
           groupMap.get('uncategorized')!.friends.push(friend);
         }
       });
 
-      // 각 그룹 내에서 친구 정렬
       groupMap.forEach((groupData) => {
         groupData.friends.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-        // '새 친구'를 해당 그룹의 최상단으로 이동
         if (newFriendId) {
           const newFriendIndex = groupData.friends.findIndex((f) => f.uid === newFriendId);
           if (newFriendIndex > -1) {
@@ -394,7 +327,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         }
       });
 
-      // 최종 렌더링을 위한 배열 생성 (이름순 정렬, '미분류'는 마지막)
       return Array.from(groupMap.entries())
         .map(([id, data]) => ({ id, ...data }))
         .sort((a, b) => {
@@ -402,31 +334,24 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
           if (b.id === 'uncategorized') return -1;
           return a.name.localeCompare(b.name, 'ko');
         })
-        .filter((group) => group.friends.length > 0); // 검색 결과가 없는 그룹은 숨김
+        .filter((group) => group.friends.length > 0);
     }
   }, [friends, groups, searchTerm, newFriendId, viewMode]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-[50vh] bg-transparent">
         <Loader2 className="animate-spin text-blue-500 w-8 h-8" aria-label="로딩 중" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-black">
-      {/* 헤더 영역 */}
-      {!isEmbedded && !isSelectionMode && (
-        <div className="px-5 pt-6 pb-2 shrink-0">
-          <h1 className="text-2xl font-bold text-main dark:text-white">친구</h1>
-        </div>
-      )}
-
+    <div className="flex-1 flex flex-col h-full bg-transparent">
       {/* 선택 모드 헤더 */}
       {isSelectionMode && (
-        <div className="px-5 pt-6 pb-2 shrink-0 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-main dark:text-white">{selectedFriendUids.size}명 선택됨</h1>
+        <div className="sticky top-0 z-20 px-5 pt-3 pb-2 flex items-center justify-between bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
+          <h1 className="text-xl font-bold text-main dark:text-white">{selectedFriendUids.size}명 선택됨</h1>
           <div className="flex gap-3">
             <button onClick={handleSelectAll} className="text-sm font-bold text-primary">
               {selectedFriendUids.size === friends.length ? '전체해제' : '전체선택'}
@@ -444,70 +369,57 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         </div>
       )}
 
-      {/* 검색 및 액션 버튼 */}
+      {/* 검색 및 액션 버튼 [수정됨: min-w-0 추가] */}
       {!isSelectionMode && (
-        <div className="px-5 py-2 flex gap-3 shrink-0 mb-2">
-          <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-900 rounded-[18px] px-4 py-3 transition-all">
-            <Search size={18} className="text-sub dark:text-gray-400 mr-2 shrink-0" />
-            <input
-              type="text"
-              value={searchTerm}
-              placeholder="친구 이름 검색"
-              className="flex-1 bg-transparent outline-none text-main dark:text-white text-[15px] font-medium placeholder:text-sub dark:placeholder:text-gray-500"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="py-2 flex gap-3 shrink-0 items-center">
+          <FormInput
+            containerClassName="flex-1 min-w-0"
+            wrapperClassName="!h-[52px]"
+            icon={<Search size={20} />}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="친구 검색"
+            onClear={() => setSearchTerm('')}
+          />
+
+          <button
+            onClick={() => setViewMode(viewMode === 'default' ? 'group' : 'default')}
+            className={`shrink-0 w-[52px] h-[52px] flex items-center justify-center rounded-xl border-2 transition-all active:scale-95 ${
+              viewMode === 'group'
+                ? 'bg-primary border-primary text-white'
+                : 'bg-gray-50 dark:bg-gray-800/50 border-transparent text-sub dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            aria-label="보기 모드 변경"
+          >
+            {viewMode === 'default' ? <Users size={24} /> : <Folder size={24} />}
+          </button>
+
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="shrink-0 w-[48px] h-[48px] flex items-center justify-center rounded-[18px] bg-gray-100 dark:bg-gray-900 text-primary dark:text-blue-400 transition-all active:scale-95"
+            className="shrink-0 w-[52px] h-[52px] flex items-center justify-center rounded-xl bg-black dark:bg-white text-white dark:text-black transition-all active:scale-95 shadow-md"
             aria-label="친구 추가"
           >
-            <UserPlus size={20} strokeWidth={2.5} />
+            <UserPlus size={24} strokeWidth={2.5} />
           </button>
         </div>
       )}
 
-      {/* 보기 모드 토글 */}
-      {!isSelectionMode && (
-        <div className="px-5 pb-2 shrink-0">
-          <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-[16px]">
-            <button
-              onClick={() => setViewMode('default')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'default' ? 'bg-white dark:bg-gray-800 text-main dark:text-white shadow-sm' : 'text-sub'
-              }`}
-            >
-              <Users size={16} /> 전체
-            </button>
-            <button
-              onClick={() => setViewMode('group')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-[12px] text-[13px] font-bold transition-all ${
-                viewMode === 'group' ? 'bg-white dark:bg-gray-800 text-main dark:text-white shadow-sm' : 'text-sub'
-              }`}
-            >
-              <Folder size={16} /> 그룹
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 친구 목록 리스트 */}
-      <div className="flex-1 overflow-y-auto px-5 pb-[calc(6rem+env(safe-area-inset-bottom))]" onScroll={cancelLongPress}>
+      {/* 친구 목록 리스트 (내부 스크롤 제거, Bottom 패딩 추가) */}
+      <div className="pt-2 pb-24" onScroll={cancelLongPress}>
         {groupedFriends.length > 0 ? (
           groupedFriends.map((group) => (
-            <div key={group.id} className="mb-4">
+            <div key={group.id} className="mb-6">
               {viewMode === 'group' && group.id !== 'all' && (
-                <h2 className="text-[13px] font-bold text-sub dark:text-gray-400 flex items-center gap-2 mb-2 px-1 mt-2">
-                  <Folder size={14} /> {group.name}
-                  <span className="text-primary">{group.friends.length}</span>
+                <h2 className="text-[13px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2 mb-3 px-1">
+                  {group.name} <span className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500">{group.friends.length}</span>
                 </h2>
               )}
-              <div className="space-y-1">
+              <div className="space-y-3">
                 {group.friends.map((friend) => (
                   <div
                     key={friend.uid}
-                    className={`w-full py-3 flex items-center gap-4 active:bg-gray-50 dark:active:bg-gray-900/50 rounded-2xl transition-colors cursor-pointer touch-pan-y ${
-                      selectedFriendUids.has(friend.uid) ? 'bg-primary/10 dark:bg-blue-900/50' : ''
+                    className={`w-full p-3 flex items-center gap-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm active:scale-[0.99] transition-all cursor-pointer touch-pan-y ${
+                      selectedFriendUids.has(friend.uid) ? 'ring-2 ring-primary bg-primary/5 dark:bg-blue-900/20' : ''
                     }`}
                     onPointerDown={() => handlePointerDown(friend.uid)}
                     onPointerUp={handlePointerUp}
@@ -524,7 +436,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
                       </div>
                     )}
                     <div
-                      className="w-[52px] h-[52px] rounded-[20px] shrink-0 bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center"
+                      className="w-[48px] h-[48px] rounded-[18px] shrink-0 bg-gray-50 dark:bg-gray-800 overflow-hidden flex items-center justify-center"
                       onClick={(e) => {
                         if (!isSelectionMode) {
                           e.stopPropagation();
@@ -535,14 +447,12 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
                       {friend.photoURL ? (
                         <img src={friend.photoURL} alt={friend.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center font-bold text-xl text-gray-400">{friend.name[0]}</div>
+                        <div className="w-full h-full flex items-center justify-center font-bold text-lg text-gray-300">{friend.name[0]}</div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <h4 className="font-semibold text-main dark:text-white text-[16px] truncate">{friend.name}</h4>
-                      </div>
-                      <p className="text-[14px] text-gray-600 dark:text-gray-400 truncate font-normal leading-snug">{friend.statusMessage || '상태 메시지 없음'}</p>
+                      <h4 className="font-bold text-main dark:text-white text-[15px] truncate mb-0.5">{friend.name}</h4>
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate font-medium">{friend.statusMessage || ''}</p>
                     </div>
                     {!isSelectionMode && (
                       <button
@@ -551,9 +461,9 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
                           setSelectedFriend(friend);
                           setIsMenuOpen(true);
                         }}
-                        className="p-2 text-sub dark:text-gray-600 hover:text-main dark:hover:text-gray-300"
+                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-main dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
-                        <MoreVertical size={20} />
+                        <MoreVertical size={18} />
                       </button>
                     )}
                   </div>
@@ -563,8 +473,8 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
           ))
         ) : (
           <div className="flex flex-col items-center justify-center h-64 text-sub dark:text-gray-400">
-            <Users size={48} className="mb-4 opacity-20" />
-            <p className="text-sm font-bold">친구가 없거나 검색 결과가 없어요.</p>
+            <Users size={48} className="mb-4 opacity-10" />
+            <p className="text-sm font-bold text-gray-400">친구가 없거나 검색 결과가 없어요.</p>
           </div>
         )}
         {viewMode === 'group' && (
@@ -580,9 +490,8 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         )}
       </div>
 
-      {/* 선택 모드 하단 액션 바 */}
       {isSelectionMode && selectedFriendUids.size > 0 && (
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-black pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-black pb-[calc(1rem+env(safe-area-inset-bottom))] z-50">
           <button
             onClick={() => setIsMoveToGroupOpen(true)}
             className="w-full h-[52px] bg-primary text-white rounded-[16px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"
@@ -593,6 +502,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         </div>
       )}
 
+      {/* Modals */}
       <FriendActionMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
@@ -626,7 +536,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         isOpen={isGroupManagerOpen}
         onClose={() => {
           setIsGroupManagerOpen(false);
-          setGroups(myInfo?.friendGroups || []); // 변경사항 취소
+          setGroups(myInfo?.friendGroups || []);
         }}
         initialGroups={myInfo?.friendGroups || []}
         onSave={handleSaveGroups}
@@ -645,10 +555,8 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         sharedCalendarActionText={sharedCalendarActionText}
       />
 
-      {/* 이미지 미리보기 모달 */}
       {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}
 
-      {/* [수정] 친구 프로필 팝업 컴포넌트화 */}
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={myInfo} existingFriends={friends} />
       <ProfilePopup friend={profilePopupFriend} onClose={() => setProfilePopupFriend(null)} />
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={myInfo} friends={friends} onOpenContacts={handleOpenContactsModal} />

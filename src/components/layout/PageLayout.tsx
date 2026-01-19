@@ -12,9 +12,10 @@ interface PageLayoutProps {
   footer?: React.ReactNode;
   contentRef?: React.RefObject<HTMLDivElement>;
   className?: string;
+  hideTopNav?: boolean;
 }
 
-const PageLayout: React.FC<PageLayoutProps> = ({ children, title, headerContent, onBack, extraNav, footer, contentRef, className }) => {
+const PageLayout: React.FC<PageLayoutProps> = ({ children, title, headerContent, onBack, extraNav, footer, contentRef, className, hideTopNav = false }) => {
   const navigate = useNavigate();
   const defaultScrollRef = useScrollToTop();
   const scrollRef = contentRef || defaultScrollRef;
@@ -22,12 +23,16 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, headerContent,
   const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[env(safe-area-inset-bottom)]';
   const finalOnBack = onBack === null ? null : onBack ?? (() => navigate(-1));
 
+  const paddingTop = hideTopNav ? 'pt-[calc(24px+env(safe-area-inset-top))]' : 'pt-[calc(76px+env(safe-area-inset-top))]';
+
   return (
     <div className="flex flex-col min-h-dvh bg-white dark:bg-gray-950 font-['Pretendard']">
-      <TopNav title={title} onBack={finalOnBack} extra={extraNav}>
-        {headerContent}
-      </TopNav>
-      <div ref={scrollRef} className={`flex-1 flex flex-col pt-[calc(76px+env(safe-area-inset-top))] ${footerPadding} overflow-y-auto w-full ${className || 'px-6'}`}>
+      {!hideTopNav && (
+        <TopNav title={title} onBack={finalOnBack} extra={extraNav}>
+          {headerContent}
+        </TopNav>
+      )}
+      <div ref={scrollRef} className={`flex-1 flex flex-col ${paddingTop} ${footerPadding} overflow-y-auto w-full ${className || 'px-6'}`}>
         {children}
       </div>
       {footer}

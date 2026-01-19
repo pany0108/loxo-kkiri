@@ -147,7 +147,7 @@ const MyProfile = () => {
   }
 
   return (
-    <PageLayout title="마이페이지" onBack={null}>
+    <PageLayout onBack={null} hideTopNav>
       <div className="space-y-8 pb-24">
         <PageHeader className="mb-2">
           <PageTitle>

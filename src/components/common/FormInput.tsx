@@ -8,11 +8,12 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   success?: boolean;
   containerClassName?: string;
+  wrapperClassName?: string;
   inputRef?: React.Ref<HTMLInputElement>;
   onClear?: () => void;
 }
 
-const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error, success, containerClassName, inputRef, onClear, ...props }) => {
+const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error, success, containerClassName, wrapperClassName, inputRef, onClear, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const hasError = !!error;
   const isPassword = props.type === 'password';
@@ -49,7 +50,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error,
   return (
     <div className={`group relative ${containerClassName || ''}`}>
       {label && <label className="block text-caption ml-1 mb-2">{label}</label>}
-      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-5 transition-all duration-300 border-2 ${borderClass}`}>
+      <div className={`flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-5 transition-all duration-300 border-2 ${borderClass} ${wrapperClassName || ''}`}>
         {icon && <div className="mr-4">{React.cloneElement(icon, { className: `${iconColorClass} ${icon.props.className || ''}` })}</div>}
         <input
           ref={inputRef}
