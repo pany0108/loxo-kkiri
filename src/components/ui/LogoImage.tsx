@@ -14,16 +14,14 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
   // 크기별 스타일 정의
   const containerStyles = {
-    sm: 'w-10 h-10 rounded-xl ring-2',
-    md: 'w-14 h-14 rounded-2xl ring-4',
-    lg: 'w-20 h-20 rounded-3xl ring-4',
+    sm: 'w-10 h-10 rounded-xl',
+    md: 'w-14 h-14 rounded-xl',
+    lg: 'w-20 h-20 rounded-2xl',
   };
 
   return (
     /* 로고 컨테이너 */
-    <div
-      className={`inline-flex items-center justify-center bg-white shadow-xl shadow-primary/20 dark:shadow-primary/10 ring-primary/10 dark:ring-blue-500/10 ${containerStyles[size]} ${className}`}
-    >
+    <div className={`inline-flex items-center justify-center overflow-hidden bg-white  ${containerStyles[size]} ${className}`}>
       {/* 로고 이미지 */}
       <img src="/logo.svg" alt="Logo" className="w-full h-full object-contain" />
     </div>
