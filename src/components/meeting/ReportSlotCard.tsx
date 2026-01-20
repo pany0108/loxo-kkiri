@@ -1,6 +1,6 @@
-import React from 'react';
 import dayjs from 'dayjs';
-import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, MessageSquare, XCircle } from 'lucide-react';
+import React from 'react';
 
 interface ReportSlot {
   id: string;
@@ -21,8 +21,16 @@ interface ReportSlotCardProps {
   onConfirmClick: (slot: ReportSlot) => void;
 }
 
+/**
+ * 리포트 화면의 시간대 카드 컴포넌트
+ * - 각 시간대별 투표 현황(가능/아마도/불가능)을 상세하게 보여줍니다.
+ * - 주최자는 이 카드를 통해 최종 시간을 확정할 수 있습니다.
+ * @param {ReportSlot} slot - 시간대 및 투표 정보 객체
+ * @param {'PENDING' | 'VOTING' | 'CONFIRMED'} status - 현재 약속 상태
+ * @param {function} onConfirmClick - 확정 버튼 클릭 핸들러
+ */
 const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirmClick }) => {
-  // [추가] 날짜 범위 처리 로직
+  // 날짜 범위 처리 로직
   const isRange = slot.date.includes(':');
   let dateDisplay = dayjs(slot.date).isValid() ? dayjs(slot.date).format('MM월 DD일 (ddd)') : slot.date;
 
@@ -32,6 +40,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
   }
 
   return (
+    /* 카드 컨테이너: 전원 가능 시 강조 스타일 적용 */
     <div
       className={`rounded-4xl overflow-hidden border-2 transition-all duration-300 ${
         slot.isAllAvailable
@@ -39,6 +48,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
           : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 shadow-card'
       }`}
     >
+      {/* 헤더: 날짜 및 시간 표시 */}
       <div className={`px-6 py-5 flex justify-between items-start ${slot.isAllAvailable ? 'bg-emerald-50/30 dark:bg-emerald-500/10' : 'bg-gray-50 dark:bg-gray-800/50'}`}>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -57,8 +67,9 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
       </div>
 
       <div className="p-6 space-y-5">
+        {/* 투표 현황 영역 */}
         <div className="space-y-4">
-          {/* Available */}
+          {/* 가능 (Available) */}
           <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-500/10 border border-emerald-100/50 dark:border-emerald-900/50">
             <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
               <CheckCircle2 size={16} />
@@ -74,7 +85,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
             </div>
           </div>
 
-          {/* Maybe */}
+          {/* 아마도 (Maybe) */}
           <div
             className={`flex items-start gap-3 p-3 rounded-2xl border ${
               slot.responses.maybe.length > 0
@@ -114,7 +125,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
             </div>
           </div>
 
-          {/* Unavailable */}
+          {/* 불가능 (Unavailable) */}
           <div
             className={`flex items-start gap-3 p-3 rounded-2xl border ${
               slot.responses.unavailable.length > 0
@@ -157,6 +168,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
           </div>
         </div>
 
+        {/* 메모 표시 영역 */}
         {slot.memos.length > 0 && (
           <div className="pt-2">
             <div className="space-y-2">
@@ -176,6 +188,7 @@ const ReportSlotCard: React.FC<ReportSlotCardProps> = ({ slot, status, onConfirm
           </div>
         )}
 
+        {/* 확정 버튼 (확정되지 않은 상태일 때만 표시) */}
         {status !== 'CONFIRMED' && (
           <button
             onClick={() => onConfirmClick(slot)}

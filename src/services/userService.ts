@@ -1,7 +1,7 @@
-import { collection, addDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '../firebase';
-import dayjs from 'dayjs';
 import { User } from 'firebase/auth';
+import { collection, addDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import dayjs from 'dayjs';
+import { db } from '../firebase';
 
 interface BirthdayInfo {
   birthDate: string;
@@ -10,9 +10,11 @@ interface BirthdayInfo {
 }
 
 /**
- * Creates the default calendar and birthday schedule for a new user.
- * @param user - The newly created Firebase user object.
- * @param birthdayInfo - Optional birthday information for creating a birthday schedule.
+ * 신규 사용자를 위한 기본 캘린더와 생일 일정을 생성합니다.
+ *
+ * @param {User} user - 신규 사용자 객체
+ * @param {BirthdayInfo} [birthdayInfo] - 생일 정보 (선택 사항)
+ * @returns {Promise<void>}
  */
 export const setupInitialCalendars = async (user: User, birthdayInfo?: BirthdayInfo) => {
   // 1. Create default calendar
@@ -50,9 +52,12 @@ export const setupInitialCalendars = async (user: User, birthdayInfo?: BirthdayI
 };
 
 /**
- * Updates or creates a user's birthday schedule based on their profile information.
- * @param user - The Firebase user object.
- * @param birthdayInfo - The new birthday information. If birthDate is empty, the schedule will be deleted.
+ * 사용자의 생일 일정을 업데이트하거나 생성합니다.
+ * - 생일 정보가 없으면 기존 생일 일정을 삭제합니다.
+ *
+ * @param {User} user - 사용자 객체
+ * @param {BirthdayInfo} birthdayInfo - 새로운 생일 정보
+ * @returns {Promise<void>}
  */
 export const updateUserBirthdaySchedule = async (user: User, birthdayInfo: BirthdayInfo) => {
   const { birthDate, isLunar, isLeapMonth } = birthdayInfo;

@@ -1,6 +1,6 @@
-import React from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
 import dayjs from 'dayjs';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import React from 'react';
 
 interface HostSlotItemProps {
   slot: {
@@ -13,6 +13,14 @@ interface HostSlotItemProps {
   onToggle: (slotId: string) => void;
 }
 
+/**
+ * 주최자가 제안한 시간대 아이템 컴포넌트
+ * - 선택 상태 및 충돌 여부를 시각적으로 표시합니다.
+ * @param {object} slot - 시간대 정보 (id, date, time)
+ * @param {boolean} isSelected - 선택 여부
+ * @param {boolean} isConflict - 일정 충돌 여부
+ * @param {function} onToggle - 선택 토글 핸들러
+ */
 const HostSlotItem: React.FC<HostSlotItemProps> = ({ slot, isSelected, isConflict, onToggle }) => {
   return (
     <button
@@ -26,6 +34,7 @@ const HostSlotItem: React.FC<HostSlotItemProps> = ({ slot, isSelected, isConflic
         }
       `}
     >
+      {/* 날짜 및 시간 정보 */}
       <div className="text-left relative z-10">
         <div className="flex items-center gap-2 mb-1">
           <p className={`text-[16px] font-black tracking-tight ${isSelected ? 'text-white' : 'text-main dark:text-white'}`}>{dayjs(slot.date).format('MM월 DD일 (ddd)')}</p>
@@ -35,6 +44,7 @@ const HostSlotItem: React.FC<HostSlotItemProps> = ({ slot, isSelected, isConflic
           <p className={`text-[13px] font-bold ${isSelected ? 'text-blue-100' : 'text-sub dark:text-gray-500'}`}>{slot.time}</p>
         </div>
 
+        {/* 충돌 경고 표시 */}
         {isConflict && !isSelected && (
           <div className="inline-flex items-center gap-1.5 text-[11px] text-red-500 dark:text-red-400 font-bold mt-2 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-lg">
             <AlertCircle size={12} strokeWidth={2.5} />
@@ -43,6 +53,7 @@ const HostSlotItem: React.FC<HostSlotItemProps> = ({ slot, isSelected, isConflic
         )}
       </div>
 
+      {/* 선택 상태 아이콘 */}
       <div className="relative z-10">
         {isSelected ? (
           <CheckCircle2 size={24} className="text-white" />

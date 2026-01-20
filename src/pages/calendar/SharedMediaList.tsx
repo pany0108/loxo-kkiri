@@ -4,6 +4,11 @@ import { FileText, Image as ImageIcon } from 'lucide-react';
 
 import { ImagePreviewModal, TopNav } from 'components';
 
+/**
+ * 공유된 미디어 목록 페이지 컴포넌트
+ * - 채팅방이나 일정에서 공유된 사진 및 문서 파일을 모아서 보여줍니다.
+ * @returns {JSX.Element} 공유 미디어 목록 화면
+ */
 const SharedMediaList = () => {
   const location = useLocation();
 

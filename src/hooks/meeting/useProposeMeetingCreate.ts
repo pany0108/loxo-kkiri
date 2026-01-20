@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { doc, collection, query, where, addDoc, writeBatch } from 'firebase/firestore';
-import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useFirestoreDoc, useFirestoreQuery } from '../common/useFirestore';
+import { addDoc, collection, doc, query, where, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { notifyMeetingInvite } from 'services';
 
+import { useFirestoreDoc, useFirestoreQuery } from 'hooks/common/useFirestore';
+import { notifyMeetingInvite } from 'services';
+import { auth, db } from '../../firebase';
+
+/** 친구 인터페이스 */
 export interface Friend {
   uid: string;
   id: string;
@@ -16,11 +18,16 @@ export interface Friend {
   email: string;
 }
 
+/** 친구 그룹 인터페이스 */
 export interface FriendGroup {
   id: string;
   name: string;
 }
 
+/**
+ * 약속 생성 페이지의 로직을 처리하는 커스텀 훅
+ * - 기본 정보 입력, 친구 선택, 날짜 선택, 약속 생성 기능을 제공합니다.
+ */
 export const useProposeMeetingCreate = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,6 +49,7 @@ export const useProposeMeetingCreate = () => {
   // 유저 및 친구 목록 관리
   const [user, setUser] = useState<any>(null);
 
+  // 사용자 인증 상태 감지
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -49,9 +57,11 @@ export const useProposeMeetingCreate = () => {
     return () => unsubscribe();
   }, []);
 
+  // 사용자 정보 및 친구 목록 로딩
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: userData } = useFirestoreDoc<any>(userDocRef);
 
+  // 친구 목록 가공
   const friendsList: Friend[] = useMemo(() => {
     if (!userData?.friendsList) return [];
     return userData.friendsList.map((f: any) => ({
@@ -65,6 +75,7 @@ export const useProposeMeetingCreate = () => {
 
   const friendGroups: FriendGroup[] = useMemo(() => userData?.friendGroups || [], [userData]);
 
+  // 친구 목록 그룹화 및 정렬
   const groupedFriends = useMemo(() => {
     const groupMap = new Map<string, { name: string; friends: Friend[] }>();
     friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
@@ -108,10 +119,10 @@ export const useProposeMeetingCreate = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>(initialState?.selectedDates || []);
   const [currentMonth, setCurrentMonth] = useState(initialState?.selectedDates && initialState.selectedDates.length > 0 ? dayjs(initialState.selectedDates[0]) : dayjs());
 
-  // [추가] 투표 아이템 관리 (단일 날짜 또는 범위 문자열 "YYYY-MM-DD:YYYY-MM-DD")
+  // 투표 아이템 관리 (단일 날짜 또는 범위 문자열 "YYYY-MM-DD:YYYY-MM-DD")
   const [votingItems, setVotingItems] = useState<string[]>(initialState?.selectedDates || []);
 
-  // [추가] 제출 중 상태
+  // 제출 중 상태
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 내 일정 불러오기
@@ -121,7 +132,7 @@ export const useProposeMeetingCreate = () => {
   }, [user]);
   const { data: mySchedulesData } = useFirestoreQuery<any>(schedulesQuery);
 
-  // [수정] 공휴일 데이터 관리 (API 사용)
+  // 공휴일 데이터 관리 (API 사용)
   const [holidaysByDate, setHolidaysByDate] = useState<Map<string, string>>(new Map());
   const [fetchedYears, setFetchedYears] = useState<Set<number>>(new Set());
 
@@ -173,7 +184,7 @@ export const useProposeMeetingCreate = () => {
     schedules: any[];
   } | null>(null);
 
-  // 핸들러
+  /** 날짜 클릭 핸들러 */
   const handleDateClick = useCallback(
     (dateStr: string) => {
       const isSelected = selectedDates.includes(dateStr);
@@ -191,6 +202,7 @@ export const useProposeMeetingCreate = () => {
     [selectedDates, schedulesByDate],
   );
 
+  /** 친구 선택 토글 핸들러 */
   const toggleFriend = useCallback(
     (friend: { id: string }) => {
       setInvitedFriends((prev) => {
@@ -206,6 +218,7 @@ export const useProposeMeetingCreate = () => {
     [friendsList],
   );
 
+  /** 그룹 선택 토글 핸들러 */
   const toggleGroup = useCallback(
     (group: { friends: { id: string }[] }) => {
       setInvitedFriends((prev) => {
@@ -225,10 +238,11 @@ export const useProposeMeetingCreate = () => {
     [friendsList],
   );
 
+  /** 다음 단계 이동 또는 약속 생성 핸들러 */
   const handleNext = useCallback(async () => {
     const calendarName = `나와 ${invitedFriends.map((f) => f.name).join(', ')}의 약속`;
 
-    // [추가] 연속 선택(범위)이 포함된 경우 바로 약속 생성 (VOTING 상태)
+    // 연속 선택(범위)이 포함된 경우 바로 약속 생성 (VOTING 상태)
     const hasRanges = votingItems.some((item) => item.includes(':'));
 
     if (hasRanges) {
@@ -249,7 +263,7 @@ export const useProposeMeetingCreate = () => {
           hostName: user.displayName || '알 수 없음',
           participants: [user.uid, ...invitedFriends.map((f) => f.id)],
           invitedFriends: invitedFriends.map((f) => ({ uid: f.id, name: f.name })),
-          dates: votingItems, // [중요] 선택된 아이템(범위 포함)을 dates로 저장
+          dates: votingItems, // 선택된 아이템(범위 포함)을 dates로 저장
           timeSlots,
           status: 'VOTING', // 바로 투표 상태로 시작
           createdAt: new Date().toISOString(),

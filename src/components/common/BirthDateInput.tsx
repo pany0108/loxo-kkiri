@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Calendar } from 'lucide-react';
+
 import { FormInput, FormCheckbox } from 'components';
 import { formatBirth } from 'utils';
 
@@ -14,6 +15,13 @@ interface BirthDateInputProps {
   required?: boolean;
 }
 
+/**
+ * 생년월일 입력 컴포넌트
+ * - 양력/음력 및 윤달 선택 기능을 포함합니다.
+ *
+ * @param {BirthDateInputProps} props
+ * @returns {JSX.Element}
+ */
 const BirthDateInput: React.FC<BirthDateInputProps> = ({ inputRef, value, isLunar, isLeapMonth, onValueChange, onTypeChange, onKeyDown, required }) => {
   // 양력으로 전환 시, 윤달은 비활성화합니다.
   useEffect(() => {

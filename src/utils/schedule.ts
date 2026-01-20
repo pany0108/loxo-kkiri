@@ -1,7 +1,8 @@
-// src/constants/index.ts
-
 import { Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2, type LucideIcon } from 'lucide-react';
 
+/**
+ * 일정 알림 설정 옵션 목록
+ */
 export const NOTIFICATION_OPTIONS = [
   { label: '알림 안함', value: 'none' },
   { label: '정시', value: '0' },
@@ -12,6 +13,9 @@ export const NOTIFICATION_OPTIONS = [
   { label: '1일 전', value: '1440' },
 ];
 
+/**
+ * 일정 색상 선택 옵션 목록 (Hex Codes)
+ */
 export const COLOR_OPTIONS = [
   '#ef4444', // red
   '#f97316', // orange
@@ -30,6 +34,9 @@ export const COLOR_OPTIONS = [
   '#71717a', // zinc
 ];
 
+/**
+ * 아이콘 키와 Lucide 아이콘 컴포넌트 매핑 객체
+ */
 export const ICON_MAP: Record<string, LucideIcon> = {
   home: Home,
   work: Briefcase,
@@ -45,5 +52,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   game: Gamepad2,
 };
 
-// (선택 사항) 아이콘 키값('home' | 'work' ...)을 다른 컴포넌트에서 타입으로 쓰기 위해 추출
+/**
+ * 아이콘 키 타입 정의
+ */
 export type IconKey = keyof typeof ICON_MAP;

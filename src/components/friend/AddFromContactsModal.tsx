@@ -54,6 +54,10 @@ interface LocalContact {
  * 연락처에서 친구 추가 모달 컴포넌트
  * - 모바일 기기의 연락처를 불러와서 앱 사용자인 경우 친구로 추가할 수 있습니다.
  * - 연락처 접근 권한 요청 및 검색 기능을 제공합니다.
+ * @param {boolean} isOpen - 모달 열림 여부
+ * @param {function} onClose - 모달 닫기 핸들러
+ * @param {UserInfo | null} myInfo - 현재 사용자 정보
+ * @param {Friend[]} existingFriends - 이미 친구인 사용자 목록
  */
 const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onClose, myInfo, existingFriends }) => {
   const [contacts, setContacts] = useState<LocalContact[]>([]);
@@ -216,7 +220,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     }
   };
 
-  // --- 스와이프 핸들러 ---
+  // --- 바텀 시트 스와이프 핸들러 ---
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;
@@ -238,6 +242,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     <AnimatePresenceSafe>
       {isOpen && (
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {/* 배경 오버레이 */}
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
             className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-4xl pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
@@ -249,10 +254,12 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
             <button onClick={onClose} className="absolute top-4 right-4 p-2 text-sub hover:text-main dark:text-gray-500 dark:hover:text-gray-300">
               <X size={20} />
             </button>
+            {/* 헤더 영역 (스와이프 핸들 포함) */}
             <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
               <h3 className="text-xl font-black text-main dark:text-white mb-4">연락처에서 친구 추가</h3>
             </div>
+            {/* 권한 없음 상태 표시 */}
             {!permissionGranted && !isLoading && (
               <div className="flex-1 flex flex-col items-center justify-center text-center text-sub dark:text-gray-400 px-6">
                 <UserPlus size={48} className="mb-4 opacity-30" />
@@ -263,6 +270,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
 
             {permissionGranted && (
               <>
+                {/* 검색 입력창 */}
                 <div className="mb-4 px-6">
                   <div className="relative flex items-center">
                     <Search size={18} className="absolute left-4 text-sub dark:text-gray-500 pointer-events-none" />
@@ -276,11 +284,13 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
                   </div>
                 </div>
 
+                {/* 로딩 및 연락처 목록 */}
                 {isLoading ? (
                   <div className="flex-1 flex items-center justify-center">
                     <Loader2 className="animate-spin text-primary w-8 h-8" />
                   </div>
                 ) : (
+                  /* 연락처 리스트 영역 */
                   <div className="flex-1 overflow-y-auto space-y-2 px-6">
                     {filteredContacts.length > 0 ? (
                       filteredContacts.map((contact, index) => (

@@ -1,11 +1,12 @@
-import { useReducer, useRef, useEffect } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { formatPhone } from 'utils';
+
 import { useFormValidation } from 'hooks/common/useFormValidation';
 import { signUpUser } from 'services/authService';
 import type { SignUpData } from 'services/authService';
+import { formatPhone } from 'utils';
 
-// --- Reducer Logic ---
+/** 회원가입 폼 상태 인터페이스 */
 interface SignUpState {
   formData: {
     email: string;
@@ -24,6 +25,7 @@ interface SignUpState {
   isLunar: boolean;
 }
 
+/** 초기 상태 값 */
 const initialState: SignUpState = {
   formData: {
     email: '',
@@ -42,6 +44,7 @@ const initialState: SignUpState = {
   isLunar: false,
 };
 
+/** 상태 업데이트 액션 타입 정의 */
 type SignUpAction =
   | { type: 'SET_FIELD'; field: keyof SignUpState['formData']; value: string }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -49,6 +52,7 @@ type SignUpAction =
   | { type: 'SET_VERIFIED'; payload: boolean }
   | { type: 'SET_BIRTH_TYPE'; payload: { isLunar: boolean; isLeapMonth: boolean } };
 
+/** 상태 관리 리듀서 함수 */
 function signUpReducer(state: SignUpState, action: SignUpAction): SignUpState {
   switch (action.type) {
     case 'SET_FIELD':
@@ -70,6 +74,10 @@ function signUpReducer(state: SignUpState, action: SignUpAction): SignUpState {
   }
 }
 
+/**
+ * 회원가입 폼 로직을 처리하는 커스텀 훅
+ * - 입력 값 관리, 유효성 검사, 회원가입 요청 등을 처리합니다.
+ */
 export const useSignupForm = () => {
   // --- Refs ---
   const emailRef = useRef<HTMLInputElement>(null);
@@ -86,6 +94,7 @@ export const useSignupForm = () => {
   const errors = useFormValidation(state.formData);
 
   // --- Effects ---
+  // 인증 번호 발송 시 입력 필드로 포커스 이동
   useEffect(() => {
     if (state.isAuthSent && !state.isVerified) {
       setTimeout(() => authCodeRef.current?.focus(), 100);
@@ -93,6 +102,7 @@ export const useSignupForm = () => {
   }, [state.isAuthSent, state.isVerified]);
 
   // --- Handlers ---
+  /** 입력 필드 변경 핸들러 */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -105,6 +115,7 @@ export const useSignupForm = () => {
     dispatch({ type: 'SET_FIELD', field: name as keyof SignUpState['formData'], value: formattedValue });
   };
 
+  /** 회원가입 제출 핸들러 */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!state.isVerified) {

@@ -12,8 +12,9 @@ import { signInWithEmail, signInWithGoogle } from 'services/authService';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
- * 이메일/비밀번호 로그인 및 Google 소셜 로그인을 처리합니다.
- * 로그인 성공 시 기존 유저 여부를 확인하여 캘린더 또는 회원가입 페이지로 이동시킵니다.
+ * - 이메일/비밀번호 로그인 및 Google 소셜 로그인을 처리합니다.
+ * - 로그인 성공 시 기존 유저 여부를 확인하여 캘린더 또는 회원가입 페이지로 이동시킵니다.
+ *
  * @returns {JSX.Element} 로그인 화면
  */
 const Login = () => {

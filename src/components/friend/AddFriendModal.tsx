@@ -6,9 +6,9 @@ import { addDoc, arrayUnion, collection, doc, getDocs, query, updateDoc, where }
 import { AlertCircle, Check, Loader2, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { auth, db } from '../../firebase';
 import { ConfirmModal } from 'components';
 import { sendPushNotificationToUser } from 'utils';
+import { auth, db } from '../../firebase';
 
 interface Friend {
   uid: string;
@@ -26,6 +26,11 @@ interface AddFriendModalProps {
  * 친구 추가 모달 컴포넌트
  * - 이메일 또는 휴대폰 번호로 사용자를 검색하여 친구로 추가합니다.
  * - 모바일 환경에서는 연락처 연동 기능을 제공합니다.
+ * @param {boolean} isOpen - 모달 열림 여부
+ * @param {function} onClose - 모달 닫기 핸들러
+ * @param {any} myInfo - 현재 사용자 정보
+ * @param {Friend[]} friends - 현재 친구 목록 (중복 확인용)
+ * @param {function} onOpenContacts - 연락처 연동 모달 열기 핸들러
  */
 const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo, friends, onOpenContacts }) => {
   const [newFriendInput, setNewFriendInput] = useState('');
@@ -35,6 +40,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
   const [addFriendMethod, setAddFriendMethod] = useState<'email' | 'phone'>('email');
   const addFriendInputRef = useRef<HTMLInputElement>(null);
 
+  // 모달 열릴 때 상태 초기화 및 포커스
   useEffect(() => {
     if (isOpen) {
       setNewFriendInput('');
@@ -43,6 +49,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   }, [isOpen]);
 
+  // 입력 방식 변경 시 포커스 유지
   useEffect(() => {
     if (isOpen) {
       addFriendInputRef.current?.focus();
@@ -57,6 +64,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     return `${nums.slice(0, 3)}-${nums.slice(3, 7)}-${nums.slice(7, 11)}`;
   };
 
+  /** 입력값 변경 핸들러 */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (addFriendMethod === 'phone') {
       setNewFriendInput(formatPhone(e.target.value));
@@ -187,11 +195,13 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
   if (!isOpen) return null;
 
   return (
+    /* 모달 오버레이 및 컨테이너 */
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-4xl p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <h3 className="text-xl font-black text-main dark:text-white mb-1">새 친구 찾기</h3>
         <p className="text-sub dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">친구의 이메일 또는 휴대폰 번호로 추가하세요.</p>
+        {/* 검색 방식 선택 탭 */}
         <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl mb-4">
           <button
             onClick={() => {
@@ -212,6 +222,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
             휴대폰 번호
           </button>
         </div>
+        {/* 입력 필드 */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 mb-6 border border-gray-100 dark:border-gray-700/50 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 transition-all">
           <input
             ref={addFriendInputRef}
@@ -226,6 +237,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
             autoFocus
           />
         </div>
+        {/* 하단 버튼 영역 */}
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-sub dark:text-gray-300 font-bold text-[14px]">
             취소
@@ -255,6 +267,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
         </button>
       </div>
 
+      {/* 권한 설정 안내 모달 */}
       <ConfirmModal
         isOpen={isPermissionModalOpen}
         onClose={() => setIsPermissionModalOpen(false)}

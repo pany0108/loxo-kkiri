@@ -1,7 +1,7 @@
+import { AnimatePresence, AnimatePresenceProps, motion } from 'framer-motion';
+import { Link, Share2, X } from 'lucide-react';
 import React, { useRef } from 'react';
 import toast from 'react-hot-toast';
-import { Link, Share2, X } from 'lucide-react';
-import { motion, AnimatePresence, AnimatePresenceProps } from 'framer-motion';
 
 interface ShareMeetingModalProps {
   isOpen: boolean;
@@ -10,11 +10,20 @@ interface ShareMeetingModalProps {
   meetingUrl: string;
 }
 
+/**
+ * 약속 공유 모달 컴포넌트
+ * - 링크 복사 또는 Web Share API를 통한 공유 기능을 제공합니다.
+ * @param {boolean} isOpen - 모달 열림 여부
+ * @param {function} onClose - 모달 닫기 핸들러
+ * @param {string} meetingTitle - 약속 제목
+ * @param {string} meetingUrl - 공유할 약속 링크 URL
+ */
 const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, meetingTitle, meetingUrl }) => {
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
 
+  // --- 스와이프 핸들러 ---
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;
@@ -32,6 +41,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  /** 링크 복사 핸들러 */
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(meetingUrl);
@@ -43,6 +53,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
     onClose();
   };
 
+  /** 공유하기 핸들러 (Web Share API) */
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -71,6 +82,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
   return (
     <AnimatePresenceSafe>
       {isOpen && (
+        /* 모달 컨테이너 (바텀 시트) */
         <motion.div
           className="fixed inset-0 z-50 flex flex-col justify-end"
           role="dialog"
@@ -87,6 +99,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           >
+            {/* 헤더 및 스와이프 핸들 */}
             <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
               <div className="flex justify-between items-center mb-4">
@@ -97,6 +110,7 @@ const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({ isOpen, onClose, 
               </div>
             </div>
 
+            {/* 공유 옵션 버튼 목록 */}
             <div className="px-6 space-y-3">
               <button
                 onClick={handleShare}

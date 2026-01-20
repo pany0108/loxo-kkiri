@@ -11,14 +11,13 @@ import {
   updatePassword,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { auth, googleProvider } from '../firebase';
 import { setupInitialCalendars } from './userService';
 import { getDocument, setDocument } from './firestoreService';
 
-// Define the shape of the data required for sign-up
 export interface SignUpData {
   email: string;
   password: string;
@@ -40,11 +39,12 @@ interface UserProfileData {
 }
 
 /**
- * Signs up a new user or completes a social sign-up by creating their profile and setting up initial data.
- * This is a helper function to be used by signUpUser and completeSocialSignUp.
- * @param user - The Firebase user object.
- * @param data - The user's profile information.
- * @returns The user's full name.
+ * 사용자 프로필 생성 및 초기 데이터 설정을 완료합니다.
+ * - 회원가입 및 소셜 로그인 추가 정보 입력 시 공통으로 사용됩니다.
+ *
+ * @param {User} user - Firebase 사용자 객체
+ * @param {UserProfileData} data - 사용자 프로필 정보
+ * @returns {Promise<{ fullName: string }>} 사용자 전체 이름
  */
 const finalizeUserSetup = async (user: User, data: UserProfileData): Promise<{ fullName: string }> => {
   const { lastName, firstName, phone, birthDate, isLunar, isLeapMonth } = data;
@@ -74,10 +74,11 @@ const finalizeUserSetup = async (user: User, data: UserProfileData): Promise<{ f
 };
 
 /**
- * Signs up a new user, creates their profile, and sets up initial data.
- * Throws an error from Firebase on failure, which should be caught by the caller.
- * @param data - The user's sign-up information.
- * @returns An object containing the newly created user and their full name.
+ * 이메일/비밀번호로 회원가입을 진행합니다.
+ *
+ * @param {SignUpData} data - 회원가입 정보
+ * @returns {Promise<{ user: User; fullName: string }>} 생성된 사용자 객체 및 이름
+ * @throws {Error} Firebase 인증 에러 발생 시
  */
 export const signUpUser = async (data: SignUpData): Promise<{ user: User; fullName: string }> => {
   const { email, password, ...profileData } = data;
@@ -102,11 +103,11 @@ export interface SocialSignUpData {
 }
 
 /**
- * Completes the sign-up process for a social login user by adding additional details.
- * Throws an error on failure.
- * @param user - The existing Firebase user object from social login.
- * @param data - The additional user information from the form.
- * @returns An object containing the user's full name.
+ * 소셜 로그인 사용자의 추가 정보 입력을 완료합니다.
+ *
+ * @param {User} user - 소셜 로그인된 Firebase 사용자 객체
+ * @param {SocialSignUpData} data - 추가 입력 정보
+ * @returns {Promise<{ fullName: string }>} 사용자 전체 이름
  */
 export const completeSocialSignUp = async (user: User, data: SocialSignUpData): Promise<{ fullName: string }> => {
   // Finalize user profile and initial data setup
@@ -119,10 +120,10 @@ export interface EmailSignInCredentials {
 }
 
 /**
- * Signs in a user with their email and password.
- * Throws a Firebase error on failure.
- * @param credentials - The user's email and password.
- * @returns The authenticated user object.
+ * 이메일/비밀번호로 로그인합니다.
+ *
+ * @param {EmailSignInCredentials} credentials - 이메일 및 비밀번호
+ * @returns {Promise<User>} 인증된 사용자 객체
  */
 export const signInWithEmail = async (credentials: EmailSignInCredentials): Promise<User> => {
   const { email, password } = credentials;
@@ -131,9 +132,9 @@ export const signInWithEmail = async (credentials: EmailSignInCredentials): Prom
 };
 
 /**
- * Signs in a user with Google, handling both native and web platforms.
- * Throws a Firebase error on failure.
- * @returns The authenticated user object from Google sign-in.
+ * 구글 로그인을 진행합니다. (Native/Web 지원)
+ *
+ * @returns {Promise<User>} 인증된 사용자 객체
  */
 export const signInWithGoogle = async (): Promise<User> => {
   if (Capacitor.isNativePlatform()) {
@@ -166,10 +167,11 @@ export interface CheckUserRegistrationResult {
 }
 
 /**
- * Checks if a user is new or has an incomplete profile.
- * Creates a basic user document in Firestore if one doesn't exist.
- * @param user - The Firebase user object.
- * @returns An object indicating if the user is new and state for the next step.
+ * 사용자의 가입 상태(신규/기존)를 확인합니다.
+ * - 프로필 정보가 불완전한 경우 신규 사용자로 간주합니다.
+ *
+ * @param {User} user - Firebase 사용자 객체
+ * @returns {Promise<CheckUserRegistrationResult>} 신규 사용자 여부 및 상태 정보
  */
 export const checkUserRegistration = async (user: User): Promise<CheckUserRegistrationResult> => {
   const userData = await getDocument<{ phone?: string }>('users', user.uid);
@@ -209,10 +211,12 @@ export interface ChangePasswordCredentials {
 }
 
 /**
- * Changes the password for the currently authenticated user.
- * Throws a Firebase error on failure.
- * @param user - The currently authenticated Firebase user object.
- * @param credentials - The current and new passwords.
+ * 비밀번호를 변경합니다.
+ * - 보안을 위해 재인증 과정을 거칩니다.
+ *
+ * @param {User} user - 현재 로그인된 사용자 객체
+ * @param {ChangePasswordCredentials} credentials - 현재 비밀번호 및 새 비밀번호
+ * @returns {Promise<void>}
  */
 export const changePassword = async (user: User, credentials: ChangePasswordCredentials): Promise<void> => {
   const { currentPassword, newPassword } = credentials;
@@ -241,10 +245,10 @@ export interface FindUserResult {
 }
 
 /**
- * Finds a user's email by their name and phone number using a Cloud Function.
- * Throws an error on failure.
- * @param info - The user's name and phone number.
- * @returns An object containing the found user's email information.
+ * 이름과 전화번호로 사용자 이메일을 찾습니다. (Cloud Function 호출)
+ *
+ * @param {FindUserInfo} info - 이름 및 전화번호
+ * @returns {Promise<FindUserResult>} 찾은 이메일 정보
  */
 export const findUserByInfo = async (info: FindUserInfo): Promise<FindUserResult> => {
   // Explicitly specify the region for the Cloud Function.
@@ -255,9 +259,10 @@ export const findUserByInfo = async (info: FindUserInfo): Promise<FindUserResult
 };
 
 /**
- * Sends a password reset email to the specified email address.
- * Throws a Firebase error on failure.
- * @param email - The user's email address.
+ * 비밀번호 재설정 이메일을 발송합니다.
+ *
+ * @param {string} email - 이메일 주소
+ * @returns {Promise<void>}
  */
 export const sendPasswordReset = async (email: string): Promise<void> => {
   await sendPasswordResetEmail(auth, email);

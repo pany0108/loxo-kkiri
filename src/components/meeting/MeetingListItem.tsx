@@ -1,8 +1,8 @@
-import React from 'react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { ChevronRight, Users } from 'lucide-react';
+import React from 'react';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
@@ -26,12 +26,13 @@ interface MeetingListItemProps {
   onClick: (meeting: Meeting) => void;
 }
 
+/** 약속 상태에 따른 배지 스타일 및 텍스트 반환 함수 */
 const getStatusBadge = (status: string, isVotingCompleted?: boolean, hasVoted?: boolean) => {
   if (status === 'VOTING') {
     if (isVotingCompleted) {
       return { className: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400', text: '확정 대기중' };
     }
-    // [추가] 투표 중인데 내가 투표하지 않은 경우
+    // 투표 중인데 내가 투표하지 않은 경우
     if (hasVoted === false) {
       return { className: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold animate-pulse', text: '투표 필요' };
     }
@@ -39,7 +40,7 @@ const getStatusBadge = (status: string, isVotingCompleted?: boolean, hasVoted?: 
   }
 
   if (status === 'PENDING') {
-    // [추가] 조율 중인데 내가 응답하지 않은 경우
+    // 조율 중인데 내가 응답하지 않은 경우
     if (hasVoted === false) {
       return { className: 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold animate-pulse', text: '응답 필요' };
     }
@@ -56,6 +57,8 @@ const getStatusBadge = (status: string, isVotingCompleted?: boolean, hasVoted?: 
 /**
  * 약속 목록 아이템 컴포넌트
  * - 약속의 제목, 상태, 참여자 정보 등을 요약하여 표시합니다.
+ * @param {Meeting} meeting - 약속 정보 객체
+ * @param {function} onClick - 클릭 핸들러
  */
 const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) => {
   const badge = getStatusBadge(meeting.status, meeting.isVotingCompleted, meeting.hasVoted);
@@ -67,12 +70,14 @@ const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) =
         meeting.isRecentlyUpdated ? 'bg-blue-50/40 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'
       }`}
     >
+      {/* 좌측 정보 영역 */}
       <div className="text-left space-y-2">
         <div className="flex items-center gap-2">
           {meeting.isRetry && <span className="text-[10px] font-black px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">재요청</span>}
           <span className={`text-[10px] font-black px-2 py-1 rounded-md ${badge.className}`}>{badge.text}</span>
         </div>
         <h4 className="font-black text-main dark:text-gray-200 text-[16px] group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">{meeting.title}</h4>
+        {/* 참여자 정보 */}
         <div className="flex items-center gap-1.5 text-sub dark:text-gray-400">
           {meeting.participants && meeting.participants.length > 0 ? (
             <div className="flex -space-x-2 mr-1">
@@ -100,6 +105,7 @@ const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) =
           <span className="text-[12px] font-bold">{meeting.members}명</span>
         </div>
       </div>
+      {/* 우측 아이콘 및 업데이트 시간 */}
       <div className="flex flex-col items-end gap-1">
         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-sub dark:text-gray-400 group-hover:bg-primary/10 dark:group-hover:bg-blue-500/10 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">
           <ChevronRight size={18} />

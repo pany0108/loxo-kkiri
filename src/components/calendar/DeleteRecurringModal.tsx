@@ -8,6 +8,13 @@ interface DeleteRecurringModalProps {
   onDeleteAll: () => void;
 }
 
+/**
+ * 반복 일정 삭제 옵션 모달 컴포넌트
+ * - 이 일정만 삭제, 향후 일정 삭제, 모든 일정 삭제 옵션을 제공합니다.
+ *
+ * @param {DeleteRecurringModalProps} props
+ * @returns {JSX.Element}
+ */
 const DeleteRecurringModal = ({ onClose, onDeleteOne, onDeleteFollowing, onDeleteAll }: DeleteRecurringModalProps) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-['Pretendard']">

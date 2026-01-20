@@ -1,14 +1,16 @@
-import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { doc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { useFirestoreDoc } from '../common/useFirestore';
-import { notifyMeetingUrge } from 'services';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { MeetingData } from 'types';
 
+import { useFirestoreDoc } from 'hooks/common/useFirestore';
+import { notifyMeetingUrge } from 'services';
+import { MeetingData } from 'types';
+import { auth, db } from '../../firebase';
+
+/** 현황 슬롯 인터페이스 */
 export interface StatusSlot {
   id: string;
   date: string;
@@ -18,6 +20,10 @@ export interface StatusSlot {
   isAllVoted: boolean;
 }
 
+/**
+ * 주최자용 약속 현황 로직을 처리하는 커스텀 훅
+ * - 투표 현황 확인, 재촉 알림 전송, 약속 삭제 기능을 제공합니다.
+ */
 export const useMeetingHostStatus = () => {
   const { id: meetingId } = useParams<{ id: string }>();
   const location = useLocation();
@@ -27,6 +33,7 @@ export const useMeetingHostStatus = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  // 페이지 진입 시 스크롤 초기화
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
     if (scrollContainerRef.current) {
@@ -34,6 +41,7 @@ export const useMeetingHostStatus = () => {
     }
   }, [location.pathname]);
 
+  /** 뒤로가기 핸들러 */
   const handleBack = useCallback(() => {
     if (location.state?.fromRetry) {
       navigate('/propose', { replace: true });
@@ -42,6 +50,7 @@ export const useMeetingHostStatus = () => {
     }
   }, [location.state, navigate]);
 
+  // 하드웨어 뒤로가기 버튼 처리 (모바일)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
@@ -57,9 +66,11 @@ export const useMeetingHostStatus = () => {
     };
   }, [handleBack]);
 
+  // 약속 데이터 실시간 구독
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
 
+  // 응답 현황 데이터 (PENDING 상태일 때)
   const responseStatus = useMemo(() => {
     if (!meetingData || meetingData.status !== 'PENDING') return null;
 
@@ -75,6 +86,7 @@ export const useMeetingHostStatus = () => {
     return { list, respondedCount: list.filter((i) => i.hasResponded).length, totalCount: list.length };
   }, [meetingData]);
 
+  // 투표 현황 데이터 (VOTING 상태일 때)
   const statusData: StatusSlot[] = useMemo(() => {
     if (!meetingData || meetingData.status !== 'VOTING') return [];
 
@@ -103,6 +115,7 @@ export const useMeetingHostStatus = () => {
     return slots.sort((a, b) => b.counts.available - a.counts.available);
   }, [meetingData]);
 
+  /** 재촉 알림 전송 핸들러 */
   const handleUrge = async () => {
     if (!meetingData || !auth.currentUser) return;
 
@@ -131,6 +144,7 @@ export const useMeetingHostStatus = () => {
     }
   };
 
+  /** 약속 삭제 핸들러 */
   const handleDeleteMeeting = async () => {
     if (!meetingId || !meetingDocRef) return;
 
@@ -146,6 +160,7 @@ export const useMeetingHostStatus = () => {
     }
   };
 
+  // 모든 참여자 정보 (이름 매핑 포함)
   const allParticipants = useMemo(() => {
     if (!meetingData) return [];
     const participantInfo = new Map<string, string>();

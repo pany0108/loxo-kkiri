@@ -10,6 +10,9 @@ interface ImagePreviewModalProps {
 /**
  * 이미지 미리보기 모달 컴포넌트
  * - 이미지 목록을 슬라이드 형태로 보여줍니다.
+ *
+ * @param {ImagePreviewModalProps} props
+ * @returns {JSX.Element}
  */
 const ImagePreviewModal = ({ images, initialIndex, onClose }: ImagePreviewModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);

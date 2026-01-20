@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, BellRing, CheckCircle2, Clock, Hourglass, Loader2, MapPin, Share2, Trash2, Users, XCircle } from 'lucide-react';
 import dayjs from 'dayjs';
+import { AlertCircle, BellRing, CheckCircle2, Clock, Hourglass, Loader2, MapPin, Share2, Trash2, Users, XCircle } from 'lucide-react';
 
 import { auth } from '../../firebase';
 import { ConfirmModal, PageFooter, PageHeader, PageLayout, PageTitle, ShareMeetingModal } from 'components';
 import { useMeetingHostStatus } from 'hooks';
 
+/**
+ * 주최자용 약속 현황 페이지 컴포넌트
+ * - PENDING 상태: 친구들의 응답 현황을 확인하고, 약속을 삭제하거나 공유할 수 있습니다.
+ * - VOTING 상태: 투표 진행 상황을 확인하고, 미투표자에게 재촉 알림을 보낼 수 있습니다.
+ * @returns {JSX.Element} 주최자 현황 화면
+ */
 const MeetingHostStatus = () => {
   const navigate = useNavigate();
   const { state, handlers } = useMeetingHostStatus();

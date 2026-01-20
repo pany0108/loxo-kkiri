@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import { ChevronDown, Repeat } from 'lucide-react';
 
-// [수정] interval과 endCount가 빈 값('')을 가질 수 있도록 타입 변경
+// interval과 endCount가 빈 값('')을 가질 수 있도록 타입 변경
 export interface RecurrenceSettings {
   frequency: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
   interval: number | ''; // 빈 값 허용
@@ -21,6 +21,13 @@ interface RecurrenceOptionsProps {
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+/**
+ * 일정 반복 설정 컴포넌트
+ * - 반복 주기, 간격, 요일, 종료 조건 등을 설정할 수 있습니다.
+ *
+ * @param {RecurrenceOptionsProps} props
+ * @returns {JSX.Element}
+ */
 const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const startDayjs = dayjs(startDate);
@@ -45,7 +52,7 @@ const RecurrenceOptions = ({ startDate, value, onChange }: RecurrenceOptionsProp
     handleChange('daysOfWeek', newDays);
   };
 
-  // [수정] 숫자 입력 핸들러 (빈 값 처리 포함)
+  // 숫자 입력 핸들러 (빈 값 처리 포함)
   const handleNumberInput = (field: 'interval' | 'endCount', inputValue: string) => {
     // 1. 빈 값인 경우 바로 적용
     if (inputValue === '') {

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Send, AlignLeft, MapPin, Map } from 'lucide-react';
 import { FormInput, FormTextarea } from 'components';
+import { AlignLeft, Map, MapPin, Send } from 'lucide-react';
+import React from 'react';
 
 interface MeetingInfoFormProps {
   title: string;
@@ -12,6 +12,17 @@ interface MeetingInfoFormProps {
   onMapClick?: () => void;
 }
 
+/**
+ * 약속 기본 정보 입력 폼 컴포넌트
+ * - 제목, 메모, 장소를 입력받습니다.
+ * @param {string} title - 약속 제목
+ * @param {string} description - 약속 설명/메모
+ * @param {string} location - 약속 장소
+ * @param {function} onTitleChange - 제목 변경 핸들러
+ * @param {function} onDescriptionChange - 설명 변경 핸들러
+ * @param {function} onLocationChange - 장소 변경 핸들러
+ * @param {function} [onMapClick] - 지도 버튼 클릭 핸들러
+ */
 const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, location, onTitleChange, onDescriptionChange, onLocationChange, onMapClick }) => {
   return (
     <section className="space-y-4">

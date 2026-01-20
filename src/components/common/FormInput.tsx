@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, Eye, EyeOff, X } from 'lucide-react';
 
-/**
- * FormInput 컴포넌트의 Props 인터페이스
- */
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactElement;
   rightContent?: React.ReactNode;
@@ -19,7 +16,9 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 /**
  * 공통 입력 필드 컴포넌트
  * - 아이콘, 라벨, 에러 메시지, 성공 상태, 비밀번호 토글, 초기화 버튼 등을 지원합니다.
+ *
  * @param {FormInputProps} props - 컴포넌트 속성
+ * @returns {JSX.Element}
  */
 const FormInput: React.FC<FormInputProps> = ({ icon, rightContent, label, error, success, containerClassName, wrapperClassName, inputRef, onClear, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);

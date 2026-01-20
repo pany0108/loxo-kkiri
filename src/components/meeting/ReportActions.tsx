@@ -1,11 +1,17 @@
-import React from 'react';
 import { RefreshCw, Trash2 } from 'lucide-react';
+import React from 'react';
 
 interface ReportActionsProps {
   onRetry: () => void;
   onCancel: () => void;
 }
 
+/**
+ * 결과 리포트 화면의 하단 액션 버튼 컴포넌트
+ * - 일정 재요청 또는 약속 취소 기능을 제공합니다.
+ * @param {function} onRetry - 재요청 핸들러
+ * @param {function} onCancel - 취소 핸들러
+ */
 const ReportActions: React.FC<ReportActionsProps> = ({ onRetry, onCancel }) => {
   return (
     <div className="mt-10 pt-6 border-t border-gray-100 dark:border-gray-800">

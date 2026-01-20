@@ -8,10 +8,20 @@ interface SyncTimeModalProps {
   onApply: () => void;
 }
 
+/**
+ * 시간 일괄 설정 모달 컴포넌트
+ * - 모든 날짜의 시작/종료 시간을 한 번에 설정할 수 있습니다.
+ * @param {boolean} isOpen - 모달 열림 여부
+ * @param {function} onClose - 모달 닫기 핸들러
+ * @param {object} syncTime - 설정할 시작/종료 시간 ({start, end})
+ * @param {function} onSyncTimeChange - 시간 변경 핸들러
+ * @param {function} onApply - 적용 버튼 핸들러
+ */
 const SyncTimeModal: React.FC<SyncTimeModalProps> = ({ isOpen, onClose, syncTime, onSyncTimeChange, onApply }) => {
   if (!isOpen) return null;
 
   return (
+    /* 모달 오버레이 */
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-xs bg-white dark:bg-gray-800 rounded-4xl p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200">

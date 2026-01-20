@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, doc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
@@ -10,6 +10,12 @@ import { ConfirmMeetingDialog, ConfirmModal, PageLayout, ReportActions, ReportHe
 import { useMeetingReport } from 'hooks';
 import { findTargetCalendarForMembers, notifyMeetingConfirmed } from 'services';
 
+/**
+ * 약속 조율 결과 리포트 페이지 컴포넌트
+ * - 투표 결과를 종합하여 보여주고, 주최자가 최종 시간을 확정할 수 있습니다.
+ *
+ * @returns {JSX.Element} 리포트 화면
+ */
 const MeetingReport = () => {
   const navigate = useNavigate();
 

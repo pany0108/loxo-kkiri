@@ -1,8 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { Plus, Search, UserPlus, Users, X } from 'lucide-react';
-import toast from 'react-hot-toast';
-
 import { AddFriendModal, AddFromContactsModal, FriendListPopup } from 'components';
+import { Plus, Search, UserPlus, Users, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface Friend {
   uid: string;
@@ -30,6 +29,12 @@ interface FriendSelectorForMeetingProps {
 /**
  * 약속 생성 시 친구 선택 컴포넌트
  * - 친구 검색, 선택, 추가 기능을 제공합니다.
+ * @param {GroupedFriends[]} groupedFriends - 그룹화된 친구 목록
+ * @param {Friend[]} invitedFriends - 초대된 친구 목록
+ * @param {Friend[]} allFriends - 전체 친구 목록
+ * @param {function} onToggleFriend - 친구 선택 토글 핸들러
+ * @param {function} onToggleGroup - 그룹 선택 토글 핸들러
+ * @param {any} user - 현재 사용자 정보
  */
 const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ groupedFriends, invitedFriends, allFriends, onToggleFriend, onToggleGroup, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +82,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
           <label className="text-caption">누구와 함께하나요?</label>
         </div>
 
+        {/* 검색 및 추가 영역 */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[24px] p-4 border-2 border-transparent space-y-4">
           <div className="relative">
             <div className="flex gap-2">
@@ -117,6 +123,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
               </button>
             </div>
           </div>
+          {/* 선택된 친구 목록 표시 */}
           {invitedFriends.length > 0 && (
             <div className="px-1">
               <h5 className="text-xs font-bold text-sub dark:text-gray-500 mb-2">선택된 친구 ({invitedFriends.length}명)</h5>
@@ -135,6 +142,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
             </div>
           )}
 
+          {/* 친구 목록 팝업 열기 버튼 */}
           <button
             onClick={() => setIsPopupOpen(true)}
             className="w-full h-[52px] border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-[20px] flex items-center justify-center gap-2 text-sub dark:text-gray-400 font-bold text-[13px] hover:border-primary hover:text-primary hover:bg-primary/20 transition-all active:scale-[0.99]"
@@ -144,6 +152,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
           </button>
         </div>
       </section>
+      {/* 관련 모달들 */}
       <FriendListPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}

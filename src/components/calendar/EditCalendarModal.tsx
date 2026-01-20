@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Briefcase, Check, ChevronDown, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, PenLine, Plane, ShoppingCart, Star, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { auth, db } from '../../firebase';
+import { auth, db } from '../../firebase'; // firebase config
 
 const CALENDAR_ICONS = [
   { id: 'home', component: Home, label: '집' },
@@ -57,6 +57,9 @@ interface EditCalendarModalProps {
 /**
  * 캘린더 수정 모달 컴포넌트
  * - 캘린더의 이름, 아이콘, 색상을 수정하거나 삭제할 수 있습니다.
+ *
+ * @param {EditCalendarModalProps} props
+ * @returns {JSX.Element | null}
  */
 const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, calendar, onDelete }) => {
   const [name, setName] = useState('');
@@ -136,12 +139,14 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
         <p className="text-sub dark:text-gray-500 text-[13px] mb-6 font-medium leading-relaxed">캘린더의 이름과 아이콘, 색상을 변경합니다.</p>
 
         <div className="space-y-6">
+          {/* 캘린더 이름 입력 */}
           <div className="flex items-center h-[58px] bg-gray-50 dark:bg-gray-700 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-700 rounded-xl px-5 transition-all">
             <PenLine size={18} className="text-sub mr-3" />
             <input value={name} onChange={(e) => setName(e.target.value)} type="text" className="w-full bg-transparent outline-none font-bold text-main dark:text-white" />
           </div>
 
           <div className="flex items-center justify-between">
+            {/* 캘린더 색상 선택 */}
             <label className="block text-[13px] font-black text-sub ml-1">캘린더 아이콘</label>
             <div className="relative" ref={colorDropdownRef}>
               <button
@@ -176,6 +181,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
             </div>
           </div>
 
+          {/* 캘린더 아이콘 선택 */}
           <div className="flex flex-wrap gap-3 px-1">
             {CALENDAR_ICONS.map(({ id, component: Icon }) => (
               <button

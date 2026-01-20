@@ -1,5 +1,8 @@
 /**
- * 휴대폰 번호 포맷팅 (010-0000-0000)
+ * 휴대폰 번호 포맷팅 함수 (010-0000-0000)
+ *
+ * @param {string} value - 숫자만 포함된 문자열 또는 포맷팅되지 않은 전화번호
+ * @returns {string} 하이픈이 포함된 전화번호 문자열
  */
 export const formatPhone = (value: string) => {
   const nums = value.replace(/[^\d]/g, '');
@@ -9,7 +12,10 @@ export const formatPhone = (value: string) => {
 };
 
 /**
- * 생년월일 포맷팅 (YYYY/MM/DD)
+ * 생년월일 포맷팅 함수 (YYYY/MM/DD)
+ *
+ * @param {string} value - 숫자만 포함된 문자열
+ * @returns {string} 슬래시가 포함된 생년월일 문자열
  */
 export const formatBirth = (value: string) => {
   const nums = value.replace(/[^\d]/g, '');

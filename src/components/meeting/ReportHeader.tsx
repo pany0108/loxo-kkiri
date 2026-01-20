@@ -1,7 +1,7 @@
-import React from 'react';
-import { Sparkles, MapPin, CalendarCheck, Calendar } from 'lucide-react';
-import dayjs from 'dayjs';
 import { PageTitle } from 'components';
+import dayjs from 'dayjs';
+import { Calendar, CalendarCheck, MapPin, Sparkles } from 'lucide-react';
+import React from 'react';
 
 interface ReportHeaderProps {
   title: string;
@@ -13,8 +13,19 @@ interface ReportHeaderProps {
   isRetry?: boolean;
 }
 
+/**
+ * 리포트 페이지 헤더 컴포넌트
+ * - 약속 상태(조율 중, 투표 중, 확정)에 따라 다른 메시지와 정보를 표시합니다.
+ * @param {string} title - 약속 제목
+ * @param {string} [location] - 약속 장소
+ * @param {'PENDING' | 'VOTING' | 'CONFIRMED'} status - 약속 상태
+ * @param {object} [confirmedSlot] - 확정된 시간 정보
+ * @param {string} [scheduleId] - 연결된 일정 ID
+ * @param {function} [onNavigate] - 페이지 이동 핸들러
+ * @param {boolean} [isRetry] - 재요청 여부
+ */
 const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, confirmedSlot, scheduleId, onNavigate, isRetry }) => {
-  // [추가] 확정된 날짜 표시 포맷팅
+  // 확정된 날짜 표시 포맷팅
   let confirmedDateDisplay = confirmedSlot?.date;
   if (confirmedSlot?.date) {
     if (confirmedSlot.date.includes(':')) {
@@ -27,6 +38,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
 
   return (
     <header className="mb-8">
+      {/* 아이콘 및 기본 정보 */}
       <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 dark:bg-blue-500/10 rounded-xl mb-6">
         <CalendarCheck className="text-primary dark:text-blue-400 w-6 h-6" />
       </div>
@@ -37,6 +49,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({ title, location, status, co
           <span>{location}</span>
         </div>
       )}
+      {/* 상태별 메시지 및 추가 정보 */}
       {status === 'CONFIRMED' ? (
         <>
           <PageTitle>

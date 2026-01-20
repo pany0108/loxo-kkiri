@@ -1,6 +1,6 @@
-import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
 
 interface DateSelectorCalendarProps {
   currentMonth: dayjs.Dayjs;
@@ -11,6 +11,17 @@ interface DateSelectorCalendarProps {
   onDateClick: (dateStr: string) => void;
 }
 
+/**
+ * 날짜 선택 달력 컴포넌트
+ * - 월 이동 및 날짜 선택 기능을 제공합니다.
+ * - 내 일정, 주최자 제안 일정, 내가 선택한 일정 등을 표시합니다.
+ * @param {dayjs.Dayjs} currentMonth - 현재 표시 중인 월
+ * @param {function} onMonthChange - 월 변경 핸들러
+ * @param {object[]} myNewSlots - 내가 새로 제안한 슬롯 목록
+ * @param {object[]} hostSlots - 주최자가 제안한 슬롯 목록
+ * @param {string[]} myExistingSchedules - 내 기존 일정이 있는 날짜 목록
+ * @param {function} onDateClick - 날짜 클릭 핸들러
+ */
 const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMonth, onMonthChange, myNewSlots, hostSlots, myExistingSchedules, onDateClick }) => {
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
@@ -23,6 +34,7 @@ const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMont
 
   return (
     <div className="bg-gray-50 dark:bg-gray-800 rounded-[32px] p-6 border-2 border-transparent">
+      {/* 월 이동 네비게이션 */}
       <div className="flex items-center justify-between mb-6 px-2">
         <button
           onClick={() => onMonthChange(currentMonth.subtract(1, 'month'))}
@@ -39,6 +51,7 @@ const DateSelectorCalendar: React.FC<DateSelectorCalendarProps> = ({ currentMont
         </button>
       </div>
 
+      {/* 날짜 그리드 */}
       <div className="grid grid-cols-7 gap-y-3 gap-x-1 text-center">
         {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
           <span key={d} className="text-[11px] font-black text-sub dark:text-gray-400 mb-2">

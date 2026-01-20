@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { X, Users, Check, Folder } from 'lucide-react';
+import { Check, Folder, Users, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface Friend {
   id: string;
@@ -22,6 +22,16 @@ interface FriendListPopupProps {
   onToggleGroup: (group: GroupedFriends) => void;
 }
 
+/**
+ * 친구 목록 선택 팝업 컴포넌트
+ * - 그룹별 또는 전체(가나다순) 친구 목록을 보여주고 선택할 수 있습니다.
+ * @param {boolean} isOpen - 팝업 열림 여부
+ * @param {function} onClose - 팝업 닫기 핸들러
+ * @param {GroupedFriends[]} groupedFriends - 그룹화된 친구 목록
+ * @param {Friend[]} invitedFriends - 이미 초대된 친구 목록
+ * @param {function} onToggleFriend - 개별 친구 선택 토글 핸들러
+ * @param {function} onToggleGroup - 그룹 전체 선택 토글 핸들러
+ */
 const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, groupedFriends, invitedFriends, onToggleFriend, onToggleGroup }) => {
   const [viewMode, setViewMode] = useState<'group' | 'alphabetical'>('alphabetical');
   const invitedIds = useMemo(() => new Set(invitedFriends.map((f) => f.id)), [invitedFriends]);
@@ -33,8 +43,10 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
   if (!isOpen) return null;
 
   return (
+    /* 모달 오버레이 */
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-300">
       <div className="relative w-full max-w-md h-[80vh] bg-white dark:bg-gray-800 rounded-4xl px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl flex flex-col">
+        {/* 헤더 */}
         <div className="flex justify-between items-center mb-4 shrink-0">
           <h3 className="text-lg font-black text-main dark:text-white flex items-center gap-2">친구 목록</h3>
           <button onClick={onClose} className="p-2 -mr-2 text-sub dark:text-gray-500 hover:text-main dark:hover:text-gray-300 rounded-full transition-colors">
@@ -42,6 +54,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
           </button>
         </div>
 
+        {/* 보기 모드 전환 탭 */}
         <div className="mb-4 shrink-0">
           <div className="flex bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
             <button
@@ -63,6 +76,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
           </div>
         </div>
 
+        {/* 친구 목록 영역 */}
         <div className="flex-1 overflow-y-auto -mx-2 px-2 space-y-3">
           {viewMode === 'group' &&
             groupedFriends.map((group) => {
@@ -134,6 +148,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, grou
             })}
         </div>
 
+        {/* 하단 완료 버튼 */}
         <div className="mt-4 shrink-0">
           <button
             onClick={onClose}

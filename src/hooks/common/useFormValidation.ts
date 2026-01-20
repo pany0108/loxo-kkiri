@@ -1,17 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 import { validatePassword } from 'utils';
 
 type FormData = Record<string, any>;
 
+/**
+ * 폼 데이터 유효성 검사를 수행하는 커스텀 훅
+ * - 이메일, 비밀번호, 비밀번호 확인 필드에 대한 실시간 유효성 검사를 처리합니다.
+ * @param {FormData} formData - 검사할 폼 데이터 객체
+ * @returns {Record<string, string>} 각 필드별 에러 메시지 객체
+ */
 export const useFormValidation = (formData: FormData) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  /**
-   * 이메일 형식 실시간 검사 Effect
-   */
+  // 이메일 형식 실시간 검사
   useEffect(() => {
     if (!formData.email) {
-      setErrors((prev) => ({ ...prev, email: '' }));
+      setErrors((prev) => {
+        const { email, ...rest } = prev;
+        return rest;
+      });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,12 +30,13 @@ export const useFormValidation = (formData: FormData) => {
     }
   }, [formData.email]);
 
-  /**
-   * 비밀번호 실시간 유효성 검사 Effect
-   */
+  // 비밀번호 실시간 유효성 검사
   useEffect(() => {
     if (!formData.password) {
-      setErrors((prev) => ({ ...prev, password: '' }));
+      setErrors((prev) => {
+        const { password, ...rest } = prev;
+        return rest;
+      });
       return;
     }
 
@@ -40,9 +49,7 @@ export const useFormValidation = (formData: FormData) => {
     }
   }, [formData.password, formData.email]);
 
-  /**
-   * 비밀번호 일치 여부 실시간 검사 Effect
-   */
+  // 비밀번호 일치 여부 실시간 검사
   useEffect(() => {
     if (formData.password !== formData.confirmPassword) {
       setErrors((prev) => ({ ...prev, confirmPassword: '비밀번호가 일치하지 않습니다.' }));

@@ -2,9 +2,10 @@ import { useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 /**
- * 페이지 전환 시 스크롤을 최상단으로 초기화하는 훅입니다.
- * @param dependency - 스크롤 초기화를 트리거할 의존성 (기본값: location.pathname)
- * @returns 스크롤 컨테이너에 연결할 ref
+ * 페이지 전환 시 스크롤을 최상단으로 초기화하는 커스텀 훅
+ * - 라우트 변경 또는 특정 의존성 변경 시 스크롤을 맨 위로 이동시킵니다.
+ * @param {any} [dependency] - 스크롤 초기화를 트리거할 의존성 (기본값: location.pathname)
+ * @returns {React.RefObject<HTMLDivElement>} 스크롤 컨테이너에 연결할 ref
  */
 export const useScrollToTop = (dependency?: any) => {
   const location = useLocation();

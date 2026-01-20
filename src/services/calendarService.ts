@@ -12,11 +12,14 @@ export interface CreateCalendarData {
 }
 
 /**
- * Creates a new calendar, checking for duplicates with the same members.
- * @param user The current user creating the calendar.
- * @param data The data for the new calendar.
- * @returns The ID of the newly created calendar.
- * @throws An error if a duplicate calendar exists.
+ * 새로운 캘린더를 생성합니다.
+ * - 동일한 멤버 구성의 캘린더가 이미 존재하는지 확인합니다.
+ * - 캘린더 생성 후 초대된 멤버들에게 알림을 전송합니다.
+ *
+ * @param {User} user - 캘린더를 생성하는 현재 사용자
+ * @param {CreateCalendarData} data - 캘린더 생성 데이터 (이름, 색상, 멤버 등)
+ * @returns {Promise<{ calendarId: string }>} 생성된 캘린더 ID
+ * @throws {Error} 동일한 멤버 구성의 캘린더가 이미 존재할 경우 에러 발생
  */
 export const createCalendar = async (user: User, data: CreateCalendarData): Promise<{ calendarId: string }> => {
   const { name, color, memberUids } = data;
@@ -38,7 +41,7 @@ export const createCalendar = async (user: User, data: CreateCalendarData): Prom
     color,
     isDefault: false,
   };
-  // addDocument from firestoreService will add timestamps
+  // firestoreService의 addDocument가 타임스탬프를 추가함
   const docRef = await addDocument('calendars', calendarData);
 
   // 3. Send notifications to invited friends
@@ -60,8 +63,10 @@ export const createCalendar = async (user: User, data: CreateCalendarData): Prom
 };
 
 /**
- * Deletes a calendar and all associated schedules.
- * @param calendarId The ID of the calendar to delete.
+ * 캘린더와 해당 캘린더에 속한 모든 일정을 삭제합니다.
+ *
+ * @param {string} calendarId - 삭제할 캘린더 ID
+ * @returns {Promise<void>}
  */
 export const deleteCalendar = async (calendarId: string): Promise<void> => {
   const batch = createBatch();
@@ -84,10 +89,13 @@ export const deleteCalendar = async (calendarId: string): Promise<void> => {
 };
 
 /**
- * Allows a user to leave a shared calendar.
- * If the user is the last member, the calendar is deleted.
- * @param calendar The calendar object to leave.
- * @param user The user who is leaving.
+ * 공유 캘린더에서 나갑니다.
+ * - 마지막 멤버인 경우 캘린더를 삭제합니다.
+ * - 남은 멤버들에게 퇴장 알림을 전송합니다.
+ *
+ * @param {CalendarType} calendar - 나갈 캘린더 객체
+ * @param {User} user - 나가는 사용자 객체
+ * @returns {Promise<void>}
  */
 export const leaveCalendar = async (calendar: CalendarType, user: User): Promise<void> => {
   if (calendar.members.length <= 1) {
@@ -115,12 +123,13 @@ export const leaveCalendar = async (calendar: CalendarType, user: User): Promise
 };
 
 /**
- * Finds a target calendar for a given set of members.
- * 1. Finds a shared calendar with the exact same members.
- * 2. If not found, finds the user's default calendar.
- * @param members An array of member UIDs.
- * @param userId The current user's ID.
- * @returns The found calendar object or null.
+ * 주어진 멤버 구성에 맞는 캘린더를 찾습니다.
+ * 1. 멤버 구성이 정확히 일치하는 공유 캘린더를 찾습니다.
+ * 2. 없다면 사용자의 기본 캘린더를 반환합니다.
+ *
+ * @param {string[]} members - 멤버 UID 배열
+ * @param {string} userId - 현재 사용자 ID
+ * @returns {Promise<CalendarType | null>} 찾은 캘린더 객체 또는 null
  */
 export const findTargetCalendarForMembers = async (members: string[], userId: string): Promise<CalendarType | null> => {
   const sortedMembers = [...members].sort();
@@ -138,7 +147,12 @@ export const findTargetCalendarForMembers = async (members: string[], userId: st
   return null;
 };
 
-// Functions to return query objects for real-time listeners
+/**
+ * 사용자가 멤버로 포함된 캘린더 목록을 조회하는 쿼리를 반환합니다.
+ *
+ * @param {string} userId - 사용자 ID
+ * @returns {Query} Firestore 쿼리 객체
+ */
 export const getCalendarsForUserQuery = (userId: string) => {
   return query(collection(db, 'calendars'), where('members', 'array-contains', userId));
 };

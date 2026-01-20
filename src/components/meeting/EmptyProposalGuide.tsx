@@ -1,6 +1,10 @@
-import React from 'react';
 import { Plus } from 'lucide-react';
+import React from 'react';
 
+/**
+ * 제안할 시간이 없을 때 표시되는 가이드 컴포넌트
+ * @returns {JSX.Element} 가이드 UI
+ */
 const EmptyProposalGuide = () => {
   return (
     <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-700/50 rounded-2xl">

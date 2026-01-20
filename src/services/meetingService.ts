@@ -1,14 +1,12 @@
-import { doc, getDocs, serverTimestamp, writeBatch, collection, runTransaction } from 'firebase/firestore';
+import { doc, getDocs, serverTimestamp, writeBatch, collection } from 'firebase/firestore';
 import { User } from 'firebase/auth';
+import dayjs from 'dayjs';
 import { db, auth } from '../firebase';
 import { getDocument, updateDocument } from './firestoreService';
 import { notifyMeetingConfirmed, notifyMeetingResponse, notifyMeetingCanceled, notifyMeetingVotingStarted } from './notificationService';
 import { findTargetCalendarForMembers } from './calendarService';
 import { createScheduleInBatch, ScheduleData } from './scheduleService';
-import dayjs from 'dayjs';
 
-// These types are assumed based on the app's logic.
-// They should be moved to a central types file if they don't exist already.
 export interface MyNewSlot {
   date: string;
   startTime: string;
@@ -35,9 +33,11 @@ export interface Meeting {
 }
 
 /**
- * Fetches a meeting and its participant responses from the subcollection.
- * @param meetingId The ID of the meeting to fetch.
- * @returns The meeting data along with participant responses.
+ * 약속 정보와 참여자들의 응답 데이터를 함께 가져옵니다.
+ *
+ * @param {string} meetingId - 약속 ID
+ * @returns {Promise<Meeting & { participantDetails: any[] }>} 약속 정보 및 참여자 상세 정보
+ * @throws {Error} 약속 정보를 찾을 수 없을 때 에러 발생
  */
 export const getMeetingWithParticipants = async (meetingId: string) => {
   const meeting = await getDocument<Meeting>('meetings', meetingId);
@@ -52,11 +52,13 @@ export const getMeetingWithParticipants = async (meetingId: string) => {
 };
 
 /**
- * Submits a participant's response for a meeting.
- * @param meetingId The ID of the meeting.
- * @param user The current user.
- * @param response The user's response data, e.g., { availableSlots: [...] }.
- * @returns An object indicating if the meeting escalated to the voting stage.
+ * 약속 제안에 대한 참여자의 응답을 제출합니다.
+ * - 모든 참여자가 응답하면 자동으로 투표 단계(VOTING)로 전환됩니다.
+ *
+ * @param {string} meetingId - 약속 ID
+ * @param {User} user - 응답하는 사용자 객체
+ * @param {{ selectedHostSlots: string[]; myNewSlots: MyNewSlot[] }} response - 선택한 시간대 및 새로운 제안 시간대
+ * @returns {Promise<{ escalatedToVoting: boolean }>} 투표 단계로 전환되었는지 여부
  */
 export const submitMeetingResponse = async (
   meetingId: string,
@@ -142,10 +144,13 @@ export const submitMeetingResponse = async (
 };
 
 /**
- * Confirms a meeting with a final time slot, creating a schedule and notifying participants.
- * @param meetingId The ID of the meeting to confirm.
- * @param selectedSlot The selected time slot with 'date' and 'time' properties.
- * @returns The ID of the newly created schedule.
+ * 약속을 최종 확정합니다.
+ * - 확정된 시간으로 일정을 생성하고, 참여자들에게 알림을 전송합니다.
+ *
+ * @param {string} meetingId - 약속 ID
+ * @param {{ date: string; time: string }} selectedSlot - 확정된 날짜 및 시간
+ * @returns {Promise<{ scheduleId: string }>} 생성된 일정 ID
+ * @throws {Error} 약속 정보나 사용자를 찾을 수 없을 때 에러 발생
  */
 export const confirmMeeting = async (meetingId: string, selectedSlot: { date: string; time: string }): Promise<{ scheduleId: string }> => {
   const meeting = await getDocument<Meeting>('meetings', meetingId);
@@ -200,10 +205,13 @@ export const confirmMeeting = async (meetingId: string, selectedSlot: { date: st
 };
 
 /**
- * Cancels a meeting and notifies all participants.
- * @param meetingId The ID of the meeting to cancel.
- * @param meetingTitle The title of the meeting for notifications.
- * @param participants An array of participant UIDs.
+ * 약속을 취소합니다.
+ * - 약속 문서를 삭제하고 참여자들에게 취소 알림을 전송합니다.
+ *
+ * @param {string} meetingId - 취소할 약속 ID
+ * @param {string} meetingTitle - 약속 제목 (알림용)
+ * @param {string[]} participants - 참여자 UID 목록
+ * @returns {Promise<void>}
  */
 export const cancelMeeting = async (meetingId: string, meetingTitle: string, participants: string[]) => {
   const user = auth.currentUser;

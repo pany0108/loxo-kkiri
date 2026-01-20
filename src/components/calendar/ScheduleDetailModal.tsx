@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Clock, MapPin, AlignLeft, Users, Calendar } from 'lucide-react';
-import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import { X, Clock, MapPin, AlignLeft, Users, Calendar } from 'lucide-react';
 
 interface ScheduleDetailModalProps {
   isOpen: boolean;
@@ -10,6 +10,13 @@ interface ScheduleDetailModalProps {
   scheduleId: string;
 }
 
+/**
+ * 일정 간편 상세 정보 모달 컴포넌트
+ * - 캘린더에서 일정을 클릭했을 때 간단한 정보를 보여줍니다.
+ *
+ * @param {ScheduleDetailModalProps} props
+ * @returns {JSX.Element | null}
+ */
 const ScheduleDetailModal: React.FC<ScheduleDetailModalProps> = ({ isOpen, onClose, schedule, scheduleId }) => {
   const navigate = useNavigate();
 

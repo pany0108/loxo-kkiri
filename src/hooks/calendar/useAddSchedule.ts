@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { collection, addDoc, query, where, writeBatch, orderBy } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useFirestoreQuery } from '../common/useFirestore'; // useFirestore.ts에서 export 된다고 가정
-import { notifyScheduleAdded } from 'services';
-import { RecurrenceSettings } from 'components';
+import { addDoc, collection, orderBy, query, where, writeBatch } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
-// 타입 정의
+import { RecurrenceSettings } from 'components';
+import { useFirestoreQuery } from '../common/useFirestore';
+import { notifyScheduleAdded } from 'services';
+import { auth, db } from '../../firebase';
+
+/** 캘린더 타입 인터페이스 */
 export interface CalendarType {
   id: string;
   name: string;
@@ -18,6 +19,7 @@ export interface CalendarType {
   color: string;
 }
 
+/** 일정 입력 폼 상태 인터페이스 */
 export interface FormDataState {
   title: string;
   calendarId: string;
@@ -30,6 +32,10 @@ export interface FormDataState {
   notification: string;
 }
 
+/**
+ * 일정 추가 페이지의 로직을 담당하는 커스텀 훅
+ * - 폼 데이터 관리, 캘린더 선택, 일정 저장 등의 기능을 제공합니다.
+ */
 export const useAddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,6 +49,7 @@ export const useAddSchedule = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [debouncedTitle, setDebouncedTitle] = useState('');
 
+  // 사용자 인증 상태 감지
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -57,7 +64,7 @@ export const useAddSchedule = () => {
   }, [user]);
 
   const { data: myCalendarsData } = useFirestoreQuery<CalendarType>(calendarsQuery);
-  const myCalendars = myCalendarsData || [];
+  const myCalendars = useMemo(() => myCalendarsData || [], [myCalendarsData]);
 
   // 내 일정 로딩 (검색용)
   const schedulesQuery = useMemo(() => {
@@ -85,6 +92,7 @@ export const useAddSchedule = () => {
 
   const receivedData = location.state as any;
 
+  /** 초기 날짜 설정 함수 */
   const getInitialDate = (dateStr?: string, isAllDay?: boolean) => {
     if (!dateStr) return dayjs().format('YYYY-MM-DDTHH:mm');
     return isAllDay ? dayjs(dateStr).format('YYYY-MM-DD') : dayjs(dateStr).format('YYYY-MM-DDTHH:mm');
@@ -149,6 +157,7 @@ export const useAddSchedule = () => {
     }
   }, [formData.calendarId, myCalendars, receivedData?.calendarId, receivedData?.newlyCreatedCalendarId]);
 
+  // 반복 설정 초기화
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(() => {
     if (receivedData?.from === '/create-calendar' && receivedData.scheduleData) {
       return receivedData.scheduleData.recurrence;
@@ -184,18 +193,14 @@ export const useAddSchedule = () => {
     setShowSuggestions(uniqueResults.length > 0);
   }, [debouncedTitle, mySchedules]);
 
+  /** 입력 필드 변경 핸들러 */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
-      // if (!newData.isAllDay && name === 'start') {
-      //   const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
-      //   const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
-      //   if (isInitialTime || isStartTimeAfterEndTime) {
-      //     newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
       if (!newData.isAllDay) {
         if (name === 'start') {
-          // [수정] 최초 시간이 설정되지 않았거나(시작=종료), 시작 시간이 종료 시간을 넘어서는 경우에만 종료 시간을 1시간 뒤로 자동 조정
+          // 최초 시간이 설정되지 않았거나(시작=종료), 시작 시간이 종료 시간을 넘어서는 경우에만 종료 시간을 1시간 뒤로 자동 조정
           const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
           const isStartTimeAfterEndTime = dayjs(value).isSameOrAfter(dayjs(prev.end));
 
@@ -203,7 +208,7 @@ export const useAddSchedule = () => {
             newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
           }
         } else if (name === 'end') {
-          // [추가] 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
+          // 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
           const startTime = dayjs(prev.start);
           const newEndTime = dayjs(value);
 
@@ -216,11 +221,13 @@ export const useAddSchedule = () => {
     });
   };
 
+  /** 캘린더 선택 핸들러 */
   const handleCalendarSelect = (calendar: CalendarType) => {
     setFormData((prev) => ({ ...prev, calendarId: calendar.id, color: calendar.color || '#3b82f6' }));
     setIsCalListOpen(false);
   };
 
+  /** 일정 추천 항목 클릭 핸들러 */
   const handleSuggestionClick = (schedule: any) => {
     setFormData({
       ...formData,
@@ -242,6 +249,7 @@ export const useAddSchedule = () => {
     toast.success(`'${schedule.title}' 일정을 불러왔습니다.`);
   };
 
+  /** 종일 설정 토글 핸들러 */
   const handleToggle = () => {
     setFormData((prev) => {
       const nextIsAllDay = !prev.isAllDay;
@@ -254,6 +262,7 @@ export const useAddSchedule = () => {
     });
   };
 
+  /** 폼 제출 핸들러 */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return toast.error('로그인이 필요합니다.');

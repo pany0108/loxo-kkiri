@@ -1,6 +1,6 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DatePickerPopupProps {
   isOpen: boolean;
@@ -11,6 +11,13 @@ interface DatePickerPopupProps {
   currentDate: Date;
 }
 
+/**
+ * 연도 및 월 선택 팝업 컴포넌트
+ * - 캘린더 헤더에서 날짜를 빠르게 이동할 때 사용됩니다.
+ *
+ * @param {DatePickerPopupProps} props
+ * @returns {JSX.Element | null}
+ */
 const DatePickerPopup: React.FC<DatePickerPopupProps> = ({ isOpen, datePickerRef, pickerYear, onYearChange, onMonthSelect, currentDate }) => {
   if (!isOpen) return null;
 

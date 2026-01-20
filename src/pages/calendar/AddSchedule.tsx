@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
+import { CalendarPlus } from 'lucide-react';
 
 import { auth } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
@@ -10,7 +10,9 @@ import { useAddSchedule } from 'hooks';
 /**
  * 일정 추가 페이지 컴포넌트
  * - 새로운 일정을 생성하는 폼 제공
- * - 날짜, 시간, 반복 설정, 위치, 알림 등 설정 가능
+ * - 날짜, 시간, 반복 설정, 위치, 알림 등을 설정할 수 있습니다.
+ *
+ * @returns {JSX.Element} 일정 추가 화면
  */
 const AddSchedule = () => {
   const navigate = useNavigate();
@@ -62,7 +64,11 @@ const AddSchedule = () => {
 
   // --- Handlers ---
 
-  /** 기념일 체크박스 변경 핸들러 */
+  /**
+   * 기념일 체크박스 변경 핸들러
+   * - 기념일 설정 시 종일 일정으로 자동 변경되고, 음력/윤달 설정이 초기화됩니다.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - 이벤트 객체
+   */
   const handleAnniversaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     handleChange({ target: { name: 'isAnniversary', value: checked } } as any);
@@ -76,12 +82,19 @@ const AddSchedule = () => {
     }
   };
 
-  /** 음력 체크박스 변경 핸들러 */
+  /**
+   * 음력 체크박스 변경 핸들러
+   * @param {boolean} isLunarValue - 음력 여부
+   */
   const handleLunarChange = (isLunarValue: boolean) => {
     handleChange({ target: { name: 'isLunar', value: isLunarValue } } as any);
   };
 
-  /** 시간 설정 토글 핸들러 (현재 시간 기준 자동 설정) */
+  /**
+   * 시간 설정 토글 핸들러
+   * - '종일' 설정 해제 시 현재 시간 기준으로 시작/종료 시간을 자동 설정합니다.
+   * - '종일' 설정 시 시간을 초기화합니다.
+   */
   const handleTimeToggle = () => {
     const nextIsAllDay = !formData.isAllDay;
 
@@ -129,6 +142,7 @@ const AddSchedule = () => {
           </PageTitle>
         </PageHeader>
 
+        {/* 일정 입력 폼 */}
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <ScheduleForm
             formData={formData}
@@ -155,6 +169,7 @@ const AddSchedule = () => {
           />
         </form>
 
+        {/* 지도 위치 선택 모달 */}
         <LocationSelectModal
           isOpen={isMapModalOpen}
           onClose={() => setIsMapModalOpen(false)}

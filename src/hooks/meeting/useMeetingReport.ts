@@ -1,11 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { doc, writeBatch, collection } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { useFirestoreDoc } from '../common/useFirestore';
-import { confirmMeeting, cancelMeeting, Meeting as MeetingData } from 'services';
 
+import { useFirestoreDoc } from 'hooks/common/useFirestore';
+import { Meeting as MeetingData, cancelMeeting, confirmMeeting } from 'services';
+import { auth, db } from '../../firebase';
+
+/** 리포트 슬롯 인터페이스 */
 export interface ReportSlot {
   id: string;
   date: string;
@@ -19,19 +21,23 @@ export interface ReportSlot {
   isAllAvailable: boolean;
 }
 
+/**
+ * 약속 결과 리포트 및 확정/취소/재요청 로직을 처리하는 커스텀 훅
+ */
 export const useMeetingReport = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
-  const location = useLocation();
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isRetryModalOpen, setIsRetryModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null);
 
+  // 약속 데이터 실시간 구독
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
 
+  // 리포트 데이터 가공 (슬롯별 투표 현황)
   const reportData: ReportSlot[] = useMemo(() => {
     if (!meetingData) return [];
 
@@ -63,11 +69,13 @@ export const useMeetingReport = () => {
     return slots.sort((a, b) => (b.isAllAvailable ? 1 : 0) - (a.isAllAvailable ? 1 : 0));
   }, [meetingData]);
 
+  /** 확정 버튼 클릭 핸들러 (모달 열기) */
   const handleConfirmClick = (slot: ReportSlot) => {
     setSelectedSlot({ date: slot.date, time: slot.time });
     setIsConfirmOpen(true);
   };
 
+  /** 최종 확정 실행 핸들러 */
   const handleFinalConfirm = async () => {
     if (!selectedSlot || !meetingId) return;
 
@@ -82,10 +90,12 @@ export const useMeetingReport = () => {
     }
   };
 
+  /** 재요청 모달 열기 */
   const handleRequestRetry = () => {
     setIsRetryModalOpen(true);
   };
 
+  /** 재요청 실행 핸들러 */
   const handleRetryConfirm = async () => {
     if (!meetingId || !meetingData || !auth.currentUser) return;
 
@@ -122,10 +132,12 @@ export const useMeetingReport = () => {
     }
   };
 
+  /** 취소 모달 열기 */
   const handleCancel = () => {
     setIsCancelModalOpen(true);
   };
 
+  /** 취소 실행 핸들러 */
   const handleCancelConfirm = async () => {
     if (!meetingId || !meetingData) return;
     try {

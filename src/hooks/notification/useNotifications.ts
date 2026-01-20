@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, QuerySnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { Notification } from './useNotificationNavigation';
+import { useEffect, useState } from 'react';
+import { QueryDocumentSnapshot, QuerySnapshot, collection, onSnapshot, query, where } from 'firebase/firestore';
 
+import { Notification } from './useNotificationNavigation';
+import { db } from '../../firebase';
+
+/**
+ * 사용자의 알림 목록을 실시간으로 구독하는 커스텀 훅
+ * @param {any} user - 현재 사용자 객체
+ * @returns {Notification[]} 알림 목록 (최신순 정렬)
+ */
 export const useNotifications = (user: any) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 

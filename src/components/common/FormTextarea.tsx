@@ -10,6 +10,13 @@ interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaEle
   textareaRef?: React.Ref<HTMLTextAreaElement>;
 }
 
+/**
+ * 커스텀 텍스트 영역(Textarea) 컴포넌트
+ * - 아이콘, 라벨, 에러 메시지, 성공 상태 등을 지원합니다.
+ *
+ * @param {FormTextareaProps} props
+ * @returns {JSX.Element}
+ */
 const FormTextarea: React.FC<FormTextareaProps> = ({ icon, label, error, success, containerClassName, textareaRef, className, ...props }) => {
   const hasError = !!error;
 

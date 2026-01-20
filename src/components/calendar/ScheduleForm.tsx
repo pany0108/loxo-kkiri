@@ -3,7 +3,7 @@ import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, H
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
-import { COLOR_OPTIONS, ICON_MAP, NOTIFICATION_OPTIONS } from '../../utils/schedule';
+import { COLOR_OPTIONS, ICON_MAP, NOTIFICATION_OPTIONS } from 'utils';
 
 interface ScheduleFormProps {
   formData: any;
@@ -33,6 +33,9 @@ interface ScheduleFormProps {
 /**
  * 일정 입력 폼 컴포넌트
  * - 제목, 캘린더 선택, 날짜/시간, 반복 설정, 장소, 알림, 메모 등을 입력받습니다.
+ *
+ * @param {ScheduleFormProps} props
+ * @returns {JSX.Element}
  */
 const ScheduleForm: React.FC<ScheduleFormProps> = ({
   formData,
@@ -70,6 +73,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
   return (
     <section className="space-y-4">
+      {/* 일정 제목 입력 */}
       <div ref={titleInputRef} className="group relative">
         <FormInput
           label="일정 제목"
@@ -104,6 +108,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
+      {/* 캘린더 선택 드롭다운 */}
       <div className="group relative" ref={dropdownRef}>
         <label className="block text-caption ml-1 mb-2">캘린더</label>
         <button
@@ -169,6 +174,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
+      {/* 기념일 및 음력/윤달 설정 */}
       <div className="flex items-center justify-between px-1">
         <FormCheckbox label="기념일" checked={formData.isAnniversary || false} onChange={handleAnniversaryChange} className="text-primary" />
         {formData.isAnniversary && (
@@ -204,6 +210,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
+      {/* 시간 설정 영역 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <label className="text-caption">시간 설정</label>
@@ -274,6 +281,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         </div>
       </div>
 
+      {/* 색상 선택 */}
       <div className="space-y-3">
         <label className="block text-caption ml-1">색상</label>
         <div className="flex flex-wrap gap-3 px-1">
@@ -293,8 +301,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         </div>
       </div>
 
+      {/* 반복 설정 옵션 */}
       <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
+      {/* 상세 정보 (장소, 알림, 메모) - 기념일이 아닐 때만 표시 */}
       {!formData.isAnniversary && (
         <div className="space-y-3">
           <label className="block text-caption ml-1">상세 정보</label>

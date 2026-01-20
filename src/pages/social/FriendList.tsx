@@ -28,9 +28,11 @@ interface FriendListProps {
 
 /**
  * 친구 목록 페이지 컴포넌트
- * - 친구 목록 조회, 검색, 그룹 관리
- * - 친구 추가, 삭제, 이름 수정
- * - 공유 캘린더 연동 관리
+ * - 친구 목록 조회, 검색, 그룹 관리를 수행합니다.
+ * - 친구 추가, 삭제, 이름 수정 및 공유 캘린더 연동 관리를 제공합니다.
+ *
+ * @param {FriendListProps} props
+ * @returns {JSX.Element} 친구 목록 화면
  */
 const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const navigate = useNavigate();

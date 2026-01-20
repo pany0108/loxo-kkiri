@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { CalendarPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import {
@@ -25,6 +25,8 @@ dayjs.locale('ko');
 /**
  * 약속 제안 생성 페이지 (Step 1) 컴포넌트
  * - 약속 기본 정보 입력, 친구 초대, 날짜 선택 기능을 제공합니다.
+ *
+ * @returns {JSX.Element} 약속 생성 화면
  */
 const ProposeMeetingCreate = () => {
   const { state, handlers } = useProposeMeetingCreate();
@@ -59,7 +61,7 @@ const ProposeMeetingCreate = () => {
     setVotingItems,
   } = handlers;
 
-  // [추가] 연속 선택 모드 상태
+  // 연속 선택 모드 상태
   const [isRangeMode, setIsRangeMode] = useState(false);
   const [rangeStart, setRangeStart] = useState<string | null>(null);
   const [isRangeRemoving, setIsRangeRemoving] = useState(false);
@@ -85,12 +87,12 @@ const ProposeMeetingCreate = () => {
 
       if (isSelected) {
         setSelectedDates((prev) => prev.filter((d) => d !== date));
-        // [추가] 선택 해제 시 votingItems에서도 제거 (해당 날짜를 포함하는 모든 아이템 제거)
+        // 선택 해제 시 votingItems에서도 제거 (해당 날짜를 포함하는 모든 아이템 제거)
         setVotingItems((prev) => prev.filter((item) => !item.includes(date)));
         toast('선택 해제할 종료일을 선택해주세요.', { icon: '🗑️' });
       } else {
         setSelectedDates((prev) => [...prev, date]);
-        // [추가] 시작일만 선택된 상태에서는 votingItems에 추가하지 않음 (종료일 선택 시 처리)
+        // 시작일만 선택된 상태에서는 votingItems에 추가하지 않음 (종료일 선택 시 처리)
         toast('종료일을 선택해주세요.', { icon: '🗓️' });
       }
     } else {
@@ -111,7 +113,7 @@ const ProposeMeetingCreate = () => {
         // 제거 모드: 범위 내 날짜들을 선택 목록에서 제거
         const newSelectedDates = selectedDates.filter((d) => !datesInRange.includes(d));
         setSelectedDates(newSelectedDates);
-        // [추가] 범위 내 날짜가 포함된 votingItems 제거
+        // 범위 내 날짜가 포함된 votingItems 제거
         setVotingItems((prev) =>
           prev.filter((item) => {
             // 아이템이 범위 내의 날짜를 하나라도 포함하면 제거
@@ -132,7 +134,7 @@ const ProposeMeetingCreate = () => {
         // 추가 모드: 범위 내 날짜들을 선택 목록에 추가
         const newSelectedDates = Array.from(new Set([...selectedDates, ...datesInRange]));
         setSelectedDates(newSelectedDates);
-        // [추가] 범위 아이템 추가
+        // 범위 아이템 추가
         const rangeString = `${datesInRange[0]}:${datesInRange[datesInRange.length - 1]}`;
         setVotingItems((prev) => [...prev, rangeString]);
         toast.success(`${datesInRange.length}일이 선택되었습니다.`);
@@ -191,10 +193,10 @@ const ProposeMeetingCreate = () => {
                 setIsRangeMode(!isRangeMode);
                 setRangeStart(null);
                 setIsRangeRemoving(false);
-                setSelectedDates([]); // [추가] 모드 변경 시 선택 초기화
-                setVotingItems([]); // [추가] 모드 변경 시 아이템 초기화
+                setSelectedDates([]); // 모드 변경 시 선택 초기화
+                setVotingItems([]); // 모드 변경 시 아이템 초기화
               }}
-              votingItems={votingItems} // [추가] 범위 정보 전달
+              votingItems={votingItems} // 범위 정보 전달
               holidaysByDate={holidaysByDate}
             />
             <div className="flex justify-end gap-3 px-1">
@@ -210,7 +212,7 @@ const ProposeMeetingCreate = () => {
           </div>
         </div>
 
-        {/* [추가] 내 일정 확인 팝업 */}
+        {/* 내 일정 확인 팝업 */}
         {schedulePopup?.isOpen && (
           <SchedulePopup
             isOpen={schedulePopup.isOpen}

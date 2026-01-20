@@ -6,6 +6,13 @@ interface PageHeaderProps {
   className?: string;
 }
 
+/**
+ * 페이지 상단 헤더 컴포넌트
+ * - 아이콘과 제목, 설명을 포함하는 헤더 영역을 렌더링합니다.
+ *
+ * @param {PageHeaderProps} props
+ * @returns {JSX.Element}
+ */
 const PageHeader: React.FC<PageHeaderProps> = ({ icon, children, className = 'mb-8' }) => {
   return (
     <header className={className}>

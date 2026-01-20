@@ -1,11 +1,12 @@
-import { useReducer, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { auth } from '../../firebase';
-import { validatePassword } from 'utils';
-import { changePassword, findUserByInfo, sendPasswordReset } from 'services/authService';
 
-// --- State & Reducer ---
+import { changePassword, findUserByInfo, sendPasswordReset } from 'services/authService';
+import { validatePassword } from 'utils';
+import { auth } from '../../firebase';
+
+/** 비밀번호 변경/재설정 폼 상태 인터페이스 */
 interface ChangePasswordState {
   mode: 'change' | 'reset';
   resetStep: 1 | 2;
@@ -22,6 +23,7 @@ interface ChangePasswordState {
   errors: Record<string, string>;
 }
 
+/** 초기 상태 값 */
 const initialState: ChangePasswordState = {
   mode: 'change',
   resetStep: 1,
@@ -34,6 +36,7 @@ const initialState: ChangePasswordState = {
   errors: {},
 };
 
+/** 상태 업데이트 액션 타입 정의 */
 type Action =
   | { type: 'INITIALIZE_MODE'; payload: 'change' | 'reset' }
   | { type: 'SET_RESET_STEP'; payload: 1 | 2 }
@@ -46,6 +49,7 @@ type Action =
   | { type: 'SET_ERROR'; field: string; value: string }
   | { type: 'CLEAR_ERROR'; field: string };
 
+/** 상태 관리 리듀서 함수 */
 function reducer(state: ChangePasswordState, action: Action): ChangePasswordState {
   switch (action.type) {
     case 'INITIALIZE_MODE':
@@ -75,17 +79,25 @@ function reducer(state: ChangePasswordState, action: Action): ChangePasswordStat
   }
 }
 
+/**
+ * 비밀번호 변경 및 재설정 로직을 처리하는 커스텀 훅
+ * - 비밀번호 변경 모드와 재설정 모드를 지원합니다.
+ * - 유효성 검사, 이메일 찾기, 비밀번호 재설정 이메일 발송 등의 기능을 포함합니다.
+ */
 export const useChangePasswordForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // --- Effects for Validation and Initialization ---
+  // --- Effects ---
+
+  // 초기 모드 설정 (로그인 페이지에서 왔는지 여부에 따라 결정)
   useEffect(() => {
     const mode = location.state?.from === 'login' ? 'reset' : 'change';
     dispatch({ type: 'INITIALIZE_MODE', payload: mode });
   }, [location.state]);
 
+  // 새 비밀번호 유효성 검사
   useEffect(() => {
     if (state.mode === 'reset') return;
 
@@ -103,6 +115,7 @@ export const useChangePasswordForm = () => {
     }
   }, [state.formData.newPassword, state.mode]);
 
+  // 비밀번호 확인 일치 여부 검사
   useEffect(() => {
     if (state.formData.confirmPassword && state.formData.newPassword !== state.formData.confirmPassword) {
       dispatch({ type: 'SET_ERROR', field: 'confirmPassword', value: '비밀번호가 일치하지 않습니다.' });
@@ -112,11 +125,14 @@ export const useChangePasswordForm = () => {
   }, [state.formData.newPassword, state.formData.confirmPassword]);
 
   // --- Handlers ---
+
+  /** 입력 필드 변경 핸들러 */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     dispatch({ type: 'SET_FIELD', field: name as keyof ChangePasswordState['formData'], value });
   };
 
+  /** 계정 찾기 정보 입력 핸들러 (휴대폰 번호 포맷팅 포함) */
   const handleFindInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -129,6 +145,7 @@ export const useChangePasswordForm = () => {
     dispatch({ type: 'SET_FIND_INFO', field: name as keyof ChangePasswordState['findInfo'], value: formattedValue });
   };
 
+  /** 사용자 정보로 이메일 찾기 핸들러 */
   const handleFindEmail = async () => {
     if (!state.findInfo.name || !state.findInfo.phone) {
       toast.error('이름과 휴대폰 번호를 모두 입력해주세요.');
@@ -152,6 +169,7 @@ export const useChangePasswordForm = () => {
     }
   };
 
+  /** 비밀번호 재설정 이메일 발송 핸들러 */
   const handleSendResetEmail = async () => {
     if (!state.foundEmail) return;
 
@@ -173,6 +191,7 @@ export const useChangePasswordForm = () => {
     }
   };
 
+  /** 폼 제출 핸들러 (비밀번호 변경) */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (state.mode === 'reset') return;

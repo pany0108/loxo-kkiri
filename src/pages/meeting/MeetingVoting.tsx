@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader2, MapPin, Vote } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { AlertCircle, Loader2, MapPin, Vote } from 'lucide-react';
 
 import { ConfirmModal, LoadingButton, PageFooter, PageHeader, PageLayout, PageTitle, VotingSlotItem } from 'components';
 import { useMeetingVoting } from 'hooks';
@@ -12,6 +12,7 @@ dayjs.locale('ko');
 /**
  * 일정 조율 투표 컴포넌트입니다.
  * 제안된 여러 일정 슬롯에 대해 사용자가 가능 여부(가능/아마도/불가능)를 투표하고 메모를 남깁니다.
+ *
  * @returns {JSX.Element} 투표 화면
  */
 const MeetingVoting = () => {

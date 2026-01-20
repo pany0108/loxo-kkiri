@@ -1,12 +1,13 @@
 import { collection, addDoc, writeBatch, doc } from 'firebase/firestore';
-// 파일 경로에 따라 '../firebase' 또는 '../../firebase'로 수정이 필요할 수 있습니다.
 import { db } from '../firebase';
 import { sendPushNotificationToUser } from 'utils';
 
 /**
  * Firestore에 알림 문서를 생성합니다. batch 작업 내에서 사용할 수 있습니다.
- * @param batch - 선택적 Firestore write batch. 제공될 경우 batch에 추가됩니다.
- * @param notificationData - 알림 문서 데이터.
+ *
+ * @param {ReturnType<typeof writeBatch> | null} batch - Firestore write batch (선택 사항)
+ * @param {any} notificationData - 생성할 알림 데이터
+ * @returns {Promise<void>}
  */
 const createFirestoreNotification = async (batch: ReturnType<typeof writeBatch> | null, notificationData: any) => {
   if (batch) {
@@ -19,6 +20,9 @@ const createFirestoreNotification = async (batch: ReturnType<typeof writeBatch> 
 
 /**
  * 캘린더 초대를 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ friendUid: string; inviterId: string; inviterName: string; calendarId: string; calendarName: string }} params - 알림 파라미터
  */
 export const notifyCalendarInvite = async (
   batch: ReturnType<typeof writeBatch>,
@@ -51,6 +55,9 @@ export const notifyCalendarInvite = async (
 
 /**
  * 캘린더 멤버들에게 새 일정을 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ memberId: string; editorName: string; calendarName: string; scheduleTitle: string; scheduleId: string; calendarId: string }} params - 알림 파라미터
  */
 export const notifyScheduleAdded = async (
   batch: ReturnType<typeof writeBatch>,
@@ -78,6 +85,9 @@ export const notifyScheduleAdded = async (
 
 /**
  * 캘린더 멤버들에게 일정 수정을 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ memberId: string; editorName: string; calendarName: string; scheduleTitle: string; scheduleId: string; calendarId: string }} params - 알림 파라미터
  */
 export const notifyScheduleUpdated = async (
   batch: ReturnType<typeof writeBatch>,
@@ -105,6 +115,9 @@ export const notifyScheduleUpdated = async (
 
 /**
  * 캘린더에서 사용자가 나갔음을 남은 멤버들에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ memberId: string; leaverName: string; calendarName: string; calendarId: string }} params - 알림 파라미터
  */
 export const notifyCalendarLeave = async (batch: ReturnType<typeof writeBatch>, params: { memberId: string; leaverName: string; calendarName: string; calendarId: string }) => {
   const { memberId, leaverName, calendarName, calendarId } = params;
@@ -128,6 +141,9 @@ export const notifyCalendarLeave = async (batch: ReturnType<typeof writeBatch>, 
 
 /**
  * 새로운 약속(Meeting) 초대를 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ friendId: string; inviterName: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingInvite = async (batch: ReturnType<typeof writeBatch>, params: { friendId: string; inviterName: string; meetingTitle: string; meetingId: string }) => {
   const { friendId, inviterName, meetingTitle, meetingId } = params;
@@ -151,6 +167,8 @@ export const notifyMeetingInvite = async (batch: ReturnType<typeof writeBatch>, 
 
 /**
  * 참여자가 약속 제안에 응답했음을 주최자에게 알립니다. (Batch 미사용)
+ *
+ * @param {{ hostId: string; responderName: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingResponse = async (params: { hostId: string; responderName: string; meetingTitle: string; meetingId: string }) => {
   const { hostId, responderName, meetingTitle, meetingId } = params;
@@ -175,6 +193,9 @@ export const notifyMeetingResponse = async (params: { hostId: string; responderN
 
 /**
  * 약속 투표가 시작되었음을 참여자들에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ participantId: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingVotingStarted = async (batch: ReturnType<typeof writeBatch>, params: { participantId: string; meetingTitle: string; meetingId: string }) => {
   const { participantId, meetingTitle, meetingId } = params;
@@ -198,6 +219,8 @@ export const notifyMeetingVotingStarted = async (batch: ReturnType<typeof writeB
 
 /**
  * 참여자가 투표했음을 주최자에게 알립니다. (Batch 미사용)
+ *
+ * @param {{ hostId: string; voterName: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingVote = async (params: { hostId: string; voterName: string; meetingTitle: string; meetingId: string }) => {
   const { hostId, voterName, meetingTitle, meetingId } = params;
@@ -221,6 +244,9 @@ export const notifyMeetingVote = async (params: { hostId: string; voterName: str
 
 /**
  * 투표가 완료되었음을 주최자에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ hostId: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyVotingCompleteForHost = async (batch: ReturnType<typeof writeBatch>, params: { hostId: string; meetingTitle: string; meetingId: string }) => {
   const { hostId, meetingTitle, meetingId } = params;
@@ -244,6 +270,9 @@ export const notifyVotingCompleteForHost = async (batch: ReturnType<typeof write
 
 /**
  * 투표가 완료되었음을 참여자들에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ participantId: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyVotingCompleteForParticipant = async (batch: ReturnType<typeof writeBatch>, params: { participantId: string; meetingTitle: string; meetingId: string }) => {
   const { participantId, meetingTitle, meetingId } = params;
@@ -267,6 +296,9 @@ export const notifyVotingCompleteForParticipant = async (batch: ReturnType<typeo
 
 /**
  * 약속이 확정되었음을 참여자들에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ participantId: string; meetingTitle: string; meetingId: string; scheduleId: string }} params - 알림 파라미터
  */
 export const notifyMeetingConfirmed = async (
   batch: ReturnType<typeof writeBatch>,
@@ -293,6 +325,9 @@ export const notifyMeetingConfirmed = async (
 
 /**
  * 약속이 취소되었음을 참여자들에게 알립니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ participantId: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingCanceled = async (batch: ReturnType<typeof writeBatch>, params: { participantId: string; meetingTitle: string; meetingId: string }) => {
   const { participantId, meetingTitle, meetingId } = params;
@@ -316,6 +351,9 @@ export const notifyMeetingCanceled = async (batch: ReturnType<typeof writeBatch>
 
 /**
  * 투표를 독려(재촉)하는 알림을 보냅니다.
+ *
+ * @param {ReturnType<typeof writeBatch>} batch - Firestore Batch
+ * @param {{ participantId: string; urgerName: string; meetingTitle: string; meetingId: string }} params - 알림 파라미터
  */
 export const notifyMeetingUrge = async (batch: ReturnType<typeof writeBatch>, params: { participantId: string; urgerName: string; meetingTitle: string; meetingId: string }) => {
   const { participantId, urgerName, meetingTitle, meetingId } = params;

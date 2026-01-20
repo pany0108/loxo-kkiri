@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, updateDoc } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { Calendar as CalendarIcon, Clock, Loader2, Sparkles } from 'lucide-react';
+import { doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 import { db } from '../../firebase';
@@ -32,6 +32,7 @@ dayjs.locale('ko');
  * 초대받은 약속에 대해 응답하는 페이지 컴포넌트입니다.
  * - 주최자가 제안한 시간 중 가능한 시간을 선택할 수 있습니다.
  * - 주최자의 제안 외에 새로운 시간을 역으로 제안할 수 있습니다 (달력 인터랙션).
+ *
  * @returns {JSX.Element} 약속 응답 화면
  */
 const MeetingResponse = () => {
@@ -91,6 +92,7 @@ const MeetingResponse = () => {
   const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /** 시간 일괄 설정 모달 열기 핸들러 */
   const handleSyncTimes = () => {
     if (myNewSlots.length < 1) {
       toast('시간을 설정할 날짜를 먼저 선택해주세요.');
@@ -104,6 +106,7 @@ const MeetingResponse = () => {
     setIsSyncModalOpen(true);
   };
 
+  /** 시간 일괄 설정 값 변경 핸들러 */
   const handleSyncTimeChange = (field: 'start' | 'end', value: string) => {
     const newSyncTime = { ...syncTime, [field]: value };
 
@@ -125,6 +128,7 @@ const MeetingResponse = () => {
     setSyncTime(newSyncTime);
   };
 
+  /** 일괄 설정된 시간 적용 핸들러 */
   const applySyncedTime = () => {
     myNewSlots.forEach((slot) => {
       updateSlotTime(slot.date, 'startTime', syncTime.start);

@@ -84,6 +84,8 @@ const COLOR_OPTIONS = [
 /**
  * 새 캘린더 생성 페이지 컴포넌트
  * - 캘린더 이름, 아이콘, 색상을 설정하고 친구를 초대하여 공유 캘린더를 생성합니다.
+ *
+ * @returns {JSX.Element} 캘린더 생성 화면
  */
 const CreateCalendar = () => {
   const navigate = useNavigate();
@@ -161,10 +163,12 @@ const CreateCalendar = () => {
     setSearchResults(filtered);
   }, [friendSearchTerm, friends, selectedFriendUids]);
 
+  /** 친구 선택 토글 핸들러 */
   const toggleFriend = (friendUid: string) => {
     setSelectedFriendUids((prev) => (prev.includes(friendUid) ? prev.filter((uid) => uid !== friendUid) : [...prev, friendUid]));
   };
 
+  /** 친구 그룹 선택 토글 핸들러 */
   const onToggleGroup = (group: { friends: { uid: string }[] }) => {
     const selectedUidsSet = new Set(selectedFriendUids);
 
@@ -207,7 +211,7 @@ const CreateCalendar = () => {
       .filter((group) => group.friends.length > 0);
   }, [friends, friendGroups, friendSearchTerm]);
 
-  // 검색 입력란에서 친구 추가 핸들러
+  /** 검색 입력란에서 친구 추가 핸들러 */
   const handleAddFriendByName = () => {
     if (friendSearchTerm.trim() === '') return;
 
@@ -252,7 +256,7 @@ const CreateCalendar = () => {
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
   const isSubmitDisabled = !finalName.trim() || isSubmitting;
 
-  // 캘린더 생성 및 저장 핸들러
+  /** 캘린더 생성 및 저장 핸들러 */
   const handleSubmit = async () => {
     if (isSubmitDisabled || !user) {
       if (!user) toast.error('로그인이 필요합니다.');
@@ -396,6 +400,7 @@ const CreateCalendar = () => {
         </PageHeader>
 
         <div className="space-y-8">
+          {/* 캘린더 이름 입력 */}
           <section className="space-y-3">
             <label className="block text-[13px] font-black text-sub dark:text-gray-400 ml-1">캘린더 이름</label>
             <div className="flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all shadow-sm">
@@ -409,6 +414,7 @@ const CreateCalendar = () => {
             </div>
           </section>
 
+          {/* 캘린더 아이콘 및 색상 선택 */}
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-[13px] font-black text-sub ml-1">캘린더 아이콘</label>
@@ -468,6 +474,7 @@ const CreateCalendar = () => {
             </div>
           </section>
 
+          {/* 공유할 친구 선택 */}
           <section className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">

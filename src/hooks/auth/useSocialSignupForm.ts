@@ -1,15 +1,16 @@
-import { useReducer, useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { signOut } from 'firebase/auth';
-import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { formatPhone } from 'utils';
-import { completeSocialSignUp, SocialSignUpData } from 'services/authService';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
 
-// --- State & Reducer ---
+import { completeSocialSignUp, SocialSignUpData } from 'services/authService';
+import { formatPhone } from 'utils';
+import { auth, db } from '../../firebase';
+
+/** 소셜 회원가입 추가 정보 입력 폼 상태 인터페이스 */
 interface SocialSignupState {
   formData: {
     phone: string;
@@ -27,6 +28,7 @@ interface SocialSignupState {
   } | null;
 }
 
+/** 초기 상태 값 */
 const initialState: SocialSignupState = {
   formData: { phone: '', birthDate: '' },
   isLoading: false,
@@ -36,6 +38,7 @@ const initialState: SocialSignupState = {
   userData: null,
 };
 
+/** 상태 업데이트 액션 타입 정의 */
 type Action =
   | { type: 'SET_USER_DATA'; payload: SocialSignupState['userData'] }
   | { type: 'SET_FIELD'; field: keyof SocialSignupState['formData']; value: string }
@@ -43,6 +46,7 @@ type Action =
   | { type: 'SET_BIRTH_TYPE'; payload: { isLunar: boolean; isLeapMonth: boolean } };
 
 function reducer(state: SocialSignupState, action: Action): SocialSignupState {
+  /** 상태 관리 리듀서 함수 */
   switch (action.type) {
     case 'SET_USER_DATA':
       return { ...state, userData: action.payload };
@@ -61,16 +65,20 @@ function reducer(state: SocialSignupState, action: Action): SocialSignupState {
   }
 }
 
+/**
+ * 소셜 로그인 후 추가 정보 입력을 처리하는 커스텀 훅
+ * - 생년월일, 전화번호 등 필수 정보를 입력받아 가입을 완료합니다.
+ */
 export const useSocialSignupForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { formData, userData, isLunar, isLeapMonth, isLoading, isVerified } = state;
+  const { formData, userData, isLunar, isLeapMonth, isVerified } = state;
 
   const birthDateRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
 
-  // Initialize user data from location state or local storage
+  // 위치 상태(location state) 또는 로컬 스토리지에서 사용자 데이터 초기화
   useEffect(() => {
     let initialUserData = null;
     if (location.state?.uid) {
@@ -83,7 +91,7 @@ export const useSocialSignupForm = () => {
     dispatch({ type: 'SET_USER_DATA', payload: initialUserData });
   }, [location.state]);
 
-  // Check user status and redirect if already completed or if data is missing
+  // 사용자 상태 확인 및 리다이렉트 처리 (이미 가입된 경우 등)
   useEffect(() => {
     const checkUserStatus = async () => {
       // Use the currently authenticated user as the primary source of truth.
@@ -112,7 +120,7 @@ export const useSocialSignupForm = () => {
     checkUserStatus();
   }, [navigate]);
 
-  // Cleanup effects
+  // 정리(Cleanup) 이펙트
   useEffect(() => {
     sessionStorage.removeItem('isAuthChecking');
     return () => {
@@ -120,6 +128,7 @@ export const useSocialSignupForm = () => {
     };
   }, []);
 
+  /** 뒤로가기 핸들러 (로그아웃 처리) */
   const handleBack = useCallback(async () => {
     try {
       localStorage.removeItem('pendingSignup');
@@ -131,6 +140,7 @@ export const useSocialSignupForm = () => {
     }
   }, []);
 
+  // 하드웨어 뒤로가기 버튼 처리 (모바일)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const listenerPromise = CapacitorApp.addListener('backButton', () => handleBack());
@@ -139,12 +149,14 @@ export const useSocialSignupForm = () => {
     };
   }, [handleBack]);
 
+  /** 입력 필드 변경 핸들러 */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const formattedValue = name === 'phone' ? formatPhone(value) : value;
     dispatch({ type: 'SET_FIELD', field: name as keyof SocialSignupState['formData'], value: formattedValue });
   };
 
+  /** 가입 완료 처리 핸들러 */
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isVerified) {

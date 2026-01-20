@@ -5,6 +5,13 @@ interface FormCheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label: string;
 }
 
+/**
+ * 커스텀 체크박스 컴포넌트
+ * - 라벨과 함께 체크박스를 렌더링합니다.
+ *
+ * @param {FormCheckboxProps} props
+ * @returns {JSX.Element}
+ */
 const FormCheckbox: React.FC<FormCheckboxProps> = ({ label, checked, className, ...props }) => {
   return (
     <label className={`flex items-center gap-2 cursor-pointer group ${className || ''}`}>

@@ -5,6 +5,12 @@ interface AddScheduleFABProps {
   onClick: () => void;
 }
 
+/**
+ * 일정 추가 플로팅 액션 버튼 (FAB) 컴포넌트
+ *
+ * @param {AddScheduleFABProps} props
+ * @returns {JSX.Element}
+ */
 const AddScheduleFAB: React.FC<AddScheduleFABProps> = ({ onClick }) => {
   return (
     <button

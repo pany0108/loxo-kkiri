@@ -1,14 +1,15 @@
-import React from 'react';
-import { CalendarCheck, X } from 'lucide-react';
-import dayjs from 'dayjs';
 import { LoadingButton, PageTitle } from 'components';
+import dayjs from 'dayjs';
+import { CalendarCheck, X } from 'lucide-react';
+import React from 'react';
 
 /**
  * 약속 확정 확인 다이얼로그의 Props 인터페이스
  * @property {boolean} isOpen - 모달 표시 여부
  * @property {() => void} onClose - 모달 닫기 핸들러
  * @property {() => void} onConfirm - 최종 확정 버튼 클릭 시 실행될 핸들러
- * @property {{ date: string; time: string } | null} slotData - 확정하려는 날짜 및 시간 데이터 (null일 경우 렌더링 안 함)
+ * @property {{ date: string; time: string } | null} slotData - 확정하려는 날짜 및 시간 데이터
+ * @property {boolean} [isLoading] - 로딩 상태
  */
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -21,15 +22,14 @@ interface ConfirmDialogProps {
 /**
  * 일정 조율 결과 리포트 화면에서 최종 시간을 확정할 때 사용하는 모달 컴포넌트입니다.
  * 사용자에게 선택한 시간 정보를 다시 한번 보여주고, 확정 의사를 묻습니다.
- *
  * @param {ConfirmDialogProps} props - 컴포넌트 속성
- * @returns {JSX.Element | null} 모달 컴포넌트
+ * @returns {JSX.Element | null}
  */
 const ConfirmMeetingDialog = ({ isOpen, onClose, onConfirm, slotData, isLoading }: ConfirmDialogProps) => {
   // 모달이 닫혀있거나 데이터가 없는 경우 렌더링하지 않음
   if (!isOpen || !slotData) return null;
 
-  // [추가] 날짜 표시 포맷팅
+  // 날짜 표시 포맷팅
   let dateDisplay = slotData.date;
   if (slotData.date) {
     if (slotData.date.includes(':')) {

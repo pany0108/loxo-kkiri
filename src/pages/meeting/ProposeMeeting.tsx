@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import { CalendarCheck2, Loader2 } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where } from 'firebase/firestore';
 
 import { auth, db } from '../../firebase';
 import { EmptyMeetingList, MeetingListItem, NewMeetingButton, PageHeader, PageLayout, PageTitle } from 'components';
@@ -34,6 +34,7 @@ interface Meeting {
  * - 진행 중인 약속의 상태(조율 중, 투표 중, 확정)를 한눈에 확인할 수 있습니다.
  * - 각 약속을 클릭하면 해당 진행 단계에 맞는 페이지로 라우팅합니다.
  * - 새로운 약속을 생성하는 진입점 역할을 합니다.
+ *
  * @returns {JSX.Element} 약속 제안 메인 화면
  */
 const ProposeMeeting = () => {
@@ -85,7 +86,7 @@ const ProposeMeeting = () => {
     const past: Meeting[] = [];
 
     sortedData.forEach((m: any) => {
-      // 투표 완료 여부 계산
+      // 투표 완료 여부 및 내 투표 여부 계산
       let isVotingCompleted = false;
       let hasVoted = false;
 
@@ -100,12 +101,12 @@ const ProposeMeeting = () => {
         if (totalParticipants > 0 && votedUserIds.size >= totalParticipants) {
           isVotingCompleted = true;
         }
-        // VOTING 상태일 때 내 투표 여부 확인
+        // VOTING 상태일 때 내 투표 여부
         if (user && votedUserIds.has(user.uid)) {
           hasVoted = true;
         }
       } else if (m.status === 'PENDING') {
-        // PENDING 상태일 때 내 응답 여부 확인 (responses 필드)
+        // PENDING 상태일 때 내 응답 여부 (responses 필드)
         if (m.responses && user && m.responses[user.uid]) {
           hasVoted = true;
         }
@@ -114,10 +115,11 @@ const ProposeMeeting = () => {
         hasVoted = true;
       }
 
-      // 최근 업데이트 여부 확인 (1시간 이내 업데이트 된 경우)
+      // 최근 업데이트 여부 (1시간 이내 업데이트 된 경우)
       const lastUpdateTime = m.updatedAt ? dayjs(m.updatedAt) : null;
       const isRecentlyUpdated = lastUpdateTime ? lastUpdateTime.isAfter(dayjs().subtract(1, 'hour')) : false;
 
+      // 참여자 프로필 매핑
       const participants = (m.participants || []).map((uid: string) => ({
         uid,
         name: userProfiles[uid]?.name,
@@ -172,12 +174,13 @@ const ProposeMeeting = () => {
    * - PENDING: 시간 조율 화면 (Response)
    * - VOTING: 최종 투표 화면 (Vote)
    * - CONFIRMED: 결과 리포트 화면 (Report)
+   *
    * @param {Meeting} meeting - 선택된 약속 객체
    */
   const handleMeetingClick = (meeting: Meeting) => {
     switch (meeting.status) {
       case 'PENDING':
-        // PENDING 상태에서도 주최자는 현황판으로 이동
+        // PENDING 상태에서도 주최자는 현황판으로, 참여자는 응답 화면으로 이동
         if (user && user.uid === meeting.hostId) {
           navigate(`/meeting/status/${meeting.id}`);
         } else {
@@ -185,8 +188,9 @@ const ProposeMeeting = () => {
         }
         break;
       case 'VOTING':
-        // 투표 완료 여부에 따라 분기 (미리 계산된 값 사용)
+        // 투표 완료 여부에 따라 분기
         if (meeting.isVotingCompleted) {
+          // 투표 완료: 주최자는 확정 페이지로, 참여자는 현황판으로
           navigate(user && user.uid === meeting.hostId ? `/meeting/report/${meeting.id}` : `/meeting/participant-status/${meeting.id}`);
         } else {
           navigate(`/meeting/vote/${meeting.id}`);
@@ -220,8 +224,10 @@ const ProposeMeeting = () => {
             <span className="text-primary dark:text-blue-400">약속을 잡아보세요</span>
           </PageTitle>
         </PageHeader>
+        {/* 새 약속 만들기 버튼 */}
         <NewMeetingButton />
 
+        {/* 탭 버튼 */}
         <div className="flex p-1 bg-gray-50 dark:bg-gray-800 rounded-lg mb-6">
           <button
             onClick={() => setActiveTab('ongoing')}

@@ -11,6 +11,9 @@ interface LocationSelectModalProps {
 /**
  * 장소 선택 모달 컴포넌트
  * - 구글 맵을 사용하여 장소를 검색하고 선택할 수 있습니다.
+ *
+ * @param {LocationSelectModalProps} props
+ * @returns {JSX.Element | null}
  */
 const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ isOpen, onClose, onSelect, initialLocation = '' }) => {
   const [keyword, setKeyword] = useState(initialLocation);

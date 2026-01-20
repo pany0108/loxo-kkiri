@@ -1,27 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import dayjs from 'dayjs'; // Keep dayjs import
+import { onAuthStateChanged } from 'firebase/auth';
+import { arrayUnion, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import { Check, ImageIcon, BookOpen, Trash2, Pencil } from 'lucide-react';
+import { BookOpen, Check, ImageIcon, Pencil, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
 import {
-  PageLayout,
-  RecurrenceSettings,
-  DeleteRecurringModal,
   ConfirmModal,
-  PageHeader,
-  PageTitle,
+  DeleteRecurringModal,
+  EditRecurringModal,
   FormTextarea,
   LoadingButton,
   LocationSelectModal,
-  EditRecurringModal,
+  PageLayout,
+  PageHeader,
+  PageTitle,
+  RecurrenceSettings,
 } from 'components';
-import { doc, updateDoc, deleteDoc, arrayUnion, writeBatch, collection, addDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { useCalendar } from 'contexts';
-import { onAuthStateChanged } from 'firebase/auth';
-import { notifyScheduleUpdated } from 'services';
 import ScheduleForm from '../../components/calendar/ScheduleForm';
+import { useCalendar } from 'contexts';
+import { notifyScheduleUpdated } from 'services';
+
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 interface Attachment {
@@ -58,6 +60,8 @@ interface EventDataState {
  * 일정 수정 페이지 컴포넌트
  * - 기존 일정 정보를 불러와 수정하거나 삭제할 수 있습니다.
  * - 반복 일정의 경우 단일/향후/전체 수정 옵션을 제공합니다.
+ *
+ * @returns {JSX.Element} 일정 수정 화면
  */
 const ScheduleEdit = () => {
   const navigate = useNavigate();
@@ -65,7 +69,7 @@ const ScheduleEdit = () => {
   const eventData = (location.state as EventDataState) || null;
   const { myCalendars } = useCalendar();
 
-  // --- [추가] 상태 관리 ---
+  // --- 상태 관리 ---
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const [isCalListOpen, setIsCalListOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -204,6 +208,7 @@ const ScheduleEdit = () => {
 
   // --- 핸들러 ---
 
+  /** 입력 필드 변경 핸들러 */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => {
@@ -232,6 +237,7 @@ const ScheduleEdit = () => {
     });
   };
 
+  /** 종일 설정 토글 핸들러 */
   const handleToggleAllDay = () => {
     setFormData((prev) => {
       const nextIsAllDay = !prev.isAllDay;
@@ -245,6 +251,7 @@ const ScheduleEdit = () => {
     });
   };
 
+  /** 기념일 설정 변경 핸들러 */
   const handleAnniversaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setFormData((prev) => {
@@ -262,10 +269,12 @@ const ScheduleEdit = () => {
     });
   };
 
+  /** 음력 설정 변경 핸들러 */
   const handleLunarChange = (isLunarValue: boolean) => {
     setFormData((prev) => ({ ...prev, isLunar: isLunarValue }));
   };
 
+  /** 저장 버튼 클릭 핸들러 */
   const handleSaveClick = () => {
     if (isSubmitting) return;
     // 반복 일정이면 모달 띄우기
@@ -440,6 +449,7 @@ const ScheduleEdit = () => {
             </PageTitle>
           </PageHeader>
 
+          {/* 일정 수정 폼 */}
           <form className="space-y-6">
             <ScheduleForm
               formData={formData}
@@ -461,6 +471,7 @@ const ScheduleEdit = () => {
               isEditMode={true}
             />
 
+            {/* 지난 일정 후기 작성 영역 (공유 일정이 아닐 때) */}
             {!isShared && isPastEvent && (
               <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
@@ -488,6 +499,8 @@ const ScheduleEdit = () => {
               </div>
             )}
           </form>
+
+          {/* 하단 삭제 버튼 */}
           <footer className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
             <button
               type="button"
@@ -500,15 +513,17 @@ const ScheduleEdit = () => {
         </>
       </PageLayout>
 
+      {/* 반복 일정 삭제 옵션 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
 
+      {/* 반복 일정 수정 옵션 모달 */}
       {isEditRecurringModalOpen && (
         <EditRecurringModal onClose={() => setIsEditRecurringModalOpen(false)} onEditOne={editOneSchedule} onEditFollowing={editFollowingSchedules} onEditAll={editAllSchedule} />
       )}
 
-      {/* [수정] 일반 일정 삭제 확인 모달 컴포넌트화 */}
+      {/* 일반 일정 삭제 확인 모달 */}
       <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}
@@ -527,6 +542,7 @@ const ScheduleEdit = () => {
         confirmButtonClassName="bg-red-500"
       />
 
+      {/* 지도 위치 선택 모달 */}
       <LocationSelectModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}

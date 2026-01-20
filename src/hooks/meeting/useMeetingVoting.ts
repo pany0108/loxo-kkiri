@@ -1,14 +1,16 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { db, auth } from '../../firebase';
-import { useFirestoreDoc } from '../common/useFirestore';
-import { useCalendar } from 'contexts';
-import { notifyMeetingVote, notifyVotingCompleteForHost, notifyVotingCompleteForParticipant } from 'services';
 
+import { useCalendar } from 'contexts';
+import { useFirestoreDoc } from 'hooks/common/useFirestore';
+import { notifyMeetingVote, notifyVotingCompleteForHost, notifyVotingCompleteForParticipant } from 'services';
+import { auth, db } from '../../firebase';
+
+/** 투표 슬롯 인터페이스 */
 export interface VotingSlot {
   id: string;
   date: string;
@@ -18,6 +20,7 @@ export interface VotingSlot {
   myMemo: string;
 }
 
+/** 약속 데이터 인터페이스 */
 export interface MeetingData {
   id: string;
   title: string;
@@ -31,6 +34,10 @@ export interface MeetingData {
   isRetry?: boolean;
 }
 
+/**
+ * 약속 투표 로직을 처리하는 커스텀 훅
+ * - 투표 데이터 로딩, 투표 상태 관리, 충돌 확인, 투표 제출 기능을 제공합니다.
+ */
 export const useMeetingVoting = () => {
   const navigate = useNavigate();
   const { id: meetingId } = useParams<{ id: string }>();
@@ -40,6 +47,7 @@ export const useMeetingVoting = () => {
   const { events } = useCalendar();
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
+  // 사용자 인증 상태 감지
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -47,11 +55,13 @@ export const useMeetingVoting = () => {
     return () => unsubscribe();
   }, []);
 
+  // 약속 데이터 실시간 구독
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
 
   const isHost = useMemo(() => user && meetingData && user.uid === meetingData.hostId, [user, meetingData]);
 
+  // 투표 슬롯 데이터 초기화 및 업데이트
   useEffect(() => {
     if (!meetingData || !user) return;
 
@@ -85,17 +95,20 @@ export const useMeetingVoting = () => {
     });
   }, [meetingData, user]);
 
+  /** 투표 상태 변경 핸들러 */
   const handleVote = useCallback((slotId: string, status: 'available' | 'maybe' | 'unavailable') => {
     setVotingSlots((prev) => prev.map((slot) => (slot.id === slotId ? { ...slot, myVote: status } : slot)));
   }, []);
 
+  /** 메모 변경 핸들러 */
   const handleMemoChange = useCallback((slotId: string, text: string) => {
     setVotingSlots((prev) => prev.map((slot) => (slot.id === slotId ? { ...slot, myMemo: text } : slot)));
   }, []);
 
+  /** 일정 충돌 정보 계산 함수 */
   const getConflictInfo = useCallback(
     (dateStr: string, timeStr: string) => {
-      // [추가] 범위 선택(연속 날짜)인 경우 처리
+      // 범위 선택(연속 날짜)인 경우 처리
       if (dateStr.includes(':')) {
         const [startStr, endStr] = dateStr.split(':');
         const rangeStart = dayjs(startStr).startOf('day');
@@ -133,15 +146,15 @@ export const useMeetingVoting = () => {
         slotEnd = dayjs(dateStr).endOf('day');
       } else {
         const [start, end] = timeStr.split(' ~ ');
-        slotStart = dayjs(`T`);
-        slotEnd = dayjs(`T`);
+        slotStart = dayjs(`${dateStr}T${start}`);
+        slotEnd = dayjs(`${dateStr}T${end}`);
       }
 
       const conflict = events.find((event) => {
         const eventStart = dayjs(event.start);
         let eventEnd = event.end ? dayjs(event.end) : event.allDay ? eventStart.add(1, 'day') : eventStart.add(1, 'hour');
 
-        // [추가] 종일 일정인데 종료 시간이 시작 시간과 같거나 이전이면(잘못된 데이터 or 0duration), 하루 뒤로 설정
+        // 종일 일정인데 종료 시간이 시작 시간과 같거나 이전이면(잘못된 데이터 or 0duration), 하루 뒤로 설정
         if (event.allDay && event.end && !eventEnd.isAfter(eventStart)) {
           eventEnd = eventStart.add(1, 'day');
         }
@@ -157,7 +170,7 @@ export const useMeetingVoting = () => {
       const sameDayEvent = events.find((event) => dayjs(event.start).format('YYYY-MM-DD') === dateStr);
       if (sameDayEvent) {
         const eventTime = sameDayEvent.allDay ? '종일' : `${dayjs(sameDayEvent.start).format('HH:mm')}~${sameDayEvent.end ? dayjs(sameDayEvent.end).format('HH:mm') : ''}`;
-        // [수정] 종일 일정인 경우 시간 일정과 겹치는 것으로 간주하여 conflict true 반환
+        // 종일 일정인 경우 시간 일정과 겹치는 것으로 간주하여 conflict true 반환
         return { isConflict: sameDayEvent.allDay, title: sameDayEvent.title, time: eventTime };
       }
 
@@ -166,8 +179,10 @@ export const useMeetingVoting = () => {
     [events],
   );
 
+  // 모든 슬롯에 투표했는지 여부
   const isAllVoted = useMemo(() => votingSlots.every((slot) => slot.myVote !== ''), [votingSlots]);
 
+  /** 투표 제출 실행 함수 */
   const submitVote = useCallback(async () => {
     if (!meetingDocRef || !user || !user.displayName || !meetingData || !meetingId) return;
 
@@ -232,6 +247,7 @@ export const useMeetingVoting = () => {
     }
   }, [meetingDocRef, user, meetingData, meetingId, votingSlots, navigate]);
 
+  /** 제출 버튼 핸들러 (충돌 확인 포함) */
   const handleSubmit = useCallback(async () => {
     if (!isAllVoted) {
       toast.error('모든 일정에 대해 가능 여부를 선택해주세요.');

@@ -1,6 +1,10 @@
-import React from 'react';
 import { CalendarCheck } from 'lucide-react';
+import React from 'react';
 
+/**
+ * 진행 중인 약속이 없을 때 표시되는 빈 상태 컴포넌트
+ * @returns {JSX.Element} 빈 상태 UI
+ */
 const EmptyMeetingList = () => {
   return (
     <div className="py-12 text-center space-y-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-700/50">

@@ -1,15 +1,20 @@
-import { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import FullCalendar from '@fullcalendar/react';
 import { DateSelectArg, DatesSetArg, EventClickArg } from '@fullcalendar/core';
 import { DateClickArg } from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
 import dayjs from 'dayjs';
+import { arrayUnion, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../../firebase';
-import { useCalendar, CalendarEvent, CalendarType } from 'contexts';
-import { getWeekOfMonth } from 'utils';
 
+import { CalendarEvent, CalendarType, useCalendar } from 'contexts';
+import { getWeekOfMonth } from 'utils';
+import { db } from '../../firebase';
+
+/**
+ * 메인 캘린더 화면의 로직을 담당하는 커스텀 훅
+ * - 캘린더 뷰 상태 관리, 이벤트 핸들링, 공휴일 가져오기 등을 처리합니다.
+ */
 export const useCalendarMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +42,7 @@ export const useCalendarMain = () => {
 
   const { myCalendars, events, activeCalendar, setActiveCalendar } = useCalendar();
 
+  /** 공휴일 정보 가져오기 */
   const fetchHolidays = useCallback(
     async (year: number) => {
       if (fetchedYears.has(year)) return;
@@ -68,6 +74,7 @@ export const useCalendarMain = () => {
     [fetchedYears],
   );
 
+  // 초기 인증 확인 상태 정리
   useEffect(() => {
     if (isInitialAuthChecking) {
       sessionStorage.removeItem('isAuthChecking');
@@ -75,6 +82,7 @@ export const useCalendarMain = () => {
     }
   }, [isInitialAuthChecking]);
 
+  // 네비게이션 상태에 따른 캘린더 뷰/날짜 변경 처리
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (!location.state) return;
@@ -101,6 +109,7 @@ export const useCalendarMain = () => {
     }
   }, [location, myCalendars, setActiveCalendar, navigate]);
 
+  // 현재 활성화된 캘린더에 따른 이벤트 필터링
   const displayedEvents = useMemo(() => {
     if (!activeCalendar || activeCalendar.isDefault) {
       return events;
@@ -108,6 +117,7 @@ export const useCalendarMain = () => {
     return events.filter((event: CalendarEvent) => event.calendarId === activeCalendar.id);
   }, [events, activeCalendar]);
 
+  // 공휴일 포함 및 리스트 뷰를 위한 이벤트 가공
   const allDisplayedEvents = useMemo(() => {
     const baseEvents = [...displayedEvents, ...holidays];
 
@@ -158,11 +168,12 @@ export const useCalendarMain = () => {
     return baseEvents;
   }, [displayedEvents, holidays, isListVisible, currentView]);
 
+  // 리스트 뷰 토글 시 캘린더 크기 조정 애니메이션
   useEffect(() => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
       calendarApi.updateSize();
-      // [수정] 리스트 열림/닫힘 애니메이션(0.5s) 동안 캘린더 크기를 지속적으로 업데이트하여 부드럽게 전환
+      // 리스트 열림/닫힘 애니메이션(0.5s) 동안 캘린더 크기를 지속적으로 업데이트하여 부드럽게 전환
       let frameId: number;
       const startTime = performance.now();
       const duration = 500;
@@ -179,11 +190,13 @@ export const useCalendarMain = () => {
     }
   }, [isListVisible]);
 
+  /** 흔들림 모드(삭제 모드) 종료 */
   const exitJiggleMode = useCallback(() => {
     setIsJiggleMode(false);
     setJigglingItemId(null);
   }, []);
 
+  // 외부 클릭 감지 (드롭다운, 흔들림 모드, 날짜 선택기 닫기)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -207,6 +220,7 @@ export const useCalendarMain = () => {
     };
   }, [isCalListOpen, isJiggleMode, isDatePickerOpen, exitJiggleMode]);
 
+  // 캘린더 제목 클릭 시 날짜 선택기 토글
   useEffect(() => {
     const titleEl = document.querySelector('.fc-toolbar-title');
     if (titleEl) {
@@ -225,6 +239,7 @@ export const useCalendarMain = () => {
     }
   }, []);
 
+  /** 이벤트 롱프레스 핸들러 (삭제 모드 진입) */
   const handlePointerDown = (event: CalendarEvent) => {
     if (isJiggleMode) return;
     longPressTimer.current = setTimeout(() => {
@@ -233,6 +248,7 @@ export const useCalendarMain = () => {
     }, 500);
   };
 
+  /** 롱프레스 해제 핸들러 */
   const handlePointerUp = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -240,6 +256,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 삭제 버튼 클릭 핸들러 */
   const handleDeleteClick = (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
     setEventToDelete(event);
@@ -252,6 +269,7 @@ export const useCalendarMain = () => {
 
   const getDocId = (event: CalendarEvent | null) => event?.originalId || event?.id;
 
+  /** 전체 일정 삭제 */
   const deleteEntireSchedule = async () => {
     if (!eventToDelete) return;
     const docId = getDocId(eventToDelete);
@@ -269,6 +287,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 이 일정만 삭제 (반복 예외 처리) */
   const deleteOnlyThis = async () => {
     if (!eventToDelete) return;
     const docId = getDocId(eventToDelete);
@@ -288,6 +307,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 이후 일정 모두 삭제 */
   const deleteFollowing = async () => {
     if (!eventToDelete) return;
     const docId = getDocId(eventToDelete);
@@ -308,6 +328,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 다음 달/주/일로 이동 */
   const goToNext = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -319,6 +340,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 이전 달/주/일로 이동 */
   const goToPrev = () => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -330,6 +352,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 월 선택 핸들러 */
   const handleMonthSelect = (month: number) => {
     const calendarApi = calendarRef.current?.getApi();
     if (calendarApi) {
@@ -339,6 +362,7 @@ export const useCalendarMain = () => {
     setIsDatePickerOpen(false);
   };
 
+  /** 뷰 변경 핸들러 (월간/주간/일간) */
   const handleViewChange = (view: string) => {
     const calendarApi = calendarRef.current?.getApi();
     setIsListVisible(false);
@@ -350,6 +374,7 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 날짜 선택 실행 (리스트 뷰 열기) */
   const executeDateSelection = (dateStr: string) => {
     setSelectedDate(dateStr);
     setIsListVisible(true);
@@ -359,10 +384,12 @@ export const useCalendarMain = () => {
     }, 100);
   };
 
+  /** 날짜 클릭 핸들러 */
   const handleDateClick = (arg: DateClickArg) => {
     executeDateSelection(arg.dateStr);
   };
 
+  /** 이벤트 클릭 핸들러 */
   const handleEventClick = (info: EventClickArg) => {
     if (info.event.extendedProps.calendarId === 'holidays') {
       info.jsEvent.preventDefault();
@@ -389,11 +416,13 @@ export const useCalendarMain = () => {
     }
   };
 
+  /** 리스트 아이템 클릭 핸들러 */
   const handleListItemClick = (event: CalendarEvent) => {
     const originalId = event.originalId || event.id;
     navigate(`/schedule/${originalId}`, { state: { ...event, id: originalId } });
   };
 
+  /** 날짜 범위 선택 핸들러 (일정 추가) */
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     const calendarApi = selectInfo.view.calendar;
     calendarApi.unselect();
@@ -407,6 +436,7 @@ export const useCalendarMain = () => {
     });
   };
 
+  /** 캘린더 날짜 세트 변경 핸들러 (제목 업데이트 및 공휴일 로드) */
   const handleDatesSet = (arg: DatesSetArg) => {
     const titleEl = document.querySelector('.fc-toolbar-title') as HTMLElement;
     if (titleEl) {
@@ -425,6 +455,7 @@ export const useCalendarMain = () => {
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
 
+  // --- 바텀 시트 스와이프 핸들러 ---
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;

@@ -8,6 +8,13 @@ interface EditRecurringModalProps {
   onEditAll: () => void;
 }
 
+/**
+ * 반복 일정 수정 옵션 모달 컴포넌트
+ * - 이 일정만 수정, 향후 일정 수정, 모든 일정 수정 옵션을 제공합니다.
+ *
+ * @param {EditRecurringModalProps} props
+ * @returns {JSX.Element}
+ */
 const EditRecurringModal = ({ onClose, onEditOne, onEditFollowing, onEditAll }: EditRecurringModalProps) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200 font-['Pretendard']">

@@ -1,9 +1,11 @@
-import { useMemo, useLayoutEffect, useRef } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { doc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { useFirestoreDoc } from '../common/useFirestore';
 
+import { useFirestoreDoc } from 'hooks/common/useFirestore';
+import { auth, db } from '../../firebase';
+
+/** 약속 데이터 인터페이스 */
 export interface MeetingData {
   id: string;
   title: string;
@@ -22,6 +24,7 @@ export interface MeetingData {
   hostName?: string;
 }
 
+/** 현황 슬롯 인터페이스 */
 export interface StatusSlot {
   id: string;
   date: string;
@@ -31,11 +34,16 @@ export interface StatusSlot {
   isAllVoted: boolean;
 }
 
+/**
+ * 참여자용 약속 현황 로직을 처리하는 커스텀 훅
+ * - 투표 현황 및 참여자 정보를 제공합니다.
+ */
 export const useMeetingParticipantStatus = () => {
   const { id: meetingId } = useParams<{ id: string }>();
   const location = useLocation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // 페이지 진입 시 스크롤 초기화
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
     if (scrollContainerRef.current) {
@@ -43,6 +51,7 @@ export const useMeetingParticipantStatus = () => {
     }
   }, [location.pathname]);
 
+  // 약속 데이터 실시간 구독
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
 
@@ -76,6 +85,7 @@ export const useMeetingParticipantStatus = () => {
     return slots.sort((a, b) => b.counts.available - a.counts.available);
   }, [meetingData]);
 
+  // 참여자 정보 및 투표 진행률 계산
   const participantsInfo = useMemo(() => {
     if (!meetingData) return { totalMembers: 0, votedCount: 0, votedUids: new Set<string>(), allParticipants: [] };
 

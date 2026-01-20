@@ -1,8 +1,8 @@
 import React from 'react';
 import { Bell, Check, ChevronDown, Plus, Settings } from 'lucide-react';
-import { CalendarType } from 'contexts';
 
 import { auth } from '../../firebase';
+import { CalendarType } from 'contexts';
 
 interface CalendarHeaderProps {
   activeCalendar: CalendarType | null;
@@ -22,6 +22,9 @@ interface CalendarHeaderProps {
 /**
  * 캘린더 헤더 컴포넌트
  * - 캘린더 선택, 관리, 생성, 알림 확인, 뷰 변경 기능을 제공합니다.
+ *
+ * @param {CalendarHeaderProps} props
+ * @returns {JSX.Element}
  */
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   activeCalendar,
@@ -54,6 +57,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   return (
     <header className="px-page pt-6 pb-2 bg-white/90 dark:bg-gray-950/80 backdrop-blur-md z-header">
       <div className="flex items-center justify-between pb-2">
+        {/* 캘린더 선택 드롭다운 */}
         <div className="relative flex-1 min-w-0 mr-4" ref={dropdownRef}>
           <button onClick={onCalListToggle} className="group flex items-center gap-2 active:opacity-70 transition-opacity w-full">
             <h1 className="text-xl sm:text-2xl font-black text-main dark:text-white tracking-tight truncate text-left">
@@ -100,11 +104,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-3">
+          {/* 알림 버튼 */}
           <button onClick={onNotificationsClick} className="relative p-2 text-sub hover:text-main dark:hover:text-gray-300 transition-colors rounded-full">
             <Bell size={22} />
             {hasUnreadNotifications && <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-950" />}
           </button>
 
+          {/* 뷰 변경 버튼 (월/주/일) */}
           <div className="flex p-1 bg-gray-50 dark:bg-gray-800 rounded-[14px]">
             {[
               { id: 'dayGridMonth', label: '월' },

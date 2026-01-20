@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useMotionValue, animate } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { animate, useMotionValue } from 'framer-motion';
 
 interface UsePullToRefreshOptions {
   onRefresh: () => Promise<void> | void;
@@ -7,12 +7,22 @@ interface UsePullToRefreshOptions {
   threshold?: number;
 }
 
+/**
+ * 당겨서 새로고침(Pull-to-Refresh) 기능을 구현하는 커스텀 훅
+ * - 모바일 터치 이벤트를 감지하여 새로고침 동작을 처리합니다.
+ * @param {UsePullToRefreshOptions} options - 옵션 객체
+ * @param {function} options.onRefresh - 새로고침 시 실행될 함수
+ * @param {boolean} [options.disabled] - 기능 비활성화 여부
+ * @param {number} [options.threshold] - 새로고침 트리거 임계값 (기본값: 80)
+ * @returns {object} 상태 및 핸들러 객체
+ */
 export const usePullToRefresh = ({ onRefresh, disabled = false, threshold = 80 }: UsePullToRefreshOptions) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const y = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStart = useRef(0);
 
+  /** 터치 시작 핸들러 */
   const handleTouchStart = (e: React.TouchEvent) => {
     if (disabled) return;
     if (containerRef.current?.scrollTop === 0) {
@@ -20,6 +30,7 @@ export const usePullToRefresh = ({ onRefresh, disabled = false, threshold = 80 }
     }
   };
 
+  /** 터치 이동 핸들러 */
   const handleTouchMove = (e: React.TouchEvent) => {
     if (disabled) return;
     if (containerRef.current && containerRef.current.scrollTop > 0) return;
@@ -35,6 +46,7 @@ export const usePullToRefresh = ({ onRefresh, disabled = false, threshold = 80 }
     }
   };
 
+  /** 터치 종료 핸들러 */
   const handleTouchEnd = async () => {
     if (disabled) return;
     if (isRefreshing) return;

@@ -1,9 +1,8 @@
-// src/pages/social/ChatList.tsx
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where } from 'firebase/firestore';
-import { MessageCircle, MessageSquareDot, Search } from 'lucide-react';
 import dayjs from 'dayjs';
+import { MessageCircle, MessageSquareDot, Search } from 'lucide-react';
 
 import { auth, db } from '../../firebase';
 import { FormInput } from 'components';
@@ -12,8 +11,10 @@ import { UserProfile } from 'types';
 
 /**
  * 채팅방 목록 페이지 컴포넌트
- * - 참여 중인 채팅방 목록 표시
- * - 검색 및 읽지 않은 메시지 필터링
+ * - 참여 중인 채팅방 목록을 표시합니다.
+ * - 검색 및 읽지 않은 메시지 필터링 기능을 제공합니다.
+ *
+ * @returns {JSX.Element} 채팅방 목록 화면
  */
 const ChatList = () => {
   const navigate = useNavigate();

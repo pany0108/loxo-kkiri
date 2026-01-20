@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { FolderPlus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-import { db } from '../../firebase'; // Corrected import path
+import { db } from '../../firebase';
 
 interface Friend {
   uid: string;
@@ -29,6 +29,12 @@ interface GroupManagerModalProps {
  * 친구 그룹 관리 모달 컴포넌트
  * - 그룹 추가, 수정, 삭제 기능을 제공합니다.
  * - 그룹 삭제 시 해당 그룹에 속한 친구들은 '미분류' 상태가 됩니다.
+ * @param {boolean} isOpen - 모달 열림 여부
+ * @param {function} onClose - 모달 닫기 핸들러
+ * @param {FriendGroup[]} initialGroups - 초기 그룹 목록
+ * @param {function} onSave - 그룹 저장 핸들러
+ * @param {Friend[]} friends - 전체 친구 목록 (그룹 삭제 시 참조)
+ * @param {any} user - 현재 사용자 정보
  */
 const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, initialGroups, onSave, friends, user }) => {
   const [groups, setGroups] = useState<FriendGroup[]>(initialGroups);
@@ -88,10 +94,12 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
   if (!isOpen) return null;
 
   return (
+    /* 모달 오버레이 및 컨테이너 */
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-4xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
         <h3 className="text-xl font-black text-main dark:text-white mb-4">그룹 관리</h3>
+        {/* 그룹 목록 입력 영역 */}
         <div ref={groupInputsContainerRef} className="space-y-2 mb-6 max-h-60 overflow-y-auto">
           {groups.map((group) => (
             <div key={group.id} className="flex items-center gap-2">
@@ -107,6 +115,7 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
             </div>
           ))}
         </div>
+        {/* 새 그룹 추가 버튼 */}
         <button
           onClick={handleAddGroup}
           className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed rounded-xl text-sub hover:bg-gray-50 dark:hover:bg-gray-700/50 mb-6"
@@ -114,6 +123,7 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
           <FolderPlus size={16} />
           <span className="text-sm font-bold">새 그룹 추가</span>
         </button>
+        {/* 하단 버튼 영역 */}
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-sub dark:text-gray-300 font-bold rounded-xl">
             취소

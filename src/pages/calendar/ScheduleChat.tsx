@@ -47,6 +47,7 @@ interface Message {
  * 일정별 상세 채팅방 컴포넌트입니다.
  * - 참여자 간의 실시간 대화 및 일정 변경 이력(시스템 메시지)을 표시합니다.
  * - 새 메시지 입력 시 자동으로 스크롤을 최하단으로 이동시킵니다.
+ *
  * @returns {JSX.Element} 채팅방 화면
  */
 const ScheduleChat = () => {
@@ -195,6 +196,7 @@ const ScheduleChat = () => {
 
   // --- Handlers ---
 
+  /** 스크롤을 최하단으로 이동시키는 함수 */
   const scrollToBottom = () => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -486,6 +488,7 @@ const ScheduleChat = () => {
       className="px-4 pb-4"
     >
       <div className="space-y-4">
+        {/* 메시지 목록 렌더링 */}
         {messages.map((msg, index) => {
           const showDateSeparator = index === 0 || !dayjs(msg.createdAt).isSame(dayjs(messages[index - 1].createdAt), 'day');
 
@@ -565,6 +568,7 @@ const ScheduleChat = () => {
             </React.Fragment>
           );
         })}
+        {/* 스크롤 앵커 */}
         <div ref={scrollRef} className="h-1" />
         <ScheduleDetailModal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} schedule={scheduleData} scheduleId={id || ''} />
 
@@ -586,7 +590,7 @@ const ScheduleChat = () => {
           confirmButtonClassName="bg-red-500"
         />
 
-        {/* [추가] 컨텍스트 메뉴 */}
+        {/* 메시지 컨텍스트 메뉴 (복사/답장/삭제) */}
         {contextMenu.isOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setContextMenu({ ...contextMenu, isOpen: false })}>
             <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />

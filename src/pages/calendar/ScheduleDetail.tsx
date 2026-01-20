@@ -127,6 +127,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
  * - 일정의 상세 정보 표시 (제목, 시간, 장소, 메모 등)
  * - 반복 일정 처리 및 삭제/수정/복사 기능
  * - 공유 일정의 경우 후기 작성 및 채팅방 이동 기능 제공
+ *
+ * @returns {JSX.Element} 일정 상세 화면
  */
 const ScheduleDetail = () => {
   const navigate = useNavigate();
@@ -537,6 +539,7 @@ const ScheduleDetail = () => {
           </div>
         }
       >
+        {/* 헤더 영역 */}
         <PageHeader className="mb-8 mt-4">
           {data.recurrence && data.recurrence.frequency !== 'none' && (
             <div className="mb-2">
@@ -549,6 +552,7 @@ const ScheduleDetail = () => {
           </div>
         </PageHeader>
 
+        {/* 상세 정보 영역 */}
         <div className="space-y-8">
           <div className="space-y-5">
             <div className="flex items-center gap-4">
@@ -638,6 +642,7 @@ const ScheduleDetail = () => {
 
           <div className="h-[1px] bg-gray-100 dark:bg-gray-800 my-6" />
 
+          {/* 지난 일정 후기 영역 */}
           {isPastEvent && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 pb-10">
               <div className="flex items-center gap-2 px-1">
@@ -750,10 +755,12 @@ const ScheduleDetail = () => {
         </div>
       </PageLayout>
 
+      {/* 반복 일정 삭제 옵션 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
 
+      {/* 일반 일정 삭제 확인 모달 */}
       <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}
@@ -772,6 +779,7 @@ const ScheduleDetail = () => {
         confirmButtonClassName="bg-red-500"
       />
 
+      {/* 후기 삭제 확인 모달 */}
       <ConfirmModal
         isOpen={isReviewDeleteModalOpen}
         onClose={() => setIsReviewDeleteModalOpen(false)}

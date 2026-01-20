@@ -1,11 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, Clock, Loader2, MapPin, Sparkles, Users, XCircle } from 'lucide-react';
 import dayjs from 'dayjs';
+import { AlertCircle, CheckCircle2, Clock, Loader2, MapPin, Sparkles, Users, XCircle } from 'lucide-react';
 
 import { PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { useMeetingParticipantStatus } from 'hooks';
 
+/**
+ * 참여자용 투표 현황 페이지 컴포넌트
+ * - 투표가 완료된 후, 주최자가 확정하기 전까지 전체 투표 결과를 보여줍니다.
+ * @returns {JSX.Element} 참여자 현황 화면
+ */
 const MeetingParticipantStatus = () => {
   const navigate = useNavigate();
   const { state } = useMeetingParticipantStatus();

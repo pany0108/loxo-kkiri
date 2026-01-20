@@ -1,5 +1,5 @@
-import React from 'react';
 import { AlignLeft, MapPin } from 'lucide-react';
+import React from 'react';
 
 interface MeetingInfoCardProps {
   title: string;
@@ -7,6 +7,13 @@ interface MeetingInfoCardProps {
   location?: string;
 }
 
+/**
+ * 약속 초대장 정보 카드 컴포넌트
+ * - 제목, 설명, 장소 정보를 표시합니다.
+ * @param {string} title - 약속 제목
+ * @param {string} [description] - 약속 설명
+ * @param {string} [location] - 약속 장소
+ */
 const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, location }) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-800 rounded-3xl p-6 mb-10 border border-gray-100 dark:border-gray-700/50 shadow-card">

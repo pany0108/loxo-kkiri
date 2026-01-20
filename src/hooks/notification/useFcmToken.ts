@@ -1,8 +1,13 @@
 import { useEffect } from 'react';
-import { PushNotifications } from '@capacitor/push-notifications';
-import { doc, updateDoc, arrayUnion, getFirestore } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { arrayUnion, doc, getFirestore, updateDoc } from 'firebase/firestore';
 
+/**
+ * FCM 토큰 발급 및 저장을 처리하는 커스텀 훅
+ * - 모바일 환경에서만 동작하며, 발급된 토큰을 Firestore 사용자 문서에 저장합니다.
+ * @param {string | null} userId - 현재 사용자 ID
+ */
 export const useFcmToken = (userId: string | null) => {
   // Firestore 인스턴스 가져오기
   const db = getFirestore();
@@ -13,9 +18,6 @@ export const useFcmToken = (userId: string | null) => {
 
     // 리스너 핸들(Promise)을 저장할 변수
     const registrationListener = PushNotifications.addListener('registration', async (token) => {
-      console.log('새로운 FCM 토큰 발급됨:', token.value);
-      console.log('현재 토큰을 저장하려는 User ID:', userId);
-
       if (userId) {
         try {
           const userRef = doc(db, 'users', userId);
@@ -23,7 +25,6 @@ export const useFcmToken = (userId: string | null) => {
           await updateDoc(userRef, {
             fcmTokens: arrayUnion(token.value),
           });
-          console.log(`Firestore 경로: users/${userId} 에 저장 완료`);
         } catch (error) {
           console.error('토큰 저장 실패:', error);
         }
@@ -43,7 +44,6 @@ export const useFcmToken = (userId: string | null) => {
       }
 
       if (permStatus.receive !== 'granted') {
-        console.error('푸시 알림 권한이 거부되었습니다.');
         return;
       }
 
@@ -56,11 +56,8 @@ export const useFcmToken = (userId: string | null) => {
 
     // 정리(Cleanup) 함수
     return () => {
-      // [수정 포인트] addListener는 Promise를 반환하므로, .then()을 통해 핸들을 받아 제거해야 합니다.
       registrationListener.then((handle) => handle.remove());
       errorListener.then((handle) => handle.remove());
     };
-
-    // [수정 포인트] 의존성 배열에 'db' 추가 (ESLint 경고 해결)
   }, [userId, db]);
 };

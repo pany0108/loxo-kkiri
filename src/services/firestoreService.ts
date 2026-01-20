@@ -13,7 +13,6 @@ import {
   DocumentData,
   QueryConstraint,
   WithFieldValue,
-  SetOptions,
   DocumentReference,
   CollectionReference,
 } from 'firebase/firestore';
@@ -21,9 +20,11 @@ import { db } from '../firebase';
 
 /**
  * Firestore에서 단일 문서를 가져옵니다.
- * @param collectionPath - 컬렉션 경로
- * @param docId - 문서 ID
- * @returns 문서 데이터 또는 null
+ *
+ * @template T - 문서 데이터 타입
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {string} docId - 문서 ID
+ * @returns {Promise<(T & { id: string }) | null>} 문서 데이터 또는 null
  */
 export const getDocument = async <T>(collectionPath: string, docId: string): Promise<(T & { id: string }) | null> => {
   const docRef = doc(db, collectionPath, docId);
@@ -36,9 +37,11 @@ export const getDocument = async <T>(collectionPath: string, docId: string): Pro
 
 /**
  * Firestore에서 쿼리 조건에 맞는 여러 문서를 가져옵니다.
- * @param collectionPath - 컬렉션 경로
- * @param constraints - Firestore 쿼리 제약 조건들
- * @returns 문서 데이터 배열
+ *
+ * @template T - 문서 데이터 타입
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {...QueryConstraint[]} constraints - Firestore 쿼리 제약 조건들
+ * @returns {Promise<(T & { id: string })[]>} 문서 데이터 배열
  */
 export const getDocuments = async <T>(collectionPath: string, ...constraints: QueryConstraint[]): Promise<(T & { id: string })[]> => {
   const collRef = collection(db, collectionPath);
@@ -49,9 +52,11 @@ export const getDocuments = async <T>(collectionPath: string, ...constraints: Qu
 
 /**
  * Firestore에 새 문서를 추가합니다. `createdAt`과 `updatedAt` 타임스탬프가 자동으로 추가됩니다.
- * @param collectionPath - 컬렉션 경로
- * @param data - 저장할 데이터
- * @returns 생성된 문서의 참조
+ *
+ * @template T - 문서 데이터 타입
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {WithFieldValue<T>} data - 저장할 데이터
+ * @returns {Promise<DocumentReference<T>>} 생성된 문서의 참조
  */
 export const addDocument = async <T extends DocumentData>(collectionPath: string, data: WithFieldValue<T>): Promise<DocumentReference<T>> => {
   const collRef = collection(db, collectionPath) as CollectionReference<T>;
@@ -65,9 +70,11 @@ export const addDocument = async <T extends DocumentData>(collectionPath: string
 
 /**
  * Firestore 문서를 업데이트합니다. `updatedAt` 타임스탬프가 자동으로 업데이트됩니다.
- * @param collectionPath - 컬렉션 경로
- * @param docId - 문서 ID
- * @param data - 업데이트할 데이터
+ *
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {string} docId - 문서 ID
+ * @param {DocumentData} data - 업데이트할 데이터
+ * @returns {Promise<void>}
  */
 export const updateDocument = async (collectionPath: string, docId: string, data: DocumentData): Promise<void> => {
   const docRef = doc(db, collectionPath, docId);
@@ -79,9 +86,12 @@ export const updateDocument = async (collectionPath: string, docId: string, data
 
 /**
  * Firestore 문서를 덮어쓰거나 생성합니다. `createdAt`과 `updatedAt` 타임스탬프가 자동으로 관리됩니다.
- * @param collectionPath - 컬렉션 경로
- * @param docId - 문서 ID
- * @param data - 저장할 데이터
+ *
+ * @template T - 문서 데이터 타입
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {string} docId - 문서 ID
+ * @param {WithFieldValue<T>} data - 저장할 데이터
+ * @returns {Promise<void>}
  */
 export const setDocument = async <T extends DocumentData>(collectionPath: string, docId: string, data: WithFieldValue<T>): Promise<void> => {
   const docRef = doc(db, collectionPath, docId) as DocumentReference<T>;
@@ -101,8 +111,10 @@ export const setDocument = async <T extends DocumentData>(collectionPath: string
 
 /**
  * Firestore 문서를 삭제합니다.
- * @param collectionPath - 컬렉션 경로
- * @param docId - 문서 ID
+ *
+ * @param {string} collectionPath - 컬렉션 경로
+ * @param {string} docId - 문서 ID
+ * @returns {Promise<void>}
  */
 export const deleteDocument = async (collectionPath: string, docId: string): Promise<void> => {
   const docRef = doc(db, collectionPath, docId);
@@ -111,6 +123,7 @@ export const deleteDocument = async (collectionPath: string, docId: string): Pro
 
 /**
  * Firestore `writeBatch` 인스턴스를 생성합니다.
- * @returns WriteBatch 인스턴스
+ *
+ * @returns {WriteBatch} WriteBatch 인스턴스
  */
 export const createBatch = () => writeBatch(db);

@@ -1,7 +1,6 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app } from '../firebase';
 
-// 인터페이스 정의 통합
 export interface PushNotificationPayload {
   userId: string;
   title: string;
@@ -21,15 +20,12 @@ const sendPushCallable = httpsCallable<PushNotificationPayload, { success: boole
 
 /**
  * 사용자에게 푸시 알림을 전송합니다.
- * 실제 환경에서는 Cloud Function을 호출하고, 개발 설정에 따라 콘솔 로그로 대체할 수도 있습니다.
+ * - Cloud Function 'sendPushNotificationToUser'를 호출합니다.
+ *
+ * @param {PushNotificationPayload} payload - 알림 전송에 필요한 데이터 (userId, title, body 등)
+ * @returns {Promise<void>}
  */
 export const sendPushNotificationToUser = async (payload: PushNotificationPayload) => {
-  // 개발 모드이거나 로컬 테스트인 경우 콘솔로만 확인하고 싶다면 아래 주석을 해제하세요.
-  // if (process.env.NODE_ENV === 'development') {
-  //   console.log('📢 [DEV: Push Simulated]', payload);
-  //   return;
-  // }
-
   try {
     const result = await sendPushCallable(payload);
 

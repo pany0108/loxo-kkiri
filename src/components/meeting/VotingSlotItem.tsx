@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { CheckCircle2, AlertCircle, XCircle, MessageSquare, Clock, Calendar, TriangleAlert } from 'lucide-react';
 import dayjs from 'dayjs';
+import { AlertCircle, Calendar, CheckCircle2, Clock, MessageSquare, TriangleAlert, XCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface VotingSlot {
   id: string;
@@ -11,7 +11,7 @@ interface VotingSlot {
   myMemo: string;
 }
 
-// [추가] 충돌 정보 상세 인터페이스
+// 충돌 정보 상세 인터페이스
 interface ConflictDetail {
   date: string;
   title: string;
@@ -25,11 +25,20 @@ interface VotingSlotItemProps {
   conflictInfo?: { isConflict: boolean; title?: string; time?: string; conflicts?: ConflictDetail[] };
 }
 
+/**
+ * 투표용 시간대 아이템 컴포넌트
+ * - 특정 시간대에 대해 가능/아마도/불가능 투표를 할 수 있습니다.
+ * - 충돌 일정 정보를 표시합니다.
+ * @param {VotingSlot} slot - 투표 대상 시간대 정보
+ * @param {function} onVote - 투표 핸들러
+ * @param {function} onMemoChange - 메모 변경 핸들러
+ * @param {object} [conflictInfo] - 일정 충돌 정보
+ */
 const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoChange, conflictInfo }) => {
-  // [추가] 충돌 일정 펼치기/접기 상태
+  // 충돌 일정 펼치기/접기 상태
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // [추가] 날짜 범위 처리 로직
+  // 날짜 범위 처리 로직
   const isRange = slot.date.includes(':');
   let dateDisplay = dayjs(slot.date).format('MM월 DD일 (ddd)');
 
@@ -55,7 +64,7 @@ const VotingSlotItem: React.FC<VotingSlotItemProps> = ({ slot, onVote, onMemoCha
           {conflictInfo && (
             <div className="mt-2 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1">
               {conflictInfo.conflicts ? (
-                // [수정] 충돌 일정이 많을 경우 일부만 표시하고 더보기 버튼 제공
+                // 충돌 일정이 많을 경우 일부만 표시하고 더보기 버튼 제공
                 <>
                   {conflictInfo.conflicts.slice(0, isExpanded ? undefined : 2).map((c, idx) => (
                     <div

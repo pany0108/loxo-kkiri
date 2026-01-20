@@ -13,6 +13,13 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+/**
+ * 사용자 인증 상태를 관리하는 Context Provider
+ * - Firebase Auth의 상태 변화를 감지하여 전역적으로 사용자 정보를 제공합니다.
+ *
+ * @param {AuthProviderProps} props
+ * @returns {JSX.Element}
+ */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

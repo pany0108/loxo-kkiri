@@ -1,8 +1,7 @@
 import React from 'react';
 import { Loader2, Smartphone, Sparkles } from 'lucide-react';
 
-import { BirthDateInput, FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
-import LoadingButton from '../../components/ui/LoadingButton';
+import { BirthDateInput, FormInput, LoadingButton, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { useSocialSignupForm } from 'hooks/auth/useSocialSignupForm';
 import { handleEnterToNext } from 'utils';
 
@@ -10,6 +9,7 @@ import { handleEnterToNext } from 'utils';
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.
  * - 소셜 계정에서 제공하지 않는 필수 정보(생년월일, 전화번호)를 수집합니다.
  * - 모바일 환경에서의 리다이렉트 데이터 유실을 방지하기 위해 LocalStorage를 활용합니다.
+ *
  * @returns {JSX.Element} 추가 정보 입력 화면
  */
 const SignupSocial = () => {

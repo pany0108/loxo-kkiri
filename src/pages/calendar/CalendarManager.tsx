@@ -48,6 +48,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
 /**
  * 캘린더 관리 페이지 컴포넌트
  * - 사용자가 참여 중인 캘린더 목록을 조회, 수정, 삭제, 탈퇴할 수 있습니다.
+ *
+ * @returns {JSX.Element} 캘린더 관리 화면
  */
 const CalendarManager = () => {
   const navigate = useNavigate();
@@ -90,7 +92,7 @@ const CalendarManager = () => {
     return count <= 1 ? '나만 보기' : `나 포함 ${count}명`;
   };
 
-  // 삭제/나가기 모달 열기
+  /** 삭제/나가기 모달 열기 핸들러 */
   const openDeleteModal = (calendar: CalendarType, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCalendarToDelete(calendar);
@@ -102,7 +104,7 @@ const CalendarManager = () => {
     }
   };
 
-  // 캘린더 삭제 확인 핸들러
+  /** 캘린더 삭제 확인 핸들러 */
   const handleDeleteConfirm = async () => {
     if (!calendarToDelete) return;
 
@@ -118,7 +120,7 @@ const CalendarManager = () => {
     }
   };
 
-  // 캘린더 나가기 확인 핸들러
+  /** 캘린더 나가기 확인 핸들러 */
   const handleLeaveConfirm = async () => {
     if (!calendarToDelete || !user) return;
 
@@ -142,7 +144,7 @@ const CalendarManager = () => {
     }
   };
 
-  // 캘린더 전환 핸들러
+  /** 캘린더 전환 핸들러 (메인 캘린더 뷰로 이동) */
   const handleSwitch = (id: string) => {
     navigate('/calendar', { state: { targetCalendarId: id }, replace: true });
   };

@@ -19,6 +19,9 @@ interface ConfirmModalProps {
 /**
  * 확인 모달 컴포넌트
  * - 사용자에게 중요한 작업(삭제, 로그아웃 등)에 대한 확인을 요청할 때 사용합니다.
+ *
+ * @param {ConfirmModalProps} props
+ * @returns {JSX.Element | null}
  */
 const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isOpen,

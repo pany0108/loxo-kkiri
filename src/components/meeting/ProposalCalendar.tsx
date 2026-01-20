@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'; // CalendarIcon alias 유지
 import dayjs from 'dayjs';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useRef, useState } from 'react';
 
 interface ProposalCalendarProps {
   currentMonth: dayjs.Dayjs;
@@ -53,6 +53,15 @@ const RANGE_PALETTES = [
  * 약속 제안용 달력 컴포넌트
  * - 날짜 선택 및 범위 선택 기능을 제공합니다.
  * - 스와이프 제스처로 월 이동이 가능합니다.
+ * @param {dayjs.Dayjs} currentMonth - 현재 표시 중인 월
+ * @param {function} onMonthChange - 월 변경 핸들러
+ * @param {string[]} selectedDates - 선택된 날짜 목록
+ * @param {Map<string, any[]>} schedulesByDate - 날짜별 일정 데이터
+ * @param {function} onDateClick - 날짜 클릭 핸들러
+ * @param {boolean} isRangeMode - 범위 선택 모드 여부
+ * @param {function} onToggleRangeMode - 범위 선택 모드 토글 핸들러
+ * @param {string[]} [votingItems] - 투표 항목 (범위 색상 결정용)
+ * @param {Map<string, string>} [holidaysByDate] - 날짜별 공휴일 정보
  */
 const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
   currentMonth,
@@ -66,7 +75,11 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
   holidaysByDate,
 }) => {
   const [direction, setDirection] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
 
+  /** 달력 날짜 생성 함수 */
   const generateDates = () => {
     const startOfMonth = currentMonth.startOf('month');
     const endOfMonth = currentMonth.endOf('month');
@@ -76,11 +89,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     return dates;
   };
 
-  // 스와이프 핸들러
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  const minSwipeDistance = 50;
-
+  // --- 스와이프 핸들러 ---
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
@@ -122,7 +131,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     return RANGE_PALETTES[index % RANGE_PALETTES.length];
   };
 
-  const variants = {
+  const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 20 : -20,
       opacity: 0,
@@ -139,6 +148,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
 
   return (
     <section className="space-y-3">
+      {/* 헤더: 제목 및 범위 선택 토글 */}
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <CalendarIcon size={18} className="text-sub dark:text-gray-400" />
@@ -159,12 +169,14 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
         </button>
       </div>
 
+      {/* 달력 컨테이너 */}
       <div
         className="bg-gray-50 dark:bg-gray-800/50 rounded-[32px] p-6 border-2 border-transparent overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
+        {/* 월 이동 네비게이션 */}
         <div className="flex items-center justify-between mb-6 px-2">
           <button
             onClick={() => {
@@ -186,6 +198,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
             <ChevronRight size={18} />
           </button>
         </div>
+        {/* 요일 헤더 */}
         <div className="grid grid-cols-7 gap-x-1 text-center mb-3">
           {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
             <span key={d} className="text-[11px] font-black text-sub dark:text-gray-400">
@@ -194,11 +207,12 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
           ))}
         </div>
 
+        {/* 날짜 그리드 (애니메이션 적용) */}
         <AnimatePresence mode="wait" custom={direction} initial={false}>
           <motion.div
             key={currentMonth.format('YYYY-MM')}
             custom={direction}
-            variants={variants}
+            variants={slideVariants}
             initial="enter"
             animate="center"
             exit="exit"

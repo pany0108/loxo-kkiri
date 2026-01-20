@@ -1,4 +1,3 @@
-// src/pages/social/SocialMain.tsx
 import React, { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
@@ -10,6 +9,8 @@ import FriendList from './FriendList';
  * 소셜 메인 페이지 컴포넌트
  * - 채팅 목록과 친구 목록을 탭으로 구분하여 보여줍니다.
  * - 스와이프 제스처를 통해 탭 간 이동이 가능합니다.
+ *
+ * @returns {JSX.Element} 소셜 메인 화면
  */
 const SocialMain = () => {
   const location = useLocation();

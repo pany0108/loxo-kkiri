@@ -1,8 +1,8 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, Plane, ShoppingCart, Star, Trash2, User, Users, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { CalendarEvent, CalendarType } from 'contexts';
 
@@ -48,6 +48,9 @@ interface EventListSheetProps {
 /**
  * 선택된 날짜의 일정 목록을 보여주는 바텀 시트 컴포넌트
  * - 일정을 클릭하여 상세 정보를 보거나, 롱프레스로 삭제 모드에 진입할 수 있습니다.
+ *
+ * @param {EventListSheetProps} props
+ * @returns {JSX.Element}
  */
 const EventListSheet: React.FC<EventListSheetProps> = ({
   isVisible,

@@ -14,7 +14,7 @@ export interface CalendarType {
   isPrivate: boolean;
   isDefault: boolean;
   color?: string;
-  icon?: string; // [추가] 캘린더 아이콘 식별자
+  icon?: string; // 캘린더 아이콘 식별자
   ownerId: string;
   createdAt?: string;
 }
@@ -31,8 +31,8 @@ export interface CalendarEvent {
   recurrence?: any;
   originalId?: string;
   calendarId: string;
-  isLeapMonth?: boolean; // [추가] 윤달 여부
-  isLunar?: boolean; // [추가] 음력 여부
+  isLeapMonth?: boolean; // 윤달 여부
+  isLunar?: boolean; // 음력 여부
 }
 
 interface CalendarContextType {
@@ -56,6 +56,13 @@ const safeDayjs = (date: any): dayjs.Dayjs | null => {
   return dayjs(date); // Fallback for Date objects
 };
 
+/**
+ * 반복 일정을 확장하여 개별 이벤트 인스턴스로 생성합니다.
+ * - 음력/양력 변환, 윤달 처리 등을 포함합니다.
+ *
+ * @param {any[]} events - 원본 이벤트 목록
+ * @returns {any[]} 확장된 이벤트 목록
+ */
 const expandRecurringEvents = (events: any[]) => {
   const expandedEvents: any[] = [];
 
@@ -91,7 +98,7 @@ const expandRecurringEvents = (events: any[]) => {
       // 최대 500회 반복으로 제한
       loopSafety++;
 
-      // [추가] 음력 생일인 경우, 현재 반복 연도에 맞는 양력 날짜로 변환합니다.
+      // 음력 생일인 경우, 현재 반복 연도에 맞는 양력 날짜로 변환합니다.
       if (event.isLunar && frequency === 'yearly') {
         const originalLunarDate = safeDayjs(event.start);
         if (originalLunarDate) {
@@ -104,7 +111,7 @@ const expandRecurringEvents = (events: any[]) => {
             year: currentLoopYear,
             month: lunarMonth,
             day: lunarDay,
-            isLeapMonth: event.isLeapMonth || false, // [추가] 윤달 여부 전달
+            isLeapMonth: event.isLeapMonth || false, // 윤달 여부 전달
           });
           const solarDate = luni.toDate();
           currentStart = dayjs(solarDate);
@@ -169,11 +176,11 @@ const expandRecurringEvents = (events: any[]) => {
         }
       } else if (frequency === 'monthly') {
         currentStart = currentStart.add(interval, 'month');
-        // [추가] 매월 마지막 날 옵션 처리 (날짜 밀림 방지)
+        // 매월 마지막 날 옵션 처리 (날짜 밀림 방지)
         if (monthlyType === 'last_day') {
           currentStart = currentStart.endOf('month');
         } else if (monthlyType === 'nth_day') {
-          // [추가] 매월 n번째 요일 처리
+          // 매월 n번째 요일 처리
           const originalWeekday = initialStart.day();
           const originalDate = initialStart.date();
           const nth = Math.ceil(originalDate / 7);
@@ -195,11 +202,11 @@ const expandRecurringEvents = (events: any[]) => {
         }
       } else if (frequency === 'yearly') {
         currentStart = currentStart.add(interval, 'year');
-        // [추가] 매년 마지막 날 옵션 처리
+        // 매년 마지막 날 옵션 처리
         if (monthlyType === 'last_day') {
           currentStart = currentStart.endOf('month');
         } else if (monthlyType === 'nth_day') {
-          // [추가] 매년 n번째 요일 처리
+          // 매년 n번째 요일 처리
           const originalWeekday = initialStart.day();
           const originalDate = initialStart.date();
           const nth = Math.ceil(originalDate / 7);
@@ -226,6 +233,14 @@ const expandRecurringEvents = (events: any[]) => {
   return expandedEvents;
 };
 
+/**
+ * 캘린더 및 일정 데이터를 관리하는 Context Provider
+ * - 사용자의 캘린더 목록과 일정 목록을 Firestore에서 실시간으로 구독합니다.
+ * - 반복 일정을 계산하여 확장된 이벤트 목록을 제공합니다.
+ *
+ * @param {{ children: ReactNode }} props
+ * @returns {JSX.Element}
+ */
 export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [activeCalendar, setActiveCalendar] = useState<CalendarType | null>(null);
@@ -273,6 +288,12 @@ export const CalendarProvider = ({ children }: { children: ReactNode }) => {
   return <CalendarContext.Provider value={{ myCalendars, events, activeCalendar, setActiveCalendar }}>{children}</CalendarContext.Provider>;
 };
 
+/**
+ * 캘린더 Context를 사용하기 위한 커스텀 훅
+ *
+ * @returns {CalendarContextType} myCalendars, events, activeCalendar, setActiveCalendar
+ * @throws {Error} CalendarProvider 외부에서 사용 시 에러 발생
+ */
 export const useCalendar = () => {
   const context = useContext(CalendarContext);
   if (!context) throw new Error('useCalendar must be used within a CalendarProvider');

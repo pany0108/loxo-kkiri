@@ -1,5 +1,5 @@
+import { ChevronLeft, X } from 'lucide-react';
 import React from 'react';
-import { X, ChevronLeft, Check } from 'lucide-react';
 
 interface NotificationHeaderProps {
   isSelectionMode: boolean;
@@ -17,6 +17,23 @@ interface NotificationHeaderProps {
   tabs: { id: string; label: string }[];
 }
 
+/**
+ * 알림 센터 헤더 컴포넌트
+ * - 알림 목록의 필터링(전체/친구/약속) 및 선택 모드(읽음 처리/삭제)를 관리합니다.
+ * @param {boolean} isSelectionMode - 선택 모드 활성화 여부
+ * @param {number} selectedCount - 현재 선택된 알림 개수
+ * @param {function} onCancelSelection - 선택 모드 취소 핸들러
+ * @param {function} onMarkSelectedAsRead - 선택된 알림 읽음 처리 핸들러
+ * @param {function} onDeleteSelected - 선택된 알림 삭제 핸들러
+ * @param {function} onSelectAll - 전체 선택/해제 토글 핸들러
+ * @param {boolean} isAllInFilterSelected - 현재 필터 내 모든 항목 선택 여부
+ * @param {number} filteredNotificationsCount - 현재 필터링된 알림 총 개수
+ * @param {function} onBack - 뒤로가기 핸들러
+ * @param {string} activeFilter - 현재 활성화된 탭 필터 ID
+ * @param {function} onFilterChange - 필터 변경 핸들러
+ * @param {number} unreadCount - 읽지 않은 알림 개수 (배지 표시용)
+ * @param {Array} tabs - 탭 메뉴 설정 정보
+ */
 const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   isSelectionMode,
   selectedCount,
@@ -33,9 +50,11 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   tabs,
 }) => {
   return (
+    /* 상단 고정 헤더 컨테이너 */
     <div className="fixed top-0 right-0 left-0 px-6 pt-[calc(1.5rem+env(safe-area-inset-top))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-40 border-b border-transparent dark:border-gray-800">
       {isSelectionMode ? (
         <>
+          {/* 선택 모드 네비게이션 */}
           <nav className="relative flex items-center justify-center pb-4 animate-in fade-in duration-200">
             <button onClick={onCancelSelection} className="absolute left-0 p-2 -ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
               <X size={28} />
@@ -56,6 +75,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
               )}
             </div>
           </nav>
+          {/* 전체 선택 버튼 영역 */}
           <div className="pb-4 animate-in fade-in duration-200">
             <button onClick={onSelectAll} disabled={filteredNotificationsCount === 0} className="flex items-center gap-2 group disabled:opacity-50">
               <div
@@ -71,6 +91,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         </>
       ) : (
         <>
+          {/* 일반 모드 네비게이션 */}
           <nav className="flex items-center justify-between pb-4">
             <div className="flex items-center gap-2">
               <button onClick={onBack} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
@@ -78,6 +99,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
               </button>
               <h1 className="text-lg font-black text-gray-900 dark:text-white">알림 센터</h1>
             </div>
+            {/* 읽지 않은 알림 필터 토글 버튼 */}
             <button
               onClick={() => onFilterChange(activeFilter === 'unread' ? 'all' : 'unread')}
               className={`relative px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
@@ -92,6 +114,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
               )}
             </button>
           </nav>
+          {/* 탭 메뉴 영역 */}
           <div className="pb-4">
             <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-[16px]">
               {tabs.map((tab) => (

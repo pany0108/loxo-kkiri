@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DayHeaderContentArg, EventContentArg, EventMountArg } from '@fullcalendar/core';
-import { collection, query, where } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { collection, query, where } from 'firebase/firestore';
 import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Loader2, Music, Plane, ShoppingCart, Star, Trash2 } from 'lucide-react';
 
 import { auth, db } from '../../firebase';
@@ -34,6 +34,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
  * - 월/주/일 뷰 캘린더 표시
  * - 일정 목록 바텀 시트 관리
  * - 날짜 이동 및 일정 추가/삭제/수정 진입점
+ *
+ * @returns {JSX.Element} 캘린더 메인 화면
  */
 const CalendarMain = () => {
   const navigate = useNavigate();
@@ -319,6 +321,7 @@ const CalendarMain = () => {
         onViewChange={handleViewChange}
       />
 
+      {/* 캘린더 영역 */}
       <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
         <DatePickerPopup
           isOpen={isDatePickerOpen}
@@ -366,6 +369,7 @@ const CalendarMain = () => {
           />
         </div>
 
+        {/* 일정 목록 바텀 시트 */}
         <EventListSheet
           isVisible={isListVisible && currentView === 'dayGridMonth'}
           onClose={() => {
@@ -392,6 +396,7 @@ const CalendarMain = () => {
         />
       </main>
 
+      {/* 일정 추가 FAB (월간 뷰에서 목록이 보일 때만 표시) */}
       {isListVisible && currentView === 'dayGridMonth' && (
         <AddScheduleFAB
           onClick={() => {
@@ -401,9 +406,12 @@ const CalendarMain = () => {
         />
       )}
 
+      {/* 반복 일정 삭제 옵션 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
+
+      {/* 일반 일정 삭제 확인 모달 */}
       <ConfirmModal
         isOpen={isSimpleDeleteModalOpen}
         onClose={() => setIsSimpleDeleteModalOpen(false)}

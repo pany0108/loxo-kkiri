@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
 import toast from 'react-hot-toast';
 
+import { auth, db } from '../../firebase';
+
+/** 알림 객체 인터페이스 */
 export interface Notification {
   id: string;
   userId: string;
@@ -15,9 +17,18 @@ export interface Notification {
   fromUserName?: string;
 }
 
+/**
+ * 알림 클릭 시 네비게이션 처리를 담당하는 커스텀 훅
+ * - 알림 타입에 따라 적절한 페이지로 이동합니다.
+ * @returns {function} 알림 객체를 받아 네비게이션을 수행하는 함수
+ */
 export const useNotificationNavigation = () => {
   const navigate = useNavigate();
 
+  /**
+   * 알림 처리 및 이동 핸들러
+   * @param {Notification} notification - 클릭된 알림 객체
+   */
   const handleNavigation = async (notification: Notification) => {
     if (!notification.relatedId) return;
 

@@ -1,6 +1,6 @@
-import React, { useMemo, useRef } from 'react';
-import { motion, AnimatePresence, AnimatePresenceProps } from 'framer-motion';
-import { X, Search, CheckCircle2 } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { AnimatePresence, AnimatePresenceProps, motion } from 'framer-motion';
+import { CheckCircle2, Search, X } from 'lucide-react';
 
 interface Friend {
   uid: string;
@@ -25,14 +25,27 @@ interface FriendListPopupProps {
   onToggleGroup: (group: { friends: Friend[] }) => void;
 }
 
+/**
+ * 친구 선택 팝업 컴포넌트 (바텀 시트)
+ * - 친구 목록을 그룹별로 보여주고 선택할 수 있습니다.
+ * - 검색 기능을 제공합니다.
+ * @param {boolean} isOpen - 팝업 열림 여부
+ * @param {function} onClose - 팝업 닫기 핸들러
+ * @param {Friend[]} friends - 전체 친구 목록
+ * @param {FriendGroup[]} friendGroups - 친구 그룹 목록
+ * @param {string[]} selectedFriendUids - 선택된 친구 UID 목록
+ * @param {function} onToggleFriend - 개별 친구 선택 토글 핸들러
+ * @param {function} onToggleGroup - 그룹 전체 선택 토글 핸들러
+ */
 const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, friends, friendGroups, selectedFriendUids, onToggleFriend, onToggleGroup }) => {
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
 
   const AnimatePresenceSafe = AnimatePresence as React.FC<React.PropsWithChildren<AnimatePresenceProps>>;
 
+  // 친구 목록을 그룹화하고 검색어로 필터링
   const groupedAndFilteredFriends = useMemo(() => {
     const groupMap = new Map<string, { name: string; friends: Friend[] }>();
     friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
@@ -61,6 +74,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
       .filter((group) => group.friends.length > 0);
   }, [friends, friendGroups, searchTerm]);
 
+  // --- 바텀 시트 스와이프 핸들러 ---
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;
@@ -82,6 +96,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
     <AnimatePresenceSafe>
       {isOpen && (
         <motion.div className="fixed inset-0 z-50 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {/* 배경 오버레이 */}
           <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
             className="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-t-[32px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl h-[80vh] flex flex-col"
@@ -93,11 +108,13 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
             <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 z-10">
               <X size={20} />
             </button>
+            {/* 헤더 영역 (스와이프 핸들 포함) */}
             <div className="px-6 pt-6" onTouchStart={onSheetTouchStart} onTouchMove={onSheetTouchMove} onTouchEnd={onSheetTouchEnd}>
               <div className="w-12 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-6" />
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-4">친구 선택</h3>
             </div>
 
+            {/* 검색 입력창 */}
             <div className="px-6 relative mb-4">
               <div className="flex items-center h-[52px] bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 transition-all shadow-sm focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white dark:focus-within:bg-gray-800">
                 <Search size={18} className="text-gray-400 dark:text-gray-600 mr-3 shrink-0" />
@@ -111,6 +128,7 @@ const FriendListPopup: React.FC<FriendListPopupProps> = ({ isOpen, onClose, frie
               </div>
             </div>
 
+            {/* 친구 목록 영역 */}
             <div className="flex-1 overflow-y-auto space-y-4 px-6">
               {groupedAndFilteredFriends.length > 0 ? (
                 groupedAndFilteredFriends.map((group) => (

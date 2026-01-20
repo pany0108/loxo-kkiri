@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { addDoc, collection, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import { CalendarClock, Clock } from 'lucide-react';
+import { addDoc, collection, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
@@ -42,6 +42,7 @@ interface TimeSlot {
  * 약속 제안 상세 설정 페이지 (Step 2) 컴포넌트입니다.
  * - 선택된 날짜별로 구체적인 시간(Time Slot)을 설정합니다.
  * - '종일' 옵션 또는 '특정 시간대'를 여러 개 추가할 수 있습니다.
+ *
  * @returns {JSX.Element} 약속 상세 설정 화면
  */
 const ProposeMeetingDetail = () => {

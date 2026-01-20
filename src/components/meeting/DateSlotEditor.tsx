@@ -1,6 +1,6 @@
-import React from 'react';
 import dayjs from 'dayjs';
-import { Calendar as CalendarIcon, Sparkles, X, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Sparkles, X } from 'lucide-react';
+import React from 'react';
 
 interface TimeSlot {
   start: string;
@@ -17,11 +17,24 @@ interface DateSlotEditorProps {
   onAddSlot: (dateStr: string) => void;
 }
 
+/**
+ * 날짜별 시간대 편집 컴포넌트
+ * - 특정 날짜의 시간대(Slot)를 추가, 삭제, 수정할 수 있습니다.
+ * - '종일' 옵션을 토글할 수 있습니다.
+ * @param {string} dateStr - 편집할 날짜 문자열 (YYYY-MM-DD)
+ * @param {TimeSlot[]} slots - 해당 날짜의 시간대 목록
+ * @param {function} onToggleAllDay - 종일 설정 토글 핸들러
+ * @param {function} onTimeChange - 시간 변경 핸들러
+ * @param {function} onDeleteSlot - 시간대 삭제 핸들러
+ * @param {function} onAddSlot - 시간대 추가 핸들러
+ */
 const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggleAllDay, onTimeChange, onDeleteSlot, onAddSlot }) => {
   const isAllDay = slots?.[0]?.isAllDay;
 
   return (
+    /* 컨테이너: 애니메이션 적용 */
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* 헤더: 날짜 표시 및 종일 토글 스위치 */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <CalendarIcon size={18} className="text-primary dark:text-blue-400" />
@@ -36,8 +49,10 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
         </div>
       </div>
 
+      {/* 시간대 목록 영역 */}
       <div className="space-y-3">
         {isAllDay ? (
+          /* 종일 설정 시 표시되는 메시지 */
           <div className="w-full h-[60px] bg-emerald-50 dark:bg-emerald-500/10 rounded-[20px] border border-emerald-100 dark:border-emerald-900/20 flex items-center justify-center gap-2 animate-in fade-in zoom-in-95 duration-200">
             <Sparkles size={16} className="text-emerald-500" />
             <span className="text-[14px] font-bold text-emerald-600 dark:text-emerald-300">이 날은 하루 종일 가능해요!</span>
@@ -45,6 +60,7 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
         ) : (
           <>
             {slots.map((slot, index) => (
+              /* 개별 시간대 입력 필드 */
               <div
                 key={index}
                 className="relative flex items-center h-[60px] bg-white dark:bg-gray-800 rounded-[20px] shadow-sm border border-gray-100 dark:border-gray-700 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-all overflow-hidden"
@@ -75,6 +91,7 @@ const DateSlotEditor: React.FC<DateSlotEditorProps> = ({ dateStr, slots, onToggl
                 )}
               </div>
             ))}
+            {/* 시간대 추가 버튼 */}
             <button
               onClick={() => onAddSlot(dateStr)}
               className="w-full h-[52px] border border-dashed border-gray-300 dark:border-gray-600 rounded-[20px] flex items-center justify-center gap-2 text-sub dark:text-gray-400 font-bold text-[13px] hover:border-primary dark:hover:border-blue-500 hover:text-primary dark:hover:text-blue-400 hover:bg-primary/10 dark:hover:bg-blue-900/20 transition-all active:scale-[0.99]"

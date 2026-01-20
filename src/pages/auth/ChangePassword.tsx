@@ -1,15 +1,16 @@
 import React from 'react';
 import { CheckCircle2, Eye, EyeOff, Lock, Mail, ShieldCheck, Smartphone, User } from 'lucide-react';
 
-import { FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
-import LoadingButton from '../../components/ui/LoadingButton';
+import { FormInput, LoadingButton, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { useChangePasswordForm } from 'hooks';
 
 /**
  * 비밀번호 변경 및 재설정 페이지 컴포넌트입니다.
- * 진입 경로(location.state)에 따라 두 가지 모드로 동작합니다:
- * 1. 재설정 모드 (Reset Mode): 로그인 전, 아이디 확인 후 비밀번호를 새로 설정합니다.
- * 2. 변경 모드 (Change Mode): 로그인 후, 현재 비밀번호 확인 과정을 거쳐 변경합니다.
+ * - 진입 경로(location.state)에 따라 두 가지 모드로 동작합니다:
+ *   1. 재설정 모드 (Reset Mode): 로그인 전, 아이디 확인 후 비밀번호를 새로 설정합니다.
+ *   2. 변경 모드 (Change Mode): 로그인 후, 현재 비밀번호 확인 과정을 거쳐 변경합니다.
+ *
+ * @returns {JSX.Element} 비밀번호 변경/재설정 화면
  */
 const ChangePassword = () => {
   const { state, dispatch, handlers } = useChangePasswordForm();
