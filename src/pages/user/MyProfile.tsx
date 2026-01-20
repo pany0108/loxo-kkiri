@@ -1,22 +1,23 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { ChevronRight, Camera, Bell, ShieldCheck, Users, LogOut, User, Edit2, ClipboardList, Loader2, Check, Moon, Sun } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { auth, db } from '../../firebase';
-import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
+import { Bell, Check, ChevronRight, ClipboardList, Edit2, Loader2, LogOut, Moon, ShieldCheck, Sun, User, Users } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
+import { ConfirmModal, PageHeader, PageLayout, PageTitle } from 'components';
 import { useTheme } from 'contexts';
 import { useFirestoreDoc } from 'hooks';
-import { PageHeader, ConfirmModal, PageTitle, PageLayout } from 'components';
 import { UserProfile } from 'types';
 
 /**
  * 마이페이지(내 프로필) 컴포넌트입니다.
  * - 사용자 정보를 조회하고 상태 메시지를 수정할 수 있습니다.
  * - 개인 정보 관리, 친구 목록, 설정 등 하위 메뉴로 이동하는 진입점 역할을 합니다.
- * * @returns {JSX.Element} 마이페이지 화면
+ * @returns {JSX.Element} 마이페이지 화면
  */
 const MyProfile = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const MyProfile = () => {
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: userData, loading: isLoading } = useFirestoreDoc<UserProfile>(userDocRef);
 
-  // [추가] 푸시 알림 권한 상태를 확인하여 토글 초기 상태를 설정합니다.
+  // 푸시 알림 권한 상태 확인
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
       setIsCheckingPermission(false);
@@ -51,12 +52,11 @@ const MyProfile = () => {
     checkPermission();
   }, []);
 
-  // [추가] 푸시 알림 토글 핸들러
+  /** 푸시 알림 토글 핸들러 */
   const handleTogglePush = async () => {
     if (isCheckingPermission || !Capacitor.isNativePlatform()) return;
 
     if (isPushEnabled) {
-      // --- 알림 끄기 ---
       const token = localStorage.getItem('fcm_token');
       if (token && user) {
         try {
@@ -70,7 +70,6 @@ const MyProfile = () => {
         }
       }
     } else {
-      // --- 알림 켜기 ---
       try {
         const permStatus = await PushNotifications.requestPermissions();
         if (permStatus.receive === 'granted') {
@@ -86,18 +85,13 @@ const MyProfile = () => {
     }
   };
 
-  /**
-   * [수정] 상태 메시지 수정 모달을 엽니다.
-   * @param {string} currentStatus - 현재 상태 메시지
-   */
+  /** 상태 메시지 수정 모달 오픈 */
   const openStatusModal = (currentStatus: string) => {
     setTempStatus(currentStatus);
     setIsStatusModalOpen(true);
   };
 
-  /**
-   * [추가] 상태 메시지를 저장합니다.
-   */
+  /** 상태 메시지 저장 */
   const handleSaveStatus = async () => {
     if (tempStatus === userData?.statusMessage) {
       setIsStatusModalOpen(false);
@@ -107,8 +101,6 @@ const MyProfile = () => {
     try {
       const userRef = doc(db, 'users', auth.currentUser!.uid);
       await updateDoc(userRef, { statusMessage: tempStatus });
-
-      // 실시간 리스너(useFirestoreDoc)가 자동으로 데이터를 업데이트하므로 수동 업데이트 불필요
       toast.success('상태 메시지가 변경되었습니다.');
     } catch (e) {
       toast.error('상태 메시지 변경 중 오류가 발생했습니다.');
@@ -118,14 +110,12 @@ const MyProfile = () => {
     }
   };
 
-  /**
-   * 로그아웃 핸들러
-   * Firebase 인증 세션을 종료하고 로그인 화면으로 이동합니다.
-   */
+  /** 로그아웃 핸들러 */
   const handleLogout = () => {
     setIsLogoutModalOpen(true);
   };
 
+  /** 로그아웃 확정 핸들러 */
   const handleLogoutConfirm = async () => {
     try {
       await signOut(auth);
@@ -157,7 +147,6 @@ const MyProfile = () => {
           </PageTitle>
         </PageHeader>
 
-        {/* 프로필 카드 섹션 */}
         <section className="bg-white dark:bg-gray-800 p-6 rounded-[28px] border border-gray-100 dark:border-gray-700 flex items-center gap-5 shadow-sm">
           <div className="relative shrink-0">
             <div className="w-[88px] h-[88px] bg-gray-100 rounded-[32px] flex items-center justify-center text-white shadow-lg border-4 border-white dark:border-gray-800 overflow-hidden">
@@ -165,14 +154,10 @@ const MyProfile = () => {
                 <User size={40} strokeWidth={2.5} />
               </div>
             </div>
-            {/* 프로필 사진 변경 기능 (개발 예정) */}
           </div>
-
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-black text-main dark:text-white truncate">{userData?.name || '사용자'}</h2>
             <p className="text-[14px] font-medium text-sub dark:text-gray-500 mb-3 truncate">{userData?.email}</p>
-
-            {/* 상태 메시지 표시 및 수정 트리거 */}
             <div
               onClick={() => openStatusModal(userData?.statusMessage || '')}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 rounded-full text-sub dark:text-gray-300 text-[13px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -183,7 +168,6 @@ const MyProfile = () => {
           </div>
         </section>
 
-        {/* 메뉴 리스트 섹션 */}
         <section className="space-y-6">
           <h3 className="px-1 text-[13px] font-bold text-sub dark:text-gray-500">계정 관리</h3>
           <div className="bg-white dark:bg-gray-800 rounded-[28px] border border-gray-100 dark:border-gray-700 overflow-hidden p-2 space-y-1">
@@ -202,20 +186,12 @@ const MyProfile = () => {
               toggleValue={themeMode === 'dark'}
               onToggle={toggleThemeMode}
             />
-            <MenuBtn
-              icon={<Bell size={20} />}
-              iconBg="bg-purple-50 text-purple-500"
-              label="푸시 알림"
-              isToggle={true}
-              toggleValue={isPushEnabled} // 실제 권한 상태를 반영
-              onToggle={handleTogglePush} // 권한 요청/토큰 제거 로직 실행
-            />
+            <MenuBtn icon={<Bell size={20} />} iconBg="bg-purple-50 text-purple-500" label="푸시 알림" isToggle={true} toggleValue={isPushEnabled} onToggle={handleTogglePush} />
             <MenuBtn icon={<LogOut size={20} />} iconBg="bg-red-50 text-red-500" label="로그아웃" onClick={handleLogout} color="text-red-500" hideArrow />
           </div>
         </section>
       </div>
 
-      {/* 로그아웃 확인 모달 */}
       {isLogoutModalOpen && (
         <ConfirmModal
           isOpen={isLogoutModalOpen}
@@ -268,8 +244,6 @@ const MyProfile = () => {
   );
 };
 
-// --- 하위 컴포넌트 ---
-
 /**
  * 메뉴 버튼 Props 인터페이스
  */
@@ -303,7 +277,6 @@ const MenuBtn = ({ icon, iconBg, label, onClick, isToggle, toggleValue, onToggle
 
     <div className="flex items-center gap-2">
       {isToggle ? (
-        // iOS 스타일 토글 스위치
         <div
           className={`w-[48px] h-[28px] flex items-center rounded-full px-1 transition-colors duration-300 ${toggleValue ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-600'}`}
           aria-hidden="true"

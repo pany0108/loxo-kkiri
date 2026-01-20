@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, MapPin } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Loader2, MapPin, Sparkles, Users, XCircle } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, PageHeader, PageFooter, PageTitle } from 'components';
+
+import { PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { useMeetingParticipantStatus } from 'hooks';
 
 const MeetingParticipantStatus = () => {
@@ -66,9 +67,7 @@ const MeetingParticipantStatus = () => {
             <div
               key={p.uid}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
-                votedUids.has(p.uid)
-                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-gray-50 dark:bg-gray-700 text-sub dark:text-gray-500'
+                votedUids.has(p.uid) ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-gray-50 dark:bg-gray-700 text-sub dark:text-gray-500'
               }`}
             >
               {votedUids.has(p.uid) && <CheckCircle2 size={12} />}

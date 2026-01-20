@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, ChevronDown, Check, Settings, Bell } from 'lucide-react';
+import { Bell, Check, ChevronDown, Plus, Settings } from 'lucide-react';
 import { CalendarType } from 'contexts';
+
 import { auth } from '../../firebase';
 
 interface CalendarHeaderProps {
@@ -18,6 +19,10 @@ interface CalendarHeaderProps {
   onViewChange: (view: string) => void;
 }
 
+/**
+ * 캘린더 헤더 컴포넌트
+ * - 캘린더 선택, 관리, 생성, 알림 확인, 뷰 변경 기능을 제공합니다.
+ */
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   activeCalendar,
   myCalendars,
@@ -32,7 +37,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   currentView,
   onViewChange,
 }) => {
-  // [추가] 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
+  // 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
   const sortedCalendars = React.useMemo(() => {
     return [...myCalendars].sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1;

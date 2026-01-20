@@ -1,25 +1,30 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
-import { PageLayout, PageHeader, PageFooter, PageTitle, LoadingButton, LocationSelectModal, ScheduleForm } from 'components';
-import { useAddSchedule } from 'hooks';
-import { auth } from '../../firebase';
 
+import { auth } from '../../firebase';
+import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
+import { useAddSchedule } from 'hooks';
+
+/**
+ * 일정 추가 페이지 컴포넌트
+ * - 새로운 일정을 생성하는 폼 제공
+ * - 날짜, 시간, 반복 설정, 위치, 알림 등 설정 가능
+ */
 const AddSchedule = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const currentUser = auth.currentUser;
+
   const { state, refs, handlers } = useAddSchedule();
   const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
   const { dropdownRef, titleInputRef } = refs;
-
   const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleCalendarSelect, handleSuggestionClick, handleToggle, handleSubmit } = handlers;
-  const currentUser = auth.currentUser;
 
   const [isMapModalOpen, setIsMapModalOpen] = React.useState(false);
 
-  // [추가] 초기 진입 시 현재 시간으로 설정
+  // 초기 진입 시 시간 설정 (현재 시간 기준 정각/30분 단위)
   React.useEffect(() => {
     const now = dayjs();
     const minute = now.minute();
@@ -36,21 +41,18 @@ const AddSchedule = () => {
       const newEnd = startObj.add(1, 'hour').format('YYYY-MM-DDTHH:mm');
 
       handleChange({ target: { name: 'start', value: newStart } } as any);
-      // [수정] 상태 업데이트 충돌 방지를 위해 지연 처리
       setTimeout(() => {
         handleChange({ target: { name: 'end', value: newEnd } } as any);
         handleChange({ target: { name: 'isAllDay', value: false } } as any);
       }, 0);
     } else {
       const state = location.state as any;
-      // 캘린더에서 날짜만 선택해서 들어온 경우 (YYYY-MM-DD), 시간은 현재 시간으로 설정
       if (state.start && typeof state.start === 'string' && state.start.length === 10) {
         const targetDate = dayjs(state.start);
         const newStart = targetDate.hour(startObj.hour()).minute(startObj.minute()).format('YYYY-MM-DDTHH:mm');
         const newEnd = targetDate.hour(startObj.hour()).minute(startObj.minute()).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
 
         handleChange({ target: { name: 'start', value: newStart } } as any);
-        // [수정] 상태 업데이트 충돌 방지를 위해 지연 처리
         setTimeout(() => {
           handleChange({ target: { name: 'end', value: newEnd } } as any);
         }, 0);
@@ -58,78 +60,66 @@ const AddSchedule = () => {
     }
   }, []);
 
+  // --- Handlers ---
+
+  /** 기념일 체크박스 변경 핸들러 */
   const handleAnniversaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     handleChange({ target: { name: 'isAnniversary', value: checked } } as any);
 
     if (checked) {
-      // 기념일 선택 시 무조건 종일 일정으로 설정
       if (!formData.isAllDay) {
         handleToggle();
       }
-      // 초기값 설정
       handleChange({ target: { name: 'isLunar', value: false } } as any);
       handleChange({ target: { name: 'isLeapMonth', value: false } } as any);
     }
   };
 
+  /** 음력 체크박스 변경 핸들러 */
   const handleLunarChange = (isLunarValue: boolean) => {
     handleChange({ target: { name: 'isLunar', value: isLunarValue } } as any);
   };
 
-  // [추가] 시간 설정 토글 핸들러 (현재 시간 기준 자동 설정)
+  /** 시간 설정 토글 핸들러 (현재 시간 기준 자동 설정) */
   const handleTimeToggle = () => {
     const nextIsAllDay = !formData.isAllDay;
 
-    // 시간 설정으로 변경되는 경우에만 현재 시간 기준으로 시간값 업데이트
     if (!nextIsAllDay) {
       const now = dayjs();
       const minute = now.minute();
       let startObj = now;
 
       if (minute >= 30) {
-        // 30분 이상이면 다음 시간 정각 (예: 6:30 -> 7:00)
         startObj = now.add(1, 'hour').startOf('hour');
       } else {
-        // 30분 미만이면 현재 시간 정각 (예: 6:10 -> 6:00)
         startObj = now.startOf('hour');
       }
 
-      // 현재 선택된 날짜 유지
       const currentDate = dayjs(formData.start);
       const newStart = currentDate.hour(startObj.hour()).minute(startObj.minute()).second(0);
       const newEnd = newStart.add(1, 'hour');
 
-      // [수정] handleToggle() 대신 직접 isAllDay를 false로 설정하여 9시 초기화 방지
       handleChange({ target: { name: 'isAllDay', value: false } } as any);
 
-      // [수정] 상태 업데이트 충돌 방지를 위해 시간 설정은 지연 처리
       setTimeout(() => {
         handleChange({ target: { name: 'start', value: newStart.format('YYYY-MM-DDTHH:mm') } } as any);
         handleChange({ target: { name: 'end', value: newEnd.format('YYYY-MM-DDTHH:mm') } } as any);
       }, 0);
     } else {
-      // 종일로 변경 시에는 기존 핸들러 사용
       handleToggle();
     }
   };
 
   const renderFooter = () => (
     <PageFooter>
-      <LoadingButton
-        type="submit"
-        form="add-schedule-form" // [추가] form 속성으로 외부 form과 연결
-        disabled={!formData.title}
-        isLoading={isSubmitting}
-        className="btn-primary"
-      >
+      <LoadingButton type="submit" form="add-schedule-form" disabled={!formData.title} isLoading={isSubmitting} className="btn-primary">
         <span>일정 등록하기</span>
       </LoadingButton>
     </PageFooter>
   );
 
   return (
-    // [수정] PageLayout으로 전체 구조 변경
     <PageLayout onBack={() => navigate(-1)} footer={renderFooter()}>
       <>
         <PageHeader icon={<CalendarPlus className="text-primary w-6 h-6" />}>
@@ -139,7 +129,6 @@ const AddSchedule = () => {
           </PageTitle>
         </PageHeader>
 
-        {/* [수정] form에 id 추가 */}
         <form id="add-schedule-form" onSubmit={handleSubmit} className="space-y-6">
           <ScheduleForm
             formData={formData}

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Search, MapPin } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { MapPin, Search, X } from 'lucide-react';
 
 interface LocationSelectModalProps {
   isOpen: boolean;
@@ -8,10 +8,15 @@ interface LocationSelectModalProps {
   initialLocation?: string;
 }
 
+/**
+ * 장소 선택 모달 컴포넌트
+ * - 구글 맵을 사용하여 장소를 검색하고 선택할 수 있습니다.
+ */
 const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ isOpen, onClose, onSelect, initialLocation = '' }) => {
   const [keyword, setKeyword] = useState(initialLocation);
   const [mapUrl, setMapUrl] = useState('');
 
+  // 모달 열릴 때 초기값 설정 및 지도 업데이트
   useEffect(() => {
     if (isOpen) {
       setKeyword(initialLocation);
@@ -23,12 +28,14 @@ const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ isOpen, onClo
     }
   }, [isOpen, initialLocation]);
 
+  /** 지도 URL 업데이트 함수 */
   const updateMap = (query: string) => {
     if (!query) return;
     // 구글 맵 임베드 (API 키 없이 사용하는 iframe 방식)
     setMapUrl(`https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`);
   };
 
+  /** 검색 핸들러 */
   const handleSearch = () => {
     updateMap(keyword);
   };

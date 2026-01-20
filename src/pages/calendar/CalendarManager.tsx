@@ -1,33 +1,33 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import {
-  Plus,
-  Users,
-  Settings,
-  Calendar as CalendarIcon,
-  AlertCircle,
-  Loader2,
-  Home,
-  Briefcase,
-  GraduationCap,
-  Dumbbell,
-  Plane,
-  Music,
-  Heart,
-  Star,
-  Gift,
-  Coffee,
-  ShoppingCart,
-  Gamepad2,
-} from 'lucide-react';
-// [추가] Firebase 관련 import
-import { collection, query, where } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { EditCalendarModal, PageHeader, ConfirmModal, PageTitle, PageLayout } from 'components';
-import { useFirestoreQuery } from 'hooks';
+import { collection, query, where } from 'firebase/firestore';
+import {
+  AlertCircle,
+  Briefcase,
+  Calendar as CalendarIcon,
+  Coffee,
+  Dumbbell,
+  Gamepad2,
+  Gift,
+  GraduationCap,
+  Heart,
+  Home,
+  Loader2,
+  Music,
+  Plane,
+  Plus,
+  Settings,
+  ShoppingCart,
+  Star,
+  Users,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
+import { ConfirmModal, EditCalendarModal, PageHeader, PageLayout, PageTitle } from 'components';
 import { CalendarType } from 'contexts';
+import { useFirestoreQuery } from 'hooks';
 import { deleteCalendar, leaveCalendar } from 'services';
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -45,6 +45,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
   game: Gamepad2,
 };
 
+/**
+ * 캘린더 관리 페이지 컴포넌트
+ * - 사용자가 참여 중인 캘린더 목록을 조회, 수정, 삭제, 탈퇴할 수 있습니다.
+ */
 const CalendarManager = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -54,7 +58,7 @@ const CalendarManager = () => {
   const [calendarToEdit, setCalendarToEdit] = useState<CalendarType | null>(null);
   const [calendarToDelete, setCalendarToDelete] = useState<CalendarType | null>(null);
 
-  // 1. 유저 인증 상태 확인
+  // 유저 인증 상태 확인
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -62,7 +66,7 @@ const CalendarManager = () => {
     return () => unsubscribe();
   }, []);
 
-  // [수정] useFirestoreQuery 훅으로 캘린더 목록 실시간 로딩
+  // 캘린더 목록 실시간 로딩
   const calendarsQuery = useMemo(() => {
     if (!user) return null;
     return query(collection(db, 'calendars'), where('members', 'array-contains', user.uid));
@@ -70,7 +74,7 @@ const CalendarManager = () => {
 
   const { data: calendarsData, loading: isLoading } = useFirestoreQuery<CalendarType>(calendarsQuery);
 
-  // [추가] 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
+  // 기본 캘린더("내 캘린더")를 항상 최상단에 위치시키기 위한 정렬 로직
   const sortedCalendars = useMemo(() => {
     const calendars = calendarsData || [];
     return [...calendars].sort((a, b) => {
@@ -86,11 +90,11 @@ const CalendarManager = () => {
     return count <= 1 ? '나만 보기' : `나 포함 ${count}명`;
   };
 
-  // 삭제 모달 열기
+  // 삭제/나가기 모달 열기
   const openDeleteModal = (calendar: CalendarType, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCalendarToDelete(calendar);
-    // [수정] 캘린더 소유자인지 확인하여 삭제/나가기 모달을 분기합니다.
+    // 캘린더 소유자인지 확인하여 삭제/나가기 모달을 분기합니다.
     if (user?.uid === calendar.ownerId) {
       setIsDeleteModalOpen(true);
     } else {
@@ -98,7 +102,7 @@ const CalendarManager = () => {
     }
   };
 
-  // [수정] 캘린더 삭제 확인
+  // 캘린더 삭제 확인 핸들러
   const handleDeleteConfirm = async () => {
     if (!calendarToDelete) return;
 
@@ -114,14 +118,13 @@ const CalendarManager = () => {
     }
   };
 
-  // [추가] 캘린더 나가기 확인
+  // 캘린더 나가기 확인 핸들러
   const handleLeaveConfirm = async () => {
     if (!calendarToDelete || !user) return;
 
     try {
       await leaveCalendar(calendarToDelete as any, user);
 
-      // [수정] 커스텀 이름 반영
       const displayName = (calendarToDelete as any).customNames?.[user.uid] || calendarToDelete.name;
 
       // 사용자가 마지막 멤버인 경우, 캘린더를 삭제합니다.
@@ -139,8 +142,8 @@ const CalendarManager = () => {
     }
   };
 
+  // 캘린더 전환 핸들러
   const handleSwitch = (id: string) => {
-    // [수정] 선택한 캘린더 ID를 state로 전달하고, 뒤로가기 스택에 남지 않도록 replace: true 사용
     navigate('/calendar', { state: { targetCalendarId: id }, replace: true });
   };
 
@@ -173,7 +176,6 @@ const CalendarManager = () => {
           <div className="space-y-3">
             {sortedCalendars.map((cal) => {
               const IconComponent = cal.icon && ICON_MAP[cal.icon] ? ICON_MAP[cal.icon] : CalendarIcon;
-              // [추가] customNames가 있으면 내 uid에 맞는 이름을 우선 사용
               const displayName = (cal as any).customNames?.[user?.uid] || cal.name;
               return (
                 <div
@@ -244,7 +246,7 @@ const CalendarManager = () => {
           />
         )}
 
-        {/* [추가] 캘린더 나가기 확인 모달 */}
+        {/* 캘린더 나가기 확인 모달 */}
         {calendarToDelete && (
           <ConfirmModal
             isOpen={isLeaveModalOpen}

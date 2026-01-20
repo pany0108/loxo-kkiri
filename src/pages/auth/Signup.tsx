@@ -1,15 +1,16 @@
 import React from 'react';
-import { Lock, Smartphone, Calendar, ShieldCheck, Sparkles, CheckCircle2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react';
+import { CheckCircle2, Lock, Mail, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PageLayout, PageHeader, FormInput, BirthDateInput, PageFooter, PageTitle } from 'components';
+
+import { BirthDateInput, FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import LoadingButton from '../../components/ui/LoadingButton';
-import { handleEnterToNext } from 'utils';
 import { useSignupForm } from 'hooks/auth/useSignupForm';
+import { handleEnterToNext } from 'utils';
 
 /**
  * 회원가입 페이지 컴포넌트입니다.
  * 이메일, 비밀번호, 실명, 생년월일, 휴대폰 번호를 입력받아 Firebase Authentication 및 Firestore에 유저를 생성합니다.
- * * @returns {JSX.Element} 회원가입 화면
+ * @returns {JSX.Element} 회원가입 화면
  */
 const Signup = () => {
   const { state, dispatch, errors, refs, handleChange, handleSubmit: handleFormSubmit } = useSignupForm();

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Smartphone, Calendar, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
-import { PageLayout, PageHeader, FormInput, BirthDateInput, PageFooter, PageTitle } from 'components';
-import { handleEnterToNext } from 'utils';
-import { useSocialSignupForm } from 'hooks/auth/useSocialSignupForm';
+import { Loader2, Smartphone, Sparkles } from 'lucide-react';
+
+import { BirthDateInput, FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import LoadingButton from '../../components/ui/LoadingButton';
+import { useSocialSignupForm } from 'hooks/auth/useSocialSignupForm';
+import { handleEnterToNext } from 'utils';
 
 /**
  * 소셜 로그인(구글 등) 직후 추가 정보를 입력받는 페이지 컴포넌트입니다.

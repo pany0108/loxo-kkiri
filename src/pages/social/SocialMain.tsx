@@ -1,17 +1,21 @@
 // src/pages/social/SocialMain.tsx
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { PageLayout, PageHeader, PageTitle } from 'components';
-import { MessageCircle } from 'lucide-react';
+
+import { PageHeader, PageLayout, PageTitle } from 'components';
 import ChatList from './ChatList';
 import FriendList from './FriendList';
 
+/**
+ * 소셜 메인 페이지 컴포넌트
+ * - 채팅 목록과 친구 목록을 탭으로 구분하여 보여줍니다.
+ * - 스와이프 제스처를 통해 탭 간 이동이 가능합니다.
+ */
 const SocialMain = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'chat' | 'friend'>(location.state?.initialTab || 'chat');
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
 
-  // 스와이프 로직
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -41,6 +45,7 @@ const SocialMain = () => {
     }
   };
 
+  /** 탭 변경 핸들러 */
   const handleTabChange = (tab: 'chat' | 'friend') => {
     if (tab === activeTab) return;
     setSlideDirection(tab === 'friend' ? 'left' : 'right');

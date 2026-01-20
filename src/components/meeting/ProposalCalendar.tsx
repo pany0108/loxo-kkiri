@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'; // CalendarIcon alias 유지
 import dayjs from 'dayjs';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface ProposalCalendarProps {
   currentMonth: dayjs.Dayjs;
@@ -11,11 +11,11 @@ interface ProposalCalendarProps {
   onDateClick: (dateStr: string) => void;
   isRangeMode: boolean;
   onToggleRangeMode: () => void;
-  votingItems?: string[]; // [추가] 범위 정보를 확인하기 위한 prop
+  votingItems?: string[];
   holidaysByDate?: Map<string, string>;
 }
 
-// [추가] 범위별 구분을 위한 색상 팔레트 (Blue Variations)
+// 범위별 구분을 위한 색상 팔레트 (Blue Variations)
 const RANGE_PALETTES = [
   // 1. Primary (Standard): 메인 컬러 그대로 사용. 가장 눈에 띄어야 하는 범위.
   {
@@ -49,6 +49,11 @@ const RANGE_PALETTES = [
   },
 ];
 
+/**
+ * 약속 제안용 달력 컴포넌트
+ * - 날짜 선택 및 범위 선택 기능을 제공합니다.
+ * - 스와이프 제스처로 월 이동이 가능합니다.
+ */
 const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
   currentMonth,
   onMonthChange,
@@ -71,7 +76,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     return dates;
   };
 
-  // [추가] 스와이프 핸들러
+  // 스와이프 핸들러
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
@@ -101,7 +106,7 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
     }
   };
 
-  // [추가] 날짜가 속한 범위의 인덱스를 찾아 색상 세트를 반환하는 함수
+  // 날짜가 속한 범위의 인덱스를 찾아 색상 세트를 반환하는 함수
   const getRangeColorSet = (dateStr: string) => {
     if (!votingItems) return RANGE_PALETTES[0];
 
@@ -210,18 +215,18 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
 
               let selectionClasses = 'bg-white dark:bg-gray-700/50 text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
 
-              // [추가] 선택된 경우 색상 세트 가져오기
+              // 선택된 경우 색상 세트 가져오기
               const colorSet = isSelected ? (isRangeMode ? getRangeColorSet(date) : RANGE_PALETTES[0]) : null;
 
-              // [수정] 날짜 계산 및 인접 선택 여부 확인 (공통 로직)
+              // 날짜 계산 및 인접 선택 여부 확인
               const dayObj = dayjs(date);
               const prevDateStr = dayObj.subtract(1, 'day').format('YYYY-MM-DD');
               const nextDateStr = dayObj.add(1, 'day').format('YYYY-MM-DD');
 
-              // [추가] 두 날짜가 같은 범위에 속해있는지 확인하는 함수
+              // 두 날짜가 같은 범위에 속해있는지 확인하는 함수
               const checkConnection = (d1: string, d2: string) => {
                 if (!selectedDates.includes(d1) || !selectedDates.includes(d2)) return false;
-                if (!votingItems) return true; // votingItems가 없으면 기존처럼 연결
+                if (!votingItems) return true;
                 return votingItems.some((item) => {
                   if (item.includes(':')) {
                     const [s, e] = item.split(':');
@@ -242,13 +247,13 @@ const ProposalCalendar: React.FC<ProposalCalendarProps> = ({
                 }
               }
 
-              // [추가] 배경 연결 스트립 로직
+              // 배경 연결 스트립 로직
               const isStartOfWeek = dayObj.day() === 0;
               const isEndOfWeek = dayObj.day() === 6;
               const connectLeft = isPrevConnected && !isStartOfWeek;
               const connectRight = isNextConnected && !isEndOfWeek;
 
-              // [추가] 날짜 텍스트 색상 결정 (공휴일/일요일: 빨강, 토요일: 파랑)
+              // 날짜 텍스트 색상 결정 (공휴일/일요일: 빨강, 토요일: 파랑)
               let dateTextColor = isSelected ? 'text-white' : 'text-main dark:text-gray-300';
               if (!isSelected) {
                 if (dayObj.day() === 0 || isHoliday) dateTextColor = 'text-red-500 dark:text-red-400';

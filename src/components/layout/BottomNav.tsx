@@ -1,18 +1,23 @@
 import React, { useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Calendar, Users, User, Handshake } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { collection, query, where } from 'firebase/firestore';
+import { Calendar, Handshake, User, Users } from 'lucide-react';
+
+import { db } from '../../firebase';
 import { useUI } from 'contexts';
 import { useAuth, useFirestoreQuery } from 'hooks';
-import { collection, query, where } from 'firebase/firestore';
-import { db } from '../../firebase';
 
+/**
+ * 하단 네비게이션 바 컴포넌트
+ * - 주요 탭(캘린더, 소셜, 약속, 프로필)으로 이동하는 링크를 제공합니다.
+ */
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isBottomNavVisible } = useUI();
   const { user } = useAuth();
 
-  // 채팅 읽지 않은 메시지 확인
+  // 채팅 읽지 않은 메시지 확인 쿼리
   const schedulesQuery = useMemo(() => {
     if (!user) return null;
     return query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
@@ -25,7 +30,7 @@ const BottomNav = () => {
     return schedules.some((schedule: any) => (schedule.unreadCounts?.[user.uid] || 0) > 0);
   }, [schedules, user]);
 
-  // 로그인 페이지에서는 하단바를 숨깁니다.
+  // 로그인 페이지 등에서는 하단바 숨김
   if (location.pathname === '/login' || location.pathname === '/signup') return null;
   if (!isBottomNavVisible) return null;
 

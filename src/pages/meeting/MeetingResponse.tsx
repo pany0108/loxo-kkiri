@@ -1,28 +1,29 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sparkles, Clock, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import dayjs from 'dayjs';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { useFirestoreDoc, useAuth, useMeetingResponseForm } from 'hooks';
-import { useCalendar } from 'contexts';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import { Calendar as CalendarIcon, Clock, Loader2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+import { db } from '../../firebase';
 import {
-  HostSlotItem,
   DateSelectorCalendar,
-  NewProposalSlotItem,
-  MeetingInfoCard,
   EmptyProposalGuide,
-  PageLayout,
-  PageHeader,
-  PageFooter,
-  SyncTimeModal,
+  HostSlotItem,
   LoadingButton,
+  MeetingInfoCard,
+  NewProposalSlotItem,
+  PageFooter,
+  PageHeader,
+  PageLayout,
   PageTitle,
+  SyncTimeModal,
 } from 'components';
-import { submitMeetingResponse, Meeting as MeetingData } from 'services';
+import { useCalendar } from 'contexts';
+import { useAuth, useFirestoreDoc, useMeetingResponseForm } from 'hooks';
+import { Meeting as MeetingData, submitMeetingResponse } from 'services';
 
 dayjs.extend(isSameOrBefore);
 dayjs.locale('ko');
@@ -31,7 +32,7 @@ dayjs.locale('ko');
  * 초대받은 약속에 대해 응답하는 페이지 컴포넌트입니다.
  * - 주최자가 제안한 시간 중 가능한 시간을 선택할 수 있습니다.
  * - 주최자의 제안 외에 새로운 시간을 역으로 제안할 수 있습니다 (달력 인터랙션).
- * * @returns {JSX.Element} 약속 응답 화면
+ * @returns {JSX.Element} 약속 응답 화면
  */
 const MeetingResponse = () => {
   const navigate = useNavigate();
@@ -82,10 +83,10 @@ const MeetingResponse = () => {
     return slots;
   }, [meetingData]);
 
-  // [Refactor] 응답 폼 로직 훅 사용
+  // 응답 폼 로직 훅 사용
   const { selectedHostSlots, myNewSlots, toggleHostSlot, toggleMyNewSlot, updateSlotTime, toggleAllDay } = useMeetingResponseForm(hostSlots);
 
-  // [추가] 시간 통일 모달 상태
+  // 시간 통일 모달 상태
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncTime, setSyncTime] = useState({ start: '19:00', end: '20:00' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,7 +149,7 @@ const MeetingResponse = () => {
         myNewSlots,
       });
 
-      // [추가] 응답 제출 및 상태 변경 시 updatedAt 필드 업데이트
+      // 응답 제출 및 상태 변경 시 updatedAt 필드 업데이트
       await updateDoc(doc(db, 'meetings', meetingId), {
         updatedAt: new Date().toISOString(),
       });
@@ -288,7 +289,7 @@ const MeetingResponse = () => {
           {myNewSlots.length === 0 && <EmptyProposalGuide />}
         </section>
 
-        {/* [추가] 시간 통일 모달 */}
+        {/* 시간 통일 모달 */}
         <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
       </>
     </PageLayout>

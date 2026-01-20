@@ -1,8 +1,8 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Image as ImageIcon, FileText } from 'lucide-react';
-import { ImagePreviewModal } from 'components';
-import { TopNav } from 'components';
+import { FileText, Image as ImageIcon } from 'lucide-react';
+
+import { ImagePreviewModal, TopNav } from 'components';
 
 const SharedMediaList = () => {
   const location = useLocation();
@@ -19,8 +19,6 @@ const SharedMediaList = () => {
     }
   }, [location.pathname]);
 
-  // [수정] location.state의 타입을 명확히 하여 타입 안정성 확보
-  // location.state가 any 타입으로 취급되어 발생할 수 있는 빌드 오류를 방지합니다.
   const { media = [], files = [], title = '일정' } = (location.state as { media?: string[]; files?: { name: string; type: string }[]; title?: string }) || {};
 
   const [activeTab, setActiveTab] = React.useState<'photo' | 'doc'>('photo');
@@ -28,7 +26,6 @@ const SharedMediaList = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 font-['Pretendard']">
-      {/* 상단 네비게이션을 TopNav 컴포넌트로 교체 */}
       <TopNav title={`공유된 미디어 (${title})`} />
 
       {/* 탭 컨트롤 */}
@@ -57,7 +54,6 @@ const SharedMediaList = () => {
             {media.length > 0 ? (
               <div className="grid grid-cols-3 gap-2">
                 {media.map((src: string, idx: number) => (
-                  // [개선] div 대신 button을 사용하여 웹 접근성 향상
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { doc, writeBatch, collection } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { ConfirmMeetingDialog, ReportHeader, ReportSlotCard, ReportActions, ConfirmModal, PageLayout } from 'components';
+
+import { auth, db } from '../../firebase';
+import { ConfirmMeetingDialog, ConfirmModal, PageLayout, ReportActions, ReportHeader, ReportSlotCard } from 'components';
 import { useMeetingReport } from 'hooks';
 import { findTargetCalendarForMembers, notifyMeetingConfirmed } from 'services';
 
@@ -14,21 +15,11 @@ const MeetingReport = () => {
 
   const { state, handlers } = useMeetingReport();
   const { meetingData, loading, reportData, isConfirmOpen, isCancelModalOpen, isRetryModalOpen, selectedSlot } = state;
-  const {
-    handleConfirmClick,
-    // handleFinalConfirm, // [수정] 훅의 핸들러 대신 로컬 핸들러 사용
-    handleRequestRetry,
-    handleRetryConfirm,
-    handleCancel,
-    handleCancelConfirm,
-    setIsConfirmOpen,
-    setIsCancelModalOpen,
-    setIsRetryModalOpen,
-  } = handlers;
+  const { handleConfirmClick, handleRequestRetry, handleRetryConfirm, handleCancel, handleCancelConfirm, setIsConfirmOpen, setIsCancelModalOpen, setIsRetryModalOpen } = handlers;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // [추가] 연속 일정(범위) 처리를 포함한 약속 확정 핸들러
+  /** 연속 일정(범위) 처리를 포함한 약속 확정 핸들러 */
   const handleFinalConfirm = async () => {
     if (!selectedSlot || !meetingData || !auth.currentUser) return;
     setIsSubmitting(true);
@@ -150,7 +141,7 @@ const MeetingReport = () => {
         {/* 확정 확인 다이얼로그 */}
         <ConfirmMeetingDialog isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleFinalConfirm} slotData={selectedSlot} isLoading={isSubmitting} />
 
-        {/* [추가] 일정 재요청 확인 모달 */}
+        {/* 일정 재요청 확인 모달 */}
         <ConfirmModal
           isOpen={isRetryModalOpen}
           onClose={() => setIsRetryModalOpen(false)}
@@ -169,7 +160,7 @@ const MeetingReport = () => {
           confirmButtonClassName="bg-primary"
         />
 
-        {/* [추가] 약속 취소 확인 모달 */}
+        {/* 약속 취소 확인 모달 */}
         <ConfirmModal
           isOpen={isCancelModalOpen}
           onClose={() => setIsCancelModalOpen(false)}

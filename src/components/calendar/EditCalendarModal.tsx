@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
-import { PenLine, Trash2, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2, ChevronDown, Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { Briefcase, Check, ChevronDown, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, PenLine, Plane, ShoppingCart, Star, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
 
 const CALENDAR_ICONS = [
   { id: 'home', component: Home, label: '집' },
@@ -53,6 +54,10 @@ interface EditCalendarModalProps {
   onDelete: () => void;
 }
 
+/**
+ * 캘린더 수정 모달 컴포넌트
+ * - 캘린더의 이름, 아이콘, 색상을 수정하거나 삭제할 수 있습니다.
+ */
 const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, calendar, onDelete }) => {
   const [name, setName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(CALENDAR_ICONS[0].id);
@@ -60,6 +65,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
 
+  // 모달이 열릴 때 캘린더 정보로 상태 초기화
   useEffect(() => {
     if (calendar) {
       const userId = auth.currentUser?.uid;
@@ -74,7 +80,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
     }
   }, [calendar]);
 
-  // [추가] 드롭다운 외부 클릭 시 닫기
+  // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
@@ -87,6 +93,7 @@ const EditCalendarModal: React.FC<EditCalendarModalProps> = ({ isOpen, onClose, 
 
   if (!isOpen || !calendar) return null;
 
+  /** 캘린더 정보 저장 핸들러 */
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error('캘린더 이름을 입력해주세요.');

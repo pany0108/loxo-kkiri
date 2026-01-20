@@ -2,6 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 
+/**
+ * 새 약속 생성 버튼 컴포넌트
+ * - 약속 생성 페이지로 이동하는 큰 버튼입니다.
+ */
 const NewMeetingButton = () => {
   const navigate = useNavigate();
 

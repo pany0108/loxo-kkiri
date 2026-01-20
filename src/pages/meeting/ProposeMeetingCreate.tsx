@@ -1,16 +1,31 @@
 import React, { useState } from 'react';
 import { CalendarPlus } from 'lucide-react';
 import dayjs from 'dayjs';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import 'dayjs/locale/ko';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import toast from 'react-hot-toast';
-import { MeetingInfoForm, FriendSelectorForMeeting, ProposalCalendar, SchedulePopup, PageLayout, PageHeader, PageFooter, PageTitle, LocationSelectModal } from 'components';
+
+import {
+  FriendSelectorForMeeting,
+  LoadingButton,
+  LocationSelectModal,
+  MeetingInfoForm,
+  PageFooter,
+  PageHeader,
+  PageLayout,
+  PageTitle,
+  ProposalCalendar,
+  SchedulePopup,
+} from 'components';
 import { useProposeMeetingCreate } from 'hooks';
-import LoadingButton from '../../components/ui/LoadingButton';
 
 dayjs.extend(isSameOrBefore);
 dayjs.locale('ko');
 
+/**
+ * 약속 제안 생성 페이지 (Step 1) 컴포넌트
+ * - 약속 기본 정보 입력, 친구 초대, 날짜 선택 기능을 제공합니다.
+ */
 const ProposeMeetingCreate = () => {
   const { state, handlers } = useProposeMeetingCreate();
   const {
@@ -50,7 +65,7 @@ const ProposeMeetingCreate = () => {
   const [isRangeRemoving, setIsRangeRemoving] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
-  // [추가] 날짜 클릭 핸들러 래퍼 (연속 선택 로직 처리)
+  /** 날짜 클릭 핸들러 래퍼 (연속 선택 로직 처리) */
   const handleDateClickWrapper = (date: string) => {
     if (!isRangeMode) {
       handleDateClick(date);

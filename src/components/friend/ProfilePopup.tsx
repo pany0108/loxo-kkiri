@@ -14,6 +14,10 @@ interface ProfilePopupProps {
   onClose: () => void;
 }
 
+/**
+ * 친구 프로필 팝업 컴포넌트
+ * - 친구의 프로필 사진, 이름, 이메일, 상태 메시지를 보여줍니다.
+ */
 const ProfilePopup: React.FC<ProfilePopupProps> = ({ friend, onClose }) => {
   if (!friend) return null;
 

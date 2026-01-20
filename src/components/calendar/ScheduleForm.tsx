@@ -1,8 +1,9 @@
 import React from 'react';
-import { MapPin, AlignLeft, Clock, Bell, ChevronDown, Sparkles, Plus, Check, History, Calendar as CalendarIcon, Map } from 'lucide-react';
-import { FormInput, FormTextarea, FormCheckbox, RecurrenceOptions } from 'components';
-import { NOTIFICATION_OPTIONS, COLOR_OPTIONS, ICON_MAP } from '../../utils/schedule';
+import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Plus, Sparkles } from 'lucide-react';
+
+import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
+import { COLOR_OPTIONS, ICON_MAP, NOTIFICATION_OPTIONS } from '../../utils/schedule';
 
 interface ScheduleFormProps {
   formData: any;
@@ -29,6 +30,10 @@ interface ScheduleFormProps {
   isEditMode?: boolean;
 }
 
+/**
+ * 일정 입력 폼 컴포넌트
+ * - 제목, 캘린더 선택, 날짜/시간, 반복 설정, 장소, 알림, 메모 등을 입력받습니다.
+ */
 const ScheduleForm: React.FC<ScheduleFormProps> = ({
   formData,
   handleChange,

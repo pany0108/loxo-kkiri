@@ -1,21 +1,22 @@
-import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, updateDoc, writeBatch, getDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { Bell, Check, Trash2, Calendar, Info, CheckCircle2, ClipboardList, BellRing, FileCheck, Edit2, RefreshCw, UserPlus, UserX } from 'lucide-react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
-import toast from 'react-hot-toast';
-import { motion, AnimatePresence, AnimatePresenceProps, useTransform } from 'framer-motion';
 import 'dayjs/locale/ko';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { onAuthStateChanged } from 'firebase/auth';
+import { AnimatePresence, AnimatePresenceProps, motion, useTransform } from 'framer-motion';
+import { AlertCircle, Bell, BellRing, Calendar, Check, CheckCircle2, ClipboardList, Edit2, FileCheck, Info, RefreshCw, Trash2, UserPlus, UserX } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
 import { NotificationHeader } from 'components';
-import { useNotificationNavigation, Notification, useNotifications, usePullToRefresh } from 'hooks';
+import { Notification, useNotificationNavigation, useNotifications, usePullToRefresh } from 'hooks';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-// ... (Notification 인터페이스 및 TABS, SafeAnimatePresence 등 기존 코드 유지) ...
+// --- Constants & Types ---
 const TABS = [
   { id: 'all', label: '전체' },
   { id: 'schedule', label: '일정' },
@@ -24,6 +25,10 @@ const TABS = [
 
 const SafeAnimatePresence = AnimatePresence as React.FC<React.PropsWithChildren<AnimatePresenceProps>>;
 
+/**
+ * 알림 센터 페이지 컴포넌트
+ * - 사용자의 모든 알림을 목록으로 표시하고 관리(읽음 처리, 삭제)합니다.
+ */
 const NotificationCenter = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +40,7 @@ const NotificationCenter = () => {
   const handleNavigation = useNotificationNavigation();
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // --- Pull to Refresh Hook ---
+  // --- Pull to Refresh ---
   const handleRefresh = useCallback(async () => {
     // 실제 데이터는 실시간(onSnapshot)이므로 여기서는 시각적 피드백만 제공합니다.
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -51,6 +56,7 @@ const NotificationCenter = () => {
   const iconOpacity = useTransform(y, [0, 60], [0, 1]);
   const iconScale = useTransform(y, [0, 80], [0.5, 1.2]);
 
+  // --- Effects ---
   useLayoutEffect(() => {
     // 페이지 전환 시 브라우저의 스크롤 복원 기능과 관계없이 항상 화면 최상단에서 시작하도록 강제합니다.
     window.scrollTo(0, 0);
@@ -67,7 +73,6 @@ const NotificationCenter = () => {
   }, []);
   const notifications = useNotifications(user);
 
-  // ... (unreadCount, filteredNotifications, handleNotificationClick 등 기존 로직 유지) ...
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
   const filteredNotifications = useMemo(() => {
@@ -78,8 +83,9 @@ const NotificationCenter = () => {
     return notifications.filter((n: Notification) => n.type === activeFilter);
   }, [notifications, activeFilter]);
 
+  // --- Handlers ---
+
   const handleNotificationClick = async (notification: Notification) => {
-    // ... (기존 로직 동일) ...
     if (isSelectionMode) {
       setSelectedIds((prev: Set<string>) => {
         const newSet = new Set(prev);
@@ -98,7 +104,7 @@ const NotificationCenter = () => {
       }
     }
 
-    // [추가] 재요청 알림 클릭 시 처리
+    // 재요청 알림 클릭 시 처리
     if (notification.type === 'MEETING_RETRY' && notification.relatedId) {
       try {
         const meetingDoc = await getDoc(doc(db, 'meetings', notification.relatedId));
@@ -112,7 +118,7 @@ const NotificationCenter = () => {
               invitedFriends: (data.invitedFriends || []).map((f: any) => ({ id: f.uid, name: f.name })),
               selectedDates: data.dates,
               calendarName: data.title,
-              isRetry: true, // [추가] 재요청 플래그 전달
+              isRetry: true,
             },
           });
           return;
@@ -153,7 +159,6 @@ const NotificationCenter = () => {
   };
 
   const confirmDeleteAll = async () => {
-    // ... (기존 로직 동일) ...
     if (notifications.length === 0) return;
     const batch = writeBatch(db);
     notifications.forEach((noti) => batch.delete(doc(db, 'notifications', noti.id)));
@@ -163,7 +168,6 @@ const NotificationCenter = () => {
   };
 
   const handleDeleteSelected = async () => {
-    // ... (기존 로직 동일) ...
     if (selectedIds.size === 0) return;
     const notificationsToDelete = notifications.filter((n) => selectedIds.has(n.id));
     const batch = writeBatch(db);
@@ -208,7 +212,6 @@ const NotificationCenter = () => {
   };
 
   const getIcon = (type: string) => {
-    // ... (기존 로직 동일) ...
     switch (type) {
       case 'SCHEDULE_UPDATED':
         return <Edit2 size={20} className="text-orange-500" />;
@@ -271,10 +274,7 @@ const NotificationCenter = () => {
           </div>
         </motion.div>
 
-        {/* [중요] 스크롤 컨테이너 
-          - flex-col을 추가하여 내부 요소를 수직으로 정렬합니다.
-          - 스페이서와 콘텐츠 영역으로 분리하여 클리핑 문제를 해결합니다.
-        */}
+        {/* 스크롤 컨테이너 */}
         <div
           ref={containerRef}
           className={`relative h-full pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-y-contain z-10 flex flex-col ${

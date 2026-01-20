@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import { Loader2, Check, Users, AlertCircle } from 'lucide-react';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, addDoc } from 'firebase/firestore';
-import { sendPushNotificationToUser } from 'utils';
-import { auth, db } from '../../firebase';
+import React, { useEffect, useRef, useState } from 'react';
 import { Contacts } from '@capacitor-community/contacts';
 import { Capacitor } from '@capacitor/core';
-import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings';
+import { AndroidSettings, IOSSettings, NativeSettings } from 'capacitor-native-settings';
+import { addDoc, arrayUnion, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { AlertCircle, Check, Loader2, Users } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
 import { ConfirmModal } from 'components';
+import { sendPushNotificationToUser } from 'utils';
 
 interface Friend {
   uid: string;
@@ -21,6 +22,11 @@ interface AddFriendModalProps {
   onOpenContacts: () => void;
 }
 
+/**
+ * 친구 추가 모달 컴포넌트
+ * - 이메일 또는 휴대폰 번호로 사용자를 검색하여 친구로 추가합니다.
+ * - 모바일 환경에서는 연락처 연동 기능을 제공합니다.
+ */
 const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo, friends, onOpenContacts }) => {
   const [newFriendInput, setNewFriendInput] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -31,7 +37,6 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
 
   useEffect(() => {
     if (isOpen) {
-      // 모달이 열릴 때 상태 초기화 및 포커스
       setNewFriendInput('');
       setAddFriendMethod('email');
       setTimeout(() => addFriendInputRef.current?.focus(), 100);
@@ -44,6 +49,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   }, [addFriendMethod, isOpen]);
 
+  /** 휴대폰 번호 포맷팅 함수 */
   const formatPhone = (value: string) => {
     const nums = value.replace(/[^\d]/g, '');
     if (nums.length <= 3) return nums;
@@ -59,13 +65,13 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   };
 
+  /** 친구 추가 핸들러 */
   const handleAddFriend = async () => {
     if (!newFriendInput.trim() || !auth.currentUser) return;
 
     const searchField = addFriendMethod;
     let searchValue = newFriendInput.trim();
 
-    // [FIX] 휴대폰 번호로 검색 시, DB에 저장된 형식(하이픈 없음)과 일치시키기 위해 하이픈을 제거합니다.
     if (searchField === 'phone') {
       searchValue = searchValue.replace(/[^\d]/g, '');
     }
@@ -116,10 +122,10 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
         createdAt: new Date().toISOString(),
       });
 
-      // [추가] 푸시 알림 전송
+      // 푸시 알림 전송
       await sendPushNotificationToUser({
         userId: targetUserDoc.id,
-        title: '새로운 친구 요청', // [FIX] 누락된 title 속성 추가
+        title: '새로운 친구 요청',
         body: `${myInfo?.name || myInfo?.displayName || '누군가'}님이 당신을 친구로 추가했습니다.`,
         data: { type: 'FRIEND_REQUEST', relatedId: auth.currentUser.uid },
       });
@@ -133,6 +139,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   };
 
+  /** 연락처 연동 버튼 클릭 핸들러 */
   const handleContactsClick = async () => {
     if (!Capacitor.isNativePlatform()) {
       toast.error('이 기능은 모바일 기기에서만 지원됩니다.');
@@ -146,15 +153,12 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
       if (permission.contacts === 'granted') {
         onOpenContacts();
       } else if (permission.contacts === 'denied') {
-        // 이미 권한이 거부된 경우, 설정으로 이동하도록 유도
         setIsPermissionModalOpen(true);
       } else {
-        // 'prompt' 또는 'prompt-with-rationale' 상태에서 권한 요청
         const result = await Contacts.requestPermissions();
         if (result.contacts === 'granted') {
           onOpenContacts();
         } else {
-          // 사용자가 권한 요청을 거부한 경우
           setIsPermissionModalOpen(true);
         }
       }
@@ -166,6 +170,7 @@ const AddFriendModal: React.FC<AddFriendModalProps> = ({ isOpen, onClose, myInfo
     }
   };
 
+  /** 설정 화면으로 이동 */
   const openSettings = async () => {
     try {
       await NativeSettings.open({

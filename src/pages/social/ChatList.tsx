@@ -2,20 +2,25 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { useFirestoreQuery, useUserProfiles } from 'hooks';
-import { MessageCircle, Search, Bell, MessageSquareDot } from 'lucide-react';
+import { MessageCircle, MessageSquareDot, Search } from 'lucide-react';
 import dayjs from 'dayjs';
-import { UserProfile } from 'types';
-import { FormInput } from 'components';
 
+import { auth, db } from '../../firebase';
+import { FormInput } from 'components';
+import { useFirestoreQuery, useUserProfiles } from 'hooks';
+import { UserProfile } from 'types';
+
+/**
+ * 채팅방 목록 페이지 컴포넌트
+ * - 참여 중인 채팅방 목록 표시
+ * - 검색 및 읽지 않은 메시지 필터링
+ */
 const ChatList = () => {
   const navigate = useNavigate();
   const user = auth.currentUser;
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyUnread, setShowOnlyUnread] = useState(false);
 
-  // ... (기존 useMemo, query, hook 등 로직 유지)
   const schedulesQuery = useMemo(() => {
     if (!user) return null;
     return query(collection(db, 'schedules'), where('attendees', 'array-contains', user.uid));
@@ -38,7 +43,7 @@ const ChatList = () => {
     return (schedules || []).filter((schedule: any) => {
       if (!schedule.attendees || schedule.isAnniversary) return false;
 
-      // 참여자가 2명 이상이거나, 1명이더라도 대화 내역(lastMessage)이 있는 경우 표시 (상대방이 나간 경우)
+      // 참여자가 2명 이상이거나, 1명이더라도 대화 내역이 있는 경우 표시
       return schedule.attendees.length > 1 || (schedule.attendees.length === 1 && schedule.lastMessage);
     });
   }, [schedules]);
@@ -72,7 +77,6 @@ const ChatList = () => {
 
   return (
     <div className="flex flex-col w-full">
-      {/* 검색 및 필터 영역 [수정됨: min-w-0 추가] */}
       <div className="py-2 flex gap-3 shrink-0 items-center">
         <FormInput
           containerClassName="flex-1 min-w-0"
@@ -96,7 +100,6 @@ const ChatList = () => {
         </button>
       </div>
 
-      {/* 리스트 영역 */}
       <div className="pt-2 pb-24">
         {filteredSchedules.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-sub dark:text-gray-400">

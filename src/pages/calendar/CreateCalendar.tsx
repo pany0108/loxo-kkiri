@@ -1,36 +1,35 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Users,
-  Check,
-  Sparkles,
-  UserPlus,
-  PenLine,
-  Loader2,
-  Search,
-  Plus,
-  X,
-  Home,
-  Briefcase,
-  ChevronDown,
-  GraduationCap,
-  Dumbbell,
-  Plane,
-  Music,
-  Heart,
-  Star,
-  Gift,
-  Coffee,
-  ShoppingCart,
-  Gamepad2,
-  CalendarPlus2,
-} from 'lucide-react';
-// Firebase 관련 import
-import toast from 'react-hot-toast';
-import { collection, addDoc, doc, onSnapshot, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageLayout, PageHeader, PageFooter, PageTitle } from 'components';
+import { addDoc, collection, doc, getDocs, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
+import {
+  Briefcase,
+  CalendarPlus2,
+  Check,
+  ChevronDown,
+  Coffee,
+  Dumbbell,
+  Gamepad2,
+  Gift,
+  GraduationCap,
+  Heart,
+  Home,
+  Loader2,
+  Music,
+  PenLine,
+  Plane,
+  Plus,
+  Search,
+  ShoppingCart,
+  Star,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
+import { AddFriendModal, AddFromContactsModal, FriendListPopup, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { notifyCalendarInvite } from 'services';
 
 const CALENDAR_ICONS = [
@@ -48,7 +47,9 @@ const CALENDAR_ICONS = [
   { id: 'game', component: Gamepad2, label: '취미' },
 ];
 
-// [추가] 친구 데이터 타입 정의
+/**
+ * 친구 데이터 인터페이스
+ */
 interface Friend {
   uid: string;
   name: string;
@@ -80,6 +81,10 @@ const COLOR_OPTIONS = [
   '#71717a', // zinc
 ];
 
+/**
+ * 새 캘린더 생성 페이지 컴포넌트
+ * - 캘린더 이름, 아이콘, 색상을 설정하고 친구를 초대하여 공유 캘린더를 생성합니다.
+ */
 const CreateCalendar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,16 +99,12 @@ const CreateCalendar = () => {
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const colorDropdownRef = useRef<HTMLDivElement>(null);
 
-  // [수정] DB에서 불러온 친구 목록 상태
   const [friends, setFriends] = useState<Friend[]>([]); // 모든 친구 목록
   const [friendGroups, setFriendGroups] = useState<FriendGroup[]>([]); // 친구 그룹 목록
 
-  // [추가] 친구 검색어 상태
   const [friendSearchTerm, setFriendSearchTerm] = useState('');
-  // [추가] 친구 검색 결과 상태
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
 
-  // [추가] 친구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,7 +116,7 @@ const CreateCalendar = () => {
     return () => unsubscribe();
   }, []);
 
-  // [추가] 로그인된 사용자의 친구 목록을 실시간으로 불러오기
+  // 로그인된 사용자의 친구 목록 실시간 구독
   useEffect(() => {
     if (!user) return;
 
@@ -136,7 +137,7 @@ const CreateCalendar = () => {
     setIsAddFromContactsModalOpen(true);
   };
 
-  // [추가] 드롭다운 외부 클릭 시 닫기
+  // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (colorDropdownRef.current && !colorDropdownRef.current.contains(event.target as Node)) {
@@ -147,7 +148,7 @@ const CreateCalendar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // [추가] 친구 검색 결과 업데이트
+  // 친구 검색 결과 업데이트
   useEffect(() => {
     if (friendSearchTerm.trim() === '') {
       setSearchResults([]);
@@ -177,7 +178,7 @@ const CreateCalendar = () => {
     setSelectedFriendUids(Array.from(selectedUidsSet));
   };
 
-  // [추가] 검색어에 따라 친구 목록 필터링
+  // 검색어에 따라 친구 목록 필터링 및 그룹화
   const groupedFriends = useMemo(() => {
     const groupMap = new Map<string, { name: string; friends: Friend[] }>();
     friendGroups.forEach((g) => groupMap.set(g.id, { name: g.name, friends: [] }));
@@ -206,7 +207,7 @@ const CreateCalendar = () => {
       .filter((group) => group.friends.length > 0);
   }, [friends, friendGroups, friendSearchTerm]);
 
-  // [추가] 검색 입력란에서 친구 추가
+  // 검색 입력란에서 친구 추가 핸들러
   const handleAddFriendByName = () => {
     if (friendSearchTerm.trim() === '') return;
 
@@ -221,7 +222,7 @@ const CreateCalendar = () => {
     }
   };
 
-  // [수정] 캘린더 이름 자동 생성 로직 변경
+  // 캘린더 이름 자동 생성 로직
   const finalName = useMemo(() => {
     if (calName) return calName; // 1. 사용자가 직접 입력한 이름이 최우선
 
@@ -251,7 +252,7 @@ const CreateCalendar = () => {
   // 이름이 없으면 생성 불가 (친구 선택 안해도 본인 캘린더로 생성 가능하게 조건 완화)
   const isSubmitDisabled = !finalName.trim() || isSubmitting;
 
-  // [수정] DB에 캘린더 저장
+  // 캘린더 생성 및 저장 핸들러
   const handleSubmit = async () => {
     if (isSubmitDisabled || !user) {
       if (!user) toast.error('로그인이 필요합니다.');
@@ -260,7 +261,7 @@ const CreateCalendar = () => {
 
     setIsSubmitting(true);
     try {
-      // [추가] 중복 캘린더 생성 방지 로직
+      // 중복 캘린더 생성 방지 로직
       const newMembers = [user.uid, ...selectedFriendUids].sort();
 
       // 1. 멤버 구성이 같은 캘린더가 있는지 확인
@@ -275,7 +276,7 @@ const CreateCalendar = () => {
         return;
       }
 
-      // [추가] 캘린더 이름 및 사용자별 맞춤 이름 생성 로직
+      // 캘린더 이름 및 사용자별 맞춤 이름 생성 로직
       let dbName = calName;
       let customNames: Record<string, string> | null = null;
 
@@ -312,16 +313,16 @@ const CreateCalendar = () => {
 
       const docRef = await addDoc(collection(db, 'calendars'), {
         name: dbName,
-        customNames: customNames, // [추가] 사용자별 이름 저장
+        customNames: customNames,
         ownerId: user.uid,
-        members: newMembers, // 정렬된 멤버 배열 저장
-        color: selectedColor, // [수정] 선택된 색상 저장
-        icon: selectedIcon, // [추가] 선택된 아이콘 저장
+        members: newMembers,
+        color: selectedColor,
+        icon: selectedIcon,
         createdAt: new Date().toISOString(),
-        isDefault: false, // 기본 캘린더 여부
+        isDefault: false,
       });
 
-      // [추가] 공유된 친구들에게 알림 보내기
+      // 공유된 친구들에게 알림 보내기
       if (selectedFriendUids.length > 0 && user?.displayName) {
         const batch = writeBatch(db);
         for (const friendUid of selectedFriendUids) {
@@ -354,7 +355,7 @@ const CreateCalendar = () => {
           },
         });
       } else if (from && from.startsWith('/schedule/edit/')) {
-        // [추가] ScheduleEdit에서 왔다면, 생성된 캘린더 ID를 포함하여 다시 돌아감
+        // ScheduleEdit에서 왔다면, 생성된 캘린더 ID를 포함하여 다시 돌아감
         navigate(from, {
           replace: true,
           state: {
@@ -555,7 +556,6 @@ const CreateCalendar = () => {
 
       <AddFriendModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} myInfo={user} friends={friends} onOpenContacts={handleOpenContactsModal} />
       <AddFromContactsModal isOpen={isAddFromContactsModalOpen} onClose={() => setIsAddFromContactsModalOpen(false)} myInfo={user as any} existingFriends={friends} />
-      {/* [수정] ProposeMeetingCreate와 동일한 FriendListPopup 사용 */}
       <FriendListPopup
         isOpen={isFriendSelectionPopupOpen}
         onClose={() => setIsFriendSelectionPopupOpen(false)}

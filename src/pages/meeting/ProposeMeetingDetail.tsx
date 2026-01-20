@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { addDoc, collection, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
-import { Clock, CalendarClock } from 'lucide-react';
+import { CalendarClock, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { collection, addDoc, writeBatch } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { MeetingSummaryCard, DateSlotEditor, SyncTimeModal, PageLayout, PageHeader, PageFooter, LoadingButton, PageTitle } from 'components';
+
+import { auth, db } from '../../firebase';
+import { DateSlotEditor, LoadingButton, MeetingSummaryCard, PageFooter, PageHeader, PageLayout, PageTitle, SyncTimeModal } from 'components';
 import { notifyMeetingInvite } from 'services';
 
 /**
@@ -41,7 +42,7 @@ interface TimeSlot {
  * 약속 제안 상세 설정 페이지 (Step 2) 컴포넌트입니다.
  * - 선택된 날짜별로 구체적인 시간(Time Slot)을 설정합니다.
  * - '종일' 옵션 또는 '특정 시간대'를 여러 개 추가할 수 있습니다.
- * * @returns {JSX.Element} 약속 상세 설정 화면
+ * @returns {JSX.Element} 약속 상세 설정 화면
  */
 const ProposeMeetingDetail = () => {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ const ProposeMeetingDetail = () => {
     calendarName: '',
   };
 
-  // [추가] 현재 시간 기준 기본값 계산
+  // 현재 시간 기준 기본값 계산
   const now = dayjs();
   const minute = now.minute();
   let startObj = now;
@@ -91,7 +92,7 @@ const ProposeMeetingDetail = () => {
     }, {}),
   );
 
-  // [추가] 시간 통일 모달 상태
+  // 시간 통일 모달 상태
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [syncTime, setSyncTime] = useState({ start: defaultStartStr, end: defaultEndStr });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -179,7 +180,7 @@ const ProposeMeetingDetail = () => {
   };
 
   /**
-   * [수정] 시간 통일 모달을 엽니다.
+   * 시간 통일 모달을 엽니다.
    */
   const handleSyncTimes = () => {
     if (selectedDates.length < 1) {
@@ -199,7 +200,7 @@ const ProposeMeetingDetail = () => {
   };
 
   /**
-   * [추가] 시간 통일 모달에서 설정한 시간으로 모든 슬롯을 업데이트합니다.
+   * 시간 통일 모달에서 설정한 시간으로 모든 슬롯을 업데이트합니다.
    */
   const applySyncedTime = () => {
     const newTimeSlots = { ...timeSlots };
@@ -220,7 +221,7 @@ const ProposeMeetingDetail = () => {
   };
 
   /**
-   * [추가] 시간 통일 모달의 시간 입력 변경을 처리합니다.
+   * 시간 통일 모달의 시간 입력 변경을 처리합니다.
    */
   const handleSyncTimeChange = (field: 'start' | 'end', value: string) => {
     const newSyncTime = { ...syncTime, [field]: value };
@@ -260,15 +261,15 @@ const ProposeMeetingDetail = () => {
         hostId: auth.currentUser.uid,
         hostName: auth.currentUser.displayName || '알 수 없음',
         participants: [auth.currentUser.uid, ...invitedFriends.map((f) => f.id)],
-        invitedFriends: invitedFriends.map((f) => ({ uid: f.id, name: f.name })), // [추가] 이름 표시용 데이터
+        invitedFriends: invitedFriends.map((f) => ({ uid: f.id, name: f.name })),
         dates: selectedDates,
         timeSlots,
-        status: 'PENDING', // [수정] 생성 시 기본 상태는 조율 중(PENDING)
+        status: 'PENDING',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
 
-      // [추가] 초대된 친구들에게 알림 전송
+      // 초대된 친구들에게 알림 전송
       const batch = writeBatch(db);
       if (invitedFriends.length > 0) {
         for (const friend of invitedFriends) {
@@ -280,11 +281,10 @@ const ProposeMeetingDetail = () => {
           });
         }
 
-        // 모든 알림 준비가 끝난 후 배치 커밋
         await batch.commit();
       }
 
-      navigate('/propose'); // 목록 페이지로 이동
+      navigate('/propose');
     } catch (error) {
       console.error('Error creating meeting:', error);
       toast.error('약속 생성 중 오류가 발생했습니다.');
@@ -314,7 +314,7 @@ const ProposeMeetingDetail = () => {
 
         <MeetingSummaryCard title={title} description={description} location={meetingLocation} invitedFriends={invitedFriends} />
 
-        {/* [추가] 시간 설정 헤더 및 통일 버튼 */}
+        {/* 시간 설정 헤더 및 통일 버튼 */}
         <div className="flex items-center justify-between mb-6 pt-8 border-t border-gray-100 dark:border-gray-700/50">
           <h3 className="text-[15px] font-black text-main dark:text-white flex items-center gap-2">
             <Clock size={18} className="text-primary dark:text-blue-400" />
@@ -343,7 +343,7 @@ const ProposeMeetingDetail = () => {
           ))}
         </div>
 
-        {/* [추가] 시간 통일 모달 */}
+        {/* 시간 통일 모달 */}
         <SyncTimeModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} syncTime={syncTime} onSyncTimeChange={handleSyncTimeChange} onApply={applySyncedTime} />
       </>
     </PageLayout>

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Users, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { ChevronRight, Users } from 'lucide-react';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
@@ -53,6 +53,10 @@ const getStatusBadge = (status: string, isVotingCompleted?: boolean, hasVoted?: 
   return { className: 'bg-gray-100 dark:bg-gray-800 text-gray-500', text: '상태 없음' };
 };
 
+/**
+ * 약속 목록 아이템 컴포넌트
+ * - 약속의 제목, 상태, 참여자 정보 등을 요약하여 표시합니다.
+ */
 const MeetingListItem: React.FC<MeetingListItemProps> = ({ meeting, onClick }) => {
   const badge = getStatusBadge(meeting.status, meeting.isVotingCompleted, meeting.hasVoted);
 

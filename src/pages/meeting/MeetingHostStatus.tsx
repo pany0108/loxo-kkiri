@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, XCircle, Sparkles, Clock, Users, Loader2, BellRing, MapPin, Share2, Hourglass, Trash2 } from 'lucide-react';
+import { AlertCircle, BellRing, CheckCircle2, Clock, Hourglass, Loader2, MapPin, Share2, Trash2, Users, XCircle } from 'lucide-react';
 import dayjs from 'dayjs';
+
 import { auth } from '../../firebase';
-import { ConfirmModal, ShareMeetingModal, PageHeader, PageFooter, PageLayout, PageTitle } from 'components';
+import { ConfirmModal, PageFooter, PageHeader, PageLayout, PageTitle, ShareMeetingModal } from 'components';
 import { useMeetingHostStatus } from 'hooks';
 
 const MeetingHostStatus = () => {
@@ -19,7 +20,7 @@ const MeetingHostStatus = () => {
     );
   }
 
-  // --- [추가] PENDING 상태 뷰 (응답 현황) ---
+  // --- PENDING 상태 뷰 (응답 현황) ---
   if (meetingData.status === 'PENDING' && responseStatus) {
     const isHost = auth.currentUser?.uid === meetingData.hostId;
     const canDelete = isHost && (!meetingData.responses || Object.keys(meetingData.responses).length === 0);
@@ -81,7 +82,7 @@ const MeetingHostStatus = () => {
           </div>
         </div>
 
-        {/* [추가] 약속 삭제 버튼 */}
+        {/* 약속 삭제 버튼 */}
         {canDelete && (
           <footer className="pt-8 mt-auto border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-4">
             <button
@@ -119,7 +120,7 @@ const MeetingHostStatus = () => {
   // 투표 참여 현황 계산 (주최자 제외)
   const totalMembers = meetingData.participants.length; // 본인 포함 전체
 
-  // [수정] 모든 슬롯의 투표를 확인하여 유니크한 투표자 수 계산
+  // 모든 슬롯의 투표를 확인하여 유니크한 투표자 수 계산
   const votedUids = new Set<string>();
   if (meetingData.votes) {
     Object.values(meetingData.votes).forEach((slotVotes: any) => {

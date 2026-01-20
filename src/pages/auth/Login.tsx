@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
-import { signInWithRedirect, User as FirebaseUser, getRedirectResult, UserCredential, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../../firebase';
-import toast from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { getRedirectResult, signInWithPopup, signInWithRedirect, UserCredential } from 'firebase/auth';
+import { Lock, User } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, googleProvider } from '../../firebase';
+import { FormCheckbox, FormInput, LoadingButton, LogoImage } from 'components';
 import { signInWithEmail, signInWithGoogle } from 'services/authService';
-import { FormInput, FormCheckbox, LogoImage, LoadingButton } from 'components';
 
 /**
  * 로그인 페이지 컴포넌트입니다.
  * 이메일/비밀번호 로그인 및 Google 소셜 로그인을 처리합니다.
  * 로그인 성공 시 기존 유저 여부를 확인하여 캘린더 또는 회원가입 페이지로 이동시킵니다.
- * * @returns {JSX.Element} 로그인 화면
+ * @returns {JSX.Element} 로그인 화면
  */
 const Login = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const Login = () => {
     getRedirectResult(auth)
       .then(async (result: UserCredential | null) => {
         if (result?.user) {
-          sessionStorage.setItem('isAuthChecking', 'true'); // [추가] 리다이렉트 후 캘린더 플래시 방지
+          sessionStorage.setItem('isAuthChecking', 'true'); // 리다이렉트 후 캘린더 플래시 방지
           // App.tsx에서 인증 상태 변경을 감지하여 라우팅을 처리하므로
           // 여기서는 별도의 로직이 필요 없습니다.
         } else {
@@ -99,19 +100,19 @@ const Login = () => {
     sessionStorage.setItem('isAuthChecking', 'true');
 
     try {
-      // ★★★ [수정] 플랫폼에 따라 로그인 방식 분기 ★★★
+      // 플랫폼에 따라 로그인 방식 분기
       if (Capacitor.isNativePlatform()) {
         // 1. 앱(Native) 환경: 기존에 만드신 서비스 함수 사용 (Plugin 사용)
         await signInWithGoogle();
       } else {
-        // 2. 웹(Web) 환경: Firebase 표준 팝업 로그인 사용 (Plugin 안 씀 -> 에러 없음)
+        // 2. 웹(Web) 환경: Firebase 표준 팝업 로그인 사용
         await signInWithPopup(auth, googleProvider);
       }
 
       // 성공 시 로직 (App.tsx에서 감지하므로 비워둠)
     } catch (error: any) {
       console.error('Google Login Error:', error);
-      sessionStorage.removeItem('isAuthChecking'); // [추가] 에러 발생 시 플래그 제거
+      sessionStorage.removeItem('isAuthChecking'); // 에러 발생 시 플래그 제거
 
       // 팝업 닫힘이나 취소는 에러로 처리하지 않음
       if (error.message === 'User cancelled login') {
@@ -121,7 +122,6 @@ const Login = () => {
 
       // Firebase Auth 에러 코드 처리
       let errorMessage = '로그인에 실패했습니다. 다시 시도해주세요.';
-      // [수정] error.code가 숫자일 수도 있으므로 문자열로 변환하여 비교합니다.
       const errorCode = error.code ? String(error.code) : null;
       if (errorCode) {
         switch (errorCode) {
@@ -137,7 +137,7 @@ const Login = () => {
             break;
           case 'auth/popup-blocked': // 웹 환경에서 팝업 차단 시
             toast('팝업이 차단되어 리다이렉트 방식으로 로그인을 시도합니다.', { icon: 'ℹ️' });
-            // [추가] 리다이렉트 시에도 계정 선택 프롬프트 유지
+            // 리다이렉트 시에도 계정 선택 프롬프트 유지
             googleProvider.setCustomParameters({ prompt: 'select_account' });
             await signInWithRedirect(auth, googleProvider);
             return;

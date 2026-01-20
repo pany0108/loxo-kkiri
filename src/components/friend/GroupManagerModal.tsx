@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
 import { FolderPlus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
+
+import { db } from '../../firebase'; // Corrected import path
 
 interface Friend {
   uid: string;
@@ -24,11 +25,17 @@ interface GroupManagerModalProps {
   user: any;
 }
 
+/**
+ * 친구 그룹 관리 모달 컴포넌트
+ * - 그룹 추가, 수정, 삭제 기능을 제공합니다.
+ * - 그룹 삭제 시 해당 그룹에 속한 친구들은 '미분류' 상태가 됩니다.
+ */
 const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, initialGroups, onSave, friends, user }) => {
   const [groups, setGroups] = useState<FriendGroup[]>(initialGroups);
   const groupInputsContainerRef = useRef<HTMLDivElement>(null);
   const prevGroupsLengthRef = useRef(initialGroups.length);
 
+  // 모달 열릴 때 초기화
   useEffect(() => {
     if (isOpen) {
       setGroups(initialGroups);
@@ -36,6 +43,7 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
     }
   }, [isOpen, initialGroups]);
 
+  // 새 그룹 추가 시 자동으로 포커스 및 스크롤 이동
   useEffect(() => {
     if (isOpen && groups.length > prevGroupsLengthRef.current) {
       const inputs = groupInputsContainerRef.current?.querySelectorAll<HTMLInputElement>('input');
@@ -48,15 +56,18 @@ const GroupManagerModal: React.FC<GroupManagerModalProps> = ({ isOpen, onClose, 
     prevGroupsLengthRef.current = groups.length;
   }, [groups, isOpen]);
 
+  /** 그룹 이름 변경 핸들러 */
   const handleGroupChange = (id: string, newName: string) => {
     setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, name: newName } : g)));
   };
 
+  /** 새 그룹 추가 핸들러 */
   const handleAddGroup = () => {
     const newGroup: FriendGroup = { id: `group_${Date.now()}`, name: '' };
     setGroups((prev) => [...prev, newGroup]);
   };
 
+  /** 그룹 삭제 핸들러 */
   const handleDeleteGroup = async (groupId: string) => {
     if (!user) return;
     const updatedFriends = friends.map((f) => {

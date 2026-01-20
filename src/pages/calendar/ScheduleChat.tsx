@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, increment, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { Send, MoreVertical, Calendar, Image as ImageIcon, LogOut, Copy, Trash2, Reply, X, Users } from 'lucide-react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, writeBatch, arrayUnion, updateDoc, increment, deleteDoc, arrayRemove } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
-import { PageLayout, PageFooter, LoadingButton, ScheduleDetailModal, ConfirmModal } from 'components';
+import { Calendar, Copy, LogOut, MoreVertical, Reply, Send, Trash2, Users, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendPushNotificationToUser } from 'utils';
+
+import { auth, db } from '../../firebase';
+import { ConfirmModal, LoadingButton, PageFooter, PageLayout, ScheduleDetailModal } from 'components';
 import { useUserProfiles } from 'hooks';
+import { sendPushNotificationToUser } from 'utils';
 
 dayjs.locale('ko');
 
@@ -46,60 +47,54 @@ interface Message {
  * 일정별 상세 채팅방 컴포넌트입니다.
  * - 참여자 간의 실시간 대화 및 일정 변경 이력(시스템 메시지)을 표시합니다.
  * - 새 메시지 입력 시 자동으로 스크롤을 최하단으로 이동시킵니다.
- * * @returns {JSX.Element} 채팅방 화면
+ * @returns {JSX.Element} 채팅방 화면
  */
 const ScheduleChat = () => {
   const navigate = useNavigate();
-  // URL 파라미터에서 현재 일정 ID를 가져옵니다 (추후 API 연동 시 사용)
   const { id } = useParams();
   const location = useLocation();
-  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // 자동 스크롤을 위한 메시지 리스트 하단 참조 Ref
-  /**
-   * 페이지가 로드될 때 스크롤을 최상단으로 이동시킵니다.
-   */
+  // --- Refs ---
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isInitialLoad = useRef(true);
+  const prevMessagesLength = useRef(0);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 페이지 로드 시 스크롤을 최상단으로 초기화
   useLayoutEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = 0;
     }
   }, [location.pathname]);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * 채팅 메시지 목록 상태
-   *
-   * 실제 구현 시에는 WebSocket 또는 Firestore onSnapshot을 통해 실시간 데이터를 수신해야 합니다.
-   */
+  // --- State ---
   const [messages, setMessages] = useState<Message[]>([]);
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [participantCount, setParticipantCount] = useState(0);
   const [participants, setParticipants] = useState<string[]>([]);
-  const [scheduleData, setScheduleData] = useState<any>(null); // [추가] 일정 상세 데이터
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // [추가] 상세 모달 상태
+  const [scheduleData, setScheduleData] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
 
   const [inputText, setInputText] = useState('');
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null); // [추가] 답장 상태
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isInitialLoad = useRef(true);
-  const prevMessagesLength = useRef(0);
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  // [추가] 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; x: number; y: number; message: Message | null }>({
     isOpen: false,
     x: 0,
     y: 0,
     message: null,
   });
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const { profiles } = useUserProfiles(participants);
 
-  // 메뉴 외부 클릭 시 닫기
+  // --- Effects ---
+
+  // 메뉴 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -110,7 +105,7 @@ const ScheduleChat = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // [추가] 채팅방 입장 시 내 읽지 않은 메시지 수 0으로 초기화
+  // 채팅방 입장 시 읽지 않은 메시지 수 초기화
   useEffect(() => {
     if (id && auth.currentUser) {
       updateDoc(doc(db, 'schedules', id), {
@@ -119,21 +114,20 @@ const ScheduleChat = () => {
     }
   }, [id]);
 
+  // 실시간 데이터 구독 (일정 정보 및 메시지)
   useEffect(() => {
     if (!id) return;
 
-    // 일정 정보 실시간 구독 (제목, 참여자 수 변경 대응)
     const scheduleUnsubscribe = onSnapshot(doc(db, 'schedules', id), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setScheduleData(data); // [추가] 전체 데이터 저장
+        setScheduleData(data);
         setScheduleTitle(data.title || '일정 채팅');
         setParticipantCount(data.attendees ? data.attendees.length : 0);
         setParticipants(data.attendees || []);
       }
     });
 
-    // 실시간 채팅 구독
     const q = query(collection(db, 'schedules', id, 'messages'), orderBy('createdAt', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map((doc) => {
@@ -154,7 +148,7 @@ const ScheduleChat = () => {
       });
       setMessages(newMessages);
 
-      // 읽음 처리 로직: 내가 읽지 않은 메시지(상대방이 보냄 + readBy에 내가 없음)를 찾아 업데이트
+      // 읽음 처리 로직
       if (auth.currentUser) {
         const unreadDocs = snapshot.docs.filter((doc) => {
           const data = doc.data();
@@ -166,7 +160,6 @@ const ScheduleChat = () => {
           unreadDocs.forEach((d) => {
             batch.update(d.ref, { readBy: arrayUnion(auth.currentUser?.uid) });
           });
-          // [추가] 메시지 읽음 처리 시 내 뱃지 카운트도 0으로 초기화 (배치에 포함)
           batch.update(doc(db, 'schedules', id), {
             [`unreadCounts.${auth.currentUser?.uid}`]: 0,
           });
@@ -181,18 +174,7 @@ const ScheduleChat = () => {
     };
   }, [id]);
 
-  /**
-   * 채팅창 스크롤을 최하단으로 이동시키는 함수
-   */
-  const scrollToBottom = () => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  /**
-   * 메시지 목록 업데이트 시 스크롤 처리
-   * - 초기 진입: 안 읽은 메시지가 있으면 거기로, 없으면 바닥으로
-   * - 이후: 메시지가 추가된 경우에만 바닥으로 (읽음 처리 등 업데이트 시 스크롤 유지)
-   */
+  // 메시지 업데이트 시 스크롤 처리
   useEffect(() => {
     if (messages.length === 0) return;
 
@@ -211,11 +193,13 @@ const ScheduleChat = () => {
     prevMessagesLength.current = messages.length;
   }, [messages]);
 
-  /**
-   * 메시지 전송 핸들러
-   * - 입력값이 비어있지 않은 경우에만 메시지를 추가합니다.
-   * - Day.js를 사용하여 현재 시간을 포맷팅합니다.
-   */
+  // --- Handlers ---
+
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  /** 메시지 전송 핸들러 */
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !id || !auth.currentUser) return;
@@ -229,7 +213,7 @@ const ScheduleChat = () => {
         createdAt: serverTimestamp(),
         type: 'text',
         photoURL: auth.currentUser.photoURL,
-        readBy: [auth.currentUser.uid], // 보낸 사람은 읽은 것으로 처리
+        readBy: [auth.currentUser.uid],
         replyTo: replyingTo
           ? {
               id: replyingTo.id,
@@ -239,22 +223,18 @@ const ScheduleChat = () => {
           : null,
       });
 
-      // [수정] 일정 문서 업데이트 (마지막 메시지, 시간, 안 읽은 개수)
       const updates: any = {
         lastMessage: inputText,
         lastMessageTime: serverTimestamp(),
       };
 
-      // 나를 제외한 참여자들의 unreadCount 증가
       participants.forEach((uid) => {
         if (uid !== auth.currentUser?.uid) {
           updates[`unreadCounts.${uid}`] = increment(1);
         }
       });
-
       await updateDoc(doc(db, 'schedules', id), updates);
 
-      // 푸시 알림 전송 (비동기 처리)
       const recipients = participants.filter((uid) => uid !== auth.currentUser?.uid);
       recipients.forEach((uid) => {
         sendPushNotificationToUser({
@@ -266,7 +246,7 @@ const ScheduleChat = () => {
       });
 
       setInputText('');
-      setReplyingTo(null); // 답장 상태 초기화
+      setReplyingTo(null);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -274,7 +254,7 @@ const ScheduleChat = () => {
     }
   };
 
-  // [추가] 롱프레스 핸들러
+  /** 메시지 롱프레스 시작 핸들러 (컨텍스트 메뉴 오픈) */
   const handleLongPressStart = (e: React.TouchEvent | React.MouseEvent, msg: Message) => {
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
@@ -289,6 +269,7 @@ const ScheduleChat = () => {
     }, 500);
   };
 
+  /** 롱프레스 종료 핸들러 */
   const handleLongPressEnd = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -296,6 +277,7 @@ const ScheduleChat = () => {
     }
   };
 
+  /** 메시지 복사 핸들러 */
   const handleCopyMessage = async () => {
     if (contextMenu.message?.text) {
       try {
@@ -308,7 +290,7 @@ const ScheduleChat = () => {
     setContextMenu({ ...contextMenu, isOpen: false });
   };
 
-  // [추가] 답장 핸들러
+  /** 메시지 답장 핸들러 */
   const handleReplyMessage = () => {
     if (contextMenu.message) {
       setReplyingTo(contextMenu.message);
@@ -316,6 +298,7 @@ const ScheduleChat = () => {
     }
   };
 
+  /** 메시지 삭제 핸들러 */
   const handleDeleteMessage = async () => {
     if (!contextMenu.message || !id) return;
 
@@ -340,19 +323,19 @@ const ScheduleChat = () => {
     setContextMenu({ ...contextMenu, isOpen: false });
   };
 
-  // [추가] 채팅방 나가기 핸들러
+  /** 채팅방 나가기 모달 오픈 핸들러 */
   const handleLeaveChat = () => {
     setIsMenuOpen(false);
     setIsLeaveModalOpen(true);
   };
 
+  /** 채팅방 나가기 확정 핸들러 */
   const confirmLeaveChat = async () => {
     if (!id || !auth.currentUser) return;
 
     try {
       const leaveMessage = `${auth.currentUser.displayName || '알 수 없음'}님이 채팅방을 나갔습니다.`;
 
-      // 1. 시스템 메시지 추가 (권한 유지를 위해 먼저 실행)
       await addDoc(collection(db, 'schedules', id, 'messages'), {
         text: leaveMessage,
         createdAt: serverTimestamp(),
@@ -360,7 +343,6 @@ const ScheduleChat = () => {
         readBy: [],
       });
 
-      // 2. 참여자 목록에서 제거 및 마지막 메시지 업데이트
       await updateDoc(doc(db, 'schedules', id), {
         attendees: arrayRemove(auth.currentUser.uid),
         lastMessage: leaveMessage,
@@ -467,12 +449,6 @@ const ScheduleChat = () => {
               >
                 <Calendar size={16} /> 일정 상세
               </button>
-              {/* <button
-                onClick={() => navigate(`/schedule/${id}/media`, { state: { media: [], title: scheduleTitle } })}
-                className="w-full px-4 py-3 text-left text-[14px] font-medium text-main dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
-              >
-                <ImageIcon size={16} /> 사진 모아보기
-              </button> */}
               <div className="h-[1px] bg-gray-100 dark:bg-gray-700 my-1 mx-2" />
               <div className="px-4 py-2">
                 <p className="text-[11px] font-bold text-sub dark:text-gray-500 mb-2">대화상대 ({participantCount})</p>
@@ -511,7 +487,6 @@ const ScheduleChat = () => {
     >
       <div className="space-y-4">
         {messages.map((msg, index) => {
-          // 날짜 구분선 표시 여부 확인 (첫 메시지이거나 이전 메시지와 날짜가 다를 때)
           const showDateSeparator = index === 0 || !dayjs(msg.createdAt).isSame(dayjs(messages[index - 1].createdAt), 'day');
 
           return (

@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { Save, Smartphone, Calendar, Loader2, CheckCircle2, User, ShieldCheck } from 'lucide-react';
-import dayjs from 'dayjs';
-import { PageLayout, PageHeader, FormInput, PageFooter, PageTitle } from 'components';
-import { auth, db } from '../../firebase';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, addDoc, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { Calendar, CheckCircle2, Loader2, Save, Smartphone, User } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+import { auth, db } from '../../firebase';
+import { FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
 import { updateUserBirthdaySchedule } from 'services';
 
 /**
  * 사용자 개인 정보를 수정하는 페이지 컴포넌트입니다.
  * Firestore의 유저 데이터와 Firebase Auth 프로필(DisplayName)을 동기화하여 업데이트합니다.
- * * @returns {JSX.Element} 개인 정보 수정 화면
+ * @returns {JSX.Element} 개인 정보 수정 화면
  */
 const EditUserInfo = () => {
   const navigate = useNavigate();
-  const authCodeRef = useRef<HTMLInputElement>(null); // [추가]
+  const authCodeRef = useRef<HTMLInputElement>(null);
 
   // --- 상태 관리 ---
   const [formData, setFormData] = useState({
@@ -32,8 +32,8 @@ const EditUserInfo = () => {
   const [isAuthSent, setIsAuthSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false); // 휴대폰 번호 인증 여부
   const [authCode, setAuthCode] = useState('');
-  const [isLeapMonth, setIsLeapMonth] = useState(false); // [추가] 윤달 여부 상태
-  const [isLunar, setIsLunar] = useState(false); // [추가] 양력/음력 상태
+  const [isLeapMonth, setIsLeapMonth] = useState(false);
+  const [isLunar, setIsLunar] = useState(false);
 
   /**
    * 컴포넌트 마운트 시 Firestore에서 현재 로그인된 사용자의 정보를 불러옵니다.
@@ -59,8 +59,8 @@ const EditUserInfo = () => {
             setIsVerified(!!data.phone); // 전화번호가 있으면 인증된 것으로 시작
             setIsAuthSent(false); // 인증번호 발송 상태 초기화
             setIsPhoneEditing(false); // 수정 모드 초기화
-            setIsLeapMonth(data.isLeapMonth || false); // [추가] 윤달 여부 설정
-            setIsLunar(data.birthDateType === 'lunar'); // [추가] 생일 타입 설정
+            setIsLeapMonth(data.isLeapMonth || false);
+            setIsLunar(data.birthDateType === 'lunar');
           }
         } catch (error) {
           // 데이터 로드 실패 시 조용히 처리하거나 에러 UI 표시
@@ -72,7 +72,7 @@ const EditUserInfo = () => {
     fetchUserData();
   }, []);
 
-  // [추가] 인증번호 발송 후 입력 필드에 자동으로 포커스
+  // 인증번호 발송 후 입력 필드에 자동으로 포커스
   useEffect(() => {
     if (isPhoneEditing && isAuthSent && !isVerified) {
       // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
@@ -82,11 +82,11 @@ const EditUserInfo = () => {
     }
   }, [isPhoneEditing, isAuthSent, isVerified]);
 
-  // [추가] DB에서 불러온 초기 휴대폰 번호 (변경 여부 확인용)
+  // DB에서 불러온 초기 휴대폰 번호 (변경 여부 확인용)
   const [originalPhone, setOriginalPhone] = useState('');
 
   /**
-   * [추가] 휴대폰 번호 자동 포맷팅 (010-0000-0000)
+   * 휴대폰 번호 자동 포맷팅 (010-0000-0000)
    */
   const formatPhone = (value: string) => {
     const nums = value.replace(/[^\d]/g, '');
@@ -122,7 +122,7 @@ const EditUserInfo = () => {
   };
 
   /**
-   * [추가] 휴대폰 인증번호 발송 시뮬레이션
+   * 휴대폰 인증번호 발송 시뮬레이션
    */
   const handleSendAuth = () => {
     if (!formData.phone || formData.phone.length < 13) {
@@ -134,7 +134,7 @@ const EditUserInfo = () => {
   };
 
   /**
-   * [추가] 인증번호 확인 시뮬레이션 (고정값: 1234)
+   * 인증번호 확인 시뮬레이션 (고정값: 1234)
    */
   const handleVerify = () => {
     if (authCode === '1234') {
@@ -154,27 +154,21 @@ const EditUserInfo = () => {
   const handleSave = async () => {
     if (!auth.currentUser) return;
 
-    // [임시] 휴대폰 인증 비활성화
-    // if (formData.phone !== originalPhone && !isVerified) {
-    //   toast.error('변경하신 휴대폰 번호를 인증해주세요.');
-    //   return;
-    // }
-
     setIsSaving(true);
 
     try {
       const userRef = doc(db, 'users', auth.currentUser.uid);
       const fullName = `${formData.lastName}${formData.firstName}`;
 
-      // [FIX] 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
+      // 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
       await updateDoc(userRef, {
         lastName: formData.lastName,
         firstName: formData.firstName,
         name: fullName, // 검색 및 표시 편의를 위한 전체 이름 필드
         phone: formData.phone.replace(/[^\d]/g, ''),
         birthDate: formData.birthDate,
-        isLeapMonth: isLunar && isLeapMonth, // [추가] 윤달 여부 저장
-        birthDateType: isLunar ? 'lunar' : 'solar', // [추가] 생일 타입 저장
+        isLeapMonth: isLunar && isLeapMonth,
+        birthDateType: isLunar ? 'lunar' : 'solar',
       });
 
       // Auth 프로필 동기화
@@ -182,7 +176,7 @@ const EditUserInfo = () => {
         displayName: fullName,
       });
 
-      // [수정] 생일 일정 업데이트 로직을 서비스로 분리
+      // 생일 일정 업데이트 로직을 서비스로 분리
       await updateUserBirthdaySchedule(auth.currentUser, {
         birthDate: formData.birthDate,
         isLunar,
@@ -209,11 +203,7 @@ const EditUserInfo = () => {
 
   const renderFooter = () => (
     <PageFooter zIndex={50}>
-      <button
-        onClick={handleSave}
-        disabled={isSaving} // [임시] 휴대폰 인증 비활성화
-        className="btn-primary"
-      >
+      <button onClick={handleSave} disabled={isSaving} className="btn-primary">
         {isSaving ? (
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
@@ -265,90 +255,10 @@ const EditUserInfo = () => {
             onChange={handleChange}
             required
           />
-          {/* <section className="space-y-3"> // 기존 인증 UI 주석
-            <label className="block text-[13px] font-black text-sub dark:text-gray-500 ml-1">휴대폰 번호 인증</label>
-            <div className="flex gap-2">
-              <div
-                className={`flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent rounded-[20px] px-5 transition-all ${
-                  isVerified
-                    ? 'bg-primary/10 dark:bg-blue-500/10 border-primary/20 dark:border-blue-500/20'
-                    : 'focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800'
-                }`}
-              >
-                <Smartphone size={20} className={isVerified ? 'text-primary dark:text-blue-400 mr-4' : 'text-sub dark:text-gray-600 mr-4'} />
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="numeric"
-                  value={formData.phone}
-                  placeholder="010-0000-0000"
-                  className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white"
-                  onChange={handleChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault(); // 폼 전체 제출 방지
-                      if (isVerified) return; // 이미 인증되었으면 실행 안함
-                      handleSendAuth();
-                    }
-                  }}
-                  readOnly={!isPhoneEditing}
-                  required
-                />
-                {isVerified && !isPhoneEditing && <CheckCircle2 size={20} className="text-primary ml-2" />}
-              </div>
-              {isPhoneEditing ? (
-                <button
-                  type="button"
-                  onClick={handleSendAuth}
-                  disabled={isVerified}
-                  className="flex-1 h-[60px] bg-gray-900 text-white rounded-[20px] text-[13px] font-black active:scale-[0.95] disabled:opacity-50"
-                >
-                  {isAuthSent ? '재발송' : '인증요청'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsPhoneEditing(true)}
-                  className="flex-1 h-[60px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-[20px] text-[13px] font-black active:scale-[0.95]"
-                >
-                  수정
-                </button>
-              )}
-            </div>
-
-            {isPhoneEditing && isAuthSent && !isVerified && (
-              <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
-                <div className="flex-[2.5] flex items-center h-[60px] bg-gray-50 dark:bg-gray-800 border-2 border-primary rounded-[20px] px-5 focus-within:bg-white dark:focus-within:bg-gray-800">
-                  <ShieldCheck size={20} className="text-primary mr-4" />
-                  <input
-                    ref={authCodeRef}
-                    name="authCode"
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="\d*"
-                    value={authCode}
-                    placeholder="인증번호 4자리"
-                    className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-gray-800 dark:text-white placeholder:text-gray-300"
-                    onChange={handleChange}
-                    maxLength={4}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleVerify();
-                      }
-                    }}
-                  />
-                </div>
-                <button type="button" onClick={handleVerify} className="flex-1 h-[60px] bg-primary text-white rounded-[20px] text-[15px] font-black active:scale-[0.95]">
-                  확인
-                </button>
-              </div>
-            )}
-          </section> */}
 
           {/* 생년월일 */}
           <section className="space-y-3">
-            {/* [추가] 양력/음력 선택 토글 */}
+            {/* 양력/음력 선택 토글 */}
             <div className="flex items-center justify-between px-1">
               <label className="block text-caption">생년월일</label>
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">

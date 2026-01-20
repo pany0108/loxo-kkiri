@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { Check, Loader2, User, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { User, Loader2, UserPlus, Check } from 'lucide-react';
+
 import { auth, db } from '../../firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { PageFooter, PageLayout, PageTitle } from 'components';
 import { useFirestoreDoc } from 'hooks';
-import { PageLayout, PageFooter, PageTitle } from 'components';
 
 interface UserProfileData {
   uid: string;
@@ -16,6 +17,10 @@ interface UserProfileData {
   friendsList?: { uid: string }[];
 }
 
+/**
+ * 다른 사용자의 프로필 페이지 컴포넌트
+ * - 사용자 정보를 조회하고 친구 추가 기능을 제공합니다.
+ */
 const UserProfile = () => {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
@@ -27,7 +32,7 @@ const UserProfile = () => {
   const currentUserDocRef = useMemo(() => (currentUser ? doc(db, 'users', currentUser.uid) : null), [currentUser]);
   const { data: myData } = useFirestoreDoc<UserProfileData>(currentUserDocRef);
 
-  // [추가] 본인 프로필에 접근 시 /profile(내 프로필)로 리다이렉트합니다.
+  // 본인 프로필에 접근 시 /profile(내 프로필)로 리다이렉트
   useEffect(() => {
     if (userId && currentUser && userId === currentUser.uid) {
       navigate('/profile', { replace: true });
@@ -40,6 +45,7 @@ const UserProfile = () => {
     return myData?.friendsList?.some((friend) => friend.uid === userId) || false;
   }, [myData, userId]);
 
+  /** 친구 추가 핸들러 */
   const handleAddFriend = async () => {
     if (!currentUser || !userData) return;
     if (isAlreadyFriend) {

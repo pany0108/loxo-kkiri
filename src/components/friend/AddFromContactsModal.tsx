@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, AnimatePresenceProps } from 'framer-motion';
-import { X, Search, UserPlus, Phone, Mail, Loader2 } from 'lucide-react'; // Check 제거
-import { Contacts } from '@capacitor-community/contacts'; // Only Contacts imported, other types will be local
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Contacts } from '@capacitor-community/contacts';
 import { Capacitor } from '@capacitor/core';
+import { arrayUnion, collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { AnimatePresence, AnimatePresenceProps, motion } from 'framer-motion';
+import { Loader2, Mail, Phone, Search, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db, auth } from '../../firebase';
+
+import { auth, db } from '../../firebase';
 
 interface Friend {
   uid: string;
@@ -30,9 +31,6 @@ interface AddFromContactsModalProps {
   existingFriends: Friend[];
 }
 
-// Define local types to match the expected structure from the plugin's output
-// These mirror the ContactPayload, PhoneNumber, EmailAddress types from @capacitor-community/contacts
-// as they might not be directly exported or cause import issues.
 interface LocalPhoneNumber {
   label: string;
   number?: string;
@@ -43,7 +41,6 @@ interface LocalEmailAddress {
   address?: string;
 }
 
-// This should match the structure of ContactPayload from the plugin
 interface LocalContact {
   contactId: string;
   name?: {
@@ -53,10 +50,15 @@ interface LocalContact {
   emails?: LocalEmailAddress[];
 }
 
+/**
+ * 연락처에서 친구 추가 모달 컴포넌트
+ * - 모바일 기기의 연락처를 불러와서 앱 사용자인 경우 친구로 추가할 수 있습니다.
+ * - 연락처 접근 권한 요청 및 검색 기능을 제공합니다.
+ */
 const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onClose, myInfo, existingFriends }) => {
-  const [contacts, setContacts] = useState<LocalContact[]>([]); // Using local Contact type
+  const [contacts, setContacts] = useState<LocalContact[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // 초기 로딩 상태를 false로 설정
+  const [isLoading, setIsLoading] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
@@ -64,8 +66,8 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
 
   const AnimatePresenceSafe = AnimatePresence as React.FC<React.PropsWithChildren<AnimatePresenceProps>>;
 
+  // 모달 열림/닫힘에 따른 초기화 및 연락처 로딩
   useEffect(() => {
-    // useEffect 내부에서 isLoading을 true로 설정
     if (!isOpen) {
       setSearchTerm('');
       setContacts([]);
@@ -80,12 +82,10 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
         return;
       }
 
-      setIsLoading(true); // 연락처 로딩 시작 시 true
+      setIsLoading(true);
       try {
-        // 1. 권한 상태 확인
         let permission = await Contacts.checkPermissions();
 
-        // 2. 권한이 'prompt' 상태일 경우, 권한 요청
         if (permission.contacts === 'prompt' || permission.contacts === 'prompt-with-rationale') {
           permission = await Contacts.requestPermissions();
         }
@@ -100,8 +100,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
           });
           setContacts(contactList.contacts as unknown as LocalContact[]); // Cast to local type
         } else {
-          // 'denied'
-          toast.error('연락처 접근 권한이 필요합니다. 설정에서 허용해주세요.');
+          toast.error('연락처 접근 권한이 필요합니다. 설정에서 허용해주세요.'); // 'denied'
           setPermissionGranted(false);
         }
       } catch (error) {
@@ -115,6 +114,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     loadContacts();
   }, [isOpen, onClose]);
 
+  // 검색어에 따른 연락처 필터링
   const filteredContacts = useMemo(() => {
     if (!searchTerm) return contacts;
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
@@ -126,8 +126,8 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     );
   }, [contacts, searchTerm]);
 
+  /** 친구 추가 핸들러 */
   const handleAddFriend = async (contact: LocalContact) => {
-    // Changed type from Contact to LocalContact
     if (!myInfo || !auth.currentUser) {
       toast.error('로그인이 필요합니다.');
       return;
@@ -135,7 +135,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
 
     const contactEmails = contact.emails?.map((e) => e.address?.toLowerCase()).filter(Boolean) || [];
 
-    // [수정] 전화번호를 하이픈이 있는 형식과 없는 형식 모두로 변환하여 검색 정확도를 높입니다.
+    // 전화번호를 하이픈이 있는 형식과 없는 형식 모두로 변환하여 검색 정확도를 높임
     const allPossiblePhoneFormats: string[] = [];
     contact.phones?.forEach((phone) => {
       if (!phone.number) return;
@@ -150,7 +150,6 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
         allPossiblePhoneFormats.push(`${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}`); // "010-1234-5678"
       }
     });
-    // [수정] ES5 호환성을 위해 스프레드 연산자 대신 Array.from 사용
     const contactPhones = Array.from(new Set(allPossiblePhoneFormats));
 
     if (contactEmails.length === 0 && contactPhones.length === 0) {
@@ -159,7 +158,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     }
 
     try {
-      let friendDoc: any = null; // Firestore DocumentSnapshot
+      let friendDoc: any = null;
 
       // 1. 이메일로 사용자 찾기
       if (contactEmails.length > 0) {
@@ -217,6 +216,7 @@ const AddFromContactsModal: React.FC<AddFromContactsModalProps> = ({ isOpen, onC
     }
   };
 
+  // --- 스와이프 핸들러 ---
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchEndY.current = null;
     sheetTouchStartY.current = e.targetTouches[0].clientY;

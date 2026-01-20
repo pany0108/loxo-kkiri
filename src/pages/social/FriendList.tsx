@@ -1,35 +1,45 @@
-// src/pages/social/FriendList.tsx
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
+import { Check, Folder, FolderPlus, Loader2, MoreVertical, Search, UserPlus, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Search, UserPlus, Check, Loader2, MoreVertical, Folder, FolderPlus, Users } from 'lucide-react';
+
 import { auth, db } from '../../firebase';
-import { doc, updateDoc, arrayRemove } from 'firebase/firestore';
 import {
-  ImagePreviewModal,
   AddFriendModal,
-  ProfilePopup,
-  FriendActionMenu,
-  EditFriendNameModal,
-  DeleteFriendModal,
-  GroupManagerModal,
-  MoveToGroupModal,
   AddFromContactsModal,
+  DeleteFriendModal,
+  EditFriendNameModal,
   FormInput,
+  FriendActionMenu,
+  GroupManagerModal,
+  ImagePreviewModal,
+  MoveToGroupModal,
+  ProfilePopup,
 } from 'components';
-import { useFirestoreDoc, useAuth } from 'hooks';
 import { useCalendar, useUI } from 'contexts';
-import { Friend, FriendGroup } from 'types';
+import { useAuth, useFirestoreDoc } from 'hooks';
 import { deleteCalendar, leaveCalendar } from 'services';
+import { Friend, FriendGroup } from 'types';
 
 interface FriendListProps {
   isEmbedded?: boolean;
 }
 
+/**
+ * 친구 목록 페이지 컴포넌트
+ * - 친구 목록 조회, 검색, 그룹 관리
+ * - 친구 추가, 삭제, 이름 수정
+ * - 공유 캘린더 연동 관리
+ */
 const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { setIsBottomNavVisible } = useUI();
+  const { myCalendars } = useCalendar();
 
+  // --- State ---
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -53,14 +63,13 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   const [viewMode, setViewMode] = useState<'default' | 'group'>('default');
 
-  const { user } = useAuth();
-  const { setIsBottomNavVisible } = useUI();
+  // --- Data Fetching ---
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
-  const { myCalendars } = useCalendar();
 
   const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
 
+  // --- Effects ---
   useEffect(() => {
     if (myInfo?.friendGroups) {
       setGroups(myInfo.friendGroups);
@@ -85,11 +94,15 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     setNewFriendId(null);
   }, [viewMode]);
 
+  // --- Handlers ---
+
+  /** 연락처에서 추가 모달 열기 */
   const handleOpenContactsModal = () => {
     setIsAddModalOpen(false);
     setIsAddFromContactsModalOpen(true);
   };
 
+  /** 친구 아이템 롱프레스 시작 (선택 모드 진입) */
   const handlePointerDown = (friendUid: string) => {
     if (isSelectionMode) return;
     longPressTimer.current = setTimeout(() => {
@@ -98,6 +111,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }, 500);
   };
 
+  /** 롱프레스 취소 */
   const cancelLongPress = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -105,12 +119,14 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 롱프레스 종료 */
   const handlePointerUp = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
   };
 
+  /** 친구 아이템 클릭 핸들러 */
   const handleFriendClick = (friend: Friend) => {
     if (isSelectionMode) {
       setSelectedFriendUids((prev) => {
@@ -127,11 +143,13 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 전체 선택/해제 핸들러 */
   const handleSelectAll = () => {
     const allFriendUids = new Set(friends.map((f) => f.uid));
     setSelectedFriendUids(selectedFriendUids.size === friends.length ? new Set() : allFriendUids);
   };
 
+  // 삭제 시 함께 정리될 공유 캘린더 계산
   const sharedCalendarsToDelete = useMemo(() => {
     if (!selectedFriend || !user || !myCalendars) return [];
     return myCalendars.filter((cal) => {
@@ -166,6 +184,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     return '가 정리됩니다.';
   }, [sharedCalendarsToDelete, user]);
 
+  /** 친구 이름 수정 저장 핸들러 */
   const handleEditSave = async () => {
     if (!selectedFriend || !editName.trim()) return;
     try {
@@ -181,6 +200,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 친구 삭제 확정 핸들러 */
   const handleDeleteConfirm = async () => {
     if (!selectedFriend || !user) return;
     try {
@@ -221,6 +241,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 그룹 관리 저장 핸들러 */
   const handleSaveGroups = async (newGroups: FriendGroup[]) => {
     if (!user) return;
     if (newGroups.some((g) => g.name.trim() === '')) {
@@ -239,6 +260,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 단일 친구 그룹 이동 핸들러 */
   const handleMoveFriendToGroup = async (groupId: string | null) => {
     if (!selectedFriend || !user) return;
     const updatedFriendsList = friends.map((f) => {
@@ -263,6 +285,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  /** 다중 친구 그룹 이동 핸들러 */
   const handleMoveMultipleFriendsToGroup = async (groupId: string | null) => {
     if (selectedFriendUids.size === 0 || !user) return;
     const updatedFriendsList = friends.map((f) => {
@@ -288,6 +311,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     }
   };
 
+  // 친구 목록 그룹화 및 정렬
   const groupedFriends = useMemo(() => {
     const filteredBySearch = friends.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -348,7 +372,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-transparent">
-      {/* 선택 모드 헤더 */}
       {isSelectionMode && (
         <div className="sticky top-0 z-20 px-5 pt-3 pb-2 flex items-center justify-between bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
           <h1 className="text-xl font-bold text-main dark:text-white">{selectedFriendUids.size}명 선택됨</h1>
@@ -369,7 +392,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         </div>
       )}
 
-      {/* 검색 및 액션 버튼 [수정됨: min-w-0 추가] */}
       {!isSelectionMode && (
         <div className="py-2 flex gap-3 shrink-0 items-center">
           <FormInput
@@ -404,7 +426,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         </div>
       )}
 
-      {/* 친구 목록 리스트 (내부 스크롤 제거, Bottom 패딩 추가) */}
       <div className="pt-2 pb-24" onScroll={cancelLongPress}>
         {groupedFriends.length > 0 ? (
           groupedFriends.map((group) => (
@@ -502,7 +523,6 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         </div>
       )}
 
-      {/* Modals */}
       <FriendActionMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}

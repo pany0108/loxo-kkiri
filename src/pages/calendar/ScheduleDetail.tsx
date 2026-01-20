@@ -1,42 +1,44 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import {
-  MapPin,
   AlignLeft,
-  Clock,
-  MessageCircle,
-  BookOpen,
-  Trash2,
-  Edit2,
   Bell,
-  Calendar as CalendarIcon,
-  Copy,
-  ChevronLeft,
-  Home,
+  BookOpen,
   Briefcase,
-  GraduationCap,
-  Dumbbell,
-  Plane,
-  Music,
-  Heart,
-  Star,
-  Gift,
+  Calendar as CalendarIcon,
+  Clock,
   Coffee,
-  ShoppingCart,
+  Copy,
+  Dumbbell,
+  Edit2,
   Gamepad2,
+  Gift,
+  GraduationCap,
+  Heart,
+  Home,
+  MapPin,
+  MessageCircle,
   MoreVertical,
+  Music,
+  Plane,
+  ShoppingCart,
+  Star,
+  Trash2,
   Users,
 } from 'lucide-react';
-import { auth } from '../../firebase'; // Import auth to check current user
-import { PageLayout, RecurrenceSettings, DeleteRecurringModal, ImagePreviewModal, ConfirmModal, PageHeader } from 'components';
-import { doc, deleteDoc, updateDoc, arrayUnion, onSnapshot, getDoc, collection, query, orderBy, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase'; // Corrected import path for db
-import { useCalendar } from 'contexts';
-import { Capacitor, PluginListenerHandle } from '@capacitor/core';
-import { App as CapacitorApp } from '@capacitor/app';
+import toast from 'react-hot-toast';
 
+import { auth, db } from '../../firebase';
+import { ConfirmModal, DeleteRecurringModal, ImagePreviewModal, PageHeader, PageLayout, RecurrenceSettings } from 'components';
+import { useCalendar } from 'contexts';
+
+/**
+ * 페이지 이동 시 전달되는 상태 데이터 인터페이스
+ */
 interface LocationState {
   id?: string;
   title?: string;
@@ -56,10 +58,12 @@ interface LocationState {
   isAnniversary?: boolean;
   isLunar?: boolean;
   isLeapMonth?: boolean;
-  fromView?: string; // [추가] 캘린더에서 어떤 뷰에서 왔는지 식별
+  fromView?: string;
 }
 
-// [추가] ScheduleDetail 컴포넌트의 data 상태 타입을 정의합니다.
+/**
+ * 일정 상세 정보 데이터 인터페이스
+ */
 interface ScheduleDetailData {
   title: string;
   start: dayjs.Dayjs;
@@ -81,14 +85,18 @@ interface ScheduleDetailData {
   isLeapMonth?: boolean;
 }
 
-// [추가] 참석자 프로필 타입 정의
+/**
+ * 참석자 프로필 인터페이스
+ */
 interface AttendeeProfile {
   uid: string;
   name: string;
   photoURL?: string;
 }
 
-// [추가] 공유 후기 데이터 타입 정의
+/**
+ * 공유 후기 데이터 인터페이스
+ */
 interface ReviewData {
   uid: string;
   content: string;
@@ -96,6 +104,9 @@ interface ReviewData {
   updatedAt?: any;
 }
 
+/**
+ * 캘린더 아이콘 매핑 객체
+ */
 const ICON_MAP: Record<string, React.ElementType> = {
   home: Home,
   work: Briefcase,
@@ -111,15 +122,21 @@ const ICON_MAP: Record<string, React.ElementType> = {
   game: Gamepad2,
 };
 
+/**
+ * 일정 상세 페이지 컴포넌트
+ * - 일정의 상세 정보 표시 (제목, 시간, 장소, 메모 등)
+ * - 반복 일정 처리 및 삭제/수정/복사 기능
+ * - 공유 일정의 경우 후기 작성 및 채팅방 이동 기능 제공
+ */
 const ScheduleDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const { myCalendars } = useCalendar();
 
-  // 캘린더에서 넘겨준 데이터 (여기에 클릭한 1월 3일, 4일 등의 정보가 들어있음)
-  const initialState = location.state as LocationState | null;
+  const initialState = (location.state as LocationState) || null;
 
+  // --- State ---
   const [data, setData] = useState<ScheduleDetailData>({
     title: initialState?.title || '로딩 중...',
     start: initialState?.start ? dayjs(initialState.start) : dayjs(),
@@ -133,7 +150,7 @@ const ScheduleDetail = () => {
     attendees: [] as AttendeeProfile[],
     recurrence: initialState?.recurrence,
     files: initialState?.files || [],
-    userId: undefined, // [추가] userId 초기값 설정
+    userId: undefined,
     review: initialState?.review || '',
     reviewImages: initialState?.reviewImages || [],
     isAnniversary: initialState?.isAnniversary || false,
@@ -149,14 +166,20 @@ const ScheduleDetail = () => {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
-
   const [isReviewDeleteModalOpen, setIsReviewDeleteModalOpen] = useState(false);
-
-  // [추가] 메뉴 상태 관리
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [sharedReviews, setSharedReviews] = useState<ReviewData[]>([]);
+  const [myReviewText, setMyReviewText] = useState('');
+
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // [추가] 메뉴 외부 클릭 시 닫기
+  const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
+  const isShared = data.attendees.length > 1;
+  const isPastEvent = dayjs().startOf('day').isAfter(data.end);
+
+  // --- Effects ---
+
+  // 메뉴 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -167,20 +190,14 @@ const ScheduleDetail = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // [추가] 공유 후기 관련 상태
-  const [sharedReviews, setSharedReviews] = useState<ReviewData[]>([]);
-  const [myReviewText, setMyReviewText] = useState('');
-
-  const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
-
-  // DB 실시간 구독
+  // 일정 데이터 실시간 구독 및 초기화
   useEffect(() => {
     if (!id) return;
 
     const unsubscribe = onSnapshot(doc(db, 'schedules', id), async (docSnap) => {
       if (docSnap.exists()) {
         const dbData = docSnap.data();
-        // [추가] 참석자 UID를 이름으로 변환
+        // 참석자 정보 조회
         const attendeeProfiles: AttendeeProfile[] = await Promise.all(
           (dbData.attendees || []).map(async (uid: string) => {
             try {
@@ -191,37 +208,31 @@ const ScheduleDetail = () => {
               }
               return { uid, name: '알 수 없음', photoURL: undefined };
             } catch {
-              // In case of error, return a placeholder
               return { uid, name: '알 수 없음', photoURL: undefined };
             }
           }),
         );
-        // [핵심 수정] 반복 일정 처리 로직
+
+        // 반복 일정 날짜 보정 로직
         const isRecurring = dbData.recurrence && dbData.recurrence.frequency !== 'none';
-        // 1. 반복 일정이고, 2. 캘린더에서 클릭해서 들어온 정보(initialState)가 있다면?
-        // => DB의 원본 날짜(1월 2일) 대신 클릭한 날짜(1월 3일, 4일...)를 사용한다.
         const displayStart = isRecurring && initialState?.start ? dayjs(initialState.start) : dayjs(dbData.start);
         let displayEnd;
 
         if (isRecurring && initialState?.start) {
-          // 반복 일정의 특정 발생(occurrence)을 보는 경우
           if (initialState.end) {
-            // FullCalendar가 전달한 인스턴스의 종료 시간을 사용
             displayEnd = dayjs(initialState.end);
           } else {
-            // end가 없으면(예: 종일 일정), 원본 이벤트의 기간(duration)을 계산하여 적용
             const originalDuration = dayjs(dbData.end || dbData.start).diff(dayjs(dbData.start));
             displayEnd = dayjs(initialState.start).add(originalDuration);
           }
         } else {
-          // 반복 일정이 아니거나, 직접 접근한 경우 DB의 종료 시간 사용
           displayEnd = dayjs(dbData.end || dbData.start);
         }
 
         setData({
           title: dbData.title,
-          start: displayStart, // 보정된 날짜 사용
-          end: displayEnd, // 보정된 종료 날짜 사용
+          start: displayStart,
+          end: displayEnd,
           location: dbData.location || '',
           content: dbData.content || '',
           color: dbData.color || '#007AFF',
@@ -230,7 +241,7 @@ const ScheduleDetail = () => {
           allDay: dbData.isAllDay || false,
           attendees: attendeeProfiles,
           recurrence: dbData.recurrence,
-          userId: dbData.userId, // [추가] userId 할당
+          userId: dbData.userId,
           files: dbData.files || [],
           review: dbData.review || '',
           reviewImages: dbData.reviewImages || [],
@@ -244,16 +255,9 @@ const ScheduleDetail = () => {
     });
 
     return () => unsubscribe();
-    // 의존성 배열에 initialState를 추가하여, 처음에 받은 날짜 정보를 기억하게 함
   }, [id, navigate, initialState]);
 
-  const isShared = data.attendees.length > 1;
-  // [수정] '지난 일정' 여부 판단 로직 개선
-  // 종일 일정의 경우, 해당 날짜가 완전히 지나야 '지난 일정'으로 판단합니다.
-  // 예를 들어 1월 8일 일정은 1월 9일 00:00부터 후기 작성이 가능합니다.
-  const isPastEvent = dayjs().startOf('day').isAfter(data.end);
-
-  // [수정] 공유 일정인 경우 리뷰 서브컬렉션 구독 (기념일 여부 무관)
+  // 공유 일정인 경우 리뷰 데이터 구독
   useEffect(() => {
     if (!id || !isShared) return;
 
@@ -265,7 +269,6 @@ const ScheduleDetail = () => {
       })) as ReviewData[];
       setSharedReviews(reviews);
 
-      // 내 리뷰가 있으면 입력창에 세팅 (수정 편의성)
       const myReview = reviews.find((r) => r.uid === auth.currentUser?.uid);
       if (myReview) {
         setMyReviewText(myReview.content);
@@ -275,7 +278,24 @@ const ScheduleDetail = () => {
     return () => unsubscribe();
   }, [id, isShared]);
 
-  // [추가] 공유 후기 저장 핸들러
+  // 안드로이드 하드웨어 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    const listenerPromise = CapacitorApp.addListener('backButton', () => {
+      handleBack();
+    });
+
+    return () => {
+      listenerPromise.then((listener: PluginListenerHandle) => listener.remove());
+    };
+  }, []);
+
+  // --- Handlers ---
+
+  /** 공유 후기 저장 핸들러 */
   const handleSharedReviewSubmit = async () => {
     if (!id || !auth.currentUser || !myReviewText.trim()) return;
     try {
@@ -296,11 +316,10 @@ const ScheduleDetail = () => {
     }
   };
 
-  // [추가] 공유 후기 삭제 핸들러
+  /** 공유 후기 삭제 요청 핸들러 (모달 오픈) */
   const handleSharedReviewDelete = async () => {
     if (!id || !auth.currentUser) return;
 
-    // 본인이 작성한 후기가 있는지 확인
     const myReview = sharedReviews.find((r) => r.uid === auth.currentUser?.uid);
     if (!myReview) {
       toast.error('삭제할 후기가 없습니다.');
@@ -310,63 +329,46 @@ const ScheduleDetail = () => {
     setIsReviewDeleteModalOpen(true);
   };
 
+  /** 공유 후기 삭제 확정 핸들러 */
   const confirmSharedReviewDelete = async () => {
     if (!id || !auth.currentUser) return;
 
     try {
       await deleteDoc(doc(db, 'schedules', id, 'reviews', auth.currentUser.uid));
-      setMyReviewText(''); // 입력창 초기화
+      setMyReviewText('');
       toast.success('후기가 삭제되었습니다.');
     } catch (error) {
       console.error('후기 삭제 실패:', error);
-      toast.error('후기 삭제 중 오류가 발생했습니다.');
+      toast.error('후기 삭제에 실패했습니다.');
     } finally {
       setIsReviewDeleteModalOpen(false);
     }
   };
 
-  // [추가] 뒤로가기 핸들러. 일정의 월로 캘린더를 이동시킵니다.
+  /** 뒤로가기 핸들러 (이전 캘린더 뷰 상태 유지) */
   const handleBack = useCallback(() => {
     if (data.start) {
       navigate('/calendar', {
-        //[수정] 뒤로 갈 때, 원래 있던 뷰(주/일) 정보도 함께 전달
         state: {
           targetDate: data.start.toISOString(),
           targetView: initialState?.fromView,
         },
       });
     } else {
-      navigate(-1); // Fallback
+      navigate(-1);
     }
   }, [data.start, initialState?.fromView, navigate]);
 
-  // [추가] 안드로이드 뒤로가기 버튼 처리
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) {
-      return;
-    }
-
-    const listenerPromise = CapacitorApp.addListener('backButton', () => {
-      handleBack();
-    });
-
-    return () => {
-      listenerPromise.then((listener: PluginListenerHandle) => listener.remove());
-    };
-  }, [handleBack]);
-
+  /** 삭제 버튼 클릭 핸들러 (반복 일정 여부에 따라 분기) */
   const handleDeleteClick = async () => {
-    // 1. 반복 일정이 아니면 바로 삭제 컨펌
     if (!data.recurrence || data.recurrence.frequency === 'none') {
       setIsSimpleDeleteModalOpen(true);
       return;
     }
-
-    // 2. 반복 일정이면 모달 띄우기
     setIsDeleteModalOpen(true);
   };
 
-  // 1. 전체 삭제 (문서 자체 삭제)
+  /** 전체 일정 삭제 핸들러 */
   const deleteEntireSchedule = async () => {
     try {
       if (id) {
@@ -380,11 +382,10 @@ const ScheduleDetail = () => {
     }
   };
 
-  // 2. 이 일정만 삭제 (exceptions 배열에 현재 날짜 추가)
+  /** 현재 일정만 삭제 핸들러 (반복 예외 처리) */
   const deleteOnlyThis = async () => {
     try {
       if (id) {
-        // 현재 보고 있는 날짜(start)를 문자열로 변환 (YYYY-MM-DD)
         const dateToDelete = data.start.format('YYYY-MM-DD');
 
         await updateDoc(doc(db, 'schedules', id), {
@@ -400,15 +401,14 @@ const ScheduleDetail = () => {
     }
   };
 
-  // 3. 향후 일정 모두 삭제 (endDate를 어제로 수정)
+  /** 향후 일정 모두 삭제 핸들러 */
   const deleteFollowing = async () => {
     try {
       if (id) {
-        // 현재 날짜의 하루 전을 종료일로 설정
         const newEndDate = data.start.subtract(1, 'day').format('YYYY-MM-DD');
 
         await updateDoc(doc(db, 'schedules', id), {
-          'recurrence.endType': 'date', // 종료 타입을 날짜로 강제 변경
+          'recurrence.endType': 'date',
           'recurrence.endDate': newEndDate,
         });
 
@@ -421,9 +421,8 @@ const ScheduleDetail = () => {
     }
   };
 
+  /** 일정 수정 페이지로 이동 핸들러 */
   const handleEdit = () => {
-    // 수정 시에는 현재 보고 있는 날짜가 아닌, 원본 데이터의 ID로 이동
-    // (반복 일정 수정 시 정책에 따라 다르지만, 여기서는 원본 수정으로 간주)
     const safeData = {
       id,
       ...data,
@@ -433,11 +432,7 @@ const ScheduleDetail = () => {
     navigate(`/schedule/edit/${id}`, { state: safeData });
   };
 
-  /**
-   * [추가] 일정 복사 핸들러
-   * 현재 일정 정보를 바탕으로 새 일정 생성 페이지로 이동합니다.
-   * 날짜는 오늘로, 시간과 기간은 원본 일정과 동일하게 설정합니다.
-   */
+  /** 일정 복사 핸들러 */
   const handleCopy = () => {
     if (!data) return;
 
@@ -445,24 +440,18 @@ const ScheduleDetail = () => {
     const originalStart = dayjs(data.start);
     const originalEnd = dayjs(data.end);
 
-    // 원본의 시간(시, 분)을 가져와 오늘 날짜에 적용
     const newStart = today.hour(originalStart.hour()).minute(originalStart.minute()).second(0);
-
-    // 원본 일정의 기간(duration)을 계산
     const duration = originalEnd.diff(originalStart);
-    // 오늘 날짜의 시작 시간에 기간을 더해 종료 시간 계산
     const newEnd = newStart.add(duration);
 
-    // 새 일정 생성 페이지로 전달할 데이터
     const { attendees, review, reviewImages, userId, ...copiedData } = data;
 
     const finalCopiedData = {
       ...copiedData,
-      start: newStart.toISOString(), // 오늘 날짜 + 원본 시간
+      start: newStart.toISOString(),
       end: newEnd.toISOString(),
-      location: '', // [수정] 장소는 복사하지 않음
-      content: '', // [수정] 메모는 복사하지 않음
-      // 복사된 일정은 반복이 아니도록 초기화
+      location: '',
+      content: '',
       recurrence: undefined,
     };
 
@@ -470,21 +459,13 @@ const ScheduleDetail = () => {
     navigate('/add-schedule', { state: finalCopiedData });
   };
 
-  // const handleViewAllMedia = () => {
-  //   navigate(`/schedule/${id}/media`, {
-  //     state: {
-  //       media: chatMedia,
-  //       files: data.files,
-  //       title: data.title,
-  //     },
-  //   });
-  // };
-
+  /** 날짜 포맷팅 헬퍼 함수 */
   const formatDate = (date: dayjs.Dayjs, isAllDay: boolean) => {
     if (isAllDay) return date.format('YYYY년 M월 D일 (ddd)');
     return date.format('YYYY년 M월 D일 (ddd) A h:mm');
   };
 
+  /** 알림 설정 라벨 반환 함수 */
   const getNotificationLabel = (value: string) => {
     switch (value) {
       case 'none':
@@ -556,7 +537,6 @@ const ScheduleDetail = () => {
           </div>
         }
       >
-        {/* 타이틀 및 상세 정보 */}
         <PageHeader className="mb-8 mt-4">
           {data.recurrence && data.recurrence.frequency !== 'none' && (
             <div className="mb-2">
@@ -570,9 +550,7 @@ const ScheduleDetail = () => {
         </PageHeader>
 
         <div className="space-y-8">
-          {/* 상세 정보 섹션 */}
           <div className="space-y-5">
-            {/* 시간 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
                 <Clock size={20} className="text-sub dark:text-gray-400" />
@@ -588,7 +566,6 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
-            {/* 캘린더 정보 */}
             {scheduleCalendar && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -607,7 +584,6 @@ const ScheduleDetail = () => {
               </div>
             )}
 
-            {/* [NEW] 함께하는 멤버 및 채팅 (심플 버전) */}
             {isShared && !data.isAnniversary && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -628,7 +604,6 @@ const ScheduleDetail = () => {
               </div>
             )}
 
-            {/* 장소 */}
             {data.location && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -640,7 +615,6 @@ const ScheduleDetail = () => {
               </div>
             )}
 
-            {/* 메모 */}
             {data.content && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -652,7 +626,6 @@ const ScheduleDetail = () => {
               </div>
             )}
 
-            {/* 알림 정보 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
                 <Bell size={20} className="text-sub dark:text-gray-400" />
@@ -665,7 +638,6 @@ const ScheduleDetail = () => {
 
           <div className="h-[1px] bg-gray-100 dark:bg-gray-800 my-6" />
 
-          {/* 2. 후기 섹션 (방명록/댓글 스타일) */}
           {isPastEvent && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 pb-10">
               <div className="flex items-center gap-2 px-1">
@@ -674,21 +646,17 @@ const ScheduleDetail = () => {
               </div>
 
               {isShared ? (
-                // 공유 일정 후기 UI
                 <div className="space-y-6">
-                  {/* 리뷰 리스트 (Feed Style) */}
                   <div className="space-y-6">
                     {sharedReviews.length > 0 ? (
                       sharedReviews.map((review) => {
                         const author = data.attendees.find((a) => a.uid === review.uid);
                         const isMe = review.uid === auth.currentUser?.uid;
 
-                        // 날짜 포맷팅 (timestamp가 있다면)
                         const dateStr = review.createdAt ? dayjs(review.createdAt.toDate ? review.createdAt.toDate() : review.createdAt).format('YYYY.MM.DD') : '';
 
                         return (
                           <div key={review.uid} className="flex gap-4 group">
-                            {/* 프로필 사진 */}
                             <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden shrink-0 border border-gray-100 dark:border-gray-600 mt-1">
                               {author?.photoURL ? (
                                 <img src={author.photoURL} alt={author.name} className="w-full h-full object-cover" />
@@ -697,7 +665,6 @@ const ScheduleDetail = () => {
                               )}
                             </div>
 
-                            {/* 내용 */}
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
@@ -725,7 +692,6 @@ const ScheduleDetail = () => {
                     )}
                   </div>
 
-                  {/* 내 후기 작성 폼 (Input Area) */}
                   <div className="mt-6">
                     <div className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-[20px] p-1.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all shadow-sm">
                       <textarea
@@ -750,8 +716,7 @@ const ScheduleDetail = () => {
                     </div>
                   </div>
                 </div>
-              ) : // 개인 일정 후기 UI (기존 유지하되 스타일 통일)
-              data.review ? (
+              ) : data.review ? (
                 <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-[24px] p-6 shadow-sm">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
@@ -785,7 +750,6 @@ const ScheduleDetail = () => {
         </div>
       </PageLayout>
 
-      {/* [추가] 반복 일정 삭제 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}

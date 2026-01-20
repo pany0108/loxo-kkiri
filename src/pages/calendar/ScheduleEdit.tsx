@@ -30,8 +30,9 @@ interface Attachment {
   url?: string;
 }
 
-// [추가] location.state로 전달되는 데이터의 타입을 명확하게 정의합니다.
-// ScheduleDetail.tsx에서 navigate시 전달하는 state 객체의 구조와 일치시킵니다.
+/**
+ * 수정할 일정 데이터 인터페이스
+ */
 interface EventDataState {
   id: string;
   title: string;
@@ -53,11 +54,15 @@ interface EventDataState {
   isLeapMonth?: boolean;
 }
 
+/**
+ * 일정 수정 페이지 컴포넌트
+ * - 기존 일정 정보를 불러와 수정하거나 삭제할 수 있습니다.
+ * - 반복 일정의 경우 단일/향후/전체 수정 옵션을 제공합니다.
+ */
 const ScheduleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // [수정] location.state에 any 대신 명시적인 타입을 지정하여 타입 안정성을 높입니다.
-  const eventData = location.state as EventDataState | null;
+  const eventData = (location.state as EventDataState) || null;
   const { myCalendars } = useCalendar();
 
   // --- [추가] 상태 관리 ---
@@ -132,7 +137,7 @@ const ScheduleEdit = () => {
     setIsCalListOpen(false);
   };
 
-  // [추가] 삭제 관련 핸들러 (ScheduleDetail.tsx에서 가져옴)
+  /** 삭제 버튼 클릭 핸들러 */
   const handleDeleteClick = async () => {
     // 1. 반복 일정이 아니면 바로 삭제 컨펌
     if (!recurrence || recurrence.frequency === 'none') {
@@ -145,7 +150,7 @@ const ScheduleEdit = () => {
 
   const getDocId = () => eventData?.id || location.pathname.split('/').pop();
 
-  // 1. 전체 삭제 (문서 자체 삭제)
+  /** 전체 삭제 핸들러 */
   const deleteEntireSchedule = async () => {
     try {
       const docId = getDocId();
@@ -160,7 +165,7 @@ const ScheduleEdit = () => {
     }
   };
 
-  // 2. 이 일정만 삭제 (exceptions 배열에 현재 날짜 추가)
+  /** 현재 일정만 삭제 핸들러 */
   const deleteOnlyThis = async () => {
     try {
       const docId = getDocId();
@@ -178,7 +183,7 @@ const ScheduleEdit = () => {
     }
   };
 
-  // 3. 향후 일정 모두 삭제 (endDate를 어제로 수정)
+  /** 향후 일정 모두 삭제 핸들러 */
   const deleteFollowing = async () => {
     try {
       const docId = getDocId();
@@ -204,7 +209,7 @@ const ScheduleEdit = () => {
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
 
-      // [수정] 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정 (AddSchedule.tsx와 동일한 로직 적용)
+      // 종일이 아닐 때, 시작 시간을 변경하면 종료 시간을 조정
       if (!newData.isAllDay) {
         if (name === 'start') {
           const isInitialTime = dayjs(prev.start).isSame(dayjs(prev.end));
@@ -214,7 +219,7 @@ const ScheduleEdit = () => {
             newData.end = dayjs(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
           }
         } else if (name === 'end') {
-          // [추가] 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
+          // 종료 시간이 시작 시간보다 빠를 경우 다음날로 자동 이동
           const startTime = dayjs(prev.start);
           const newEndTime = dayjs(value);
 
@@ -233,7 +238,7 @@ const ScheduleEdit = () => {
       return {
         ...prev,
         isAllDay: nextIsAllDay,
-        // [수정] 종일 옵션을 켜면 시간을 00:00 ~ 23:59로 설정하고, 끄면 기본 시간으로 되돌립니다.
+        // 종일 옵션을 켜면 시간을 00:00 ~ 23:59로 설정하고, 끄면 기본 시간으로 되돌립니다.
         start: nextIsAllDay ? dayjs(prev.start).startOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT09:00'),
         end: nextIsAllDay ? dayjs(prev.start).endOf('day').format('YYYY-MM-DDTHH:mm') : dayjs(prev.start).format('YYYY-MM-DDT10:00'),
       };
@@ -272,7 +277,7 @@ const ScheduleEdit = () => {
     }
   };
 
-  // 1. 이 일정만 수정
+  /** 이 일정만 수정 핸들러 */
   const editOneSchedule = async () => {
     try {
       setIsSubmitting(true);
@@ -312,7 +317,7 @@ const ScheduleEdit = () => {
     }
   };
 
-  // 2. 향후 일정 수정
+  /** 향후 일정 수정 핸들러 */
   const editFollowingSchedules = async () => {
     try {
       setIsSubmitting(true);
@@ -361,13 +366,13 @@ const ScheduleEdit = () => {
     }
   };
 
-  // 3. 모든 일정 수정 (기존 handleSave 로직)
+  /** 모든 일정 수정 핸들러 */
   const editAllSchedule = async () => {
     try {
       setIsSubmitting(true);
       const docId = getDocId();
       if (docId) {
-        // [수정] 저장 시점에 선택된 캘린더의 멤버를 참석자로 설정합니다.
+        // 저장 시점에 선택된 캘린더의 멤버를 참석자로 설정합니다.
         const attendees = selectedCalendar?.members || (user ? [user.uid] : []);
 
         const scheduleUpdateData: any = {
@@ -376,10 +381,7 @@ const ScheduleEdit = () => {
           recurrence,
         };
 
-        // [수정] 반복 일정 수정 시, 시리즈의 시작 시간은 변경하지 않습니다.
-        // 사용자가 UI에서 특정 발생(occurrence)의 날짜를 보고 있더라도,
-        // 시리즈 전체의 시작점을 바꾸려는 의도가 아니므로 'start' 필드를 업데이트에서 제외합니다.
-        // 'end' 필드 또한 반복 규칙에 의해 결정되므로 직접 업데이트하지 않습니다.
+        // 반복 일정 수정 시, 시리즈의 시작 시간은 변경하지 않습니다.
         if (eventData?.recurrence && eventData.recurrence.frequency !== 'none') {
           delete scheduleUpdateData.start;
           delete scheduleUpdateData.end;
@@ -387,7 +389,7 @@ const ScheduleEdit = () => {
 
         await updateDoc(doc(db, 'schedules', docId!), scheduleUpdateData);
 
-        // [추가] 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
+        // 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
         if (attendees.length > 1) {
           const batch = writeBatch(db);
           const editorName = user?.displayName || '누군가';
@@ -406,7 +408,6 @@ const ScheduleEdit = () => {
             });
           }
 
-          // 모든 알림 작업이 끝난 후 배치 커밋
           await batch.commit();
         }
         toast.success('수정되었습니다.');
@@ -499,12 +500,10 @@ const ScheduleEdit = () => {
         </>
       </PageLayout>
 
-      {/* [추가] 반복 일정 삭제 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}
 
-      {/* [추가] 반복 일정 수정 모달 */}
       {isEditRecurringModalOpen && (
         <EditRecurringModal onClose={() => setIsEditRecurringModalOpen(false)} onEditOne={editOneSchedule} onEditFollowing={editFollowingSchedules} onEditAll={editAllSchedule} />
       )}

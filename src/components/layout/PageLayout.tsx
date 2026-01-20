@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { TopNav } from 'components';
 import { useScrollToTop } from 'hooks';
 
@@ -15,6 +16,10 @@ interface PageLayoutProps {
   hideTopNav?: boolean;
 }
 
+/**
+ * 페이지 레이아웃 컴포넌트
+ * - 상단 네비게이션(TopNav), 콘텐츠 영역, 하단 푸터(Footer)를 포함하는 공통 레이아웃입니다.
+ */
 const PageLayout: React.FC<PageLayoutProps> = ({ children, title, headerContent, onBack, extraNav, footer, contentRef, className, hideTopNav = false }) => {
   const navigate = useNavigate();
   const defaultScrollRef = useScrollToTop();

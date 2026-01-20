@@ -1,15 +1,16 @@
-import React, { useMemo, useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2 } from 'lucide-react';
 import { DayHeaderContentArg, EventContentArg, EventMountArg } from '@fullcalendar/core';
+import { collection, query, where } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import './CalendarMain.css';
-import { useCalendar } from 'contexts';
-import { useFirestoreQuery, useCalendarMain } from 'hooks';
-import { collection, query, where } from 'firebase/firestore';
+import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Loader2, Music, Plane, ShoppingCart, Star, Trash2 } from 'lucide-react';
+
 import { auth, db } from '../../firebase';
-import { DeleteRecurringModal, Calendar, ConfirmModal, CalendarHeader, DatePickerPopup, EventListSheet, AddScheduleFAB } from 'components';
+import { AddScheduleFAB, Calendar, CalendarHeader, ConfirmModal, DatePickerPopup, DeleteRecurringModal, EventListSheet } from 'components';
+import { useCalendar } from 'contexts';
+import { useCalendarMain, useFirestoreQuery } from 'hooks';
+import './CalendarMain.css';
 
 dayjs.extend(isSameOrBefore);
 
@@ -28,21 +29,28 @@ const ICON_MAP: Record<string, React.ElementType> = {
   game: Gamepad2,
 };
 
+/**
+ * 캘린더 메인 페이지 컴포넌트
+ * - 월/주/일 뷰 캘린더 표시
+ * - 일정 목록 바텀 시트 관리
+ * - 날짜 이동 및 일정 추가/삭제/수정 진입점
+ */
 const CalendarMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { myCalendars, activeCalendar, setActiveCalendar } = useCalendar(); // Context
 
+  // --- Refs & State ---
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const minSwipeDistance = 50;
-
-  // [추가] 리스트 스와이프를 위한 상태 및 Refs
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   const sheetTouchStartX = useRef<number | null>(null);
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndX = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
 
+  // --- Custom Hook for Calendar Logic ---
   const { refs, state, handlers } = useCalendarMain();
   const { calendarRef, dropdownRef, listRef, datePickerRef } = refs;
   const {
@@ -82,6 +90,8 @@ const CalendarMain = () => {
     setIsSimpleDeleteModalOpen,
   } = handlers;
 
+  // --- Effects ---
+  // 페이지 진입 시 스크롤 초기화
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
     if (listRef.current) {
@@ -89,8 +99,7 @@ const CalendarMain = () => {
     }
   }, [listRef, location.pathname]);
 
-  const { myCalendars, activeCalendar, setActiveCalendar } = useCalendar();
-
+  // 읽지 않은 알림 확인 쿼리
   const notificationsQuery = useMemo(() => {
     if (!auth.currentUser) return null;
     return query(collection(db, 'notifications'), where('userId', '==', auth.currentUser.uid), where('isRead', '==', false));
@@ -99,15 +108,20 @@ const CalendarMain = () => {
   const { data: unreadNotifications } = useFirestoreQuery(notificationsQuery);
   const hasUnread = useMemo(() => (unreadNotifications ? unreadNotifications.length > 0 : false), [unreadNotifications]);
 
+  // --- Handlers ---
+
+  /** 캘린더 영역 터치 시작 핸들러 */
   const onCalendarTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;
   };
 
+  /** 캘린더 영역 터치 이동 핸들러 */
   const onCalendarTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
 
+  /** 캘린더 영역 터치 종료 핸들러 (스와이프 감지) */
   const onCalendarTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
     const distance = touchStartX.current - touchEndX.current;
@@ -118,7 +132,7 @@ const CalendarMain = () => {
     if (isRightSwipe) goToPrev();
   };
 
-  // [추가] 날짜 이동 핸들러
+  /** 이전 날짜로 이동 (일간 뷰) */
   const handlePrevDate = () => {
     if (!selectedDate) return;
     setSlideDirection('left');
@@ -131,6 +145,7 @@ const CalendarMain = () => {
     }
   };
 
+  /** 다음 날짜로 이동 (일간 뷰) */
   const handleNextDate = () => {
     if (!selectedDate) return;
     setSlideDirection('right');
@@ -143,25 +158,26 @@ const CalendarMain = () => {
     }
   };
 
-  // [추가] 시트 터치 핸들러 래퍼
+  /** 바텀 시트 터치 시작 핸들러 */
   const onSheetTouchStart = (e: React.TouchEvent) => {
     sheetTouchStartX.current = e.targetTouches[0].clientX;
     sheetTouchStartY.current = e.targetTouches[0].clientY;
     handlers.onSheetTouchStart(e);
   };
 
+  /** 바텀 시트 터치 이동 핸들러 */
   const onSheetTouchMove = (e: React.TouchEvent) => {
     sheetTouchEndX.current = e.targetTouches[0].clientX;
     sheetTouchEndY.current = e.targetTouches[0].clientY;
     handlers.onSheetTouchMove(e);
   };
 
+  /** 바텀 시트 터치 종료 핸들러 (스와이프 감지) */
   const onSheetTouchEnd = (e: React.TouchEvent) => {
     if (sheetTouchStartX.current !== null && sheetTouchEndX.current !== null && sheetTouchStartY.current !== null && sheetTouchEndY.current !== null) {
       const xDiff = sheetTouchStartX.current - sheetTouchEndX.current;
       const yDiff = sheetTouchStartY.current - sheetTouchEndY.current;
 
-      // 수평 스와이프 감지 (수직 이동보다 수평 이동이 크고, 최소 거리 이상일 때)
       if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > minSwipeDistance) {
         if (xDiff > 0) {
           handleNextDate();
@@ -171,7 +187,6 @@ const CalendarMain = () => {
       }
     }
 
-    // 초기화
     sheetTouchStartX.current = null;
     sheetTouchStartY.current = null;
     sheetTouchEndX.current = null;
@@ -180,12 +195,12 @@ const CalendarMain = () => {
     handlers.onSheetTouchEnd();
   };
 
+  /** 주/일 뷰 헤더 커스텀 렌더링 */
   const renderTimeGridHeader = (args: DayHeaderContentArg) => {
     const date = args.date.getDate();
     const dayName = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(args.date);
     const dayOfWeek = args.date.getDay();
 
-    // [추가] 공휴일 여부 확인
     const dateStr = dayjs(args.date).format('YYYY-MM-DD');
     const isHoliday = allDisplayedEvents.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
 
@@ -206,17 +221,17 @@ const CalendarMain = () => {
     );
   };
 
+  /** 이벤트 콘텐츠 커스텀 렌더링 */
   const renderEventContent = (eventInfo: EventContentArg) => {
     const isHoliday = eventInfo.event.extendedProps.calendarId === 'holidays';
     const calendarId = eventInfo.event.extendedProps.calendarId;
     const eventCalendar = myCalendars.find((c) => c.id === calendarId);
 
     let IconComponent = null;
-    // '내 캘린더'(기본 캘린더)가 활성화된 경우에만, 다른 특정 캘린더의 아이콘을 표시합니다.
     if (activeCalendar?.isDefault && eventCalendar && !eventCalendar.isDefault && eventCalendar.icon) {
       IconComponent = ICON_MAP[eventCalendar.icon];
     }
-    // [추가] 공휴일 스타일링
+
     if (isHoliday) {
       return <div className="fc-event-title fc-sticky px-1 text-[9px] font-bold text-red-500 dark:text-red-400">{eventInfo.event.title}</div>;
     }
@@ -242,7 +257,6 @@ const CalendarMain = () => {
       );
     }
 
-    // --- 주/일 뷰 이벤트 렌더링 ---
     const formatTime = (date: Date | null) => {
       if (!date) return '';
       return date.toLocaleTimeString('ko-KR', {
@@ -274,7 +288,6 @@ const CalendarMain = () => {
     );
   };
 
-  // [추가] 소셜 로그인 처리 중 전체 화면 로더 표시
   if (isInitialAuthChecking) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-white dark:bg-gray-950">
@@ -307,7 +320,6 @@ const CalendarMain = () => {
       />
 
       <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden relative rounded-t-[32px] shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
-        {/* [추가] 연/월 선택 팝업 */}
         <DatePickerPopup
           isOpen={isDatePickerOpen}
           datePickerRef={datePickerRef}
@@ -345,7 +357,6 @@ const CalendarMain = () => {
               if (color) {
                 info.el.style.setProperty('--event-color', color);
               }
-              // [추가] 시간 선택 일정(allDay: false)이 여러 날짜에 걸쳐 블록으로 렌더링될 때 배경색 제거
               if (!info.event.allDay && info.view.type === 'dayGridMonth') {
                 info.el.style.backgroundColor = 'transparent';
                 info.el.style.borderColor = 'transparent';
@@ -355,7 +366,6 @@ const CalendarMain = () => {
           />
         </div>
 
-        {/* 바텀시트 */}
         <EventListSheet
           isVisible={isListVisible && currentView === 'dayGridMonth'}
           onClose={() => {
@@ -386,13 +396,11 @@ const CalendarMain = () => {
         <AddScheduleFAB
           onClick={() => {
             const targetDate = selectedDate || new Date().toISOString().split('T')[0];
-            //[수정] 현재 뷰를 state에 담아서 넘겨준다.
             navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
           }}
         />
       )}
 
-      {/* [추가] 삭제 관련 모달 */}
       {isDeleteModalOpen && (
         <DeleteRecurringModal onClose={() => setIsDeleteModalOpen(false)} onDeleteOne={deleteOnlyThis} onDeleteFollowing={deleteFollowing} onDeleteAll={deleteEntireSchedule} />
       )}

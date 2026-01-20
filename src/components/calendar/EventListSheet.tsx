@@ -1,9 +1,10 @@
 import React from 'react';
-import { X, Trash2, User, Users, Home, Briefcase, GraduationCap, Dumbbell, Plane, Music, Heart, Star, Gift, Coffee, ShoppingCart, Gamepad2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, Plane, ShoppingCart, Star, Trash2, User, Users, X } from 'lucide-react';
+
 import { CalendarEvent, CalendarType } from 'contexts';
-import { motion, AnimatePresence } from 'framer-motion';
 
 dayjs.locale('ko');
 
@@ -44,6 +45,10 @@ interface EventListSheetProps {
   myCalendars: CalendarType[];
 }
 
+/**
+ * 선택된 날짜의 일정 목록을 보여주는 바텀 시트 컴포넌트
+ * - 일정을 클릭하여 상세 정보를 보거나, 롱프레스로 삭제 모드에 진입할 수 있습니다.
+ */
 const EventListSheet: React.FC<EventListSheetProps> = ({
   isVisible,
   onClose,
@@ -69,7 +74,7 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
     if (!selectedDate) return false;
     if (event.calendarId === 'holidays') return false;
 
-    // [수정] 종일 일정 필터링 로직 개선
+    // 종일 일정 필터링 로직
     if (event.allDay) {
       const targetDateStr = selectedDate;
       const startDateStr = dayjs(event.start).format('YYYY-MM-DD');

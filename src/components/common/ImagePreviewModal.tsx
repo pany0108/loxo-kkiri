@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface ImagePreviewModalProps {
   images: string[];
@@ -7,6 +7,10 @@ interface ImagePreviewModalProps {
   onClose: () => void;
 }
 
+/**
+ * 이미지 미리보기 모달 컴포넌트
+ * - 이미지 목록을 슬라이드 형태로 보여줍니다.
+ */
 const ImagePreviewModal = ({ images, initialIndex, onClose }: ImagePreviewModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const touchStartX = useRef<number | null>(null);
@@ -21,6 +25,7 @@ const ImagePreviewModal = ({ images, initialIndex, onClose }: ImagePreviewModalP
     };
   }, []);
 
+  /** 이전 이미지로 이동 */
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (currentIndex > 0) {
@@ -28,6 +33,7 @@ const ImagePreviewModal = ({ images, initialIndex, onClose }: ImagePreviewModalP
     }
   };
 
+  /** 다음 이미지로 이동 */
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (currentIndex < images.length - 1) {
@@ -35,7 +41,7 @@ const ImagePreviewModal = ({ images, initialIndex, onClose }: ImagePreviewModalP
     }
   };
 
-  // --- 스와이프 로직 ---
+  // --- 스와이프 핸들러 ---
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;
     touchStartX.current = e.targetTouches[0].clientX;

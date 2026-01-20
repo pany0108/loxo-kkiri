@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Plus, Search, UserPlus, Users, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Users, UserPlus, Search, X, Plus } from 'lucide-react';
-import { FriendListPopup, AddFriendModal, AddFromContactsModal } from 'components';
+
+import { AddFriendModal, AddFromContactsModal, FriendListPopup } from 'components';
 
 interface Friend {
   uid: string;
-  id: string; // [추가] 하위 컴포넌트(FriendListPopup)와 타입 호환성을 위해 id 추가
+  id: string;
   name: string;
   group?: string;
-  email: string; // [수정] 하위 컴포넌트(AddFromContactsModal)와 타입 호환성을 위해 string으로 변경
+  email: string;
 }
 
 interface GroupedFriends {
@@ -26,12 +27,17 @@ interface FriendSelectorForMeetingProps {
   user: any;
 }
 
+/**
+ * 약속 생성 시 친구 선택 컴포넌트
+ * - 친구 검색, 선택, 추가 기능을 제공합니다.
+ */
 const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ groupedFriends, invitedFriends, allFriends, onToggleFriend, onToggleGroup, user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isAddFriendModalOpen, setIsAddFriendModalOpen] = useState(false);
   const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
 
+  // 검색어에 따른 친구 필터링
   const searchResults = useMemo(() => {
     if (!searchTerm) {
       return [];
@@ -39,6 +45,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
     return allFriends.filter((friend) => friend.name.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [allFriends, searchTerm]);
 
+  /** 이름으로 친구 추가 핸들러 */
   const handleAddFriendByName = () => {
     if (!searchTerm.trim()) return;
 
@@ -56,6 +63,7 @@ const FriendSelectorForMeeting: React.FC<FriendSelectorForMeetingProps> = ({ gro
     setSearchTerm('');
   };
 
+  /** 연락처 모달 열기 핸들러 */
   const handleOpenContactsModal = () => {
     setIsAddFriendModalOpen(false);
     setIsAddFromContactsModalOpen(true);

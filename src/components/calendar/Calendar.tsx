@@ -1,11 +1,13 @@
 import React, { forwardRef, useMemo } from 'react';
-import FullCalendar from '@fullcalendar/react';
+import { DateClickArg } from '@fullcalendar/interaction';
+import { DateSelectArg, DatesSetArg, DayCellContentArg, DayHeaderContentArg, EventClickArg, EventContentArg, EventMountArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
-import { DateSelectArg, DatesSetArg, DayHeaderContentArg, EventContentArg, EventClickArg, DayCellContentArg, EventMountArg } from '@fullcalendar/core';
-import { CalendarEvent } from 'contexts';
 import dayjs from 'dayjs';
+
+import { CalendarEvent } from 'contexts';
 
 interface CalendarProps {
   currentView: string;
@@ -22,6 +24,11 @@ interface CalendarProps {
   eventDidMount: (info: EventMountArg) => void;
 }
 
+/**
+ * FullCalendar 라이브러리를 래핑한 캘린더 컴포넌트
+ * - 월간, 주간, 일간 뷰를 지원하며, 이벤트 렌더링 및 상호작용을 처리합니다.
+ * @param {CalendarProps} props - 컴포넌트 속성
+ */
 const Calendar = forwardRef<FullCalendar, CalendarProps>(
   (
     { currentView, events, selectedDate, dateClick, eventClick, handleDateSelect, handleDatesSet, renderEventContent, renderTimeGridHeader, goToPrev, goToNext, eventDidMount },
