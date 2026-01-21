@@ -1,5 +1,22 @@
 import React from 'react';
-import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Maximize2, Minus, Palette, Pencil, Plus, Sparkles } from 'lucide-react';
+import {
+  AlignLeft,
+  Bell,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronDown,
+  Clock,
+  FileText,
+  History,
+  Map,
+  MapPin,
+  Maximize2,
+  Minus,
+  Palette,
+  Pencil,
+  Plus,
+  Sparkles,
+} from 'lucide-react';
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
@@ -339,7 +356,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       {!formData.isAnniversary && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1 mb-2">
-            <AlignLeft size={18} className="text-sub dark:text-gray-500" />
+            <FileText size={18} className="text-sub dark:text-gray-500" />
             <label className="text-caption">더 자세히 기록해볼까요?</label>
           </div>
 

@@ -231,7 +231,10 @@ const EditUserInfo = () => {
         <div className="space-y-8">
           {/* 이름 필드 (성/이름 분리) */}
           <section className="space-y-3">
-            <label className="block text-caption ml-1">이름</label>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <User size={18} className="text-sub dark:text-gray-500" />
+              <label className="text-caption">성함이 어떻게 되시나요?</label>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1">
                 <FormInput name="lastName" value={formData.lastName} onChange={handleChange} placeholder="성" />
@@ -244,23 +247,31 @@ const EditUserInfo = () => {
 
           {/* 휴대폰 번호 */}
           {/* 휴대폰 번호 입력 (인증 절차 임시 비활성화) */}
-          <FormInput
-            label="휴대폰 번호"
-            icon={<Smartphone size={20} />}
-            name="phone"
-            type="tel"
-            inputMode="numeric"
-            value={formatPhone(formData.phone)}
-            placeholder="010-0000-0000"
-            onChange={handleChange}
-            required
-          />
+          <div>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <Smartphone size={18} className="text-sub dark:text-gray-500" />
+              <label className="text-caption">연락처를 알려주세요</label>
+            </div>
+            <FormInput
+              icon={<Smartphone size={20} />}
+              name="phone"
+              type="tel"
+              inputMode="numeric"
+              value={formatPhone(formData.phone)}
+              placeholder="010-0000-0000"
+              onChange={handleChange}
+              required
+            />
+          </div>
 
           {/* 생년월일 */}
           <section className="space-y-3">
             {/* 양력/음력 선택 토글 */}
-            <div className="flex items-center justify-between px-1">
-              <label className="block text-caption">생년월일</label>
+            <div className="flex items-center justify-between px-1 mb-2">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-sub dark:text-gray-500" />
+                <label className="text-caption">생일은 언제인가요?</label>
+              </div>
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
                 <button
                   type="button"
