@@ -9,7 +9,7 @@ import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home
 import { auth, db } from '../../firebase';
 import { AddScheduleFAB, Calendar, CalendarHeader, ConfirmModal, DatePickerPopup, DeleteRecurringModal, EventListSheet } from 'components';
 import { useCalendar } from 'contexts';
-import { useCalendarMain, useFirestoreQuery } from 'hooks';
+import { useCalendarMain, useDoubleBackExit, useFirestoreQuery } from 'hooks';
 import './CalendarMain.css';
 
 dayjs.extend(isSameOrBefore);
@@ -109,6 +109,12 @@ const CalendarMain = () => {
 
   const { data: unreadNotifications } = useFirestoreQuery(notificationsQuery);
   const hasUnread = useMemo(() => (unreadNotifications ? unreadNotifications.length > 0 : false), [unreadNotifications]);
+
+  /**
+   * 안드로이드 하드웨어 뒤로가기 버튼 처리
+   * - 메인 탭 진입점에서는 뒤로가기 2회 시 앱이 종료되도록 설정합니다.
+   */
+  useDoubleBackExit();
 
   // --- Handlers ---
 

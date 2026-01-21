@@ -7,7 +7,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 import { auth, db } from '../../firebase';
 import { EmptyMeetingList, MeetingListItem, NewMeetingButton, PageHeader, PageLayout, PageTitle } from 'components';
-import { useFirestoreQuery, useUserProfiles } from 'hooks';
+import { useDoubleBackExit, useFirestoreQuery, useUserProfiles } from 'hooks';
 
 /**
  * 약속 데이터 인터페이스
@@ -49,6 +49,12 @@ const ProposeMeeting = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  /**
+   * 안드로이드 하드웨어 뒤로가기 버튼 처리
+   * - 메인 탭 진입점에서는 뒤로가기 2회 시 앱이 종료되도록 설정합니다.
+   */
+  useDoubleBackExit();
 
   // DB에서 내가 참여 중인 약속 목록 불러오기
   const meetingsQuery = useMemo(() => {
@@ -167,7 +173,7 @@ const ProposeMeeting = () => {
     });
 
     return { ongoingMeetings: ongoing, pastMeetings: past };
-  }, [meetingsData, userProfiles]);
+  }, [meetingsData, userProfiles, user]);
 
   /**
    * 약속 아이템 클릭 시 현재 상태에 따라 적절한 페이지로 이동합니다.

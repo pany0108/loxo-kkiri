@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { PageHeader, PageLayout, PageTitle } from 'components';
+import { useDoubleBackExit } from 'hooks';
 import ChatList from './ChatList';
 import FriendList from './FriendList';
 
@@ -22,6 +23,12 @@ const SocialMain = () => {
   const touchEndX = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const minSwipeDistance = 50;
+
+  /**
+   * 안드로이드 하드웨어 뒤로가기 버튼 처리
+   * - 메인 탭 진입점에서는 뒤로가기 2회 시 앱이 종료되도록 설정합니다.
+   */
+  useDoubleBackExit();
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEndX.current = null;

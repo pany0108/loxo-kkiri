@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { auth, db } from '../../firebase';
 import { ConfirmModal, PageHeader, PageLayout, PageTitle } from 'components';
 import { useTheme } from 'contexts';
-import { useFirestoreDoc } from 'hooks';
+import { useDoubleBackExit, useFirestoreDoc } from 'hooks';
 import { UserProfile } from 'types';
 
 /**
@@ -51,6 +51,12 @@ const MyProfile = () => {
     };
     checkPermission();
   }, []);
+
+  /**
+   * 안드로이드 하드웨어 뒤로가기 버튼 처리
+   * - 메인 탭 진입점에서는 뒤로가기 2회 시 앱이 종료되도록 설정합니다.
+   */
+  useDoubleBackExit();
 
   /** 푸시 알림 토글 핸들러 */
   const handleTogglePush = async () => {
