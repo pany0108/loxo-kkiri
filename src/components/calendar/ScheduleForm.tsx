@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Maximize2, Minus, Plus, Sparkles } from 'lucide-react';
+import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Maximize2, Minus, Palette, Pencil, Plus, Sparkles } from 'lucide-react';
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
@@ -94,8 +94,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     <section className="space-y-4">
       {/* 일정 제목 입력 */}
       <div ref={titleInputRef} className="group relative">
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <Pencil size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">어떤 일정인가요?</label>
+        </div>
         <FormInput
-          label="일정 제목"
           name="title"
           value={formData.title}
           onChange={handleChange}
@@ -129,7 +132,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
       {/* 캘린더 선택 드롭다운 */}
       <div className="group relative" ref={dropdownRef}>
-        <label className="block text-caption ml-1 mb-2">캘린더</label>
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <CalendarIcon size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">어디에 저장할까요?</label>
+        </div>
         <button
           type="button"
           onClick={() => setIsCalListOpen(!isCalListOpen)}
@@ -231,8 +237,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
       {/* 시간 설정 영역 */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <label className="text-caption">시간 설정</label>
+        <div className="flex items-center justify-between px-1 mb-2">
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-sub dark:text-gray-500" />
+            <label className="text-caption">언제인가요?</label>
+          </div>
           <div
             onClick={formData.isAnniversary ? undefined : handleToggleAllDay}
             className={`flex items-center gap-2 group ${formData.isAnniversary ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
@@ -302,7 +311,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
       {/* 색상 선택 */}
       <div className="space-y-3">
-        <label className="block text-caption ml-1">색상</label>
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <Palette size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">어떤 색으로 표시할까요?</label>
+        </div>
         <div className="flex flex-wrap gap-3 px-1">
           {COLOR_OPTIONS.map((color) => (
             <button
@@ -326,7 +338,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
       {/* 상세 정보 (장소, 알림, 메모) - 기념일이 아닐 때만 표시 */}
       {!formData.isAnniversary && (
         <div className="space-y-3">
-          <label className="block text-caption ml-1">상세 정보</label>
+          <div className="flex items-center gap-2 px-1 mb-2">
+            <AlignLeft size={18} className="text-sub dark:text-gray-500" />
+            <label className="text-caption">더 자세히 기록해볼까요?</label>
+          </div>
 
           <FormInput
             icon={<MapPin size={18} />}

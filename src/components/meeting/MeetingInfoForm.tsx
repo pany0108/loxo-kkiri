@@ -1,5 +1,5 @@
 import { FormInput, FormTextarea } from 'components';
-import { AlignLeft, Map, MapPin, Maximize2, Minus, Plus, Send } from 'lucide-react';
+import { AlignLeft, Map, MapPin, Maximize2, Minus, Pencil, Plus, Send } from 'lucide-react';
 import React from 'react';
 
 interface MeetingInfoFormProps {
@@ -45,36 +45,52 @@ const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, l
 
   return (
     <section className="space-y-4">
-      <FormInput label="약속 제목" icon={<Send size={20} />} value={title} onChange={(e) => onTitleChange(e.target.value)} placeholder="예: 강남역 저녁 모임" />
+      <div>
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <Pencil size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">어떤 약속인가요?</label>
+        </div>
+        <FormInput icon={<Send size={20} />} value={title} onChange={(e) => onTitleChange(e.target.value)} placeholder="예: 강남역 저녁 모임" />
+      </div>
 
-      <FormTextarea
-        label="메모 (선택)"
-        icon={<AlignLeft size={20} />}
-        value={description}
-        onChange={(e) => onDescriptionChange(e.target.value)}
-        placeholder="장소나 준비물 등을 적어주세요"
-        rows={3}
-      />
+      <div>
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <AlignLeft size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">메모를 남겨주세요</label>
+        </div>
+        <FormTextarea
+          icon={<AlignLeft size={20} />}
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder="장소나 준비물 등을 적어주세요"
+          rows={3}
+        />
+      </div>
 
-      <FormInput
-        label="장소 (선택)"
-        icon={<MapPin size={20} />}
-        value={location}
-        onChange={(e) => onLocationChange(e.target.value)}
-        placeholder="예: 강남역 2번 출구"
-        rightContent={
-          onMapClick && (
-            <button
-              type="button"
-              onClick={onMapClick}
-              className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors"
-              title="지도에서 선택"
-            >
-              <Map size={18} />
-            </button>
-          )
-        }
-      />
+      <div>
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <MapPin size={18} className="text-sub dark:text-gray-500" />
+          <label className="text-caption">어디서 만나나요?</label>
+        </div>
+        <FormInput
+          icon={<MapPin size={20} />}
+          value={location}
+          onChange={(e) => onLocationChange(e.target.value)}
+          placeholder="예: 강남역 2번 출구"
+          rightContent={
+            onMapClick && (
+              <button
+                type="button"
+                onClick={onMapClick}
+                className="p-2 text-sub dark:text-gray-500 hover:text-primary dark:hover:text-blue-400 transition-colors"
+                title="지도에서 선택"
+              >
+                <Map size={18} />
+              </button>
+            )
+          }
+        />
+      </div>
 
       {location && (
         <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group">
