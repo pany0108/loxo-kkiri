@@ -207,89 +207,88 @@ const LocationSelectModal: React.FC<LocationSelectModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col h-[70vh] max-h-[600px] animate-in zoom-in-95 duration-200">
-        {/* 상단 검색바 */}
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0">
-          <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-700 rounded-xl px-4 h-12 transition-all focus-within:ring-2 focus-within:ring-blue-500/50">
-            <Search size={20} className="text-gray-400 mr-2 shrink-0" />
-            <input
-              className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400"
-              placeholder="장소 검색 (예: 롯데월드)"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              autoFocus
-            />
-            {isLoadingLocation && <Loader2 size={16} className="animate-spin text-blue-500" />}
+    <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 animate-in fade-in duration-200 flex flex-col">
+      {/* 상단 검색바 */}
+      <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-gray-100 dark:border-gray-700 flex items-center gap-3 shrink-0 bg-white dark:bg-gray-900 z-10">
+        <div className="flex-1 flex items-center bg-gray-100 dark:bg-gray-700 rounded-xl px-4 h-12 transition-all focus-within:ring-2 focus-within:ring-blue-500/50">
+          <Search size={20} className="text-gray-400 mr-2 shrink-0" />
+          <input
+            className="flex-1 bg-transparent outline-none text-sm font-bold text-gray-900 dark:text-white placeholder:text-gray-400"
+            placeholder="장소 검색 (예: 롯데월드)"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            autoFocus
+          />
+          {isLoadingLocation && <Loader2 size={16} className="animate-spin text-blue-500" />}
+        </div>
+        <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
+          <X size={24} />
+        </button>
+      </div>
+
+      {/* 지도 영역 */}
+      <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative w-full min-h-0">
+        {isLoaded ? (
+          <>
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={center}
+              zoom={15}
+              onLoad={onLoad}
+              onUnmount={onUnmount}
+              onClick={handleMapClick}
+              options={{
+                disableDefaultUI: false,
+                zoomControl: true,
+                streetViewControl: false,
+                mapTypeControl: false,
+                clickableIcons: true,
+                gestureHandling: 'greedy', // 한 손가락 조작 허용
+              }}
+            >
+              <MarkerF position={markerPosition} draggable={true} onDragEnd={handleMarkerDragEnd} />
+            </GoogleMap>
+
+            {/* 내 위치 버튼 (수동 요청) */}
+            <button
+              onClick={() => fetchCurrentLocation(true)}
+              disabled={isLocating}
+              className="absolute bottom-6 right-4 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors z-10"
+              title="내 위치로 이동"
+            >
+              {isLocating ? <Loader2 size={24} className="animate-spin" /> : <Crosshair size={24} />}
+            </button>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-600">
+            <Loader2 size={48} className="mb-3 animate-spin text-blue-500 opacity-50" />
+            <p className="text-sm font-bold">지도를 불러오는 중...</p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-        </div>
+        )}
 
-        {/* 지도 영역 */}
-        <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative w-full">
-          {isLoaded ? (
-            <>
-              <GoogleMap
-                mapContainerStyle={containerStyle}
-                center={center}
-                zoom={15}
-                onLoad={onLoad}
-                onUnmount={onUnmount}
-                onClick={handleMapClick}
-                options={{
-                  disableDefaultUI: false,
-                  zoomControl: true,
-                  streetViewControl: false,
-                  mapTypeControl: false,
-                  clickableIcons: true,
-                }}
-              >
-                <MarkerF position={markerPosition} draggable={true} onDragEnd={handleMarkerDragEnd} />
-              </GoogleMap>
+        {isLoaded && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 px-4 py-2 rounded-full shadow-lg text-xs font-medium z-10 pointer-events-none text-gray-600 dark:text-gray-300 whitespace-nowrap">
+            <span className="flex items-center gap-1">
+              <MapPin size={12} />
+              건물을 클릭하면 이름이, 빈 곳을 누르면 주소가 입력됩니다
+            </span>
+          </div>
+        )}
+      </div>
 
-              {/* 내 위치 버튼 (수동 요청) */}
-              <button
-                onClick={() => fetchCurrentLocation(true)}
-                disabled={isLocating}
-                className="absolute bottom-6 right-4 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors z-10"
-                title="내 위치로 이동"
-              >
-                {isLocating ? <Loader2 size={24} className="animate-spin" /> : <Crosshair size={24} />}
-              </button>
-            </>
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-600">
-              <Loader2 size={48} className="mb-3 animate-spin text-blue-500 opacity-50" />
-              <p className="text-sm font-bold">지도를 불러오는 중...</p>
-            </div>
-          )}
-
-          {isLoaded && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-gray-800/90 px-4 py-2 rounded-full shadow-lg text-xs font-medium z-10 pointer-events-none text-gray-600 dark:text-gray-300 whitespace-nowrap">
-              <span className="flex items-center gap-1">
-                <MapPin size={12} />
-                건물을 클릭하면 이름이, 빈 곳을 누르면 주소가 입력됩니다
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 하단 버튼 */}
-        <div className="p-4 border-t border-gray-100 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-800">
-          <button
-            onClick={() => {
-              if (keyword) onSelect(keyword);
-              else onClose();
-            }}
-            className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg shadow-blue-600/20 hover:bg-blue-700 flex justify-center items-center gap-2"
-          >
-            <MapPin size={18} />
-            {keyword ? `'${keyword}'(으)로 설정` : '취소'}
-          </button>
-        </div>
+      {/* 하단 버튼 */}
+      <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-100 dark:border-gray-700 shrink-0 bg-white dark:bg-gray-800 z-10">
+        <button
+          onClick={() => {
+            if (keyword) onSelect(keyword);
+            else onClose();
+          }}
+          className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg shadow-blue-600/20 hover:bg-blue-700 flex justify-center items-center gap-2"
+        >
+          <MapPin size={18} />
+          {keyword ? `'${keyword}'(으)로 설정` : '취소'}
+        </button>
       </div>
     </div>
   );
