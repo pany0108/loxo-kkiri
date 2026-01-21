@@ -1,5 +1,5 @@
 import { FormInput, FormTextarea } from 'components';
-import { AlignLeft, Map, MapPin, Send } from 'lucide-react';
+import { AlignLeft, Map, MapPin, Maximize2, Send } from 'lucide-react';
 import React from 'react';
 
 interface MeetingInfoFormProps {
@@ -56,6 +56,28 @@ const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, l
           )
         }
       />
+
+      {location && (
+        <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group">
+          <iframe
+            title="Location Preview"
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            style={{ border: 0 }}
+            loading="lazy"
+            src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk&q=${encodeURIComponent(location)}&language=ko`}
+            allowFullScreen
+          />
+          {onMapClick && (
+            <div onClick={onMapClick} className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center">
+              <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 group-hover:scale-100">
+                <Maximize2 size={20} className="text-gray-600 dark:text-gray-300" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 };

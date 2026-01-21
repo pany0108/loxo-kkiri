@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Plus, Sparkles } from 'lucide-react';
+import { AlignLeft, Bell, Calendar as CalendarIcon, Check, ChevronDown, Clock, History, Map, MapPin, Maximize2, Plus, Sparkles } from 'lucide-react';
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
@@ -326,6 +326,26 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
               </button>
             }
           />
+
+          {formData.location && (
+            <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group">
+              <iframe
+                title="Location Preview"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 0 }}
+                loading="lazy"
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk&q=${encodeURIComponent(formData.location)}&language=ko`}
+                allowFullScreen
+              />
+              <div onClick={openMapModal} className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center">
+                <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 group-hover:scale-100">
+                  <Maximize2 size={20} className="text-gray-600 dark:text-gray-300" />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
             <Bell size={18} className="text-sub dark:text-gray-400" />
