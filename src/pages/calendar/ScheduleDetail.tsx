@@ -280,6 +280,20 @@ const ScheduleDetail = () => {
     return () => unsubscribe();
   }, [id, isShared]);
 
+  /** 뒤로가기 핸들러 (이전 캘린더 뷰 상태 유지) */
+  const handleBack = useCallback(() => {
+    if (data.start) {
+      navigate('/calendar', {
+        state: {
+          targetDate: data.start.toISOString(),
+          targetView: initialState?.fromView,
+        },
+      });
+    } else {
+      navigate(-1);
+    }
+  }, [data.start, initialState?.fromView, navigate]);
+
   // 안드로이드 하드웨어 뒤로가기 버튼 처리
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
@@ -293,7 +307,7 @@ const ScheduleDetail = () => {
     return () => {
       listenerPromise.then((listener: PluginListenerHandle) => listener.remove());
     };
-  }, []);
+  }, [handleBack]);
 
   // --- Handlers ---
 
@@ -346,20 +360,6 @@ const ScheduleDetail = () => {
       setIsReviewDeleteModalOpen(false);
     }
   };
-
-  /** 뒤로가기 핸들러 (이전 캘린더 뷰 상태 유지) */
-  const handleBack = useCallback(() => {
-    if (data.start) {
-      navigate('/calendar', {
-        state: {
-          targetDate: data.start.toISOString(),
-          targetView: initialState?.fromView,
-        },
-      });
-    } else {
-      navigate(-1);
-    }
-  }, [data.start, initialState?.fromView, navigate]);
 
   /** 삭제 버튼 클릭 핸들러 (반복 일정 여부에 따라 분기) */
   const handleDeleteClick = async () => {

@@ -104,8 +104,6 @@ const ScheduleEdit = () => {
     isLeapMonth: eventData?.isLeapMonth || false,
   });
 
-  const [attachments] = useState<Attachment[]>(eventData?.files || [{ name: 'menu.pdf', type: 'doc' }]);
-
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(
     eventData?.recurrence || {
       frequency: 'none',
@@ -121,16 +119,6 @@ const ScheduleEdit = () => {
   const selectedCalendar = myCalendars.find((c) => c.id === formData.calendarId);
   const isShared = selectedCalendar ? selectedCalendar.members.length > 1 : false;
   const isPastEvent = dayjs().isAfter(formData.end);
-
-  const sortedCalendars = React.useMemo(() => {
-    return [...myCalendars].sort((a, b) => {
-      if (selectedCalendar && a.id === selectedCalendar.id) return -1;
-      if (selectedCalendar && b.id === selectedCalendar.id) return 1;
-      if (a.isDefault) return -1;
-      if (b.isDefault) return 1;
-      return 0;
-    });
-  }, [myCalendars, selectedCalendar]);
 
   const handleCalendarSelect = (calendar: any) => {
     setFormData((prev) => ({

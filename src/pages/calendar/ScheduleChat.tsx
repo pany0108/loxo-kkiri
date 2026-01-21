@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, increment, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, arrayRemove, arrayUnion, collection, doc, increment, onSnapshot, orderBy, query, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { Calendar, Copy, LogOut, MoreVertical, Reply, Send, Trash2, Users, X } from 'lucide-react';

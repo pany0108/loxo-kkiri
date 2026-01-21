@@ -22,7 +22,7 @@ const AddSchedule = () => {
   const { state, refs, handlers } = useAddSchedule();
   const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
   const { dropdownRef, titleInputRef } = refs;
-  const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleCalendarSelect, handleSuggestionClick, handleToggle, handleSubmit } = handlers;
+  const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleToggle, handleSubmit } = handlers;
 
   const [isMapModalOpen, setIsMapModalOpen] = React.useState(false);
 
@@ -60,7 +60,7 @@ const AddSchedule = () => {
         }, 0);
       }
     }
-  }, []);
+  }, [handleChange, location.state]);
 
   // --- Handlers ---
 

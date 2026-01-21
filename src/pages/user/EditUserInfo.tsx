@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -16,7 +16,6 @@ import { updateUserBirthdaySchedule } from 'services';
  */
 const EditUserInfo = () => {
   const navigate = useNavigate();
-  const authCodeRef = useRef<HTMLInputElement>(null);
 
   // --- 상태 관리 ---
   const [formData, setFormData] = useState({
@@ -28,10 +27,6 @@ const EditUserInfo = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPhoneEditing, setIsPhoneEditing] = useState(false);
-  const [isAuthSent, setIsAuthSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false); // 휴대폰 번호 인증 여부
-  const [authCode, setAuthCode] = useState('');
   const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [isLunar, setIsLunar] = useState(false);
 
@@ -54,11 +49,6 @@ const EditUserInfo = () => {
               phone: data.phone || '',
               birthDate: data.birthDate || '',
             });
-            // 초기 로드 시 기존 번호는 인증된 것으로 간주
-            setOriginalPhone(data.phone?.replace(/[^\d]/g, '') || '');
-            setIsVerified(!!data.phone); // 전화번호가 있으면 인증된 것으로 시작
-            setIsAuthSent(false); // 인증번호 발송 상태 초기화
-            setIsPhoneEditing(false); // 수정 모드 초기화
             setIsLeapMonth(data.isLeapMonth || false);
             setIsLunar(data.birthDateType === 'lunar');
           }
@@ -71,19 +61,6 @@ const EditUserInfo = () => {
 
     fetchUserData();
   }, []);
-
-  // 인증번호 발송 후 입력 필드에 자동으로 포커스
-  useEffect(() => {
-    if (isPhoneEditing && isAuthSent && !isVerified) {
-      // isAuthSent가 true로 바뀌고 컴포넌트가 리렌더링된 후 포커스를 줍니다.
-      setTimeout(() => {
-        authCodeRef.current?.focus();
-      }, 100); // 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
-    }
-  }, [isPhoneEditing, isAuthSent, isVerified]);
-
-  // DB에서 불러온 초기 휴대폰 번호 (변경 여부 확인용)
-  const [originalPhone, setOriginalPhone] = useState('');
 
   /**
    * 휴대폰 번호 자동 포맷팅 (010-0000-0000)
@@ -101,49 +78,9 @@ const EditUserInfo = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'authCode') {
-      setAuthCode(value);
-      return; // authCode는 별도 상태이므로 여기서 종료
-    }
-
     const finalValue = name === 'phone' ? formatPhone(value) : value;
 
-    if (name === 'phone') {
-      // 휴대폰 번호가 변경되면 인증 상태 초기화
-      if (finalValue.replace(/[^\d]/g, '') !== originalPhone) {
-        setIsVerified(false);
-        setIsAuthSent(false);
-      } else {
-        // 원래 번호로 돌아오면 다시 인증된 상태로
-        setIsVerified(true);
-      }
-    }
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
-  };
-
-  /**
-   * 휴대폰 인증번호 발송 시뮬레이션
-   */
-  const handleSendAuth = () => {
-    if (!formData.phone || formData.phone.length < 13) {
-      toast.error('올바른 휴대폰 번호를 입력해주세요.');
-      return;
-    }
-    setIsAuthSent(true);
-    toast.success('인증번호가 발송되었습니다. (테스트 번호: 1234)');
-  };
-
-  /**
-   * 인증번호 확인 시뮬레이션 (고정값: 1234)
-   */
-  const handleVerify = () => {
-    if (authCode === '1234') {
-      setIsVerified(true);
-      setIsPhoneEditing(false); // 인증 완료 후 수정 모드 종료
-      toast.success('휴대폰 번호가 인증되었습니다.');
-    } else {
-      toast.error('인증번호가 일치하지 않습니다.');
-    }
   };
 
   /**

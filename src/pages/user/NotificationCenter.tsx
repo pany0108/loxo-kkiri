@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { AnimatePresence, AnimatePresenceProps, motion, useTransform } from 'framer-motion';
-import { AlertCircle, Bell, BellRing, Calendar, Check, CheckCircle2, ClipboardList, Edit2, FileCheck, Info, RefreshCw, Trash2, UserPlus, UserX } from 'lucide-react';
+import { Bell, BellRing, Calendar, Check, CheckCircle2, ClipboardList, Edit2, FileCheck, Info, RefreshCw, Trash2, UserPlus, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
