@@ -1,5 +1,5 @@
 import { FormInput, FormTextarea } from 'components';
-import { AlignLeft, Map, MapPin, Maximize2, Send } from 'lucide-react';
+import { AlignLeft, Map, MapPin, Maximize2, Minus, Plus, Send } from 'lucide-react';
 import React from 'react';
 
 interface MeetingInfoFormProps {
@@ -24,6 +24,25 @@ interface MeetingInfoFormProps {
  * @param {function} [onMapClick] - 지도 버튼 클릭 핸들러
  */
 const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, location, onTitleChange, onDescriptionChange, onLocationChange, onMapClick }) => {
+  const [isMapLoading, setIsMapLoading] = React.useState(true);
+  const [zoom, setZoom] = React.useState(15);
+
+  React.useEffect(() => {
+    if (location) {
+      setIsMapLoading(true);
+    }
+  }, [location, zoom]);
+
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.min(prev + 1, 20));
+  };
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.max(prev - 1, 1));
+  };
+
   return (
     <section className="space-y-4">
       <FormInput label="약속 제목" icon={<Send size={20} />} value={title} onChange={(e) => onTitleChange(e.target.value)} placeholder="예: 강남역 저녁 모임" />
@@ -59,23 +78,46 @@ const MeetingInfoForm: React.FC<MeetingInfoFormProps> = ({ title, description, l
 
       {location && (
         <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group">
+          {isMapLoading && (
+            <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
+              <MapPin className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-bounce opacity-50" />
+            </div>
+          )}
           <iframe
+            key={`${location}_${zoom}`}
             title="Location Preview"
             width="100%"
             height="100%"
             frameBorder="0"
-            style={{ border: 0 }}
+            style={{ border: 0, opacity: isMapLoading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
             loading="lazy"
-            src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk&q=${encodeURIComponent(location)}&language=ko`}
+            src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk&q=${encodeURIComponent(location)}&zoom=${zoom}&language=ko`}
             allowFullScreen
+            onLoad={() => setIsMapLoading(false)}
           />
           {onMapClick && (
-            <div onClick={onMapClick} className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center">
+            <div onClick={onMapClick} className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center z-20">
               <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 group-hover:scale-100">
                 <Maximize2 size={20} className="text-gray-600 dark:text-gray-300" />
               </div>
             </div>
           )}
+          <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+            >
+              <Plus size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+            >
+              <Minus size={16} />
+            </button>
+          </div>
         </div>
       )}
     </section>
