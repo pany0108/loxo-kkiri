@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { Calendar as CalendarIcon, Clock, Loader2, Sparkles } from 'lucide-react';
+import { CalendarHeart, Calendar as CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
@@ -196,7 +196,7 @@ const MeetingResponse = () => {
     <PageLayout title="약속 응답하기" footer={renderFooter()}>
       <>
         {/* 헤더 섹션 */}
-        <PageHeader className="mb-6" icon={<Sparkles className="text-primary dark:text-blue-400 w-6 h-6" />}>
+        <PageHeader className="mb-6" icon={<CalendarHeart className="text-primary dark:text-blue-400 w-6 h-6" />}>
           <PageTitle>
             {(meetingData as any).isRetry ? (
               <>

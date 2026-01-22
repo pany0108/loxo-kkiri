@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import {
@@ -15,17 +16,23 @@ import {
   Copy,
   Dumbbell,
   Edit2,
+  ExternalLink,
+  Expand,
   Gamepad2,
   Gift,
   GraduationCap,
   Heart,
   Home,
+  Loader2,
   MapPin,
   MessageCircle,
+  Minus,
   MoreVertical,
   Music,
   Plane,
+  Plus,
   ShoppingCart,
+  Shrink,
   Star,
   Trash2,
   Users,
@@ -33,8 +40,9 @@ import {
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
-import { ConfirmModal, DeleteRecurringModal, ImagePreviewModal, PageHeader, PageLayout, RecurrenceSettings } from 'components';
+import { AdvancedMarker, ConfirmModal, DeleteRecurringModal, ImagePreviewModal, PageHeader, PageLayout, RecurrenceSettings } from 'components';
 import { useCalendar } from 'contexts';
+import { LIBRARIES } from 'utils';
 
 /**
  * 페이지 이동 시 전달되는 상태 데이터 인터페이스
@@ -131,6 +139,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
  * @returns {JSX.Element} 일정 상세 화면
  */
 const ScheduleDetail = () => {
+  // --------------------------------------------------------------------------------
+  // Hooks & Contexts
+  // --------------------------------------------------------------------------------
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -138,7 +149,11 @@ const ScheduleDetail = () => {
 
   const initialState = (location.state as LocationState) || null;
 
-  // --- State ---
+  // --------------------------------------------------------------------------------
+  // State Management
+  // --------------------------------------------------------------------------------
+  
+  // 일정 데이터 상태
   const [data, setData] = useState<ScheduleDetailData>({
     title: initialState?.title || '로딩 중...',
     start: initialState?.start ? dayjs(initialState.start) : dayjs(),
@@ -160,28 +175,55 @@ const ScheduleDetail = () => {
     isLeapMonth: initialState?.isLeapMonth || false,
   });
 
+  // 이미지 미리보기 상태
   const [previewState, setPreviewState] = useState<{
     isOpen: boolean;
     images: string[];
     index: number;
   }>({ isOpen: false, images: [], index: 0 });
 
+  // 모달 및 메뉴 상태
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSimpleDeleteModalOpen, setIsSimpleDeleteModalOpen] = useState(false);
   const [isReviewDeleteModalOpen, setIsReviewDeleteModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // 후기 관련 상태
   const [sharedReviews, setSharedReviews] = useState<ReviewData[]>([]);
   const [myReviewText, setMyReviewText] = useState('');
 
+  // 지도 관련 상태
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [zoom, setZoom] = useState(15);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+
+  // Refs
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // --------------------------------------------------------------------------------
+  // Derived State
+  // --------------------------------------------------------------------------------
   const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
   const isShared = data.attendees.length > 1;
   const isPastEvent = dayjs().startOf('day').isAfter(data.end);
 
-  // --- Effects ---
+  // --------------------------------------------------------------------------------
+  // Google Maps Loader
+  // --------------------------------------------------------------------------------
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: 'AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk',
+    libraries: LIBRARIES,
+    language: 'ko',
+  });
 
-  // 메뉴 외부 클릭 감지
+  // --------------------------------------------------------------------------------
+  // Effects
+  // --------------------------------------------------------------------------------
+
+  // 1. 메뉴 외부 클릭 감지
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -192,7 +234,22 @@ const ScheduleDetail = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 일정 데이터 실시간 구독 및 초기화
+  // 2. 지도 지오코딩 (주소 -> 좌표 변환)
+  useEffect(() => {
+    if (data.location && isLoaded && window.google) {
+      setIsMapLoading(true);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: data.location }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const { lat, lng } = results[0].geometry.location;
+          setCenter({ lat: lat(), lng: lng() });
+        }
+        setIsMapLoading(false);
+      });
+    }
+  }, [data.location, isLoaded]);
+
+  // 3. 일정 데이터 실시간 구독 및 초기화
   useEffect(() => {
     if (!id) return;
 
@@ -259,7 +316,7 @@ const ScheduleDetail = () => {
     return () => unsubscribe();
   }, [id, navigate, initialState]);
 
-  // 공유 일정인 경우 리뷰 데이터 구독
+  // 4. 공유 일정인 경우 리뷰 데이터 구독
   useEffect(() => {
     if (!id || !isShared) return;
 
@@ -280,6 +337,10 @@ const ScheduleDetail = () => {
     return () => unsubscribe();
   }, [id, isShared]);
 
+  // --------------------------------------------------------------------------------
+  // Handlers
+  // --------------------------------------------------------------------------------
+
   /** 뒤로가기 핸들러 (이전 캘린더 뷰 상태 유지) */
   const handleBack = useCallback(() => {
     if (data.start) {
@@ -294,7 +355,7 @@ const ScheduleDetail = () => {
     }
   }, [data.start, initialState?.fromView, navigate]);
 
-  // 안드로이드 하드웨어 뒤로가기 버튼 처리
+  // 5. 안드로이드 하드웨어 뒤로가기 버튼 처리 (핸들러 정의 후 등록)
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
       return;
@@ -309,7 +370,15 @@ const ScheduleDetail = () => {
     };
   }, [handleBack]);
 
-  // --- Handlers ---
+  /** 지도 로드 완료 핸들러 */
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMapInstance(map);
+  }, []);
+
+  /** 지도 언마운트 핸들러 */
+  const onUnmount = useCallback(() => {
+    setMapInstance(null);
+  }, []);
 
   /** 공유 후기 저장 핸들러 */
   const handleSharedReviewSubmit = async () => {
@@ -490,8 +559,24 @@ const ScheduleDetail = () => {
     }
   };
 
+  /** 지도 줌 인 핸들러 */
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.min(prev + 1, 20));
+  };
+
+  /** 지도 줌 아웃 핸들러 */
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoom((prev) => Math.max(prev - 1, 1));
+  };
+
+  // --------------------------------------------------------------------------------
+  // Render
+  // --------------------------------------------------------------------------------
   return (
     <>
+      {/* 메인 레이아웃 */}
       <PageLayout
         onBack={handleBack}
         extraNav={
@@ -556,6 +641,7 @@ const ScheduleDetail = () => {
         {/* 상세 정보 영역 */}
         <div className="space-y-8">
           <div className="space-y-5">
+            {/* 시간 정보 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
                 <Clock size={20} className="text-sub dark:text-gray-400" />
@@ -571,6 +657,7 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
+            {/* 캘린더 정보 */}
             {scheduleCalendar && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -589,6 +676,7 @@ const ScheduleDetail = () => {
               </div>
             )}
 
+            {/* 참석자 정보 (공유 일정) */}
             {isShared && !data.isAnniversary && (
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -609,17 +697,78 @@ const ScheduleDetail = () => {
               </div>
             )}
 
+            {/* 장소 및 지도 */}
             {data.location && (
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                  <MapPin size={20} className="text-sub dark:text-gray-400" />
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                    <MapPin size={20} className="text-sub dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[15px] font-bold text-main dark:text-white">{data.location}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-[15px] font-bold text-main dark:text-white">{data.location}</p>
+                <div className={`w-full ${isMapExpanded ? 'h-96' : 'h-48'} rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}>
+                  {isMapLoading || !isLoaded || !center ? (
+                    <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
+                      <Loader2 className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-spin opacity-50" />
+                    </div>
+                  ) : (
+                    <GoogleMap
+                      mapContainerStyle={{ width: '100%', height: '100%' }}
+                      center={center}
+                      zoom={zoom}
+                      onLoad={onLoad}
+                      onUnmount={onUnmount}
+                      options={{
+                        disableDefaultUI: true, // 기본 UI 컨트롤 숨김
+                        clickableIcons: true,
+                        gestureHandling: 'greedy',
+                        mapId:'3ee6e463dfd708817a22a110'
+                      }}
+                    >
+                      <AdvancedMarker position={center} map={mapInstance} title="약속 장소" />
+                    </GoogleMap>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.location)}`, '_blank');
+                    }}
+                    className="absolute top-2 left-2 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors z-30"
+                    title="구글 지도에서 보기"
+                  >
+                    <ExternalLink size={16} />
+                  </button>
+                  <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-30">
+                    <button
+                      type="button"
+                      onClick={() => setIsMapExpanded(!isMapExpanded)}
+                      className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {isMapExpanded ? <Shrink size={16} /> : <Expand size={16} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleZoomIn}
+                      className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Plus size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleZoomOut}
+                      className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Minus size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
+            {/* 메모/내용 */}
             {data.content && (
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -631,6 +780,7 @@ const ScheduleDetail = () => {
               </div>
             )}
 
+            {/* 알림 설정 */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
                 <Bell size={20} className="text-sub dark:text-gray-400" />

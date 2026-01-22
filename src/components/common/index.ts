@@ -6,3 +6,4 @@ export { default as BirthDateInput } from './BirthDateInput';
 export { default as FormCheckbox } from './FormCheckbox';
 export { default as PageTitle } from './PageTitle';
 export { default as FormTextarea } from './FormTextarea';
+export { default as AdvancedMarker } from './AdvancedMarker';

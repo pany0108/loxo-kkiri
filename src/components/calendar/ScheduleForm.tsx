@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import {
   AlignLeft,
   Bell,
@@ -6,21 +7,25 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Expand,
+  ExternalLink,
   FileText,
   History,
+  Loader2,
   Map,
   MapPin,
-  Maximize2,
   Minus,
   Palette,
   Pencil,
   Plus,
+  Shrink,
   Sparkles,
 } from 'lucide-react';
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
-import { COLOR_OPTIONS, ICON_MAP, NOTIFICATION_OPTIONS } from 'utils';
+import AdvancedMarker from '../common/AdvancedMarker';
+import { COLOR_OPTIONS, ICON_MAP, LIBRARIES, NOTIFICATION_OPTIONS } from 'utils';
 
 interface ScheduleFormProps {
   formData: any;
@@ -50,9 +55,11 @@ interface ScheduleFormProps {
 /**
  * 일정 입력 폼 컴포넌트
  * - 제목, 캘린더 선택, 날짜/시간, 반복 설정, 장소, 알림, 메모 등을 입력받습니다.
+ * - Google Maps를 연동하여 장소 위치를 시각적으로 보여줍니다.
  *
+ * @component
  * @param {ScheduleFormProps} props
- * @returns {JSX.Element}
+ * @returns {JSX.Element} 일정 입력 폼
  */
 const ScheduleForm: React.FC<ScheduleFormProps> = ({
   formData,
@@ -78,7 +85,34 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   dropdownRef,
   isEditMode = false,
 }) => {
-  const sortedCalendars = React.useMemo(() => {
+  // --------------------------------------------------------------------------------
+  // State Management
+  // --------------------------------------------------------------------------------
+  const [isMapLoading, setIsMapLoading] = useState(true); // 지도 로딩 상태
+  const [zoom, setZoom] = useState(15); // 지도 줌 레벨
+  const [isMapExpanded, setIsMapExpanded] = useState(false); // 지도 확장 여부
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null); // 지도 중심 좌표
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null); // Google Map 인스턴스
+
+  // --------------------------------------------------------------------------------
+  // Hooks (Google Maps API Loader)
+  // --------------------------------------------------------------------------------
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: 'AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk', // TODO: 환경변수로 분리 권장
+    libraries: LIBRARIES,
+    language: 'ko',
+  });
+
+  // --------------------------------------------------------------------------------
+  // Derived State
+  // --------------------------------------------------------------------------------
+
+  /**
+   * 캘린더 목록 정렬
+   * - 선택된 캘린더 > 기본 캘린더 > 나머지 순서로 정렬
+   */
+  const sortedCalendars = useMemo(() => {
     return [...myCalendars].sort((a, b) => {
       if (selectedCalendar && a.id === selectedCalendar.id) return -1;
       if (selectedCalendar && b.id === selectedCalendar.id) return 1;
@@ -88,28 +122,79 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     });
   }, [myCalendars, selectedCalendar]);
 
-  const [isMapLoading, setIsMapLoading] = React.useState(true);
-  const [zoom, setZoom] = React.useState(15);
+  // --------------------------------------------------------------------------------
+  // Effects
+  // --------------------------------------------------------------------------------
 
-  React.useEffect(() => {
-    if (formData.location) {
+  /**
+   * 장소(location)가 변경되거나 API가 로드되었을 때 지오코딩을 수행하여 좌표를 설정합니다.
+   */
+  useEffect(() => {
+    if (formData.location && isLoaded && window.google) {
       setIsMapLoading(true);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: formData.location }, (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const { lat, lng } = results[0].geometry.location;
+          setCenter({ lat: lat(), lng: lng() });
+        }
+        setIsMapLoading(false);
+      });
     }
-  }, [formData.location, zoom]);
+  }, [formData.location, isLoaded]);
 
+  // --------------------------------------------------------------------------------
+  // Handlers
+  // --------------------------------------------------------------------------------
+
+  /**
+   * 지도가 로드되었을 때 호출되는 콜백
+   * @param {google.maps.Map} map - 로드된 지도 인스턴스
+   */
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMapInstance(map);
+  }, []);
+
+  /**
+   * 지도가 언마운트될 때 호출되는 콜백
+   */
+  const onUnmount = useCallback(() => {
+    setMapInstance(null);
+  }, []);
+
+  /**
+   * 지도 줌 인 핸들러
+   * @param {React.MouseEvent} e - 마우스 이벤트
+   */
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation();
     setZoom((prev) => Math.min(prev + 1, 20));
   };
 
+  /**
+   * 지도 줌 아웃 핸들러
+   * @param {React.MouseEvent} e - 마우스 이벤트
+   */
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation();
     setZoom((prev) => Math.max(prev - 1, 1));
   };
 
+  /**
+   * 구글 지도 외부 링크 열기 핸들러
+   * @param {React.MouseEvent} e - 마우스 이벤트
+   */
+  const handleOpenGoogleMaps = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`, '_blank');
+  };
+
+  // --------------------------------------------------------------------------------
+  // Render
+  // --------------------------------------------------------------------------------
   return (
     <section className="space-y-4">
-      {/* 일정 제목 입력 */}
+      {/* 1. 일정 제목 입력 영역 */}
       <div ref={titleInputRef} className="group relative">
         <div className="flex items-center gap-2 px-1 mb-2">
           <Pencil size={18} className="text-sub dark:text-gray-500" />
@@ -124,6 +209,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           required
           autoComplete="off"
         />
+        {/* 일정 검색 제안 목록 (자동완성) */}
         {!isEditMode && showSuggestions && scheduleSearchResults.length > 0 && handleSuggestionClick && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-100 dark:border-gray-600 z-20 max-h-48 overflow-y-auto">
             {scheduleSearchResults.map((schedule) => (
@@ -147,7 +233,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
-      {/* 캘린더 선택 드롭다운 */}
+      {/* 2. 캘린더 선택 드롭다운 영역 */}
       <div className="group relative" ref={dropdownRef}>
         <div className="flex items-center gap-2 px-1 mb-2">
           <CalendarIcon size={18} className="text-sub dark:text-gray-500" />
@@ -216,7 +302,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
-      {/* 기념일 및 음력/윤달 설정 */}
+      {/* 3. 기념일 및 음력/윤달 설정 영역 */}
       <div className="flex items-center justify-between px-1">
         <FormCheckbox label="기념일" checked={formData.isAnniversary || false} onChange={handleAnniversaryChange} className="text-primary" />
         {formData.isAnniversary && (
@@ -252,7 +338,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         )}
       </div>
 
-      {/* 시간 설정 영역 */}
+      {/* 4. 날짜 및 시간 설정 영역 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1 mb-2">
           <div className="flex items-center gap-2">
@@ -326,7 +412,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         </div>
       </div>
 
-      {/* 색상 선택 */}
+      {/* 5. 색상 선택 영역 */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 px-1 mb-2">
           <Palette size={18} className="text-sub dark:text-gray-500" />
@@ -349,10 +435,10 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
         </div>
       </div>
 
-      {/* 반복 설정 옵션 */}
+      {/* 6. 반복 설정 옵션 */}
       <RecurrenceOptions startDate={formData.start} value={recurrence} onChange={setRecurrence} />
 
-      {/* 상세 정보 (장소, 알림, 메모) - 기념일이 아닐 때만 표시 */}
+      {/* 7. 상세 정보 (장소, 알림, 메모) - 기념일이 아닐 때만 표시 */}
       {!formData.isAnniversary && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 px-1 mb-2">
@@ -360,6 +446,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             <label className="text-caption">더 자세히 기록해볼까요?</label>
           </div>
 
+          {/* 장소 입력 */}
           <FormInput
             icon={<MapPin size={18} />}
             name="location"
@@ -378,31 +465,48 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             }
           />
 
+          {/* 지도 미리보기 (장소가 있을 때만) */}
           {formData.location && (
-            <div className="w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group">
-              {isMapLoading && (
+            <div className={`w-full ${isMapExpanded ? 'h-96' : 'h-48'} rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}>
+              {isMapLoading || !isLoaded || !center ? (
                 <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
-                  <MapPin className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-bounce opacity-50" />
+                  <Loader2 className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-spin opacity-50" />
                 </div>
+              ) : (
+                <GoogleMap
+                  mapContainerStyle={{ width: '100%', height: '100%' }}
+                  center={center}
+                  zoom={zoom}
+                  onLoad={onLoad}
+                  onUnmount={onUnmount}
+                  options={{
+                    disableDefaultUI: true,
+                    clickableIcons: true,
+                    gestureHandling: 'greedy',
+                    mapId:'3ee6e463dfd708817a22a110'
+                  }}
+                >
+                  <AdvancedMarker position={center} map={mapInstance} title="약속 장소" />
+                </GoogleMap>
               )}
-              <iframe
-                key={`${formData.location}_${zoom}`}
-                title="Location Preview"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                style={{ border: 0, opacity: isMapLoading ? 0 : 1, transition: 'opacity 0.3s ease-in-out' }}
-                loading="lazy"
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD-e_Nh3dflo_xgW4CcIySthA9i8L46rUk&q=${encodeURIComponent(formData.location)}&zoom=${zoom}&language=ko`}
-                allowFullScreen
-                onLoad={() => setIsMapLoading(false)}
-              />
-              <div onClick={openMapModal} className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center z-20">
-                <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 group-hover:scale-100">
-                  <Maximize2 size={20} className="text-gray-600 dark:text-gray-300" />
-                </div>
-              </div>
-              <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* 구글 지도 외부 링크 버튼 */}
+              <button
+                type="button"
+                onClick={handleOpenGoogleMaps}
+                className="absolute top-2 left-2 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors z-30"
+                title="구글 지도에서 보기"
+              >
+                <ExternalLink size={16} />
+              </button>
+              {/* 지도 컨트롤 버튼 그룹 */}
+              <div className="absolute bottom-2 right-2 flex flex-col gap-1 z-30">
+                <button
+                  type="button"
+                  onClick={() => setIsMapExpanded(!isMapExpanded)}
+                  className="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors"
+                >
+                  {isMapExpanded ? <Shrink size={16} /> : <Expand size={16} />}
+                </button>
                 <button
                   type="button"
                   onClick={handleZoomIn}
@@ -421,6 +525,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             </div>
           )}
 
+          {/* 알림 설정 */}
           <div className="flex items-center h-[56px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-4 gap-4 transition-all relative">
             <Bell size={18} className="text-sub dark:text-gray-400" />
             <select
@@ -437,6 +542,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             </select>
           </div>
 
+          {/* 메모 입력 */}
           <FormTextarea icon={<AlignLeft size={18} />} name="content" value={formData.content} onChange={handleChange} rows={3} placeholder="메모" />
         </div>
       )}

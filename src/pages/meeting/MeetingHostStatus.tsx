@@ -47,7 +47,7 @@ const MeetingHostStatus = () => {
           <>
             <h3 className="text-lg font-bold text-sub dark:text-gray-400">{meetingData.title}</h3>
             {meetingData.location && (
-              <div className="flex items-center gap-2 text-sub dark:text-gray-400 font-medium mb-2">
+              <div className="flex items-center gap-2 text-[14px] text-sub dark:text-gray-400 font-medium mb-2">
                 <MapPin size={16} />
                 <span>{meetingData.location}</span>
               </div>
