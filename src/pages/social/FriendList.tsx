@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
-import { Check, Folder, FolderPlus, Loader2, MoreVertical, Search, UserPlus, Users } from 'lucide-react';
+import { Check, Folder, FolderPlus, Loader2, MoreVertical, Plus, Search, Share2, UserPlus, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
@@ -54,6 +54,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   const [isAddFromContactsModalOpen, setIsAddFromContactsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedFriendUids, setSelectedFriendUids] = useState<Set<string>>(new Set());
@@ -97,6 +98,30 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   }, [viewMode]);
 
   // --- Handlers ---
+
+  /** 친구 초대 핸들러 (Web Share API) */
+  const handleInviteFriend = async () => {
+    const shareData = {
+      title: 'Super Scheduler 초대',
+      text: `${user?.displayName || '친구'}님이 Super Scheduler로 초대했습니다!\n함께 일정을 관리하고 소통해보세요. 👇`,
+      url: window.location.origin, // 실제 배포된 도메인 주소로 연결됩니다.
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') toast.error('공유에 실패했습니다.');
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+        toast.success('초대 메시지가 복사되었습니다.\n카카오톡에 붙여넣기 해주세요!', { icon: '💬' });
+      } catch (e) {
+        toast.error('복사에 실패했습니다.');
+      }
+    }
+  };
 
   /** 연락처에서 추가 모달 열기 */
   const handleOpenContactsModal = () => {
@@ -418,13 +443,41 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
             {viewMode === 'default' ? <Users size={24} /> : <Folder size={24} />}
           </button>
 
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="shrink-0 w-[52px] h-[52px] flex items-center justify-center rounded-xl bg-black dark:bg-white text-white dark:text-black transition-all active:scale-95 shadow-md"
-            aria-label="친구 추가"
-          >
-            <UserPlus size={24} strokeWidth={2.5} />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+              className="shrink-0 w-[52px] h-[52px] flex items-center justify-center rounded-xl bg-black dark:bg-white text-white dark:text-black transition-all active:scale-95 shadow-md"
+              aria-label="추가 메뉴 열기"
+            >
+              <Plus size={24} strokeWidth={2.5} />
+            </button>
+
+            {isAddMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setIsAddMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-20 overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-200">
+                  <button
+                    onClick={() => {
+                      setIsAddModalOpen(true);
+                      setIsAddMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <UserPlus size={18} /> 친구 검색/추가
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleInviteFriend();
+                      setIsAddMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                  >
+                    <Share2 size={18} /> 친구 초대하기
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
