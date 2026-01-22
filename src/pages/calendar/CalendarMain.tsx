@@ -346,7 +346,7 @@ const CalendarMain = () => {
           } ${animationClass}`}
           style={{
             height: currentView === 'dayGridMonth' && isListVisible ? '50%' : '100%',
-            paddingBottom: isListVisible ? '0' : '64px',
+            paddingBottom: isListVisible ? '0' : '54px',
           }}
         >
           <Calendar

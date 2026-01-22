@@ -42,16 +42,16 @@ const BottomNav = () => {
   if (!isBottomNavVisible) return null;
 
   const navItems = [
-    { icon: <Calendar size={24} />, path: '/calendar' },
-    { icon: <Users size={24} />, path: '/social' },
-    { icon: <Handshake size={24} />, path: '/propose' },
-    { icon: <User size={24} />, path: '/profile' },
+    { icon: <Calendar size={22} />, path: '/calendar' },
+    { icon: <Users size={22} />, path: '/social' },
+    { icon: <Handshake size={22} />, path: '/propose' },
+    { icon: <User size={22} />, path: '/profile' },
   ];
 
   return (
     /* 하단 네비게이션 컨테이너 */
     <nav className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.2)] z-40">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto">
+      <div className="flex justify-around items-center h-[54px] max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
