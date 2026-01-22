@@ -455,6 +455,7 @@ const ScheduleDetail = () => {
       location: '',
       content: '',
       recurrence: undefined,
+      fromView: initialState?.fromView,
     };
 
     toast.success('일정이 복사되었습니다. 날짜를 확인하고 저장하세요.');

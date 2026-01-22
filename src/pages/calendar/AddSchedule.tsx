@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import dayjs from 'dayjs';
 import { CalendarPlus } from 'lucide-react';
 
@@ -25,9 +27,16 @@ const AddSchedule = () => {
   const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleToggle, handleSubmit } = handlers;
 
   const [isMapModalOpen, setIsMapModalOpen] = React.useState(false);
+  
+  // 초기화 실행 여부를 추적하는 Ref (리렌더링 루프 방지)
+  const isInitialized = useRef(false);
 
   // 초기 진입 시 시간 설정 (현재 시간 기준 정각/30분 단위)
   React.useEffect(() => {
+    // 이미 초기화되었다면 중단하여 불필요한 상태 업데이트 방지
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     const now = dayjs();
     const minute = now.minute();
     let startObj = now;
@@ -42,11 +51,10 @@ const AddSchedule = () => {
       const newStart = startObj.format('YYYY-MM-DDTHH:mm');
       const newEnd = startObj.add(1, 'hour').format('YYYY-MM-DDTHH:mm');
 
+      // setTimeout 제거: 상태 업데이트는 즉시 처리하여 배치(Batch) 처리 유도
       handleChange({ target: { name: 'start', value: newStart } } as any);
-      setTimeout(() => {
-        handleChange({ target: { name: 'end', value: newEnd } } as any);
-        handleChange({ target: { name: 'isAllDay', value: false } } as any);
-      }, 0);
+      handleChange({ target: { name: 'end', value: newEnd } } as any);
+      handleChange({ target: { name: 'isAllDay', value: false } } as any);
     } else {
       const state = location.state as any;
       if (state.start && typeof state.start === 'string' && state.start.length === 10) {
@@ -55,14 +63,53 @@ const AddSchedule = () => {
         const newEnd = targetDate.hour(startObj.hour()).minute(startObj.minute()).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
 
         handleChange({ target: { name: 'start', value: newStart } } as any);
-        setTimeout(() => {
-          handleChange({ target: { name: 'end', value: newEnd } } as any);
-        }, 0);
+        handleChange({ target: { name: 'end', value: newEnd } } as any);
       }
     }
-  }, [handleChange, location.state]);
+    // 의존성 배열을 비워 마운트 시 1회만 실행 보장 (eslint 경고 무시)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Handlers ---
+
+  /** * 뒤로가기 핸들러 (수정됨)
+   * - 복잡한 비동기 로직(setTimeout)을 제거하고 순수한 네비게이션만 수행합니다.
+   * - replace: true를 사용하여 히스토리를 깔끔하게 관리합니다.
+   */
+  const handleBack = React.useCallback(() => {
+    // 캘린더 생성 등 특정 경로에서 왔을 경우
+    if (location.state?.from === '/create-calendar') {
+      navigate('/calendar', { replace: true });
+    } else {
+      // 일반적인 경우 캘린더 메인으로 명시적 이동
+      navigate('/calendar', { replace: true });
+    }
+  }, [location.state, navigate]);
+
+  // 안드로이드 하드웨어 뒤로가기 버튼 처리
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let listener: PluginListenerHandle | undefined;
+    let isMounted = true;
+
+    const setupListener = async () => {
+      const handle = await CapacitorApp.addListener('backButton', () => {
+        handleBack();
+      });
+      if (isMounted) {
+        listener = handle;
+      } else {
+        handle.remove();
+      }
+    };
+    setupListener();
+
+    return () => {
+      isMounted = false;
+      if (listener) listener.remove();
+    };
+  }, [handleBack]);
 
   /**
    * 기념일 체크박스 변경 핸들러
@@ -133,7 +180,7 @@ const AddSchedule = () => {
   );
 
   return (
-    <PageLayout onBack={() => navigate(-1)} footer={renderFooter()}>
+    <PageLayout onBack={handleBack} footer={renderFooter()}>
       <>
         <PageHeader icon={<CalendarPlus className="text-primary w-6 h-6" />}>
           <PageTitle>

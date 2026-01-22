@@ -407,7 +407,7 @@ const CalendarMain = () => {
         <AddScheduleFAB
           onClick={() => {
             const targetDate = selectedDate || new Date().toISOString().split('T')[0];
-            navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id } });
+            navigate('/add-schedule', { state: { start: targetDate, end: targetDate, allDay: true, calendarId: activeCalendar?.id, fromView: currentView } });
           }}
         />
       )}
