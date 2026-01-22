@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, Smartphone, Sparkles } from 'lucide-react';
 
 import { BirthDateInput, FormInput, LoadingButton, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
@@ -13,6 +14,7 @@ import { handleEnterToNext } from 'utils';
  * @returns {JSX.Element} 추가 정보 입력 화면
  */
 const SignupSocial = () => {
+  const navigate = useNavigate();
   const { state, dispatch, refs, handlers } = useSocialSignupForm();
   const { formData, isLoading, isLeapMonth, isLunar, userData } = state;
   const { birthDateRef, phoneRef } = refs;
@@ -28,6 +30,23 @@ const SignupSocial = () => {
   }
 
   const { lastName, firstName } = userData;
+
+  /**
+   * 폼 제출 핸들러
+   * - handleComplete 실행 후 성공 시 캘린더 화면으로 이동합니다.
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    try {
+      // handleComplete는 성공 시 void를, 실패 시 에러를 던질 것으로 예상합니다.
+      await handleComplete(e);
+
+      // 성공적으로 완료되면 캘린더 화면으로 이동합니다.
+      navigate('/calendar', { replace: true });
+    } catch (error) {
+      // 실패 시 hook 내부에서 toast 에러를 처리할 것으로 예상되므로, 여기서는 콘솔에만 기록합니다.
+      console.error('Social signup failed:', error);
+    }
+  };
 
   return (
     <PageLayout
@@ -53,7 +72,7 @@ const SignupSocial = () => {
           </PageTitle>
         </PageHeader>
 
-        <form id="social-signup-form" onSubmit={handleComplete} className="space-y-8">
+        <form id="social-signup-form" onSubmit={handleSubmit} className="space-y-8">
           <div className="space-y-3">
             <BirthDateInput
               inputRef={birthDateRef}
