@@ -21,6 +21,7 @@ import {
   Shrink,
   Sparkles,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
