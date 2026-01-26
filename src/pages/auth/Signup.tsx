@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Lock, Mail, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ import { handleEnterToNext } from 'utils';
  * @returns {JSX.Element} 회원가입 화면
  */
 const Signup = () => {
+  const navigate = useNavigate();
   const { state, dispatch, errors, refs, handleChange, handleSubmit: handleFormSubmit } = useSignupForm();
 
   const { formData, isLoading, isLeapMonth, isLunar } = state;
@@ -23,10 +25,14 @@ const Signup = () => {
    * - 커스텀 훅의 handleSubmit을 호출하고, 결과에 따라 UI 피드백(토스트, 포커스)을 처리합니다.
    */
   const handleSubmit = async (e: React.FormEvent) => {
+    sessionStorage.setItem('isAuthChecking', 'true');
+
     const result = await handleFormSubmit(e);
     if (result?.success) {
       toast.success(`${result.fullName}님, 가입을 축하합니다!`);
+      navigate('/calendar', { replace: true });
     } else if (result?.error) {
+      sessionStorage.removeItem('isAuthChecking');
       const error = result.error;
       console.error('Signup Error:', error);
       if (error.code === 'auth/email-already-in-use') {
