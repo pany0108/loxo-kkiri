@@ -22,7 +22,7 @@ import {
   SyncTimeModal,
 } from 'components';
 import { useCalendar } from 'contexts';
-import { useAuth, useFirestoreDoc, useMeetingResponseForm } from 'hooks';
+import { useAuth, useFirestoreDoc, useMeetingResponseForm, useUserProfiles } from 'hooks';
 import { Meeting as MeetingData, submitMeetingResponse } from 'services';
 
 dayjs.extend(isSameOrBefore);
@@ -46,6 +46,18 @@ const MeetingResponse = () => {
 
   const meetingDocRef = useMemo(() => (meetingId ? doc(db, 'meetings', meetingId) : null), [meetingId]);
   const { data: meetingData, loading } = useFirestoreDoc<MeetingData>(meetingDocRef);
+
+  // 참여자 프로필 정보 가져오기
+  const participantUids = useMemo(() => (meetingData as any)?.participants || [], [meetingData]);
+  const { profiles } = useUserProfiles(participantUids);
+
+  const participantsList = useMemo(() => {
+    return participantUids.map((uid: string) => ({
+      uid,
+      name: profiles[uid]?.name,
+      photoURL: profiles[uid]?.photoURL,
+    }));
+  }, [participantUids, profiles]);
 
   // 내 기존 일정 데이터 (충돌 확인용)
   const myExistingSchedules = useMemo(() => {
@@ -214,7 +226,13 @@ const MeetingResponse = () => {
         </PageHeader>
 
         {/* 약속 상세 정보 카드 */}
-        <MeetingInfoCard title={meetingData.title} description={meetingData.description} location={meetingData.location} />
+        <MeetingInfoCard
+          title={meetingData.title}
+          description={meetingData.description}
+          location={meetingData.location}
+          memberCount={(meetingData as any).participants?.length}
+          participants={participantsList}
+        />
 
         {/* 주최자 제안 확인 및 선택 영역 */}
         <section className="space-y-4 mb-10">

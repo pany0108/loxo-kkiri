@@ -21,8 +21,6 @@ import {
   Shrink,
   Sparkles,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
-
 import { FormCheckbox, FormInput, FormTextarea, RecurrenceOptions } from 'components';
 import { RecurrenceSettings } from 'components/calendar/RecurrenceOptions';
 import AdvancedMarker from '../common/AdvancedMarker';
@@ -468,7 +466,11 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
 
           {/* 지도 미리보기 (장소가 있을 때만) */}
           {formData.location && (
-            <div className={`w-full ${isMapExpanded ? 'h-96' : 'h-48'} rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}>
+            <div
+              className={`w-full ${
+                isMapExpanded ? 'h-96' : 'h-48'
+              } rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}
+            >
               {isMapLoading || !isLoaded || !center ? (
                 <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
                   <Loader2 className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-spin opacity-50" />
@@ -484,7 +486,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                     disableDefaultUI: true,
                     clickableIcons: true,
                     gestureHandling: 'greedy',
-                    mapId:'3ee6e463dfd708817a22a110'
+                    mapId: '3ee6e463dfd708817a22a110',
                   }}
                 >
                   <AdvancedMarker position={center} map={mapInstance} title="약속 장소" />

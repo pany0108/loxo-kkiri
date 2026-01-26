@@ -1,14 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
-import { AlignLeft, Expand, ExternalLink, Loader2, MapPin, Minus, Plus, Shrink } from 'lucide-react';
+import { AlignLeft, Expand, ExternalLink, Loader2, MapPin, Minus, Plus, Shrink, Users } from 'lucide-react';
 
 import { LIBRARIES } from 'utils';
 import AdvancedMarker from '../common/AdvancedMarker';
+import ParticipantListModal from './ParticipantListModal';
+
+interface Participant {
+  uid: string;
+  name?: string;
+  photoURL?: string;
+}
 
 interface MeetingInfoCardProps {
   title: string;
   description?: string;
   location?: string;
+  memberCount?: number;
+  participants?: Participant[];
 }
 
 /**
@@ -23,9 +32,11 @@ interface MeetingInfoCardProps {
  * @param {string} props.title - 약속 제목
  * @param {string} [props.description] - 약속 설명 (옵션)
  * @param {string} [props.location] - 약속 장소 주소 (옵션)
+ * @param {number} [props.memberCount] - 참여 인원 수 (옵션)
+ * @param {Participant[]} [props.participants] - 참여자 목록 (옵션)
  * @returns {JSX.Element} 렌더링된 약속 정보 카드
  */
-const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, location }) => {
+const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, location, memberCount, participants }) => {
   // --------------------------------------------------------------------------------
   // State Management
   // --------------------------------------------------------------------------------
@@ -34,6 +45,7 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, l
   const [isMapExpanded, setIsMapExpanded] = useState(false); // 지도 확장 여부
   const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null); // 지도 중심 좌표
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null); // Google Map 인스턴스
+  const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false); // 참여자 목록 모달 상태
 
   // --------------------------------------------------------------------------------
   // Hooks (Google Maps API Loader)
@@ -129,6 +141,20 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, l
       <h3 className="text-[19px] font-black text-main dark:text-white mb-3">{title}</h3>
 
       <div className="space-y-3">
+        {/* 참여 인원 표시 */}
+        {memberCount !== undefined && memberCount > 0 && (
+          <button
+            type="button"
+            onClick={() => participants && participants.length > 0 && setIsParticipantModalOpen(true)}
+            className={`flex items-start gap-2.5 text-left ${participants && participants.length > 0 ? 'cursor-pointer hover:opacity-70 transition-opacity' : ''}`}
+          >
+            <Users size={16} className="text-sub dark:text-gray-500 mt-0.5 shrink-0" />
+            <p className="text-[14px] font-medium text-sub dark:text-gray-300 leading-relaxed underline decoration-dashed underline-offset-4 decoration-gray-300 dark:decoration-gray-600">
+              {memberCount}명 참여
+            </p>
+          </button>
+        )}
+
         {/* 약속 설명 영역 */}
         <div className="flex items-start gap-2.5">
           <AlignLeft size={16} className="text-sub dark:text-gray-500 mt-0.5 shrink-0" />
@@ -145,7 +171,11 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, l
             </div>
 
             {/* 지도 컨테이너 */}
-            <div className={`w-full ${isMapExpanded ? 'h-80' : 'h-40'} rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}>
+            <div
+              className={`w-full ${
+                isMapExpanded ? 'h-80' : 'h-40'
+              } rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}
+            >
               {/* 로딩 상태 또는 데이터 준비 안 됨 */}
               {isMapLoading || !isLoaded || !center ? (
                 <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
@@ -215,6 +245,9 @@ const MeetingInfoCard: React.FC<MeetingInfoCardProps> = ({ title, description, l
           </div>
         )}
       </div>
+
+      {/* 참여자 목록 모달 컴포넌트 사용 */}
+      <ParticipantListModal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)} participants={participants || []} />
     </div>
   );
 };

@@ -20,3 +20,5 @@ export { default as ReportSlotCard } from './ReportSlotCard';
 export { default as ReportActions } from './ReportActions';
 export { default as FriendListPopup } from './FriendListPopup';
 export { default as ShareMeetingModal } from './ShareMeetingModal';
+export { default as ParticipantListModal } from './ParticipantListModal';
+export { default as MapPopupModal } from './MapPopupModal';

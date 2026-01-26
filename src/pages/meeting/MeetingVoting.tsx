@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { AlertCircle, Loader2, MapPin, Vote } from 'lucide-react';
+import { AlertCircle, Loader2, Vote, AlignLeft, MapPin, Users } from 'lucide-react';
 
-import { ConfirmModal, LoadingButton, PageFooter, PageHeader, PageLayout, PageTitle, VotingSlotItem } from 'components';
-import { useMeetingVoting } from 'hooks';
+import { ConfirmModal, LoadingButton, MapPopupModal, PageFooter, PageHeader, PageLayout, PageTitle, ParticipantListModal, VotingSlotItem } from 'components';
+import { useMeetingVoting, useUserProfiles } from 'hooks';
 
 dayjs.locale('ko');
 
@@ -20,6 +20,21 @@ const MeetingVoting = () => {
   const { state, handlers } = useMeetingVoting();
   const { loading, meetingData, votingSlots, isHost, isConflictModalOpen, isAllVoted, meetingId } = state;
   const { handleVote, handleMemoChange, getConflictInfo, handleSubmit, submitVote, setIsConflictModalOpen } = handlers;
+  const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // 참여자 프로필 정보 가져오기
+  const participantUids = useMemo(() => meetingData?.participants || [], [meetingData]);
+  const { profiles } = useUserProfiles(participantUids);
+
+  const participantsList = useMemo(() => {
+    if (!participantUids) return [];
+    return participantUids.map((uid: string) => ({
+      uid,
+      name: profiles[uid]?.name,
+      photoURL: profiles[uid]?.photoURL,
+    }));
+  }, [participantUids, profiles]);
 
   if (loading || !meetingData) {
     return (
@@ -50,31 +65,57 @@ const MeetingVoting = () => {
   return (
     <PageLayout title="투표하기" footer={renderFooter()}>
       <>
-        <PageHeader icon={<Vote className="text-primary w-6 h-6" />}>
-          <>
-            <div className="flex items-center gap-2 mb-2">
-              <PageTitle>{meetingData.title}</PageTitle>
-            </div>
-            {meetingData.location && (
-              <div className="flex items-center gap-2 text-sub dark:text-gray-400 font-medium mb-2">
-                <MapPin size={16} />
-                <span>{meetingData.location}</span>
+        <PageHeader className="mb-6" icon={<Vote className="text-primary w-6 h-6" />}>
+          <PageTitle>
+            {meetingData.isRetry ? (
+              <>
+                재요청된 일정입니다. <br />
+                <span className="text-primary dark:text-blue-400">가능 여부</span>를 다시 알려주세요.
+              </>
+            ) : (
+              <>
+                나의 <span className="text-primary dark:text-blue-400">가능 여부</span>를<br />
+                알려주세요.
+              </>
+            )}
+          </PageTitle>
+        </PageHeader>
+
+        {/* 약속 상세 정보 */}
+        <section className="bg-gray-50 dark:bg-gray-800 rounded-3xl p-6 mb-10 border border-gray-100 dark:border-gray-700/50 shadow-card">
+          <h3 className="text-[19px] font-black text-main dark:text-white mb-3">{meetingData.title}</h3>
+          <div className="space-y-3">
+            {/* 참여 인원 */}
+            {participantsList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsParticipantModalOpen(true)}
+                className="flex items-start gap-2.5 text-left cursor-pointer hover:opacity-70 transition-opacity"
+              >
+                <Users size={16} className="text-sub dark:text-gray-500 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-sub dark:text-gray-300 leading-relaxed underline decoration-dashed underline-offset-4 decoration-gray-300 dark:decoration-gray-600">
+                  {participantsList.length}명 참여
+                </p>
+              </button>
+            )}
+            {/* 메모 */}
+            {(meetingData as any).description && (
+              <div className="flex items-start gap-2.5">
+                <AlignLeft size={16} className="text-sub dark:text-gray-500 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-sub dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{(meetingData as any).description}</p>
               </div>
             )}
-            <p className="text-sub dark:text-gray-400 font-medium">
-              {meetingData.isRetry ? (
-                <>
-                  재요청된 일정입니다. <br />
-                  <span className="text-primary dark:text-blue-400 font-bold">가능 여부</span>를 다시 알려주세요.
-                </>
-              ) : (
-                <>
-                  나의 <span className="text-primary dark:text-blue-400 font-bold">가능 여부</span>를 알려주세요.
-                </>
-              )}
-            </p>
-          </>
-        </PageHeader>
+            {/* 위치 */}
+            {meetingData.location && (
+              <button type="button" onClick={() => setIsMapModalOpen(true)} className="flex items-start gap-2.5 text-left cursor-pointer hover:opacity-70 transition-opacity">
+                <MapPin size={16} className="text-sub dark:text-gray-500 mt-0.5 shrink-0" />
+                <p className="text-[14px] font-medium text-sub dark:text-gray-300 leading-relaxed underline decoration-dashed underline-offset-4 decoration-gray-300 dark:decoration-gray-600">
+                  {meetingData.location}
+                </p>
+              </button>
+            )}
+          </div>
+        </section>
 
         {/* 투표 슬롯 리스트 */}
         <div className="space-y-6">
@@ -104,6 +145,12 @@ const MeetingVoting = () => {
           confirmText="제출하기"
           confirmButtonClassName="bg-primary"
         />
+
+        {/* 참여자 목록 모달 */}
+        <ParticipantListModal isOpen={isParticipantModalOpen} onClose={() => setIsParticipantModalOpen(false)} participants={participantsList} />
+
+        {/* 지도 팝업 모달 */}
+        {isMapModalOpen && meetingData.location && <MapPopupModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} location={meetingData.location} />}
       </>
     </PageLayout>
   );
