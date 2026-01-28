@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
@@ -145,14 +145,14 @@ const ScheduleDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const { myCalendars } = useCalendar();
+  const { myCalendars, events } = useCalendar();
 
   const initialState = (location.state as LocationState) || null;
 
   // --------------------------------------------------------------------------------
   // State Management
   // --------------------------------------------------------------------------------
-  
+
   // 일정 데이터 상태
   const [data, setData] = useState<ScheduleDetailData>({
     title: initialState?.title || '로딩 중...',
@@ -208,6 +208,40 @@ const ScheduleDetail = () => {
   const scheduleCalendar = myCalendars.find((c) => c.id === data.calendarId);
   const isShared = data.attendees.length > 1;
   const isPastEvent = dayjs().startOf('day').isAfter(data.end);
+
+  // [추가] 이 일정이 포함된 캘린더 목록 계산
+  const includedCalendars = useMemo(() => {
+    if (!data.title) return [];
+
+    // 현재 일정과 동일한(제목, 시간, 종일여부) 일정을 찾습니다.
+    const matches = events.filter((e) => {
+      if (e.title !== data.title) return false;
+      if (e.allDay !== data.allDay) return false;
+      // 시작 시간 비교 (분 단위)
+      if (!dayjs(e.start).isSame(data.start, 'minute')) return false;
+      // 종료 시간 비교
+      if (data.end && e.end) {
+        if (!dayjs(e.end).isSame(data.end, 'minute')) return false;
+      }
+      return true;
+    });
+
+    const calIds = Array.from(new Set(matches.map((e) => e.calendarId)));
+    if (data.calendarId && !calIds.includes(data.calendarId)) {
+      calIds.push(data.calendarId);
+    }
+    return calIds
+      .map((calId) => myCalendars.find((c) => c.id === calId))
+      .filter((c) => !!c)
+      .sort((a, b) => {
+        if (!a || !b) return 0;
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        const nameA = (auth.currentUser && (a as any).customNames?.[auth.currentUser.uid]) || a.name;
+        const nameB = (auth.currentUser && (b as any).customNames?.[auth.currentUser.uid]) || b.name;
+        return nameA.localeCompare(nameB, 'ko');
+      });
+  }, [data, events, myCalendars]);
 
   // --------------------------------------------------------------------------------
   // Google Maps Loader
@@ -657,21 +691,23 @@ const ScheduleDetail = () => {
               </div>
             </div>
 
-            {/* 캘린더 정보 */}
-            {scheduleCalendar && (
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+            {/* [수정] 캘린더 정보 (여러 캘린더 포함 시 목록 표시) */}
+            {(includedCalendars.length > 0 ? includedCalendars : scheduleCalendar ? [scheduleCalendar] : []).length > 0 && (
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0 mt-1">
                   <CalendarIcon size={20} className="text-sub dark:text-gray-400" />
                 </div>
-                <div className="flex-1 flex items-center gap-3">
-                  {scheduleCalendar.icon && ICON_MAP[scheduleCalendar.icon] ? (
-                    React.createElement(ICON_MAP[scheduleCalendar.icon], { size: 18, style: { color: scheduleCalendar.color } })
-                  ) : (
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: scheduleCalendar.color }} />
-                  )}
-                  <span className="text-[15px] font-bold text-main dark:text-white">
-                    {(scheduleCalendar as any).customNames?.[auth.currentUser?.uid || ''] || scheduleCalendar.name}
-                  </span>
+                <div className="flex-1 flex flex-col gap-3 py-1.5">
+                  {(includedCalendars.length > 0 ? includedCalendars : [scheduleCalendar!]).map((cal) => (
+                    <div key={cal!.id} className="flex items-center gap-3">
+                      {cal!.icon && ICON_MAP[cal!.icon] ? (
+                        React.createElement(ICON_MAP[cal!.icon], { size: 18, style: { color: cal!.color } })
+                      ) : (
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cal!.color }} />
+                      )}
+                      <span className="text-[15px] font-bold text-main dark:text-white">{(cal as any).customNames?.[auth.currentUser?.uid || ''] || cal!.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -708,7 +744,11 @@ const ScheduleDetail = () => {
                     <p className="text-[15px] font-bold text-main dark:text-white">{data.location}</p>
                   </div>
                 </div>
-                <div className={`w-full ${isMapExpanded ? 'h-96' : 'h-48'} rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}>
+                <div
+                  className={`w-full ${
+                    isMapExpanded ? 'h-96' : 'h-48'
+                  } rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 relative bg-gray-100 dark:bg-gray-800 group transition-all duration-300 ease-in-out`}
+                >
                   {isMapLoading || !isLoaded || !center ? (
                     <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse flex items-center justify-center z-10">
                       <Loader2 className="text-gray-400 dark:text-gray-500 w-8 h-8 animate-spin opacity-50" />
@@ -724,7 +764,7 @@ const ScheduleDetail = () => {
                         disableDefaultUI: true, // 기본 UI 컨트롤 숨김
                         clickableIcons: true,
                         gestureHandling: 'greedy',
-                        mapId:'3ee6e463dfd708817a22a110'
+                        mapId: '3ee6e463dfd708817a22a110',
                       }}
                     >
                       <AdvancedMarker position={center} map={mapInstance} title="약속 장소" />

@@ -149,6 +149,18 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
               const isMerged = (event as any).extendedProps?.isMerged;
               const mergedEvents = (event as any).extendedProps?.mergedEvents as CalendarEvent[];
 
+              const sortedMergedEvents =
+                isMerged && mergedEvents
+                  ? [...mergedEvents].sort((a, b) => {
+                      const calA = myCalendars.find((c) => c.id === a.calendarId);
+                      const calB = myCalendars.find((c) => c.id === b.calendarId);
+                      if (!calA || !calB) return 0;
+                      if (calA.isDefault && !calB.isDefault) return -1;
+                      if (!calA.isDefault && calB.isDefault) return 1;
+                      return calA.name.localeCompare(calB.name, 'ko');
+                    })
+                  : [];
+
               const eventCalendar = myCalendars.find((c) => c.id === event.calendarId);
               let IconComponent = null;
               if (activeCalendar?.isDefault && eventCalendar && !eventCalendar.isDefault && eventCalendar.icon) {
@@ -223,7 +235,7 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                       )}
                       {isMerged ? (
                         <div className="flex flex-col items-end gap-1 mt-1">
-                          {mergedEvents.map((evt) => {
+                          {sortedMergedEvents.map((evt) => {
                             const cal = myCalendars.find((c) => c.id === evt.calendarId);
                             return (
                               <div key={evt.id} className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md shrink-0">

@@ -82,9 +82,11 @@ const CalendarManager = () => {
     return [...calendars].sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1; // a가 기본 캘린더면 위로
       if (!a.isDefault && b.isDefault) return 1; // b가 기본 캘린더면 위로
-      return 0; // 나머지는 순서 유지
+      const nameA = (a as any).customNames?.[user?.uid] || a.name;
+      const nameB = (b as any).customNames?.[user?.uid] || b.name;
+      return nameA.localeCompare(nameB, 'ko');
     });
-  }, [calendarsData]);
+  }, [calendarsData, user]);
 
   const formatMembers = (members: string[]) => {
     // 실제로는 uid를 이름으로 변환하는 과정이 필요하지만 지금은 배열 길이로 표현

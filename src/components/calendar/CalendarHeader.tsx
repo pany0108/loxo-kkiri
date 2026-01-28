@@ -45,7 +45,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     return [...myCalendars].sort((a, b) => {
       if (a.isDefault && !b.isDefault) return -1;
       if (!a.isDefault && b.isDefault) return 1;
-      return 0;
+      const userId = auth.currentUser?.uid;
+      const nameA = (userId && (a as any).customNames?.[userId]) || a.name;
+      const nameB = (userId && (b as any).customNames?.[userId]) || b.name;
+      return nameA.localeCompare(nameB, 'ko');
     });
   }, [myCalendars]);
 
