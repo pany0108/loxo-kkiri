@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { arrayUnion, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { BookOpen, Check, ImageIcon, Pencil, Trash2 } from 'lucide-react';
@@ -22,7 +22,7 @@ import {
 } from 'components';
 import ScheduleForm from '../../components/calendar/ScheduleForm';
 import { useCalendar } from 'contexts';
-import { notifyScheduleUpdated } from 'services';
+import { notifyScheduleAdded, notifyScheduleUpdated } from 'services';
 
 dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
@@ -104,6 +104,8 @@ const ScheduleEdit = () => {
     isLeapMonth: eventData?.isLeapMonth || false,
   });
 
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>(eventData?.calendarId ? [eventData.calendarId] : []);
+
   const [recurrence, setRecurrence] = useState<RecurrenceSettings>(
     eventData?.recurrence || {
       frequency: 'none',
@@ -120,13 +122,16 @@ const ScheduleEdit = () => {
   const isShared = selectedCalendar ? selectedCalendar.members.length > 1 : false;
   const isPastEvent = dayjs().isAfter(formData.end);
 
-  const handleCalendarSelect = (calendar: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      calendarId: calendar.id,
-      color: calendar.color || '#007AFF',
-    }));
-    setIsCalListOpen(false);
+  const handleCalendarSelect = (calendarId: string) => {
+    setSelectedCalendarIds((prev) => {
+      if (prev.includes(calendarId)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((id) => id !== calendarId);
+      }
+      return [...prev, calendarId];
+    });
+    // Update formData color based on the last selected or first selected?
+    // Let's keep formData.calendarId as the "primary" for color display if needed, or just rely on selectedCalendarIds[0]
   };
 
   /** 삭제 버튼 클릭 핸들러 */
@@ -368,48 +373,83 @@ const ScheduleEdit = () => {
     try {
       setIsSubmitting(true);
       const docId = getDocId();
-      if (docId) {
-        // 저장 시점에 선택된 캘린더의 멤버를 참석자로 설정합니다.
-        const attendees = selectedCalendar?.members || (user ? [user.uid] : []);
+      if (!docId) return;
 
-        const scheduleUpdateData: any = {
+      const originalCalendarId = eventData?.calendarId;
+      const primaryNewCalendarId = selectedCalendarIds.includes(originalCalendarId) ? originalCalendarId : selectedCalendarIds[0];
+
+      const otherCalendarIds = selectedCalendarIds.filter((id) => id !== primaryNewCalendarId);
+
+      // 1. Update the existing document (Primary)
+      const primaryCalendar = myCalendars.find((c) => c.id === primaryNewCalendarId);
+      const primaryAttendees = primaryCalendar?.members || (user ? [user.uid] : []);
+
+      const scheduleUpdateData: any = {
+        ...formData,
+        calendarId: primaryNewCalendarId,
+        color: primaryCalendar?.color || formData.color,
+        attendees: primaryAttendees,
+        recurrence,
+      };
+
+      if (eventData?.recurrence && eventData.recurrence.frequency !== 'none') {
+        delete scheduleUpdateData.start;
+        delete scheduleUpdateData.end;
+      }
+
+      await updateDoc(doc(db, 'schedules', docId), scheduleUpdateData);
+
+      // Notify for primary update
+      if (primaryAttendees.length > 1) {
+        const batch = writeBatch(db);
+        for (const memberId of primaryAttendees) {
+          if (memberId === user?.uid) continue;
+          await notifyScheduleUpdated(batch, {
+            memberId,
+            editorName: user?.displayName || '누군가',
+            calendarName: primaryCalendar?.name || '공유',
+            scheduleTitle: formData.title,
+            scheduleId: docId,
+            calendarId: primaryNewCalendarId,
+          });
+        }
+        await batch.commit();
+      }
+
+      // 2. Create copies for other calendars
+      for (const calId of otherCalendarIds) {
+        const cal = myCalendars.find((c) => c.id === calId);
+        const attendees = cal?.members || [user.uid];
+
+        const newDocRef = await addDoc(collection(db, 'schedules'), {
           ...formData,
+          calendarId: calId,
+          color: cal?.color || formData.color,
           attendees,
           recurrence,
-        };
+          userId: user.uid,
+          createdAt: new Date().toISOString(),
+        });
 
-        // 반복 일정 수정 시, 시리즈의 시작 시간은 변경하지 않습니다.
-        if (eventData?.recurrence && eventData.recurrence.frequency !== 'none') {
-          delete scheduleUpdateData.start;
-          delete scheduleUpdateData.end;
-        }
-
-        await updateDoc(doc(db, 'schedules', docId!), scheduleUpdateData);
-
-        // 공유 캘린더 일정 수정 시 멤버들에게 알림 전송
         if (attendees.length > 1) {
           const batch = writeBatch(db);
-          const editorName = user?.displayName || '누군가';
-
           for (const memberId of attendees) {
-            // 일정을 수정한 본인에게는 알림을 보내지 않음
             if (memberId === user?.uid) continue;
-
-            await notifyScheduleUpdated(batch, {
+            await notifyScheduleAdded(batch, {
               memberId,
-              editorName,
-              calendarName: selectedCalendar?.name || '공유',
+              editorName: user?.displayName || '누군가',
+              calendarName: cal?.name || '공유',
               scheduleTitle: formData.title,
-              scheduleId: docId,
-              calendarId: selectedCalendar?.id || '',
+              scheduleId: newDocRef.id,
+              calendarId: calId,
             });
           }
-
           await batch.commit();
         }
-        toast.success('수정되었습니다.');
-        navigate(-1); // 뒤로 가기
       }
+
+      toast.success('수정되었습니다.');
+      navigate(-1);
     } catch (error) {
       console.error('수정 실패:', error);
       toast.error('수정 중 오류가 발생했습니다.');
@@ -448,7 +488,7 @@ const ScheduleEdit = () => {
               recurrence={recurrence}
               setRecurrence={setRecurrence}
               myCalendars={myCalendars}
-              selectedCalendar={selectedCalendar}
+              selectedCalendarIds={selectedCalendarIds}
               isCalListOpen={isCalListOpen}
               setIsCalListOpen={setIsCalListOpen}
               handleCalendarSelect={handleCalendarSelect}

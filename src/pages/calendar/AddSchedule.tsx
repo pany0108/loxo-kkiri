@@ -4,10 +4,12 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import dayjs from 'dayjs';
 import { CalendarPlus } from 'lucide-react';
-
-import { auth } from '../../firebase';
+import { addDoc, collection, writeBatch } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import { auth, db } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
 import { useAddSchedule } from 'hooks';
+import { notifyScheduleAdded } from 'services';
 
 /**
  * 일정 추가 페이지 컴포넌트
@@ -22,12 +24,14 @@ const AddSchedule = () => {
   const currentUser = auth.currentUser;
 
   const { state, refs, handlers } = useAddSchedule();
-  const { formData, recurrence, isCalListOpen, isSubmitting, scheduleSearchResults, showSuggestions, myCalendars, selectedCalendar } = state;
+  const { formData, recurrence, isCalListOpen, scheduleSearchResults, showSuggestions, myCalendars } = state;
   const { dropdownRef, titleInputRef } = refs;
-  const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleToggle, handleSubmit } = handlers;
+  const { setRecurrence, setIsCalListOpen, setShowSuggestions, handleChange, handleToggle } = handlers;
 
   const [isMapModalOpen, setIsMapModalOpen] = React.useState(false);
-  
+  const [selectedCalendarIds, setSelectedCalendarIds] = React.useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   // 초기화 실행 여부를 추적하는 Ref (리렌더링 루프 방지)
   const isInitialized = useRef(false);
 
@@ -70,7 +74,80 @@ const AddSchedule = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 초기 캘린더 선택
+  React.useEffect(() => {
+    if (selectedCalendarIds.length === 0 && myCalendars.length > 0) {
+      if (formData.calendarId) {
+        setSelectedCalendarIds([formData.calendarId]);
+      } else {
+        const defaultCal = myCalendars.find((c) => c.isDefault) || myCalendars[0];
+        if (defaultCal) setSelectedCalendarIds([defaultCal.id]);
+      }
+    }
+  }, [myCalendars, formData.calendarId, selectedCalendarIds.length]);
+
   // --- Handlers ---
+
+  const handleCalendarSelect = (calendarId: string) => {
+    setSelectedCalendarIds((prev) => {
+      if (prev.includes(calendarId)) {
+        if (prev.length === 1) return prev; // 최소 1개 선택 유지
+        return prev.filter((id) => id !== calendarId);
+      }
+      return [...prev, calendarId];
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return toast.error('로그인이 필요합니다.');
+    if (!formData.title) return toast.error('제목을 입력해주세요.');
+    if (selectedCalendarIds.length === 0) return toast.error('일정을 저장할 캘린더를 선택해주세요.');
+    if (dayjs(formData.end).isBefore(dayjs(formData.start))) return toast.error('종료 시간이 시작 시간보다 빠를 수 없습니다.');
+
+    setIsSubmitting(true);
+    try {
+      const batch = writeBatch(db);
+
+      for (const calendarId of selectedCalendarIds) {
+        const selectedCalendar = myCalendars.find((c) => c.id === calendarId);
+        const attendees = selectedCalendar ? selectedCalendar.members : [currentUser.uid];
+
+        const scheduleData = {
+          userId: currentUser.uid,
+          ...formData,
+          calendarId, // 각 일정에 맞는 캘린더 ID 설정
+          recurrence,
+          createdAt: new Date().toISOString(),
+          attendees,
+        };
+
+        const scheduleDocRef = await addDoc(collection(db, 'schedules'), scheduleData);
+
+        if (selectedCalendar && selectedCalendar.members.length > 1) {
+          for (const memberId of selectedCalendar.members) {
+            if (memberId === currentUser.uid) continue;
+            await notifyScheduleAdded(batch, {
+              memberId,
+              editorName: currentUser.displayName || '알 수 없음',
+              calendarName: selectedCalendar.name,
+              scheduleTitle: formData.title,
+              scheduleId: scheduleDocRef.id,
+              calendarId: selectedCalendar.id,
+            });
+          }
+        }
+      }
+      await batch.commit();
+      toast.success('일정이 저장되었습니다! ☁️');
+      navigate('/calendar');
+    } catch (error) {
+      console.error('Error adding document: ', error);
+      toast.error('저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   /** * 뒤로가기 핸들러 (수정됨)
    * - 복잡한 비동기 로직(setTimeout)을 제거하고 순수한 네비게이션만 수행합니다.
@@ -200,10 +277,10 @@ const AddSchedule = () => {
             recurrence={recurrence}
             setRecurrence={setRecurrence}
             myCalendars={myCalendars}
-            selectedCalendar={selectedCalendar}
+            selectedCalendarIds={selectedCalendarIds}
             isCalListOpen={isCalListOpen}
             setIsCalListOpen={setIsCalListOpen}
-            handleCalendarSelect={handlers.handleCalendarSelect}
+            handleCalendarSelect={handleCalendarSelect}
             currentUser={currentUser}
             navigate={navigate}
             openMapModal={() => setIsMapModalOpen(true)}

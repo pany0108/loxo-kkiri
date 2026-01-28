@@ -66,7 +66,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             <ChevronDown size={20} className={`text-sub transition-transform duration-300 flex-shrink-0 ${isCalListOpen ? 'rotate-180' : ''}`} />
           </button>
           <p className="text-[12px] text-sub font-bold mt-1 ml-0.5 truncate">
-            {activeCalendar ? (activeCalendar.members.length === 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
+            {activeCalendar ? (activeCalendar.members.length <= 1 ? '나만의 공간' : `${activeCalendar.members.length}명과 공유중`) : '캘린더를 생성해주세요'}
           </p>
 
           {isCalListOpen && (

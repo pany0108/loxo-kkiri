@@ -4,7 +4,7 @@ import { DayHeaderContentArg, EventContentArg, EventMountArg } from '@fullcalend
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { collection, query, where } from 'firebase/firestore';
-import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Loader2, Music, Plane, ShoppingCart, Star, Trash2 } from 'lucide-react';
+import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Loader2, Music, Plane, Share2, ShoppingCart, Star, Trash2 } from 'lucide-react';
 
 import { auth, db } from '../../firebase';
 import { AddScheduleFAB, Calendar, CalendarHeader, ConfirmModal, DatePickerPopup, DeleteRecurringModal, EventListSheet } from 'components';
@@ -40,7 +40,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 const CalendarMain = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { myCalendars, activeCalendar, setActiveCalendar } = useCalendar(); // Context
+  const { myCalendars, activeCalendar, setActiveCalendar, events } = useCalendar(); // Context
 
   // --- Refs & State ---
   const touchStartX = useRef<number | null>(null);
@@ -68,7 +68,6 @@ const CalendarMain = () => {
     isDeleteModalOpen,
     isSimpleDeleteModalOpen,
     isInitialAuthChecking,
-    allDisplayedEvents,
   } = state;
   const {
     setIsCalListOpen,
@@ -115,6 +114,65 @@ const CalendarMain = () => {
    * - 메인 탭 진입점에서는 뒤로가기 2회 시 앱이 종료되도록 설정합니다.
    */
   useDoubleBackExit();
+
+  // '모든 캘린더' 모드 또는 특정 캘린더 선택에 따른 이벤트 필터링
+  const finalEvents = useMemo(() => {
+    // 1. 모든 이벤트에 캘린더 색상 적용
+    const coloredEvents = events.map((event) => {
+      if (event.calendarId === 'holidays') return event;
+      const calendar = myCalendars.find((c) => c.id === event.calendarId);
+      if (calendar) {
+        return {
+          ...event,
+          color: calendar.color || event.color,
+          backgroundColor: calendar.color || event.color,
+          borderColor: calendar.color || event.color,
+        };
+      }
+      return event;
+    });
+
+    // 2. 뷰 모드에 따른 필터링 및 병합
+    if (activeCalendar && !activeCalendar.isDefault) {
+      // 특정 캘린더 보기: 해당 캘린더의 일정만 표시 (병합 없음)
+      return coloredEvents.filter((e) => e.calendarId === activeCalendar.id || e.calendarId === 'holidays');
+    }
+
+    // 내 캘린더(기본) 보기: 모든 일정 표시하되, 중복된 공유 일정은 하나로 병합
+    const grouped = new Map<string, any[]>();
+    coloredEvents.forEach((event) => {
+      const key = `${event.title}_${event.start}_${event.end}_${event.allDay}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(event);
+    });
+
+    const merged: any[] = [];
+    grouped.forEach((group) => {
+      if (group.length === 1) {
+        merged.push(group[0]);
+      } else {
+        // 중복된 일정이 있을 경우, 기본 캘린더의 일정을 우선적으로 표시
+        const defaultCalEvent = group.find((e) => {
+          const cal = myCalendars.find((c) => c.id === e.calendarId);
+          return cal?.isDefault;
+        });
+        const representative = defaultCalEvent || group[0];
+
+        merged.push({
+          ...representative,
+          extendedProps: {
+            ...representative.extendedProps,
+            isMerged: true,
+            mergedCount: group.length,
+            mergedEvents: group,
+          },
+        });
+      }
+    });
+    return merged;
+  }, [events, activeCalendar, myCalendars]);
 
   // --- Handlers ---
 
@@ -210,7 +268,7 @@ const CalendarMain = () => {
     const dayOfWeek = args.date.getDay();
 
     const dateStr = dayjs(args.date).format('YYYY-MM-DD');
-    const isHoliday = allDisplayedEvents.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
+    const isHoliday = finalEvents.some((e) => e.calendarId === 'holidays' && dayjs(e.start).format('YYYY-MM-DD') === dateStr);
 
     let dateColor = 'text-[#191F28] dark:text-gray-200';
     let dayNameColor = 'text-[#8B95A1] dark:text-gray-500';
@@ -234,8 +292,11 @@ const CalendarMain = () => {
     const isHoliday = eventInfo.event.extendedProps.calendarId === 'holidays';
     const calendarId = eventInfo.event.extendedProps.calendarId;
     const eventCalendar = myCalendars.find((c) => c.id === calendarId);
+    const isMerged = eventInfo.event.extendedProps.isMerged;
+    const mergedCount = eventInfo.event.extendedProps.mergedCount;
 
     let IconComponent = null;
+    // '모든 캘린더' 보기이거나 기본 캘린더 보기일 때, 다른 캘린더의 일정은 아이콘을 표시하여 구분
     if (activeCalendar?.isDefault && eventCalendar && !eventCalendar.isDefault && eventCalendar.icon) {
       IconComponent = ICON_MAP[eventCalendar.icon];
     }
@@ -249,6 +310,12 @@ const CalendarMain = () => {
         return (
           <div className="px-1 overflow-hidden flex items-center justify-center">
             {IconComponent && <IconComponent size={10} className="mr-1 shrink-0" />}
+            {isMerged && (
+              <div className="flex items-center gap-0.5 mr-1 text-main dark:text-gray-200 shrink-0">
+                <Share2 size={10} />
+                <span className="text-[9px] font-bold">{mergedCount}</span>
+              </div>
+            )}
             <div className="text-[10px] truncate">{eventInfo.event.title}</div>
           </div>
         );
@@ -260,6 +327,12 @@ const CalendarMain = () => {
         >
           <div className="w-0.5 h-3.5 mr-0.5 shrink-0" style={{ backgroundColor: eventInfo.backgroundColor || 'var(--color-primary)' }} />
           {IconComponent && <IconComponent size={10} className="mr-1 text-sub dark:text-gray-400 shrink-0" />}
+          {isMerged && (
+            <div className="flex items-center gap-0.5 mr-1 text-sub dark:text-gray-400 shrink-0">
+              <Share2 size={10} />
+              <span className="text-[9px] font-bold">{mergedCount}</span>
+            </div>
+          )}
           <div className="text-[10px] font-bold text-main dark:text-gray-200 truncate">{eventInfo.event.title}</div>
         </div>
       );
@@ -291,6 +364,12 @@ const CalendarMain = () => {
           </div>
         )}
         {IconComponent && <IconComponent size={10} className="text-white/90 mr-0.5" />}
+        {isMerged && (
+          <div className="flex items-center gap-0.5 mr-1 text-white/90 shrink-0">
+            <Share2 size={10} />
+            <span className="text-[9px] font-bold">{mergedCount}</span>
+          </div>
+        )}
         {eventInfo.event.title && <div className={`font-bold text-white leading-tight truncate ${isWeekView ? 'text-[10px]' : 'text-[12px] px-0.5'}`}>{eventInfo.event.title}</div>}
       </div>
     );
@@ -351,7 +430,7 @@ const CalendarMain = () => {
         >
           <Calendar
             currentView={currentView}
-            events={allDisplayedEvents}
+            events={finalEvents}
             selectedDate={selectedDate}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
@@ -383,7 +462,7 @@ const CalendarMain = () => {
             handlers.setSelectedDate(null);
           }}
           selectedDate={selectedDate}
-          events={allDisplayedEvents}
+          events={finalEvents}
           onListItemClick={handleListItemClick}
           isJiggleMode={isJiggleMode}
           jigglingItemId={jigglingItemId}

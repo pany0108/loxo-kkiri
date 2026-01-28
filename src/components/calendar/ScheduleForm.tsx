@@ -35,10 +35,10 @@ interface ScheduleFormProps {
   recurrence: RecurrenceSettings;
   setRecurrence: (settings: RecurrenceSettings) => void;
   myCalendars: any[];
-  selectedCalendar: any;
+  selectedCalendarIds: string[];
   isCalListOpen: boolean;
   setIsCalListOpen: (isOpen: boolean) => void;
-  handleCalendarSelect: (calendar: any) => void;
+  handleCalendarSelect: (calendarId: string) => void;
   currentUser: any;
   navigate: any;
   openMapModal: () => void;
@@ -69,7 +69,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
   recurrence,
   setRecurrence,
   myCalendars,
-  selectedCalendar,
+  selectedCalendarIds,
   isCalListOpen,
   setIsCalListOpen,
   handleCalendarSelect,
@@ -113,13 +113,15 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
    */
   const sortedCalendars = useMemo(() => {
     return [...myCalendars].sort((a, b) => {
-      if (selectedCalendar && a.id === selectedCalendar.id) return -1;
-      if (selectedCalendar && b.id === selectedCalendar.id) return 1;
+      const aSelected = selectedCalendarIds.includes(a.id);
+      const bSelected = selectedCalendarIds.includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
       if (a.isDefault) return -1;
       if (b.isDefault) return 1;
       return 0;
     });
-  }, [myCalendars, selectedCalendar]);
+  }, [myCalendars, selectedCalendarIds]);
 
   // --------------------------------------------------------------------------------
   // Effects
@@ -188,6 +190,17 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`, '_blank');
   };
 
+  const getSelectedCalendarsText = () => {
+    if (selectedCalendarIds.length === 0) return '캘린더 선택...';
+    if (selectedCalendarIds.length === 1) {
+      const cal = myCalendars.find((c) => c.id === selectedCalendarIds[0]);
+      return cal ? (cal as any).customNames?.[currentUser?.uid || ''] || cal.name : '캘린더 선택...';
+    }
+    return `${selectedCalendarIds.length}개 캘린더 선택됨`;
+  };
+
+  const primaryCalendar = myCalendars.find((c) => c.id === selectedCalendarIds[0]);
+
   // --------------------------------------------------------------------------------
   // Render
   // --------------------------------------------------------------------------------
@@ -244,16 +257,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
           className="w-full flex items-center justify-between h-[60px] bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus-within:border-primary focus-within:bg-white dark:focus-within:bg-gray-800 rounded-[20px] px-5 transition-all text-left"
         >
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: selectedCalendar?.color || '#ccc' }}>
-              {(selectedCalendar as any)?.icon && ICON_MAP[(selectedCalendar as any).icon] ? (
-                React.createElement(ICON_MAP[(selectedCalendar as any).icon], { size: 14 })
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: primaryCalendar?.color || '#ccc' }}>
+              {(primaryCalendar as any)?.icon && ICON_MAP[(primaryCalendar as any).icon] ? (
+                React.createElement(ICON_MAP[(primaryCalendar as any).icon], { size: 14 })
               ) : (
                 <CalendarIcon size={14} />
               )}
             </div>
-            <span className="text-[15px] font-bold text-main dark:text-gray-200">
-              {selectedCalendar ? (selectedCalendar as any).customNames?.[currentUser?.uid || ''] || selectedCalendar.name : '캘린더 선택...'}
-            </span>
+            <span className="text-[15px] font-bold text-main dark:text-gray-200">{getSelectedCalendarsText()}</span>
           </div>
           <ChevronDown size={20} className={`text-sub dark:text-gray-400 transition-transform duration-200 ${isCalListOpen ? 'rotate-180' : ''}`} />
         </button>
@@ -263,13 +274,14 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
             {sortedCalendars.map((cal) => {
               const IconComponent = (cal as any).icon && ICON_MAP[(cal as any).icon] ? ICON_MAP[(cal as any).icon] : CalendarIcon;
               const calName = (cal as any).customNames?.[currentUser?.uid || ''] || cal.name;
+              const isSelected = selectedCalendarIds.includes(cal.id);
               return (
                 <button
                   key={cal.id}
                   type="button"
-                  onClick={() => handleCalendarSelect(cal)}
+                  onClick={() => handleCalendarSelect(cal.id)}
                   className={`w-full flex items-center justify-between p-4 rounded-[18px] transition-all ${
-                    selectedCalendar?.id === cal.id ? 'bg-primary/20 dark:bg-primary/10 text-primary' : 'text-sub dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+                    isSelected ? 'bg-primary/20 dark:bg-primary/10 text-primary' : 'text-sub dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -278,7 +290,7 @@ const ScheduleForm: React.FC<ScheduleFormProps> = ({
                     </div>
                     <span className="text-[14px] font-bold">{calName}</span>
                   </div>
-                  {selectedCalendar?.id === cal.id && <Check size={16} className="text-primary" />}
+                  {isSelected && <Check size={16} className="text-primary" />}
                 </button>
               );
             })}

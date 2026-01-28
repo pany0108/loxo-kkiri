@@ -33,6 +33,7 @@ export interface CalendarEvent {
   calendarId: string;
   isLeapMonth?: boolean; // 윤달 여부
   isLunar?: boolean; // 음력 여부
+  extendedProps?: Record<string, any>;
 }
 
 interface CalendarContextType {

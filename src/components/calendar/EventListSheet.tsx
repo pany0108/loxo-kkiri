@@ -1,7 +1,7 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, Plane, ShoppingCart, Star, Trash2, User, Users, X } from 'lucide-react';
+import { Briefcase, Coffee, Dumbbell, Gamepad2, Gift, GraduationCap, Heart, Home, Music, Plane, Share2, ShoppingCart, Star, Trash2, User, Users, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { CalendarEvent, CalendarType } from 'contexts';
@@ -146,6 +146,8 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
               const displayStart = (event as any).extendedProps?.originalStart || event.start;
               const displayEnd = (event as any).extendedProps?.originalEnd || event.end;
               const displayAllDay = (event as any).extendedProps?.originalAllDay ?? event.allDay;
+              const isMerged = (event as any).extendedProps?.isMerged;
+              const mergedEvents = (event as any).extendedProps?.mergedEvents as CalendarEvent[];
 
               const eventCalendar = myCalendars.find((c) => c.id === event.calendarId);
               let IconComponent = null;
@@ -200,10 +202,17 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                   <div className="pl-2">
                     <div className="flex items-center justify-between mb-2">
                       <span className="px-2 py-1 bg-gray-50 dark:bg-gray-700/50 text-[10px] font-bold text-sub dark:text-gray-400 rounded-[8px]">{timeDisplay}</span>
-                      <div className="flex items-center gap-1 text-[10px] font-bold text-sub dark:text-gray-400">
-                        {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
-                        <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
-                      </div>
+                      {isMerged ? (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-primary dark:text-blue-400">
+                          <Share2 size={12} />
+                          <span>{mergedEvents.length}개 캘린더</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-sub dark:text-gray-400">
+                          {event.attendees.length > 1 ? <Users size={12} /> : <User size={12} />}
+                          <span>{event.attendees.length > 1 ? `${event.attendees.length}명` : '나'}</span>
+                        </div>
+                      )}
                     </div>
                     <h4 className="text-[15px] font-black text-main dark:text-white mb-1 transition-colors truncate">{event.title}</h4>
                     <div className="flex items-center justify-between">
@@ -212,11 +221,26 @@ const EventListSheet: React.FC<EventListSheetProps> = ({
                       ) : (
                         <div />
                       )}
-                      {IconComponent && (
-                        <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md shrink-0" title={eventCalendar?.name}>
-                          <IconComponent size={12} className="text-sub dark:text-gray-400" />
-                          <span className="text-[10px] font-bold text-sub dark:text-gray-400 truncate max-w-[60px]">{eventCalendar?.name}</span>
+                      {isMerged ? (
+                        <div className="flex flex-col items-end gap-1 mt-1">
+                          {mergedEvents.map((evt) => {
+                            const cal = myCalendars.find((c) => c.id === evt.calendarId);
+                            return (
+                              <div key={evt.id} className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md shrink-0">
+                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cal?.color || '#ccc' }} />
+                                <span className="text-[10px] font-bold text-sub dark:text-gray-400 truncate max-w-[80px]">{cal?.name}</span>
+                                <span className="text-[9px] text-gray-400">({evt.attendees.length}명)</span>
+                              </div>
+                            );
+                          })}
                         </div>
+                      ) : (
+                        IconComponent && (
+                          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 px-1.5 py-0.5 rounded-md shrink-0" title={eventCalendar?.name}>
+                            <IconComponent size={12} className="text-sub dark:text-gray-400" />
+                            <span className="text-[10px] font-bold text-sub dark:text-gray-400 truncate max-w-[60px]">{eventCalendar?.name}</span>
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
