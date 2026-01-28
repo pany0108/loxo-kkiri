@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateProfile } from 'firebase/auth';
+import { signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { Calendar, CheckCircle2, Loader2, Save, Smartphone, User } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, Loader2, Save, Smartphone, Trash2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
-import { FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
-import { updateUserBirthdaySchedule } from 'services';
+import { ConfirmModal, FormInput, PageFooter, PageHeader, PageLayout, PageTitle } from 'components';
+import { deleteUserAccountAndData, updateUserBirthdaySchedule } from 'services';
 
 /**
  * 사용자 개인 정보를 수정하는 페이지 컴포넌트입니다.
@@ -29,6 +29,7 @@ const EditUserInfo = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [isLunar, setIsLunar] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   /**
    * 컴포넌트 마운트 시 Firestore에서 현재 로그인된 사용자의 정보를 불러옵니다.
@@ -129,6 +130,36 @@ const EditUserInfo = () => {
     }
   };
 
+  /** 회원 탈퇴 확정 핸들러 */
+  const handleDeleteAccountConfirm = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Firestore 데이터 삭제 및 Firebase Auth 계정 삭제 (userService.ts 내부에서 처리됨)
+      await deleteUserAccountAndData(user);
+
+      toast.success('회원 탈퇴가 완료되었습니다. 이용해주셔서 감사합니다.');
+      navigate('/'); // 로그아웃 후 메인 페이지로 이동
+    } catch (error: any) {
+      console.error('회원 탈퇴 오류:', error);
+      if (error.code === 'auth/requires-recent-login') {
+        toast.error('보안을 위해 다시 로그인한 후 시도해주세요.');
+        await signOut(auth);
+        navigate('/login');
+      } else {
+        toast.error('회원 탈퇴 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsSaving(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-950">
@@ -150,7 +181,7 @@ const EditUserInfo = () => {
           </>
         )}
       </button>
-      <p className="text-center text-[11px] text-[#8B95A1] dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p>
+      {/* <p className="text-center text-[11px] text-[#8B95A1] dark:text-gray-600 font-bold mt-4 tracking-tight">회원님의 정보는 암호화되어 안전하게 보호됩니다.</p> */}
     </PageFooter>
   );
 
@@ -242,6 +273,17 @@ const EditUserInfo = () => {
             </div>
           </section>
 
+          {/* 회원 탈퇴 버튼 */}
+          <div className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="text-sm font-bold text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors flex items-center gap-2"
+            >
+              <Trash2 size={14} />
+              회원 탈퇴하기
+            </button>
+          </div>
+
           {/* 안내 메시지 카드 */}
           <div className="bg-primary/10 dark:bg-blue-500/10 rounded-[24px] p-5 border border-primary/20 dark:border-blue-500/20 flex gap-3 animate-in fade-in zoom-in-95 duration-500">
             <CheckCircle2 className="text-primary dark:text-blue-400 shrink-0 mt-0.5" size={18} />
@@ -252,6 +294,25 @@ const EditUserInfo = () => {
           </div>
         </div>
       </>
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteAccountConfirm}
+        icon={<AlertCircle size={32} />}
+        iconContainerClassName="bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400"
+        title="회원 탈퇴"
+        message={
+          <>
+            정말로 탈퇴하시겠습니까?
+            <br />
+            모든 데이터가 영구적으로 삭제되며, 복구할 수 없습니다.
+          </>
+        }
+        confirmText="탈퇴하기"
+        confirmButtonClassName="bg-red-500"
+        isLoading={isSaving}
+      />
     </PageLayout>
   );
 };
