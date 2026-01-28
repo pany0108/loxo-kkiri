@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Edit2, FolderPlus, Trash2, X } from 'lucide-react';
+import { Ban, Edit2, FolderPlus, Trash2, X } from 'lucide-react';
 
 interface Friend {
   uid: string;
@@ -14,6 +14,7 @@ interface FriendActionMenuProps {
   onEdit: () => void;
   onMoveGroup: () => void;
   onDelete: () => void;
+  onBlock: () => void;
 }
 
 /**
@@ -25,8 +26,9 @@ interface FriendActionMenuProps {
  * @param {function} onEdit - 이름 수정 핸들러
  * @param {function} onMoveGroup - 그룹 이동 핸들러
  * @param {function} onDelete - 친구 삭제 핸들러
+ * @param {function} onBlock - 친구 차단 핸들러
  */
-const FriendActionMenu: React.FC<FriendActionMenuProps> = ({ isOpen, onClose, friend, onEdit, onMoveGroup, onDelete }) => {
+const FriendActionMenu: React.FC<FriendActionMenuProps> = ({ isOpen, onClose, friend, onEdit, onMoveGroup, onDelete, onBlock }) => {
   const sheetTouchStartY = useRef<number | null>(null);
   const sheetTouchEndY = useRef<number | null>(null);
   const minSheetSwipeDistance = 50;
@@ -86,6 +88,12 @@ const FriendActionMenu: React.FC<FriendActionMenuProps> = ({ isOpen, onClose, fr
                   <FolderPlus size={20} />
                 </div>
                 <span className="font-bold text-gray-700 dark:text-gray-300">그룹 변경</span>
+              </button>
+              <button onClick={onBlock} className="w-full flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-2xl transition-colors">
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl flex items-center justify-center">
+                  <Ban size={20} />
+                </div>
+                <span className="font-bold text-gray-700 dark:text-gray-300">차단하기</span>
               </button>
               <button onClick={onDelete} className="w-full flex items-center gap-4 p-4 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-2xl transition-colors">
                 <div className="w-10 h-10 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center">

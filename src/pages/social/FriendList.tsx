@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
-import { Check, Folder, FolderPlus, Loader2, MoreVertical, Plus, Search, Share2, UserPlus, Users } from 'lucide-react';
+import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { Ban, Check, Folder, FolderPlus, Loader2, MoreVertical, Plus, Search, Share2, UserPlus, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
 import {
   AddFriendModal,
   AddFromContactsModal,
+  ConfirmModal,
   DeleteFriendModal,
   EditFriendNameModal,
   FormInput,
@@ -47,6 +48,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [profilePopupFriend, setProfilePopupFriend] = useState<Friend | null>(null);
@@ -101,10 +103,13 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
 
   /** 친구 초대 핸들러 (Web Share API) */
   const handleInviteFriend = async () => {
+    // TODO: 추후 수정 필요
+    const appUrl = 'https://play.google.com/store/apps/details?id=com.namu.kkiri';
+
     const shareData = {
-      title: 'Super Scheduler 초대',
+      title: '끼리 초대',
       text: `${user?.displayName || '친구'}님이 Super Scheduler로 초대했습니다!\n함께 일정을 관리하고 소통해보세요. 👇`,
-      url: window.location.origin, // 실제 배포된 도메인 주소로 연결됩니다.
+      url: appUrl,
     };
 
     if (navigator.share) {
@@ -265,6 +270,31 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
     } catch (e) {
       console.error('친구 삭제 오류:', e);
       toast.error('친구 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  /** 친구 차단 핸들러 */
+  const handleBlockFriend = () => {
+    if (!selectedFriend || !user) return;
+    setIsBlockModalOpen(true);
+    setIsMenuOpen(false);
+  };
+
+  /** 친구 차단 확정 핸들러 */
+  const confirmBlockFriend = async () => {
+    if (!selectedFriend || !user) return;
+    try {
+      const myRef = doc(db, 'users', user.uid);
+      await updateDoc(myRef, {
+        friendsList: arrayRemove(selectedFriend),
+        blockedUsers: arrayUnion(selectedFriend.uid),
+      });
+      toast.success(`${selectedFriend.name}님을 차단했습니다.`);
+      setIsBlockModalOpen(false);
+      setSelectedFriend(null);
+    } catch (e) {
+      console.error('친구 차단 오류:', e);
+      toast.error('차단 중 오류가 발생했습니다.');
     }
   };
 
@@ -595,6 +625,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
           setIsDeleteModalOpen(true);
           setIsMenuOpen(false);
         }}
+        onBlock={handleBlockFriend}
       />
 
       <MoveToGroupModal
@@ -628,6 +659,24 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
         onConfirm={handleDeleteConfirm}
         sharedCalendarName={sharedCalendarName}
         sharedCalendarActionText={sharedCalendarActionText}
+      />
+
+      <ConfirmModal
+        isOpen={isBlockModalOpen}
+        onClose={() => setIsBlockModalOpen(false)}
+        onConfirm={confirmBlockFriend}
+        icon={<Ban size={32} />}
+        iconContainerClassName="bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400"
+        title="친구 차단"
+        message={
+          <>
+            <span className="font-bold text-main dark:text-white">{selectedFriend?.name}</span>님을 차단하시겠습니까?
+            <br />
+            차단하면 친구 목록에서 삭제되고 대화를 받을 수 없습니다.
+          </>
+        }
+        confirmText="차단하기"
+        confirmButtonClassName="bg-red-500"
       />
 
       {previewImage && <ImagePreviewModal images={[previewImage]} initialIndex={0} onClose={() => setPreviewImage(null)} />}

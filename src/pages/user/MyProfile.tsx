@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { signOut } from 'firebase/auth';
 import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
-import { Bell, Check, ChevronRight, ClipboardList, Edit2, Loader2, LogOut, Moon, ShieldCheck, Sun, User, Users } from 'lucide-react';
+import { Bell, Check, ChevronRight, ClipboardList, Edit2, Loader2, LogOut, Moon, ShieldCheck, Sun, User, Users, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
@@ -180,6 +180,7 @@ const MyProfile = () => {
             <MenuBtn icon={<ClipboardList size={20} />} iconBg="bg-emerald-50 text-emerald-600" label="개인 정보 관리" onClick={() => navigate('/edit-info')} />
             <MenuBtn icon={<Users size={20} />} iconBg="bg-primary/10 text-primary" label="친구 목록 편집" onClick={() => navigate('/friend-list')} />
             <MenuBtn icon={<ShieldCheck size={20} />} iconBg="bg-orange-50 text-orange-500" label="비밀번호 변경" onClick={() => navigate('/change-password')} />
+            <MenuBtn icon={<UserX size={20} />} iconBg="bg-red-50 text-red-500" label="차단 관리" onClick={() => navigate('/blocked-users')} />
           </div>
 
           <h3 className="px-1 text-[13px] font-bold text-sub dark:text-gray-500">설정</h3>

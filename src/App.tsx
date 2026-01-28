@@ -29,6 +29,7 @@ import {
   NotificationCenter,
   UserProfile,
   SocialMain,
+  BlockedUserList,
 } from 'pages';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider, CalendarProvider, ThemeProvider, UIProvider } from 'contexts';
@@ -158,6 +159,7 @@ const AppContent = () => {
     '/schedule/',
     '/meeting/',
     '/profile/',
+    '/blocked-users',
   ];
 
   const shouldHideNav = hideNavPaths.includes(location.pathname) || ['/schedule/', '/meeting/', '/chat/', '/profile/'].some((path) => location.pathname.startsWith(path));
@@ -187,6 +189,7 @@ const AppContent = () => {
             <Route path="/profile/:userId" element={user ? <UserProfile /> : <Navigate to="/" />} />
             <Route path="/edit-info" element={user ? <EditUserInfo /> : <Navigate to="/" />} />
             <Route path="/friend-list" element={user ? <FriendList /> : <Navigate to="/" />} />
+            <Route path="/blocked-users" element={user ? <BlockedUserList /> : <Navigate to="/" />} />
             <Route path="/social" element={user ? <SocialMain /> : <Navigate to="/" />} />
             {/* --- 03. 캘린더 핵심 기능 --- */}
             <Route path="/calendar" element={user ? <CalendarMain /> : <Navigate to="/" />} />

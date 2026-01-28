@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import { MessageCircle, MessageSquareDot, Search } from 'lucide-react';
 
 import { auth, db } from '../../firebase';
 import { FormInput } from 'components';
-import { useFirestoreQuery, useUserProfiles } from 'hooks';
+import { useFirestoreDoc, useFirestoreQuery, useUserProfiles } from 'hooks';
 import { UserProfile } from 'types';
 
 /**
@@ -28,6 +28,10 @@ const ChatList = () => {
   }, [user]);
 
   const { data: schedules, loading } = useFirestoreQuery<any>(schedulesQuery);
+
+  const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
+  const { data: myInfo, loading: myInfoLoading } = useFirestoreDoc<any>(userDocRef);
+  const blockedUsers = useMemo(() => myInfo?.blockedUsers || [], [myInfo]);
 
   const allAttendeeUids = useMemo(() => {
     if (!schedules) return [];
@@ -52,6 +56,12 @@ const ChatList = () => {
   const filteredSchedules = useMemo(() => {
     return validSchedules
       .filter((schedule: any) => {
+        // 차단된 유저와의 1:1 채팅방 숨김 처리
+        const otherAttendees = (schedule.attendees || []).filter((uid: string) => uid !== user?.uid);
+        if (otherAttendees.length === 1 && blockedUsers.includes(otherAttendees[0])) {
+          return false;
+        }
+
         if (showOnlyUnread) {
           const unreadCount = schedule.unreadCounts?.[user?.uid || ''] || 0;
           if (unreadCount === 0) return false;
@@ -66,9 +76,9 @@ const ChatList = () => {
         };
         return getTime(b) - getTime(a);
       });
-  }, [validSchedules, searchTerm, showOnlyUnread, user]);
+  }, [validSchedules, searchTerm, showOnlyUnread, user, blockedUsers]);
 
-  if (loading || profilesLoading) {
+  if (loading || profilesLoading || myInfoLoading) {
     return (
       <div className="flex justify-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
