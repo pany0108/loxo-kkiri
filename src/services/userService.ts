@@ -1,5 +1,5 @@
 import { User, deleteUser } from 'firebase/auth';
-import { collection, doc, addDoc, query, where, getDocs, writeBatch, arrayRemove, getDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, query, where, getDocs, writeBatch, arrayRemove } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import { db } from '../firebase';
 

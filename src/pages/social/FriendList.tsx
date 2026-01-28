@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, doc, getDocs, query, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { Ban, Check, Folder, FolderPlus, Loader2, MoreVertical, Plus, Search, Share2, UserPlus, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -61,6 +61,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedFriendUids, setSelectedFriendUids] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hiddenFriendIds, setHiddenFriendIds] = useState<Set<string>>(new Set());
 
   const [isGroupManagerOpen, setIsGroupManagerOpen] = useState(false);
   const [isMoveToGroupOpen, setIsMoveToGroupOpen] = useState(false);
@@ -72,7 +73,10 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   const userDocRef = useMemo(() => (user ? doc(db, 'users', user.uid) : null), [user]);
   const { data: myInfo, loading: isLoading } = useFirestoreDoc<any>(userDocRef);
 
-  const friends: Friend[] = useMemo(() => myInfo?.friendsList || [], [myInfo]);
+  const friends: Friend[] = useMemo(() => {
+    const list = myInfo?.friendsList || [];
+    return list.filter((f: Friend) => !hiddenFriendIds.has(f.uid));
+  }, [myInfo, hiddenFriendIds]);
 
   // --- Effects ---
   useEffect(() => {
@@ -233,44 +237,96 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
   };
 
   /** 친구 삭제 확정 핸들러 */
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!selectedFriend || !user) return;
-    try {
-      const myRef = doc(db, 'users', auth.currentUser!.uid);
-      await updateDoc(myRef, { friendsList: arrayRemove(selectedFriend) });
+    const friendToDelete = selectedFriend;
+    const calendarsToDelete = sharedCalendarsToDelete; // 현재 시점의 삭제 대상 캘린더 캡처
 
-      let deletedCount = 0;
-      let leftCount = 0;
+    // 1. 낙관적 업데이트: UI에서 즉시 숨김
+    setHiddenFriendIds((prev) => new Set(prev).add(friendToDelete.uid));
+    setIsDeleteModalOpen(false);
+    setIsMenuOpen(false);
+    setSelectedFriend(null);
 
-      if (sharedCalendarsToDelete.length > 0) {
-        await Promise.all(
-          sharedCalendarsToDelete.map((cal) => {
-            if (cal.ownerId === user.uid) {
-              deletedCount++;
-              return deleteCalendar(cal.id);
-            }
-            leftCount++;
-            return leaveCalendar(cal as any, user);
-          }),
-        );
+    // 2. 실제 삭제 로직 (지연 실행)
+    const timerId = setTimeout(async () => {
+      try {
+        const myRef = doc(db, 'users', user.uid);
+        await updateDoc(myRef, { friendsList: arrayRemove(friendToDelete) });
+
+        if (calendarsToDelete.length > 0) {
+          await Promise.all(
+            calendarsToDelete.map((cal) => {
+              if (cal.ownerId === user.uid) {
+                return deleteCalendar(cal.id);
+              }
+              return leaveCalendar(cal as any, user);
+            }),
+          );
+        }
+
+        // 단둘이 생성된 미확정 약속 삭제
+        const meetingsRef = collection(db, 'meetings');
+        const q = query(meetingsRef, where('participants', 'array-contains', user.uid), where('status', 'in', ['PENDING', 'VOTING']));
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        let deletedMeetingsCount = 0;
+
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const participants = data.participants || [];
+          if (participants.length === 2 && participants.includes(friendToDelete.uid)) {
+            batch.delete(docSnap.ref);
+            deletedMeetingsCount++;
+          }
+        });
+
+        if (deletedMeetingsCount > 0) {
+          await batch.commit();
+        }
+
+        // 삭제 완료 후 hidden 목록에서 제거 (이미 DB에서 삭제되었으므로)
+        setHiddenFriendIds((prev) => {
+          const next = new Set(prev);
+          next.delete(friendToDelete.uid);
+          return next;
+        });
+      } catch (e) {
+        console.error('친구 삭제 오류:', e);
+        toast.error('친구 삭제 중 오류가 발생했습니다.');
+        // 에러 발생 시 복구
+        setHiddenFriendIds((prev) => {
+          const next = new Set(prev);
+          next.delete(friendToDelete.uid);
+          return next;
+        });
       }
+    }, 4000);
 
-      let message = '친구를 삭제했습니다.';
-      if (deletedCount > 0 && leftCount === 0) {
-        message = '친구를 삭제하고 공유 캘린더를 삭제했습니다.';
-      } else if (deletedCount === 0 && leftCount > 0) {
-        message = '친구를 삭제하고 공유 캘린더에서 나갔습니다.';
-      } else if (deletedCount > 0 && leftCount > 0) {
-        message = '친구를 삭제하고 공유 캘린더를 정리했습니다.';
-      }
-
-      toast.success(message);
-      setIsDeleteModalOpen(false);
-      setIsMenuOpen(false);
-    } catch (e) {
-      console.error('친구 삭제 오류:', e);
-      toast.error('친구 삭제 중 오류가 발생했습니다.');
-    }
+    // 3. 실행 취소 토스트 표시
+    toast(
+      (t) => (
+        <div className="flex items-center justify-between w-full gap-3">
+          <span className="text-sm font-medium">친구를 삭제했습니다.</span>
+          <button
+            onClick={() => {
+              clearTimeout(timerId);
+              setHiddenFriendIds((prev) => {
+                const next = new Set(prev);
+                next.delete(friendToDelete.uid);
+                return next;
+              });
+              toast.dismiss(t.id);
+              toast.success('삭제를 취소했습니다.');
+            }}
+            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors"
+          >
+            실행 취소
+          </button>
+        </div>
+      ),
+      { duration: 4000, position: 'bottom-center', style: { minWidth: '300px' } },
+    );
   };
 
   /** 친구 차단 핸들러 */
