@@ -63,8 +63,8 @@
 1. **레포지토리 클론**
 
    ```bash
-   git clone https://github.com/your-username/super-scheduler.git
-   cd super-scheduler
+   git clone https://github.com/your-username/loxo-kkiri.git
+   cd loxo-kkiri
    ```
 
 2. **의존성 설치**
