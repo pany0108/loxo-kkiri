@@ -63,7 +63,7 @@
 1. **레포지토리 클론**
 
    ```bash
-   git clone https://github.com/your-username/loxo-kkiri.git
+   git clone https://github.com/pany0108/loxo-kkiri.git
    cd loxo-kkiri
    ```
 
