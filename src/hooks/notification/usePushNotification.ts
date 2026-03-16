@@ -5,8 +5,8 @@ import { User } from 'firebase/auth';
 import { arrayUnion, doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { App } from '@capacitor/app'; // Import App for openSettings
-import { Dialog, ConfirmResult } from '@capacitor/dialog'; // Import Dialog for alerts
-
+import { Dialog, ConfirmResult } from '@capacitor/dialog';
+import { LocalNotifications, ActionPerformed as LocalActionPerformed } from '@capacitor/local-notifications';
 import { Notification } from './useNotificationNavigation';
 import { db } from '../../firebase';
 
@@ -103,7 +103,7 @@ export const usePushNotification = (user: User | null, handleNavigation: (notifi
           const { relatedId, start, type } = notification.extra;
 
           if (type === 'SCHEDULE_REMINDER' && relatedId && user) {
-            const notiObj: Notification = {
+            const notiObj: any = {
               id: notification.id.toString(),
               userId: user.uid,
               type: 'SCHEDULE_REMINDER',
@@ -124,7 +124,7 @@ export const usePushNotification = (user: User | null, handleNavigation: (notifi
             .catch((err: any) => console.log('getLaunchNotification ERROR: ', err));
           if (launchNotif && launchNotif.notification?.data) {
             const { data } = launchNotif.notification;
-            const notiObj: Notification = {
+            const notiObj: any = {
               id: launchNotif.notification.id,
               userId: user.uid,
               type: data.type,

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { BookOpen, Check, ImageIcon, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
+import { Capacitor } from '@capacitor/core';
 import { auth, db } from '../../firebase';
 import {
   ConfirmModal,
