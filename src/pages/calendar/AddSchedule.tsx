@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { auth, db } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
 import { useAddSchedule } from 'hooks';
-import { notifyScheduleAdded } from 'services';
+import { notifyScheduleAdded, scheduleLocalNotification } from 'services';
 
 /**
  * 일정 추가 페이지 컴포넌트
@@ -108,6 +108,7 @@ const AddSchedule = () => {
     setIsSubmitting(true);
     try {
       const batch = writeBatch(db);
+      const schedulesToNotify: any[] = [];
 
       for (const calendarId of selectedCalendarIds) {
         const selectedCalendar = myCalendars.find((c) => c.id === calendarId);
@@ -124,6 +125,13 @@ const AddSchedule = () => {
 
         const scheduleDocRef = await addDoc(collection(db, 'schedules'), scheduleData);
 
+        // 모든 일정에 대해 로컬 알림 예약을 시도합니다. (notificationScheduler에서 반복 처리)
+        schedulesToNotify.push({
+          id: scheduleDocRef.id,
+          ...scheduleData, 
+        });
+
+        // 공유 캘린더에 일정을 추가하는 경우, 다른 멤버들에게 알림을 보냅니다.
         if (selectedCalendar && selectedCalendar.members.length > 1) {
           for (const memberId of selectedCalendar.members) {
             if (memberId === currentUser.uid) continue;
@@ -139,6 +147,25 @@ const AddSchedule = () => {
         }
       }
       await batch.commit();
+      if (Capacitor.isNativePlatform() && schedulesToNotify.length > 0) {
+        const DOW_MAP: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+        
+        for (const schedule of schedulesToNotify) {
+          await scheduleLocalNotification({
+            id: schedule.id,
+            ...schedule,
+            recurrence: schedule.recurrence ? {
+              frequency: schedule.recurrence.frequency,
+              interval: Number(schedule.recurrence.interval) || 1,
+              daysOfWeek: schedule.recurrence.daysOfWeek?.map((dayIndex: number) => DOW_MAP[dayIndex]),
+              monthlyType: schedule.recurrence.monthlyType === 'date' ? 'date' : 'day',
+              endType: schedule.recurrence.endType,
+              endDate: schedule.recurrence.endDate,
+              endCount: schedule.recurrence.endCount === '' ? undefined : Number(schedule.recurrence.endCount),
+            } : undefined,
+          } as any); // 타입스크립트 에러 방지를 위해 as any 사용
+        }
+      }
       toast.success('일정이 저장되었습니다! ☁️');
       navigate('/calendar');
     } catch (error) {

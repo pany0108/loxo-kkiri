@@ -15,6 +15,7 @@ export interface Notification {
   createdAt: string;
   fromUserId?: string;
   fromUserName?: string;
+  extraData?: any;
 }
 
 /**
@@ -40,10 +41,19 @@ export const useNotificationNavigation = () => {
       navigate('/calendar', { state: { targetCalendarId: notification.relatedId } });
       return;
     }
-    if (notification.type === 'SCHEDULE_ADDED' || notification.type === 'SCHEDULE_UPDATED') {
+    if (
+      notification.type === 'SCHEDULE_ADDED' ||
+      notification.type === 'SCHEDULE_UPDATED' ||
+      notification.type === 'SCHEDULE_REMINDER'
+    ) {
       try {
         const scheduleDoc = await getDoc(doc(db, 'schedules', notification.relatedId));
-        if (scheduleDoc.exists()) navigate(`/schedule/${notification.relatedId}`);
+        if (scheduleDoc.exists()) {
+          // 반복 일정의 특정 인스턴스로 이동할 수 있도록, 알림에 포함된 시작 시간을 state로 전달합니다.
+          navigate(`/schedule/${notification.relatedId}`, {
+            state: { start: notification.extraData?.start },
+          });
+        }
         else toast.error('삭제된 일정입니다.');
       } catch (error) {
         toast.error('일정 정보를 불러오는 중 오류가 발생했습니다.');
