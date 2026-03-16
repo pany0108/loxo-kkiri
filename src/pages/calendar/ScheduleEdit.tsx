@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
@@ -30,7 +29,7 @@ import {
   scheduleLocalNotification,
 } from 'services';
 
-dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
 
 interface Attachment {
   name: string;

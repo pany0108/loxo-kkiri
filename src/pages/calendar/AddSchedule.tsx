@@ -4,13 +4,12 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import dayjs from 'dayjs';
 import { CalendarPlus } from 'lucide-react';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { auth, db } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
 import { useAddSchedule } from 'hooks';
 import { notifyScheduleAdded } from 'services';
-import { scheduleLocalNotification } from 'services/notificationScheduler';
 
 /**
  * 일정 추가 페이지 컴포넌트
@@ -109,24 +108,21 @@ const AddSchedule = () => {
     setIsSubmitting(true);
     try {
       const batch = writeBatch(db);
-      const schedulesToNotify: any[] = [];
 
       for (const calendarId of selectedCalendarIds) {
         const selectedCalendar = myCalendars.find((c) => c.id === calendarId);
         const attendees = selectedCalendar ? selectedCalendar.members : [currentUser.uid];
 
-        const newScheduleRef = doc(collection(db, 'schedules'));
-
         const scheduleData = {
           userId: currentUser.uid,
           ...formData,
-          calendarId,
+          calendarId, // 각 일정에 맞는 캘린더 ID 설정
           recurrence,
           createdAt: new Date().toISOString(),
           attendees,
         };
 
-        batch.set(newScheduleRef, scheduleData);
+        const scheduleDocRef = await addDoc(collection(db, 'schedules'), scheduleData);
 
         // 모든 일정에 대해 로컬 알림 예약을 시도합니다. (notificationScheduler에서 반복 처리)
         schedulesToNotify.push({
@@ -143,21 +139,13 @@ const AddSchedule = () => {
               editorName: currentUser.displayName || '알 수 없음',
               calendarName: selectedCalendar.name,
               scheduleTitle: formData.title,
-              scheduleId: newScheduleRef.id,
+              scheduleId: scheduleDocRef.id,
               calendarId: selectedCalendar.id,
             });
           }
         }
       }
       await batch.commit();
-
-      // DB 저장이 성공한 후, 네이티브 환경에서 로컬 알림을 예약합니다.
-      if (Capacitor.isNativePlatform()) {
-        for (const schedule of schedulesToNotify) {
-          await scheduleLocalNotification(schedule);
-        }
-      }
-
       toast.success('일정이 저장되었습니다! ☁️');
       navigate('/calendar');
     } catch (error) {
