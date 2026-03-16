@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged } from 'firebase/auth';
-import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { BookOpen, Check, ImageIcon, Pencil, Trash2 } from 'lucide-react';
@@ -23,7 +23,12 @@ import {
 } from 'components';
 import ScheduleForm from '../../components/calendar/ScheduleForm';
 import { useCalendar } from 'contexts';
-import { notifyScheduleAdded, notifyScheduleUpdated, cancelLocalNotification, scheduleLocalNotification } from 'services';
+import {
+  notifyScheduleAdded,
+  notifyScheduleUpdated,
+  cancelAllNotificationsForSchedule,
+  scheduleLocalNotification,
+} from 'services';
 
 dayjs.extend(isSameOrAfter);
 
@@ -153,9 +158,9 @@ const ScheduleEdit = () => {
     try {
       const docId = getDocId();
       if (docId) {
-        // 단일 일정에 대해 예약된 로컬 알림이 있었다면 취소합니다.
-        if (Capacitor.isNativePlatform() && eventData && (!eventData.recurrence || eventData.recurrence.frequency === 'none')) {
-          await cancelLocalNotification(docId);
+        // 예약된 모든 로컬 알림(반복 포함)을 취소합니다.
+        if (Capacitor.isNativePlatform()) {
+          await cancelAllNotificationsForSchedule(docId);
         }
 
         await deleteDoc(doc(db, 'schedules', docId));
@@ -305,7 +310,15 @@ const ScheduleEdit = () => {
       const newScheduleRef = doc(collection(db, 'schedules'));
       const newScheduleData = {
         ...formData,
-        recurrence: { frequency: 'none', interval: 1, daysOfWeek: [], monthlyType: 'date', endType: 'none', endDate: '', endCount: 0 }, // 반복 없음
+        recurrence: { 
+          frequency: 'none' as const, 
+          interval: 1, 
+          daysOfWeek: [], 
+          monthlyType: 'date' as const, 
+          endType: 'none' as const, 
+          endDate: '', 
+          endCount: 0 
+        },
         attendees: selectedCalendar?.members || (user ? [user.uid] : []),
         userId: user?.uid,
         createdAt: new Date().toISOString(),
@@ -314,6 +327,25 @@ const ScheduleEdit = () => {
       batch.set(newScheduleRef, newScheduleData);
 
       await batch.commit();
+
+      // 로컬 알림 재예약
+      if (Capacitor.isNativePlatform()) {
+        // 1. 수정된 원본 반복 일정의 알림 재예약 (예외 날짜가 추가됨)
+        const originalScheduleDoc = await getDoc(originalRef);
+        if (originalScheduleDoc.exists()) {
+          await scheduleLocalNotification({
+            id: originalScheduleDoc.id,
+            ...originalScheduleDoc.data(),
+          } as any);
+        }
+
+        // 2. 새로 생성된 단일 일정의 알림 예약
+        await scheduleLocalNotification({
+          id: newScheduleRef.id,
+          ...newScheduleData,
+        });
+      }
+
       toast.success('이 일정만 수정되었습니다.');
       navigate(-1);
     } catch (error) {
@@ -363,6 +395,33 @@ const ScheduleEdit = () => {
       batch.set(newScheduleRef, newScheduleData);
 
       await batch.commit();
+
+      // 로컬 알림 재예약
+      if (Capacitor.isNativePlatform()) {
+        // 1. 수정된 원본 반복 일정(기간이 짧아짐)의 알림 재예약
+        const originalScheduleDoc = await getDoc(originalRef);
+        if (originalScheduleDoc.exists()) {
+          await scheduleLocalNotification({
+            id: originalScheduleDoc.id,
+            ...originalScheduleDoc.data(),
+          } as any);
+        }
+
+        // 2. 새로 생성된 '향후' 반복 일정의 알림 예약
+        const DOW_MAP: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+        await scheduleLocalNotification({
+          id: newScheduleRef.id,
+          ...newScheduleData,
+          recurrence: {
+            ...newRecurrence,
+            interval: Number(newRecurrence.interval) || 1,
+            daysOfWeek: newRecurrence.daysOfWeek?.map((dayIndex) => DOW_MAP[dayIndex]),
+            monthlyType: newRecurrence.monthlyType === 'date' ? 'date' : 'day',
+            endCount: newRecurrence.endCount === '' ? undefined : Number(newRecurrence.endCount),
+          },
+        });
+      }
+
       toast.success('향후 일정이 수정되었습니다.');
       navigate(-1);
     } catch (error) {
@@ -380,11 +439,6 @@ const ScheduleEdit = () => {
       setIsSubmitting(true);
       const docId = getDocId();
       if (!docId) return;
-
-      // 기존 단일 일정의 로컬 알림이 있었다면 취소합니다.
-      if (Capacitor.isNativePlatform() && eventData && (!eventData.recurrence || eventData.recurrence.frequency === 'none')) {
-        await cancelLocalNotification(docId);
-      }
 
       const originalCalendarId = eventData?.calendarId;
       const primaryNewCalendarId = selectedCalendarIds.includes(originalCalendarId) ? originalCalendarId : selectedCalendarIds[0];
@@ -459,11 +513,24 @@ const ScheduleEdit = () => {
         }
       }
 
-      // 수정된 일정이 단일 일정일 경우, 새로운 로컬 알림을 예약합니다.
-      if (Capacitor.isNativePlatform() && recurrence.frequency === 'none') {
+      // 수정된 일정에 대해 새로운 로컬 알림을 예약합니다 (반복 포함).
+      if (Capacitor.isNativePlatform()) {
+        // 폼에서 오는 interval 값은 빈 문자열일 수 있으므로, 숫자 타입으로 변환합니다.
+        // 또한, `notificationScheduler`가 기대하는 `RecurrenceSettings` 타입으로 변환합니다.
+        const DOW_MAP: ('SU' | 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA')[] = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
         await scheduleLocalNotification({
           id: docId,
           ...formData,
+          recurrence: {
+            frequency: recurrence.frequency,
+            interval: Number(recurrence.interval) || 1,
+            daysOfWeek: recurrence.daysOfWeek?.map((dayIndex) => DOW_MAP[dayIndex]),
+            // `monthlyType`은 현재 알림 스케줄링 로직에서 사용되지 않지만, 타입 호환성을 위해 변환합니다.
+            monthlyType: recurrence.monthlyType === 'date' ? 'date' : 'day',
+            endType: recurrence.endType,
+            endDate: recurrence.endDate,
+            endCount: recurrence.endCount === '' ? undefined : Number(recurrence.endCount),
+          },
         });
       }
 

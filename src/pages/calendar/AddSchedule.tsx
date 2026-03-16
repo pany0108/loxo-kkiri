@@ -128,13 +128,11 @@ const AddSchedule = () => {
 
         batch.set(newScheduleRef, scheduleData);
 
-        // 반복 일정이 아닌 경우에만 로컬 알림 예약 목록에 추가합니다.
-        if (recurrence.frequency === 'none') {
-          schedulesToNotify.push({
-            id: newScheduleRef.id,
-            ...scheduleData,
-          });
-        }
+        // 모든 일정에 대해 로컬 알림 예약을 시도합니다. (notificationScheduler에서 반복 처리)
+        schedulesToNotify.push({
+          id: newScheduleRef.id,
+          ...scheduleData, // scheduleData에는 recurrence 정보가 포함되어 있습니다.
+        });
 
         // 공유 캘린더에 일정을 추가하는 경우, 다른 멤버들에게 알림을 보냅니다.
         if (selectedCalendar && selectedCalendar.members.length > 1) {
