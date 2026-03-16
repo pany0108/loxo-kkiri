@@ -4,12 +4,13 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import dayjs from 'dayjs';
 import { CalendarPlus } from 'lucide-react';
-import { addDoc, collection, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { auth, db } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
 import { useAddSchedule } from 'hooks';
 import { notifyScheduleAdded } from 'services';
+import { scheduleLocalNotification } from 'services/notificationScheduler';
 
 /**
  * 일정 추가 페이지 컴포넌트
@@ -108,22 +109,34 @@ const AddSchedule = () => {
     setIsSubmitting(true);
     try {
       const batch = writeBatch(db);
+      const schedulesToNotify: any[] = [];
 
       for (const calendarId of selectedCalendarIds) {
         const selectedCalendar = myCalendars.find((c) => c.id === calendarId);
         const attendees = selectedCalendar ? selectedCalendar.members : [currentUser.uid];
 
+        const newScheduleRef = doc(collection(db, 'schedules'));
+
         const scheduleData = {
           userId: currentUser.uid,
           ...formData,
-          calendarId, // 각 일정에 맞는 캘린더 ID 설정
+          calendarId,
           recurrence,
           createdAt: new Date().toISOString(),
           attendees,
         };
 
-        const scheduleDocRef = await addDoc(collection(db, 'schedules'), scheduleData);
+        batch.set(newScheduleRef, scheduleData);
 
+        // 반복 일정이 아닌 경우에만 로컬 알림 예약 목록에 추가합니다.
+        if (recurrence.frequency === 'none') {
+          schedulesToNotify.push({
+            id: newScheduleRef.id,
+            ...scheduleData,
+          });
+        }
+
+        // 공유 캘린더에 일정을 추가하는 경우, 다른 멤버들에게 알림을 보냅니다.
         if (selectedCalendar && selectedCalendar.members.length > 1) {
           for (const memberId of selectedCalendar.members) {
             if (memberId === currentUser.uid) continue;
@@ -132,13 +145,21 @@ const AddSchedule = () => {
               editorName: currentUser.displayName || '알 수 없음',
               calendarName: selectedCalendar.name,
               scheduleTitle: formData.title,
-              scheduleId: scheduleDocRef.id,
+              scheduleId: newScheduleRef.id,
               calendarId: selectedCalendar.id,
             });
           }
         }
       }
       await batch.commit();
+
+      // DB 저장이 성공한 후, 네이티브 환경에서 로컬 알림을 예약합니다.
+      if (Capacitor.isNativePlatform()) {
+        for (const schedule of schedulesToNotify) {
+          await scheduleLocalNotification(schedule);
+        }
+      }
+
       toast.success('일정이 저장되었습니다! ☁️');
       navigate('/calendar');
     } catch (error) {
