@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import dayjs from 'dayjs';
@@ -22,9 +23,9 @@ import {
 } from 'components';
 import ScheduleForm from '../../components/calendar/ScheduleForm';
 import { useCalendar } from 'contexts';
-import { notifyScheduleAdded, notifyScheduleUpdated } from 'services';
+import { notifyScheduleAdded, notifyScheduleUpdated, cancelLocalNotification, scheduleLocalNotification } from 'services';
 
-dayjs.extend(isSameOrAfter); // [추가] dayjs 플러그인 활성화
+dayjs.extend(isSameOrAfter);
 
 interface Attachment {
   name: string;
@@ -152,6 +153,11 @@ const ScheduleEdit = () => {
     try {
       const docId = getDocId();
       if (docId) {
+        // 단일 일정에 대해 예약된 로컬 알림이 있었다면 취소합니다.
+        if (Capacitor.isNativePlatform() && eventData && (!eventData.recurrence || eventData.recurrence.frequency === 'none')) {
+          await cancelLocalNotification(docId);
+        }
+
         await deleteDoc(doc(db, 'schedules', docId));
         toast.success('일정이 삭제되었습니다.');
         navigate('/calendar');
@@ -375,6 +381,11 @@ const ScheduleEdit = () => {
       const docId = getDocId();
       if (!docId) return;
 
+      // 기존 단일 일정의 로컬 알림이 있었다면 취소합니다.
+      if (Capacitor.isNativePlatform() && eventData && (!eventData.recurrence || eventData.recurrence.frequency === 'none')) {
+        await cancelLocalNotification(docId);
+      }
+
       const originalCalendarId = eventData?.calendarId;
       const primaryNewCalendarId = selectedCalendarIds.includes(originalCalendarId) ? originalCalendarId : selectedCalendarIds[0];
 
@@ -446,6 +457,14 @@ const ScheduleEdit = () => {
           }
           await batch.commit();
         }
+      }
+
+      // 수정된 일정이 단일 일정일 경우, 새로운 로컬 알림을 예약합니다.
+      if (Capacitor.isNativePlatform() && recurrence.frequency === 'none') {
+        await scheduleLocalNotification({
+          id: docId,
+          ...formData,
+        });
       }
 
       toast.success('수정되었습니다.');

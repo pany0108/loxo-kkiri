@@ -15,6 +15,7 @@ export interface Notification {
   createdAt: string;
   fromUserId?: string;
   fromUserName?: string;
+  extraData?: { start?: string };
 }
 
 /**
