@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
+functions/node_modules/
 /.pnp
 .pnp.js
 
@@ -23,3 +24,9 @@ yarn-debug.log*
 yarn-error.log*
 
 .env
+
+# IDE (웹스톰, IntelliJ 등 에디터 설정 파일)
+.idea/
+
+# Firebase 캐시 및 로컬 설정 파일
+.firebase/
