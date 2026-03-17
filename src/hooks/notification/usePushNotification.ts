@@ -172,6 +172,7 @@ export const usePushNotification = (user: User | null, handleNavigation: (notifi
           registrationListener.remove();
           receivedListener.remove();
           actionPerformedListener.remove();
+          localActionPerformedListener.remove();
         };
       } catch (error) {
         console.error('푸시 알림 설정 실패:', error);
