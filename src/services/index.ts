@@ -5,3 +5,4 @@ export * from './firestoreService';
 export * from './meetingService';
 export * from './calendarService';
 export * from './scheduleService';
+export { cancelAllNotificationsForSchedule, scheduleLocalNotification } from './localNotificationService';

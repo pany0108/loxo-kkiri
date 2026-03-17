@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { auth, db } from '../../firebase';
 import { LoadingButton, LocationSelectModal, PageFooter, PageHeader, PageLayout, PageTitle, ScheduleForm } from 'components';
 import { useAddSchedule } from 'hooks';
-import { notifyScheduleAdded } from 'services';
+import { notifyScheduleAdded, scheduleLocalNotification } from 'services';
 
 /**
  * 일정 추가 페이지 컴포넌트
@@ -108,6 +108,7 @@ const AddSchedule = () => {
     setIsSubmitting(true);
     try {
       const batch = writeBatch(db);
+      const createdScheduleIds: string[] = [];
 
       for (const calendarId of selectedCalendarIds) {
         const selectedCalendar = myCalendars.find((c) => c.id === calendarId);
@@ -116,13 +117,14 @@ const AddSchedule = () => {
         const scheduleData = {
           userId: currentUser.uid,
           ...formData,
-          calendarId, // 각 일정에 맞는 캘린더 ID 설정
+          calendarId,
           recurrence,
           createdAt: new Date().toISOString(),
           attendees,
         };
 
         const scheduleDocRef = await addDoc(collection(db, 'schedules'), scheduleData);
+        createdScheduleIds.push(scheduleDocRef.id);
 
         if (selectedCalendar && selectedCalendar.members.length > 1) {
           for (const memberId of selectedCalendar.members) {
@@ -139,6 +141,17 @@ const AddSchedule = () => {
         }
       }
       await batch.commit();
+
+      for (const id of createdScheduleIds) {
+        await scheduleLocalNotification({
+          id: id,
+          title: formData.title,
+          start: formData.start,
+          notification: formData.notification,
+          recurrence: recurrence,
+        });
+      }
+
       toast.success('일정이 저장되었습니다! ☁️');
       navigate('/calendar');
     } catch (error) {
