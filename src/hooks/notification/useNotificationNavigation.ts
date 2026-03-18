@@ -44,7 +44,8 @@ export const useNotificationNavigation = () => {
     if (
       notification.type === 'SCHEDULE_ADDED' ||
       notification.type === 'SCHEDULE_UPDATED' ||
-      notification.type === 'SCHEDULE_REMINDER'
+      notification.type === 'SCHEDULE_REMINDER' ||
+      notification.type === 'SCHEDULE_ALARM'
     ) {
       try {
         const scheduleDoc = await getDoc(doc(db, 'schedules', notification.relatedId));
