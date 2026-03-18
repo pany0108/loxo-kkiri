@@ -78,6 +78,8 @@ export const scheduleLocalNotification = async (params: ScheduleLocalNotiParams)
           title: title,
           body: bodyText,
           schedule: { at: notifyTime },
+          smallIcon: 'ic_stat_logo', // 1단계에서 저장한 아이콘 파일명 (확장자 제외)
+          iconColor: '#007AFF', // 알림 아이콘에 입힐 테마 컬러 (선택 사항)
           extra: { scheduleId: id, type: 'SCHEDULE_ALARM', start: currentDate.toISOString() },
         });
       }
@@ -113,6 +115,8 @@ export const scheduleLocalNotification = async (params: ScheduleLocalNotiParams)
         title: title,
         body: bodyText,
         schedule: { at: notifyTime },
+        smallIcon: 'ic_stat_logo',
+        iconColor: '#007AFF',
         extra: { scheduleId: id, type: 'SCHEDULE_ALARM', start: start },
       });
     }
