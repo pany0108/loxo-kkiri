@@ -100,15 +100,15 @@ export const usePushNotification = (user: User | null, handleNavigation: (notifi
         // 4. 로컬 알림 탭(클릭) 리스너
         const localActionPerformedListener = await LocalNotifications.addListener('localNotificationActionPerformed', async (action: LocalActionPerformed) => {
           const { notification } = action;
-          const { relatedId, start, type } = notification.extra;
+          const { scheduleId, start, type } = notification.extra;
 
-          if (type === 'SCHEDULE_REMINDER' && relatedId && user) {
+          if (type === 'SCHEDULE_ALARM' && scheduleId && user) {
             const notiObj: any = {
               id: notification.id.toString(),
               userId: user.uid,
-              type: 'SCHEDULE_REMINDER',
+              type: 'SCHEDULE_ALARM',
               message: notification.body || '',
-              relatedId: relatedId,
+              relatedId: scheduleId,
               isRead: true,
               createdAt: new Date().toISOString(),
               extraData: { start },
