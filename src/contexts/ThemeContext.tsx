@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -19,8 +21,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
  */
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    // 로컬 스토리지에 저장된 테마가 있으면 사용하고, 없으면 'light'를 기본값으로 합니다.
-    return (localStorage.getItem('app-theme-mode') as ThemeMode) || 'light';
+    const savedTheme = localStorage.getItem('app-theme-mode') as ThemeMode;
+    if (savedTheme) return savedTheme;
+    
+    // 저장된 테마가 없다면 기기(시스템) 테마를 감지하여 기본값으로 설정
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    return 'light';
   });
 
   useEffect(() => {
@@ -34,6 +40,41 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       root.classList.remove('dark');
     }
     localStorage.setItem('app-theme-mode', themeMode);
+
+    // 1. 웹 및 일부 안드로이드 기기를 위한 메타 태그 업데이트
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
+    }
+    const bgColor = themeMode === 'dark' ? '#030712' : '#ffffff'; // Tailwind gray-950 or white
+    metaThemeColor.setAttribute('content', bgColor);
+
+    // 2. 안드로이드 상단바 및 하단 네비게이션바 네이티브 UI 동기화
+    if (Capacitor.isNativePlatform()) {
+      const updateNativeSystemUI = async () => {
+        try {
+          // 상단 상태바: 라이트 모드면 검은 텍스트(Style.Light), 다크 모드면 흰 텍스트(Style.Dark)
+          await StatusBar.setStyle({ style: themeMode === 'dark' ? Style.Dark : Style.Light });
+          await StatusBar.setBackgroundColor({ color: bgColor });
+        } catch (e) {
+          console.warn('StatusBar plugin error:', e);
+        }
+
+        try {
+          // 하단 네비게이션바 (플러그인이 설치된 경우에만 동작하도록 동적 임포트)
+          const { NavigationBar } = await import('@capacitor/navigation-bar');
+          await NavigationBar.setColor({
+            color: bgColor,
+            darkButtons: themeMode === 'light', // 라이트 모드일 때 버튼을 어둡게
+          });
+        } catch (e) {
+          console.warn('NavigationBar plugin not installed or error:', e);
+        }
+      };
+      updateNativeSystemUI();
+    }
   }, [themeMode]);
 
   const toggleThemeMode = () => {
