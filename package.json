@@ -12,6 +12,7 @@
     "@capacitor/push-notifications": "^6.0.5",
     "@capacitor/splash-screen": "^6.0.0",
     "@capacitor/status-bar": "^6.0.0",
+    "@capgo/capacitor-navigation-bar": "^6.1.75",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@fullcalendar/daygrid": "^6.1.14",
     "@fullcalendar/interaction": "^6.1.14",

@@ -64,11 +64,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
         try {
           // 하단 네비게이션바 (플러그인이 설치된 경우에만 동작하도록 동적 임포트)
-          const { NavigationBar } = await import('@capacitor/navigation-bar');
-          await NavigationBar.setColor({
+          // @ts-ignore
+          const { NavigationBar } = await import('@capgo/capacitor-navigation-bar');
+          const navBar = NavigationBar as any;
+          const options = {
             color: bgColor,
             darkButtons: themeMode === 'light', // 라이트 모드일 때 버튼을 어둡게
-          });
+          };
+
+          // 버전에 따라 지원하는 메서드가 다를 수 있으므로 안전하게 호출합니다.
+          if (navBar.setColor) {
+            await navBar.setColor(options);
+          } else if (navBar.setNavigationBarColor) {
+            await navBar.setNavigationBarColor(options);
+          }
         } catch (e) {
           console.warn('NavigationBar plugin not installed or error:', e);
         }
