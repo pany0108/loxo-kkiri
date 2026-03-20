@@ -194,11 +194,38 @@ export const checkUserRegistration = async (user: User): Promise<CheckUserRegist
       });
     }
 
+    const displayName = user.displayName?.trim() || '';
+    let lastName = '';
+    let firstName = '';
+
+    if (displayName.includes(' ')) {
+      const parts = displayName.split(' ');
+      if (/[a-zA-Z]/.test(displayName) && !/[가-힣]/.test(displayName)) {
+        // 영문 이름인 경우 (예: "Nayoung Park" -> 성: Park, 이름: Nayoung)
+        lastName = parts.pop() || '';
+        firstName = parts.join(' ');
+      } else {
+        // 한글 이름에 띄어쓰기가 있는 경우 (예: "박 나영" -> 성: 박, 이름: 나영)
+        lastName = parts[0];
+        firstName = parts.slice(1).join(' ');
+      }
+    } else {
+      if (/[가-힣]/.test(displayName)) {
+        // 한글 이름 띄어쓰기 없는 경우 (예: "박나영" -> 성: 박, 이름: 나영)
+        lastName = displayName.charAt(0);
+        firstName = displayName.slice(1);
+      } else {
+        // 그 외 (예: "Nayoung" -> 성 없음, 이름: Nayoung)
+        lastName = '';
+        firstName = displayName;
+      }
+    }
+
     const signupData = {
       uid: user.uid,
       email: user.email || '',
-      lastName: user.displayName?.charAt(0) || '',
-      firstName: user.displayName?.slice(1) || '',
+      lastName,
+      firstName,
     };
 
     return { isNewUser: true, state: signupData };

@@ -85,9 +85,33 @@ const AppContent = () => {
 
         // 유저 정보가 없거나 필수 정보(전화번호, 생년월일)가 없는 경우
         if (!userSnap.exists() || !userSnap.data()?.phone || !userSnap.data()?.birthDate) {
-          const displayName = user.displayName || '';
-          const lastName = displayName.charAt(0) || '';
-          const firstName = displayName.slice(1) || '';
+          const displayName = user.displayName?.trim() || '';
+          let lastName = '';
+          let firstName = '';
+
+          if (displayName.includes(' ')) {
+            const parts = displayName.split(' ');
+            if (/[a-zA-Z]/.test(displayName) && !/[가-힣]/.test(displayName)) {
+              // 영문 이름인 경우 (예: "Nayoung Park" -> 성: Park, 이름: Nayoung)
+              lastName = parts.pop() || '';
+              firstName = parts.join(' ');
+            } else {
+              // 한글 이름에 띄어쓰기가 있는 경우 (예: "박 나영" -> 성: 박, 이름: 나영)
+              lastName = parts[0];
+              firstName = parts.slice(1).join(' ');
+            }
+          } else {
+            // 띄어쓰기가 없는 경우
+            if (/[가-힣]/.test(displayName)) {
+              // 한글 (예: "박나영" -> 성: 박, 이름: 나영)
+              lastName = displayName.charAt(0);
+              firstName = displayName.slice(1);
+            } else {
+              // 영문 단일 단어 등 (예: "Nayoung" -> 이름: Nayoung)
+              lastName = '';
+              firstName = displayName;
+            }
+          }
 
           // 정보 없음 -> 소셜 가입 페이지로 이동
           navigate('/signup-social', {
