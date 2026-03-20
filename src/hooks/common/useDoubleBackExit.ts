@@ -16,6 +16,7 @@ export const useDoubleBackExit = () => {
 
     let lastBackPress = 0;
     let listener: any;
+    let isMounted = true;
 
     /**
      * 뒤로가기 버튼 클릭 핸들러
@@ -44,11 +45,15 @@ export const useDoubleBackExit = () => {
     // 리스너 등록
     const setupListener = async () => {
       listener = await App.addListener('backButton', handleBackButton);
+      if (!isMounted && listener) {
+        listener.remove();
+      }
     };
     setupListener();
 
     // 컴포넌트 언마운트 시 리스너 제거
     return () => {
+      isMounted = false;
       if (listener) listener.remove();
     };
   }, []);

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { AlertCircle, Calendar, CheckCircle2, Loader2, Save, Smartphone, Trash2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,6 +32,31 @@ const EditUserInfo = () => {
   const [isLeapMonth, setIsLeapMonth] = useState(false);
   const [isLunar, setIsLunar] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  /**
+   * 안드로이드 하드웨어 뒤로가기 버튼 처리
+   */
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let listener: any;
+    let isMounted = true;
+
+    const setupListener = async () => {
+      listener = await App.addListener('backButton', () => {
+        navigate(-1);
+      });
+      if (!isMounted && listener) {
+        listener.remove();
+      }
+    };
+    setupListener();
+
+    return () => {
+      isMounted = false;
+      if (listener) listener.remove();
+    };
+  }, [navigate]);
 
   /**
    * 컴포넌트 마운트 시 Firestore에서 현재 로그인된 사용자의 정보를 불러옵니다.
