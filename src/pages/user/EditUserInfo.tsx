@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -62,8 +62,7 @@ const EditUserInfo = () => {
    * 컴포넌트 마운트 시 Firestore에서 현재 로그인된 사용자의 정보를 불러옵니다.
    */
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const userRef = doc(db, 'users', user.uid);
@@ -82,12 +81,15 @@ const EditUserInfo = () => {
           }
         } catch (error) {
           // 데이터 로드 실패 시 조용히 처리하거나 에러 UI 표시
+        } finally {
+          setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    };
+    });
 
-    fetchUserData();
+    return () => unsubscribe();
   }, []);
 
   /**

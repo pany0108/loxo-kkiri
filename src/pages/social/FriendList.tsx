@@ -653,7 +653,7 @@ const FriendList: React.FC<FriendListProps> = ({ isEmbedded = false }) => {
       </div>
 
       {isSelectionMode && selectedFriendUids.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-black pb-[calc(1rem+max(env(safe-area-inset-bottom),20px))] z-50">
+        <div className="fixed bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-black pb-[calc(1rem+max(env(safe-area-inset-bottom),32px))] z-50">
           <button
             onClick={() => setIsMoveToGroupOpen(true)}
             className="w-full h-[52px] bg-primary text-white rounded-[16px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform"

@@ -201,7 +201,7 @@ const AppContent = () => {
   return (
     <div className="flex flex-col h-[100dvh] bg-white dark:bg-gray-950 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <div className="flex-1 min-h-0">
-        <div className="h-full pb-[calc(54px+max(env(safe-area-inset-bottom),20px))]">
+        <div className="h-full pb-[calc(54px+max(env(safe-area-inset-bottom),32px))]">
           <Routes>
             {/* --- 01. 계정 및 인증 --- */}
             <Route path="/" element={!user ? <Login /> : <Navigate to="/calendar" />} />
