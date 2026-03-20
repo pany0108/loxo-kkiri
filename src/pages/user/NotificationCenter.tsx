@@ -277,7 +277,7 @@ const NotificationCenter = () => {
         {/* 스크롤 컨테이너 */}
         <div
           ref={containerRef}
-          className={`relative h-full pb-[calc(10rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-y-contain z-10 flex flex-col ${
+          className={`relative h-full pb-[calc(10rem+max(env(safe-area-inset-bottom),20px))] overflow-y-auto overscroll-y-contain z-10 flex flex-col ${
             isSelectionMode ? 'pt-[calc(105px+env(safe-area-inset-top))]' : 'pt-[calc(148px+env(safe-area-inset-top))]'
           }`}
           {...handlers}
@@ -401,7 +401,7 @@ const NotificationCenter = () => {
       )}
 
       {!isSelectionMode && notifications.length > 0 && (
-        <footer className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 text-center border-t border-gray-100 dark:border-gray-800/50">
+        <footer className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+max(env(safe-area-inset-bottom),20px))] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md z-20 text-center border-t border-gray-100 dark:border-gray-800/50">
           <button onClick={handleDeleteAll} className="text-xs font-bold text-sub dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
             모든 알림 지우기
           </button>

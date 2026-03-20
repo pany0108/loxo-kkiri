@@ -34,7 +34,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, title, headerContent,
   const defaultScrollRef = useScrollToTop();
   const scrollRef = contentRef || defaultScrollRef;
 
-  const footerPadding = footer ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[env(safe-area-inset-bottom)]';
+  const footerPadding = footer ? 'pb-[calc(8rem+max(env(safe-area-inset-bottom),20px))]' : 'pb-[max(env(safe-area-inset-bottom),20px)]';
   const finalOnBack = onBack === null ? null : onBack ?? (() => navigate(-1));
 
   const paddingTop = hideTopNav ? 'pt-[calc(24px+env(safe-area-inset-top))]' : 'pt-[calc(76px+env(safe-area-inset-top))]';

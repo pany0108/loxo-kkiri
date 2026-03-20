@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { signOut } from 'firebase/auth';
 import { arrayRemove, doc, updateDoc } from 'firebase/firestore';
-import { Bell, Check, ChevronRight, ClipboardList, Edit2, Loader2, LogOut, Moon, ShieldCheck, Sun, User, Users, UserX } from 'lucide-react';
+import { Bell, Check, ChevronRight, ClipboardList, Edit2, Loader2, LogOut, Moon, ShieldCheck, Sun, User, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { auth, db } from '../../firebase';
