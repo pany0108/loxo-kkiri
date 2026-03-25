@@ -105,27 +105,3 @@
 This project is licensed under the MIT License.
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-### 모바일 빌드 (Android/iOS)
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-1. **빌드**
-
-   ```bash
-   npm run build
-   ```
-
-2. **Capacitor 동기화**
-
-   ```bash
-   npx cap sync
-   ```
-
-3. **네이티브 IDE 열기**
-   ```bash
-   npx cap open android  # 또는 ios
-   ```
-
-## 📝 라이선스
-
-This project is licensed under the MIT License.
