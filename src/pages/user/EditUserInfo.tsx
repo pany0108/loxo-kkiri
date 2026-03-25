@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { AlertCircle, Calendar, CheckCircle2, Loader2, Save, Smartphone, Trash2, User } from 'lucide-react';
@@ -68,17 +68,34 @@ const EditUserInfo = () => {
           const userRef = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
 
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            setFormData({
-              lastName: data.lastName || '',
-              firstName: data.firstName || '',
-              phone: data.phone || '',
-              birthDate: data.birthDate || '',
-            });
-            setIsLeapMonth(data.isLeapMonth || false);
-            setIsLunar(data.birthDateType === 'lunar');
+          const data = userSnap.exists() ? userSnap.data() : {};
+
+          let fName = data.firstName || '';
+          let lName = data.lastName || '';
+
+          // 구글 로그인 등으로 가입하여 성/이름이 분리되지 않은 경우, name이나 displayName에서 추출
+          if (!fName && !lName) {
+            const displayName = data.name || user.displayName || '';
+            if (displayName.includes(' ')) {
+              const parts = displayName.split(' ');
+              lName = parts[0];
+              fName = parts.slice(1).join(' ');
+            } else if (displayName.length >= 2) {
+              lName = displayName.substring(0, 1);
+              fName = displayName.substring(1);
+            } else {
+              fName = displayName;
+            }
           }
+
+          setFormData({
+            lastName: lName,
+            firstName: fName,
+            phone: data.phone || '',
+            birthDate: data.birthDate || '',
+          });
+          setIsLeapMonth(data.isLeapMonth || false);
+          setIsLunar(data.birthDateType === 'lunar');
         } catch (error) {
           // 데이터 로드 실패 시 조용히 처리하거나 에러 UI 표시
         } finally {
@@ -105,11 +122,8 @@ const EditUserInfo = () => {
   /**
    * 입력 필드 값 변경 핸들러
    */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
+  const handleFieldChange = (name: string, value: string) => {
     const finalValue = name === 'phone' ? formatPhone(value) : value;
-
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
   };
 
@@ -128,7 +142,7 @@ const EditUserInfo = () => {
       const fullName = `${formData.lastName}${formData.firstName}`;
 
       // 전화번호에서 하이픈을 제거하고 숫자만 저장하여 데이터 정합성을 보장합니다.
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         lastName: formData.lastName,
         firstName: formData.firstName,
         name: fullName, // 검색 및 표시 편의를 위한 전체 이름 필드
@@ -136,7 +150,7 @@ const EditUserInfo = () => {
         birthDate: formData.birthDate,
         isLeapMonth: isLunar && isLeapMonth,
         birthDateType: isLunar ? 'lunar' : 'solar',
-      });
+      }, { merge: true });
 
       // Auth 프로필 동기화
       await updateProfile(auth.currentUser, {
@@ -234,10 +248,10 @@ const EditUserInfo = () => {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-1">
-                <FormInput name="lastName" value={formData.lastName} onChange={handleChange} placeholder="성" />
+                <FormInput name="lastName" value={formData.lastName} onChange={(e) => handleFieldChange('lastName', e.target.value)} placeholder="성" />
               </div>
               <div className="col-span-2">
-                <FormInput name="firstName" value={formData.firstName} onChange={handleChange} placeholder="이름" />
+                <FormInput name="firstName" value={formData.firstName} onChange={(e) => handleFieldChange('firstName', e.target.value)} placeholder="이름" />
               </div>
             </div>
           </section>
@@ -256,7 +270,7 @@ const EditUserInfo = () => {
               inputMode="numeric"
               value={formatPhone(formData.phone)}
               placeholder="010-0000-0000"
-              onChange={handleChange}
+              onChange={(e) => handleFieldChange('phone', e.target.value)}
               required
             />
           </div>
@@ -295,7 +309,7 @@ const EditUserInfo = () => {
               <input
                 name="birthDate"
                 value={formData.birthDate}
-                onChange={handleChange}
+                onChange={(e) => handleFieldChange('birthDate', e.target.value)}
                 placeholder="YYYY/MM/DD"
                 className="bg-transparent border-none outline-none w-full h-full text-[15px] font-bold text-main dark:text-white placeholder:text-sub"
               />
