@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import { sendPushNotificationToUser } from 'utils';
 
 import { useFirestoreDoc } from 'hooks/common/useFirestore';
 import { Meeting as MeetingData, cancelMeeting, confirmMeeting } from 'services';
@@ -105,14 +106,19 @@ export const useMeetingReport = () => {
       const meetingRef = doc(db, 'meetings', meetingId);
       batch.update(meetingRef, { status: 'PENDING', isRetry: true, votes: {}, responses: {} });
 
+      const pushTargetUids: string[] = [];
+      const messageBody = `'${meetingData.title}' 약속의 재요청이 필요합니다. 탭하여 다시 진행해주세요.`;
+
       for (const uid of meetingData.participants) {
         if (uid === auth.currentUser.uid) continue;
+
+        pushTargetUids.push(uid);
 
         const notiRef = doc(collection(db, 'notifications'));
         batch.set(notiRef, {
           userId: uid,
           type: 'MEETING_RETRY',
-          message: `'${meetingData.title}' 약속의 재요청이 필요합니다. 탭하여 다시 진행해주세요.`,
+          message: messageBody,
           relatedId: meetingId,
           fromUserId: auth.currentUser.uid,
           fromUserName: auth.currentUser.displayName || '주최자',
@@ -122,10 +128,28 @@ export const useMeetingReport = () => {
       }
 
       await batch.commit();
+      if (pushTargetUids.length > 0) {
+        try {
+          await Promise.all(
+            pushTargetUids.map((uid) =>
+              sendPushNotificationToUser({
+                userId: uid,
+                title: '일정 재요청 안내',
+                body: messageBody,
+                data: { type: 'MEETING_RETRY', relatedId: meetingId, link: '/propose' },
+              })
+            )
+          );
+        } catch (pushError) {
+          console.error('푸시 전송 중 에러 (무시됨):', pushError);
+        }
+      }
+
       setIsRetryModalOpen(false);
       toast.success('멤버들에게 재요청 알림을 보냈습니다.');
 
-      navigate(`/meeting/status/`, { replace: true, state: { fromRetry: true } });
+      navigate('/propose', { replace: true, state: { fromRetry: true, meetingId } });
+
     } catch (error) {
       console.error('Error requesting retry:', error);
       toast.error('재요청 중 오류가 발생했습니다.');
