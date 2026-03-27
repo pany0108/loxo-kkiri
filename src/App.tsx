@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { BottomNav } from 'components';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import {
   Login,
   Signup,
@@ -49,6 +51,9 @@ const AppContent = () => {
   // [수정] 단순 boolean 대신 검증된 상태를 메모리에 유지
   const [isUserVerified, setIsUserVerified] = useState(false);
   const [isCheckingDb, setIsCheckingDb] = useState(false);
+
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateData, setUpdateData] = useState<{ isForceUpdate: boolean; releaseNotes: string; storeUrlAndroid: string; storeUrlIos: string } | null>(null);
 
   // [수정] 로그인 후 유저 검증 및 라우팅 처리 (캐싱 적용)
   useEffect(() => {
@@ -147,6 +152,57 @@ const AppContent = () => {
 
     checkUserAndRedirect();
   }, [user, loading, navigate, location.pathname, isUserVerified]);
+
+  // 앱 진입 시 Firestore에서 최신 버전 정보를 확인하는 로직
+  useEffect(() => {
+    const checkAppVersion = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      try {
+        const info = await CapacitorApp.getInfo();
+        const currentVersion = info.version;
+
+        const versionDocRef = doc(db, 'settings', 'version');
+        const versionSnap = await getDoc(versionDocRef);
+
+        if (versionSnap.exists()) {
+          const data = versionSnap.data();
+          const { latestVersion, minVersion, releaseNotes, storeUrlAndroid, storeUrlIos } = data;
+
+          // 버전 문자열 비교 (예: "1.0.1" > "1.0.0")
+          const isLowerVersion = (v1: string, v2: string) => {
+            if (!v1 || !v2) return false;
+            const parts1 = v1.split('.').map(Number);
+            const parts2 = v2.split('.').map(Number);
+            for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+              const p1 = parts1[i] || 0;
+              const p2 = parts2[i] || 0;
+              if (p1 < p2) return true;
+              if (p1 > p2) return false;
+            }
+            return false;
+          };
+
+          const isForceUpdate = minVersion && isLowerVersion(currentVersion, minVersion);
+          const isUpdateAvailable = latestVersion && isLowerVersion(currentVersion, latestVersion);
+
+          if (isUpdateAvailable) {
+            setUpdateData({
+              isForceUpdate,
+              releaseNotes: releaseNotes || '새로운 버전이 출시되었습니다.\n안정적인 서비스 이용을 위해 앱을 업데이트 해주세요.',
+              storeUrlAndroid: storeUrlAndroid || 'market://details?id=com.loxo.kkiri',
+              storeUrlIos: storeUrlIos || '',
+            });
+            setShowUpdateModal(true);
+          }
+        }
+      } catch (error) {
+        console.error('앱 버전 확인 중 오류:', error);
+      }
+    };
+
+    checkAppVersion();
+  }, []);
 
   // 푸시 알림 클릭 시 내비게이션을 처리하는 핸들러
   const handlePushNotificationNavigation = useCallback(
@@ -248,6 +304,31 @@ const AppContent = () => {
         </div>
       </div>
       {user && !shouldHideNav && <BottomNav />}
+
+      {/* 앱 업데이트 안내 모달 */}
+      {showUpdateModal && updateData && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-5">
+          <div className="bg-white dark:bg-gray-800 rounded-[28px] p-7 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-black text-main dark:text-white mb-3">새로운 업데이트 안내 🎉</h2>
+            <p className="text-sub dark:text-gray-400 text-[14px] mb-8 whitespace-pre-wrap leading-relaxed">
+              {updateData.releaseNotes}
+            </p>
+            <div className="flex gap-3">
+              {!updateData.isForceUpdate && (
+                <button onClick={() => setShowUpdateModal(false)} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 text-sub dark:text-gray-300 font-bold rounded-xl active:scale-95 transition-transform">
+                  다음에
+                </button>
+              )}
+              <button onClick={() => {
+                const url = Capacitor.getPlatform() === 'ios' ? updateData.storeUrlIos : updateData.storeUrlAndroid;
+                if (url) window.location.href = url;
+              }} className="flex-1 py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-transform">
+                업데이트 하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
